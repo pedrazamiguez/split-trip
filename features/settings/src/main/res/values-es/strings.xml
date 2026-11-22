@@ -15,6 +15,8 @@
     <string name="settings_account_status_description">Info de tu cuenta</string>
     <string name="settings_account_subscriptions_title">Suscripciones</string>
     <string name="settings_account_subscriptions_description">Gestiona tu plan</string>
+    <string name="settings_account_plan_allowances_title">Plan y límites</string>
+    <string name="settings_account_plan_allowances_description">Consulta tus cuotas y uso</string>
     <string name="settings_account_security_title">Seguridad y Privacidad</string>
     <string name="settings_account_security_description">Mantén tu cuenta segura</string>
 
@@ -194,25 +196,25 @@
     <string name="account_status_link_email_sheet_email">Dirección de correo electrónico</string>
     <string name="account_status_link_email_sheet_error_email_empty">El correo no puede estar vacío</string>
     <string name="settings_logout_guest_dialog_title">¿Restablecer sesión de invitado?</string>
-    <string name="settings_logout_guest_dialog_text">Cerrar sesión o restablecer borrará de forma permanente todos los viajes, gastos y balances locales. ¡Asegúrate de vincular tu cuenta antes para guardar tus datos!</string>
+    <string name="settings_logout_guest_dialog_text">Cerrar sesión o restablecer borrará de forma permanente todos los grupos, gastos y balances locales. ¡Asegúrate de vincular tu cuenta antes para guardar tus datos!</string>
 
     <!-- FAQ Screen -->
     <string name="faq_title">Preguntas frecuentes</string>
     <string name="faq_question_1">¿Qué es SplitTrip?</string>
-    <string name="faq_answer_1">SplitTrip es una aplicación moderna para compartir gastos y dividir cuentas de grupo diseñada para hacer que los viajes, cenas y eventos en grupo sean libres de estrés. Calcula balances, rastrea gastos y concilia deudas sin conexión o en línea.</string>
+    <string name="faq_answer_1">SplitTrip es una aplicación moderna para compartir gastos y presupuestos de grupo, diseñada para que la convivencia, los gastos del día a día, las cenas y los viajes en grupo sean sin complicaciones. Calcula balances, controla el gasto y concilia deudas con o sin conexión.</string>
     <string name="faq_question_2">¿Cómo funciona el modo sin conexión?</string>
     <string name="faq_answer_2">SplitTrip está construido sobre una arquitectura que prioriza la base de datos local (offline-first). Cualquier transacción o edición de grupo que realices se guarda instantáneamente en tu base de datos local (Room) y se propaga a la interfaz de usuario de inmediato. Cuando hay una conexión de red disponible, los cambios se sincronizan de forma segura en segundo plano en nuestras bases de datos de Cloud Firestore.</string>
     <string name="faq_question_3">¿Puedo usar múltiples monedas?</string>
-    <string name="faq_answer_3">¡Sí! SplitTrip admite completamente viajes con múltiples monedas. Puedes establecer una moneda predeterminada para tu perfil, especificar monedas para gastos individuales y ver balances convertidos automáticamente basados en tipos de cambio en tiempo real.</string>
+    <string name="faq_answer_3">¡Sí! SplitTrip admite completamente grupos con múltiples monedas. Puedes establecer una moneda predeterminada para tu perfil, especificar monedas para gastos individuales y ver balances convertidos automáticamente basados en tipos de cambio en tiempo real.</string>
     <string name="faq_question_4">¿Mis datos están seguros?</string>
-    <string name="faq_answer_4">Absolutamente. SplitTrip utiliza Firebase Authentication para autenticar a los usuarios de forma segura. Tu información personal, los detalles del viaje y las transacciones financieras están protegidos utilizando cifrado de tránsito estándar de la industria y robustas reglas de seguridad de Firestore.</string>
+    <string name="faq_answer_4">Absolutamente. SplitTrip utiliza Firebase Authentication para autenticar a los usuarios de forma segura. Tu información personal, los detalles de tus grupos y las transacciones financieras están protegidos utilizando cifrado de tránsito estándar de la industria y robustas reglas de seguridad de Firestore.</string>
     <string name="faq_question_5">¿Cómo vinculo mi cuenta de invitado?</string>
     <string name="faq_answer_5">Si comenzaste como invitado, puedes ir a Ajustes &gt; Estado de la cuenta y vincular una cuenta de Google o un correo electrónico y contraseña. Esto fusiona tu sesión local de invitado con una cuenta permanente respaldada en la nube para que nunca pierdas tus datos.</string>
 
     <!-- Privacy Policy Screen -->
     <string name="privacy_title">Política de privacidad</string>
     <string name="privacy_section_1_title">1. Información que recopilamos</string>
-    <string name="privacy_section_1_body">Recopilamos información de autenticación cuando te registras (correo electrónico, nombre de perfil, imagen de perfil) y detalles financieros compartidos (viajes, descripciones de gastos, importes y listas de miembros) para facilitar los cálculos de deudas. No recopilamos datos de tarjetas de crédito, credenciales bancarias ni nos conectamos a APIs de bancos. Los acuerdos de pago son cálculos informativos y la aplicación no ejecuta transferencias monetarias. Las cuentas de invitado almacenan estos datos solo en tu dispositivo.</string>
+    <string name="privacy_section_1_body">Recopilamos información de autenticación cuando te registras (correo electrónico, nombre de perfil, imagen de perfil) y detalles financieros compartidos (grupos, descripciones de gastos, importes y listas de miembros) para facilitar los cálculos de deudas. No recopilamos datos de tarjetas de crédito, credenciales bancarias ni nos conectamos a APIs de bancos. Los acuerdos de pago son cálculos informativos y la aplicación no ejecuta transferencias monetarias. Las cuentas de invitado almacenan estos datos solo en tu dispositivo.</string>
     <string name="privacy_section_2_title">2. Cómo utilizamos los datos</string>
     <string name="privacy_section_2_body">Tus datos se procesan en el dispositivo y se sincronizan con la nube para la colaboración en grupo en tiempo real. No vendemos ni monetizamos tus registros de transacciones, métodos de pago o información personal.</string>
     <string name="privacy_section_3_title">3. Seguridad de los datos</string>
@@ -286,12 +288,12 @@
 
     <!-- Subscriptions Screen -->
     <string name="subscriptions_title">Suscripciones</string>
-    <string name="subscriptions_subtitle">Elige el plan que mejor se adapte a tu estilo de viaje</string>
+    <string name="subscriptions_subtitle">Elige el plan que mejor se adapte a tus grupos</string>
     <string name="subscriptions_interval_monthly">Mensual</string>
     <string name="subscriptions_interval_annual">Anual</string>
     <string name="subscriptions_annual_save_badge">Ahorra 25%</string>
     <string name="subscriptions_tier_free_title">SplitTrip Free</string>
-    <string name="subscriptions_tier_free_description">Gestión de gastos esencial para viajes ocasionales</string>
+    <string name="subscriptions_tier_free_description">Gestión de gastos esencial para grupos del día a día y viajes</string>
     <string name="subscriptions_tier_free_price">0 €</string>
     <string name="subscriptions_tier_free_period">Gratis para siempre</string>
     <string name="subscriptions_tier_pro_title">SplitTrip Pro</string>
@@ -304,7 +306,7 @@
     <string name="subscriptions_period_annual_billed">facturado anualmente</string>
     <string name="subscriptions_feature_free_groups">1 grupo</string>
     <string name="subscriptions_feature_free_members">Hasta 4 miembros por grupo</string>
-    <string name="subscriptions_feature_free_standard_calc">Liquidación estándar de deudas</string>
+    <string name="subscriptions_feature_free_standard_calc">Acuerdos de pago estándar</string>
     <string name="subscriptions_feature_free_multi_currency">Soporte multidivisa</string>
     <string name="subscriptions_feature_subunits">Gestión de subunidades</string>
     <string name="subscriptions_feature_pro_unlimited_groups">Grupos ilimitados</string>
@@ -332,11 +334,40 @@
     <string name="subscriptions_complimentary_pro_manage_info">Tienes acceso gratuito a SplitTrip Pro; no hay ninguna suscripción de Google Play que gestionar.</string>
 
     <!-- Developer Diagnostics -->
-    <string name="developer_diagnostics_title">Registros de diagnóstico</string>
-    <string name="developer_diagnostics_description">Exporta registros en memoria anonimizados para diagnóstico y resolución de errores.</string>
-    <string name="developer_diagnostics_copy_action">Copiar diagnósticos</string>
     <string name="developer_diagnostics_copied">Registros de diagnóstico copiados al portapapeles</string>
     <string name="settings_developer_diagnostics_title">Registros de diagnóstico</string>
     <string name="settings_developer_diagnostics_description">Copiar registros anonimizados para depuración</string>
+
+    <!-- Plan & Allowances Screen -->
+    <string name="plan_allowances_title">Plan y límites</string>
+    <string name="plan_allowances_subtitle">Tus cuotas y funciones incluidas</string>
+    <string name="plan_allowances_tier_free_subtitle">Consulta tus cuotas mensuales y límites de grupo. Mejora cuando quieras.</string>
+    <string name="plan_allowances_tier_pro_subtitle">Tienes acceso a límites ampliados y a todas las funciones Pro.</string>
+    <string name="plan_allowances_tier_ungated_title">Todas las funciones desbloqueadas</string>
+    <string name="plan_allowances_tier_ungated_subtitle">Los límites del plan están desactivados actualmente. Disfruta de acceso completo a SplitTrip.</string>
+    <string name="plan_allowances_badge_free">Gratis</string>
+    <string name="plan_allowances_badge_pro">Pro</string>
+    <string name="plan_allowances_badge_unlimited">Ilimitado</string>
+    <string name="plan_allowances_section_usage">Uso y cuotas</string>
+    <string name="plan_allowances_section_allowances">Límites y ventajas del plan</string>
+    <string name="plan_allowances_quota_ai_scans_title">Escaneos IA de recibos</string>
+    <string name="plan_allowances_quota_ai_scans_subtitle">Se reinicia cada mes natural</string>
+    <string name="plan_allowances_quota_media_uploads_title">Subidas de archivos</string>
+    <string name="plan_allowances_quota_media_uploads_subtitle">Recibos y portadas de grupo · Reinicio mensual</string>
+    <string name="plan_allowances_quota_owned_groups_title">Grupos propios</string>
+    <string name="plan_allowances_quota_owned_groups_subtitle">Grupos creados por ti</string>
+    <string name="plan_allowances_usage_fraction">%1$s / %2$s</string>
+    <string name="plan_allowances_usage_unlimited">%1$s usados · Ilimitado</string>
+    <string name="plan_allowances_status_remaining">Quedan %1$s</string>
+    <string name="plan_allowances_status_exhausted">Límite alcanzado</string>
+    <string name="plan_allowances_perk_members_title">Miembros por grupo</string>
+    <string name="plan_allowances_perk_members_detail">Hasta %1$s</string>
+    <string name="plan_allowances_perk_subunits_title">Subunidades por grupo</string>
+    <string name="plan_allowances_perk_subunits_detail">Hasta %1$s</string>
+    <string name="plan_allowances_perk_ad_free_title">Experiencia sin publicidad</string>
+    <string name="plan_allowances_perk_status_included">Incluido</string>
+    <string name="plan_allowances_perk_status_pro_only">Pro</string>
+    <string name="plan_allowances_upgrade_title">¿Necesitas más capacidad?</string>
+    <string name="plan_allowances_upgrade_description">Mejora a SplitTrip Pro para tener más grupos, más miembros por grupo, más escaneos IA de recibos, subidas de archivos ilimitadas, subunidades ilimitadas y una experiencia sin anuncios.</string>
 </resources>
 

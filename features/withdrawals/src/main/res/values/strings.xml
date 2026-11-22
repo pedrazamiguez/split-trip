@@ -65,5 +65,27 @@
     <!-- Member Picker -->
     <string name="withdrawal_member_picker_title">Withdrawing member</string>
     <string name="withdrawal_member_picker_you_label">You</string>
+
+    <!-- Step Info Bottom Sheet -->
+    <string name="withdrawal_step_info_amount_title">Withdrawal amount &amp; currency</string>
+    <string name="withdrawal_step_info_amount_description">Enter the cash amount withdrawn from the ATM and the currency you received (defaults to the group\'s main currency).\n\nThis step is required. Recording cash withdrawals lets SplitTrip track physical cash on hand and lock real exchange rates for cash expenses.</string>
+    <string name="withdrawal_step_info_exchange_rate_title">Withdrawal currency conversion</string>
+    <string name="withdrawal_step_info_exchange_rate_description">Shown only when the withdrawn currency differs from the group\'s main currency. Pre-filled with the latest exchange rate.\n\nEnter either the exchange rate or the exact amount deducted from your bank in the group\'s currency and the other field updates automatically. Cash expenses paid from this withdrawal will use this locked rate.</string>
+    <string name="withdrawal_step_info_scope_title">Withdrawing member &amp; scope</string>
+    <string name="withdrawal_step_info_scope_description">Choose which member made the withdrawal (defaults to you) and which cash pool it belongs to (defaults to \"For the whole group\").</string>
+    <string name="withdrawal_step_info_scope_item_for_group_title">For the whole group</string>
+    <string name="withdrawal_step_info_scope_item_for_group_description">Adds the cash to the shared group cash pool, available for group cash expenses.</string>
+    <string name="withdrawal_step_info_scope_item_for_subunit_title">For a subunit</string>
+    <string name="withdrawal_step_info_scope_item_for_subunit_description">Shown when the selected member belongs to a subunit. Tracks this cash under that subunit\'s pool.</string>
+    <string name="withdrawal_step_info_scope_item_for_you_title">Only for you</string>
+    <string name="withdrawal_step_info_scope_item_for_you_description">Tracks the cash in the selected member\'s personal cash pool for their own cash expenses.</string>
+    <string name="withdrawal_step_info_details_title">ATM fee &amp; details</string>
+    <string name="withdrawal_step_info_details_description">Toggle \"ATM fee\" on if the cash machine charged a withdrawal fee; this reveals the fee steps next. You can also add a short title (like the ATM location) and optional notes.\n\nThis step is optional and starts empty with the fee toggle off. Tap \"Skip to Review\" anytime if you don\'t need to add a fee or notes.</string>
+    <string name="withdrawal_step_info_atm_fee_title">ATM fee amount</string>
+    <string name="withdrawal_step_info_atm_fee_description">Shown only when you turned on the ATM fee toggle in the Details step. Enter the fee charged by the ATM and its currency.\n\nThe fee is recorded alongside the withdrawal so your group balances reflect the full cost of getting cash.</string>
+    <string name="withdrawal_step_info_fee_exchange_rate_title">Fee currency conversion</string>
+    <string name="withdrawal_step_info_fee_exchange_rate_description">Shown only when the ATM fee currency differs from the group\'s main currency. Pre-filled with the latest exchange rate.\n\nEdit either the exchange rate or the converted fee amount in the group\'s currency and the other field updates automatically.</string>
+    <string name="withdrawal_step_info_review_title">Review &amp; confirm</string>
+    <string name="withdrawal_step_info_review_description">Check the withdrawn amount, currency conversion, scope, any ATM fee, and details before logging the withdrawal.\n\nWant to adjust something now? Tap any completed step in the top bar or press \"Back\" before saving.</string>
 </resources>
 

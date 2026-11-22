@@ -24,6 +24,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpens
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceiptQuotaUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ManualReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
@@ -65,7 +66,8 @@ class ConfigEventHandler(
     private val addExpenseUiMapper: AddExpenseUiMapper,
     private val receiptExtractionService: ReceiptExtractionService,
     private val featureGateService: FeatureGateService,
-    private val aiReceiptQuotaUiMapper: AiReceiptQuotaUiMapper
+    private val aiReceiptQuotaUiMapper: AiReceiptQuotaUiMapper,
+    private val manualReceiptQuotaUiMapper: ManualReceiptQuotaUiMapper
 ) : AddExpenseEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
@@ -173,6 +175,8 @@ class ConfigEventHandler(
         val isAiCapable = receiptExtractionService.capability() == ExtractionCapability.ON_DEVICE_AI
         val aiQuota = featureGateService.observeAiReceiptQuota().first()
         val aiQuotaUi = aiReceiptQuotaUiMapper.mapQuotaToUiModel(aiQuota)
+        val manualReceiptQuota = featureGateService.observeManualReceiptQuota().first()
+        val manualReceiptQuotaUi = manualReceiptQuotaUiMapper.mapQuotaToUiModel(manualReceiptQuota)
         val effectiveAiMode = resolveEffectiveAiMode(isAiCapable, aiQuota.canScan)
         val currentMillis = System.currentTimeMillis()
         val formattedDate = addExpenseUiMapper.formatExpenseDateForDisplay(currentMillis)
@@ -188,6 +192,9 @@ class ConfigEventHandler(
                 isAiGated = aiQuotaUi.isAiGated,
                 isAiProFeature = aiQuotaUi.isAiProFeature,
                 aiRemainingScansLabel = aiQuotaUi.remainingScansLabel,
+                isManualReceiptGated = manualReceiptQuotaUi.isManualReceiptGated,
+                isManualReceiptProFeature = manualReceiptQuotaUi.isManualReceiptProFeature,
+                manualReceiptRemainingLabel = manualReceiptQuotaUi.remainingAttachmentsLabel,
                 currentStep = if (effectiveAiMode) AddExpenseStep.RECEIPT else AddExpenseStep.TITLE,
                 groupName = config.group.name,
                 currentUserId = currentUserId,

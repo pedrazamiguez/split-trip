@@ -65,7 +65,7 @@
     <string name="expense_error_invalid_exchange_rate">El tipo de cambio debe ser mayor que cero</string>
     <string name="expense_error_invalid_group_amount">El importe convertido debe ser mayor que cero</string>
     <string name="expense_error_insufficient_cash">No tienes suficiente efectivo\nNecesitas %1$s pero solo tienes %2$s disponible</string>
-    <string name="expense_error_cash_conflict">Otro miembro acaba de usar este efectivo. El importe disponible ha cambiado — revisa e inténtalo de nuevo.</string>
+    <string name="expense_error_cash_conflict">Otro miembro acaba de usar este efectivo. El importe disponible ha cambiado. Revisa e inténtalo de nuevo.</string>
 
     
     <string name="add_expense_cash_conflict_resolution_title">El efectivo ha cambiado</string>
@@ -110,11 +110,11 @@
     <string name="add_expense_cash_no_cash_available_generic">No hay efectivo disponible en esta moneda. Añade una retirada o cambia el método de pago.</string>
     
     <string name="add_expense_cash_tranche_funded_from">Financiado desde</string>
-    <string name="add_expense_cash_tranche_atm_label">Cajero — %1$s</string>
+    <string name="add_expense_cash_tranche_atm_label">Cajero · %1$s</string>
     <string name="add_expense_cash_tranche_atm_label_no_date">Cajero</string>
     <string name="add_expense_cash_tranche_remaining">%1$s restante</string>
     <string name="add_expense_cash_tranche_collapse">Ver menos ▲</string>
-    <string name="add_expense_cash_tranche_disclaimer">Indicativo — los tramos finales se confirman al guardar.</string>
+    <string name="add_expense_cash_tranche_disclaimer">Indicativo: los tramos finales se confirman al guardar.</string>
     <string name="add_expense_cash_tranche_rate_label">@ %1$s</string>
     <plurals name="add_expense_cash_tranche_count">
         <item quantity="one">%1$d retirada ▼</item>
@@ -423,63 +423,78 @@
 
     <!-- AI Scan Pro Gate and Manual Receipt Demarcation -->
     <string name="expense_autofill_unlock_with_pro">Desbloquea escaneo IA con Pro</string>
-    <string name="add_expense_receipt_manual_description">Adjunta una foto o PDF como comprobante de compra para todos los miembros (Gratis e ilimitado).</string>
+    <string name="add_expense_receipt_manual_description">Foto o PDF opcional para los miembros del grupo.</string>
 
     <!-- Step Info Bottom Sheet -->
-    <string name="action_step_info">Sobre este paso</string>
-    <string name="expense_step_info_dismiss">Entendido</string>
-
     <string name="expense_step_info_title_title">Concepto del gasto</string>
-    <string name="expense_step_info_title_description">Dale al gasto un nombre claro y fácil de reconocer (como \"Cena en Roma\" o \"Taxi al aeropuerto\") para que todos los compañeros de viaje lo identifiquen en el registro de gastos.\n\nEste paso es obligatorio. En dispositivos compatibles, también puedes activar el escáner de recibos con IA para extraer automáticamente el concepto, el importe, la moneda y la fecha.</string>
+    <string name="expense_step_info_title_description">Dale al gasto un nombre claro (como \"Cena de pizza margarita\" o \"Taxi al aeropuerto\") para que todos en el grupo lo identifiquen rápido en la lista de gastos.\n\nEste paso es obligatorio. En dispositivos compatibles, también puedes usar el escáner de recibos con IA para rellenar el concepto, el importe, la moneda y la fecha automáticamente a partir de un recibo.</string>
 
     <string name="expense_step_info_payment_method_title">Método de pago</string>
-    <string name="expense_step_info_payment_method_description">Elige cómo realizaste el pago (Efectivo, Tarjeta de crédito o débito, Transferencia, Bizum, entre otros). Por defecto se preselecciona el último método usado en el grupo y al tocar una opción avanzarás automáticamente.\n\nPor qué es importante: Si eliges Efectivo, el gasto se vincula a tus retiradas de efectivo en cajero (tramos FIFO) y el tipo de cambio se bloquea al cambio real de la retirada. Los métodos digitales y con tarjeta permiten usar tipos de cambio en vivo o personalizados.</string>
+    <string name="expense_step_info_payment_method_description">Elige cómo se realizó el pago (Efectivo, Tarjeta de crédito o débito, Transferencia, Bizum y más). El último método usado en el grupo viene preseleccionado, y al tocar una opción pasarás directo al siguiente paso.\n\nAl elegir Efectivo, el gasto se vincula a tus retiradas de cajero y fija el tipo de cambio al de la retirada real. Los métodos digitales y con tarjeta usan tipos de cambio en vivo o personalizados.</string>
 
     <string name="expense_step_info_amount_title">Importe y moneda</string>
-    <string name="expense_step_info_amount_description">Introduce el importe pagado y la moneda que figura en el recibo (por defecto se selecciona la última moneda usada o la moneda base del grupo).\n\nEste paso es obligatorio. Una vez introducido el importe (y confirmado el tipo de cambio si es en moneda extranjera), puedes tocar \"Ir al resumen\" en cualquier momento para aceptar los valores por defecto de los pasos opcionales restantes.</string>
+    <string name="expense_step_info_amount_description">Introduce el importe pagado y la moneda que aparece en el recibo (con la última moneda usada o la moneda base del grupo preseleccionada).\n\nEste paso es obligatorio. Una vez introducido el importe (y confirmado el tipo de cambio si es otra moneda), puedes tocar \"Ir al resumen\" en cualquier momento para usar los valores por defecto en los pasos opcionales restantes.</string>
 
     <string name="expense_step_info_exchange_rate_title">Conversión de moneda</string>
-    <string name="expense_step_info_exchange_rate_description">Solo aparece cuando la moneda del gasto es distinta a la moneda base del grupo. Este paso es opcional y utiliza por defecto el último tipo de cambio obtenido.\n\nEn pagos con tarjeta o digitales, puedes editar tanto el tipo de cambio como el importe convertido del grupo y el otro campo se recalculará automáticamente. En pagos en Efectivo, el cambio se calcula automáticamente a partir de tus retiradas de efectivo en cajero y puedes elegir de qué fondo de efectivo descontarlo.</string>
+    <string name="expense_step_info_exchange_rate_description">Solo aparece cuando la moneda del gasto es distinta a la moneda base del grupo. Es opcional y usa por defecto el último tipo de cambio disponible.\n\nEn pagos con tarjeta o digitales, puedes editar el tipo de cambio o el importe convertido al grupo y el otro campo se actualiza solo. En pagos en Efectivo, el cambio se vincula a tus retiradas en cajero y puedes elegir de qué fondo de efectivo descontarlo.</string>
 
     <string name="expense_step_info_split_title">Reparto entre miembros</string>
-    <string name="expense_step_info_split_description">Configura cómo se divide el gasto entre tus compañeros de viaje. Este paso es opcional y por defecto aplica un reparto a partes iguales entre todos los miembros.\n\n• Partes iguales: Divide el coste equitativamente entre los miembros incluidos.\n• Cantidades: Introduce el importe exacto para cada participante.\n• Porcentaje: Asigna porcentajes usando el icono del candado para fijar cuotas concretas mientras el resto se redistribuye automáticamente.\n\nSi el grupo tiene subunidades (como parejas o familias), activa \"Dividir por subunidad\" para repartir primero por grupo.</string>
+    <string name="expense_step_info_split_description">Elige cómo dividir el gasto entre los miembros del grupo. Es opcional y por defecto aplica un reparto a partes iguales entre todos los miembros.\n\nSi el grupo tiene subunidades (como parejas o familias), activa \"Dividir por subunidad\" para repartir primero por subunidad.</string>
+    <string name="expense_step_info_split_item_equal_title">Partes iguales</string>
+    <string name="expense_step_info_split_item_equal_description">Divide el importe a partes iguales entre los miembros seleccionados.</string>
+    <string name="expense_step_info_split_item_exact_title">Cantidades</string>
+    <string name="expense_step_info_split_item_exact_description">Introduce un importe concreto para cada participante.</string>
+    <string name="expense_step_info_split_item_percent_title">Porcentaje</string>
+    <string name="expense_step_info_split_item_percent_description">Asigna porcentajes y usa el icono del candado para fijar cuotas concretas mientras el resto se redistribuye automáticamente.</string>
 
     <string name="expense_step_info_category_title">Categoría y subcategoría</string>
-    <string name="expense_step_info_category_description">Clasifica el gasto en una categoría y una subcategoría opcional (como Comida y bebida, Alojamiento o Transporte). Este paso es opcional y preselecciona la última categoría utilizada.\n\nCategorizar los gastos alimenta el gráfico de gastos por categoría en la pestaña de Gastos sin afectar al estado de cuentas de los miembros.</string>
+    <string name="expense_step_info_category_description">Agrupa el gasto bajo una categoría y una subcategoría opcional (como Comida y bebida, Alojamiento o Transporte). Es opcional y preselecciona la última categoría que usaste.\n\nLas categorías alimentan el gráfico de gastos en la pestaña de Gastos sin afectar a los balances de los miembros.</string>
 
-    <string name="expense_step_info_funding_source_title">Pagado con (Origen de los fondos)</string>
-    <string name="expense_step_info_funding_source_description">Indica de dónde salió el dinero para este pago. Este paso es opcional y selecciona por defecto \"Tu dinero\" si el grupo no tiene aportaciones previas al pocket, o \"Pocket del grupo\" si hay un pocket compartido activo.\n\n• Pocket del grupo: Se paga con el dinero compartido reunido mediante aportaciones en el pocket virtual. Se descuenta del saldo del pocket sin generar un reembolso personal.\n• Tu dinero: Pagas de tu propio bolsillo. SplitTrip registra una aportación vinculada para que tus compañeros de viaje te reembolsen su parte en el acuerdo de pago.</string>
+    <string name="expense_step_info_funding_source_title">Pagado con</string>
+    <string name="expense_step_info_funding_source_description">Elige de dónde salió el dinero para este pago. Es opcional y selecciona por defecto \"Tu dinero\" si el grupo no tiene fondos en el pocket, o \"Pocket del grupo\" si hay un pocket compartido activo.</string>
+    <string name="expense_step_info_funding_source_item_your_money_title">Tu dinero</string>
+    <string name="expense_step_info_funding_source_item_your_money_description">Pagado de tu propio bolsillo. SplitTrip registra la parte de cada miembro para que los demás te devuelvan lo que corresponda en los acuerdos de pago.</string>
+    <string name="expense_step_info_funding_source_item_group_pocket_title">Pocket del grupo</string>
+    <string name="expense_step_info_funding_source_item_group_pocket_description">Pagado con el fondo común que el grupo ya ha reunido. Se descuenta directamente del saldo del pocket sin necesidad de reembolsos personales.</string>
 
-    <string name="expense_step_info_contribution_scope_title">Pagado para (Alcance de la aportación)</string>
-    <string name="expense_step_info_contribution_scope_description">Solo aparece cuando el origen del pago es \"Tu dinero\". Este paso es opcional y selecciona por defecto \"Para ti\".\n\nDetermina a quién se acredita el pago de tu bolsillo en los balances del grupo:\n• Para ti: Acredita tu balance personal para que el grupo te reembolse directamente.\n• Para una subunidad: Acredita el balance compartido de tu subunidad.\n• Para todo el grupo: Registra el pago como una aportación general al grupo.</string>
+    <string name="expense_step_info_contribution_scope_title">Pagado para</string>
+    <string name="expense_step_info_contribution_scope_description">Solo aparece cuando pagas con \"Tu dinero\". Es opcional y por defecto selecciona \"Para ti\". Define a quién se le acredita este pago en los balances del grupo.</string>
+    <string name="expense_step_info_contribution_scope_item_for_you_title">Para ti</string>
+    <string name="expense_step_info_contribution_scope_item_for_you_description">Acredita tu balance personal para que el grupo te reembolse directamente.</string>
+    <string name="expense_step_info_contribution_scope_item_for_subunit_title">Para una subunidad</string>
+    <string name="expense_step_info_contribution_scope_item_for_subunit_description">Acredita el balance compartido de tu subunidad.</string>
+    <string name="expense_step_info_contribution_scope_item_for_group_title">Para todo el grupo</string>
+    <string name="expense_step_info_contribution_scope_item_for_group_description">Registra el pago como una aportación general para todo el grupo.</string>
 
     <string name="expense_step_info_vendor_notes_title">Comercio y notas</string>
-    <string name="expense_step_info_vendor_notes_description">Añade el nombre del establecimiento o empresa y cualquier nota útil (como referencias de reserva, artículos pedidos o números de factura).\n\nEste paso es totalmente opcional y ambos campos están vacíos por defecto. Los detalles añadidos se muestran en la ficha del gasto y permiten buscarlo fácilmente en el registro de gastos.</string>
+    <string name="expense_step_info_vendor_notes_description">Añade el nombre del comercio o empresa y cualquier nota útil (como referencias de reserva, artículos pedidos o números de factura).\n\nEste paso es totalmente opcional y ambos campos empiezan vacíos. Lo que añadas aparecerá en el detalle del gasto y podrás buscarlo en la lista de gastos.</string>
 
     <string name="expense_step_info_payment_status_title">Estado y fecha del pago</string>
-    <string name="expense_step_info_payment_status_description">Registra el estado del pago y cuándo se realizó. Este paso es opcional y por defecto se marca como \"Pagado\" con la fecha y hora actuales.\n\n• Pagado: Pago completado estándar, incluido de inmediato en los balances activos.\n• Programado: Pago futuro con fecha de vencimiento obligatoria; se reserva por separado hasta que se confirme.\n• Pagado (Reembolsable): Pago completado (como una fianza o reserva flexible) con fecha límite opcional que puede cancelarse y reembolsarse más adelante.</string>
+    <string name="expense_step_info_payment_status_description">Indica si el pago ya se ha realizado y cuándo tuvo lugar. Es opcional y por defecto se marca como \"Pagado\" con la fecha y hora actuales.</string>
+    <string name="expense_step_info_payment_status_item_paid_title">Pagado</string>
+    <string name="expense_step_info_payment_status_item_paid_description">Pago ya realizado, incluido de inmediato en los balances activos.</string>
+    <string name="expense_step_info_payment_status_item_scheduled_title">Programado</string>
+    <string name="expense_step_info_payment_status_item_scheduled_description">Pago futuro con fecha de vencimiento, mantenido aparte hasta que lo confirmes.</string>
+    <string name="expense_step_info_payment_status_item_refundable_title">Pagado (Reembolsable)</string>
+    <string name="expense_step_info_payment_status_item_refundable_description">Pago ya realizado (como una fianza reembolsable) con una fecha límite opcional, que puedes cancelar y reembolsar más adelante.</string>
+    <string name="expense_step_info_payment_status_item_cancelled_title">Cancelado / Reembolsado</string>
+    <string name="expense_step_info_payment_status_item_cancelled_description">Disponible al editar cualquier gasto, aunque no se marcara como reembolsable. Indica que el pago se canceló o reembolsó para excluirlo de los balances activos y devolver el dinero al pocket.</string>
 
     <string name="expense_step_info_receipt_title">Recibo adjunto</string>
-    <string name="expense_step_info_receipt_description">Adjunta una foto desde la cámara o galería, o sube un documento PDF como comprobante de compra para todos los miembros (gratis e ilimitado). Este paso es opcional y se puede omitir.\n\nEn dispositivos compatibles con SplitTrip Pro, también puedes usar el escáner de recibos con IA (con tecnología Gemini Nano en el dispositivo) para leer y rellenar los campos automáticamente.</string>
+    <string name="expense_step_info_receipt_description">Adjunta una foto desde la cámara o galería, o sube un PDF como comprobante para todos los miembros. Es opcional y puedes omitirlo cuando quieras. Las cuentas gratuitas incluyen un cupo mensual de adjuntos manuales, mientras que SplitTrip Pro incluye adjuntos ilimitados.\n\nEn dispositivos compatibles, también puedes usar el escáner de recibos con IA (con Gemini Nano en el dispositivo) para rellenar los datos del gasto automáticamente. Las cuentas gratuitas incluyen un cupo mensual de escaneos, con límites mayores en SplitTrip Pro.</string>
 
-    <string name="expense_step_info_add_ons_title">Extras (Propinas, comisiones y descuentos)</string>
-    <string name="expense_step_info_add_ons_description">Desglosa propinas, comisiones, recargos o descuentos como un importe fijo o un porcentaje. Este paso es opcional y está vacío por defecto.\n\n• Adicional: Se suma al importe introducido (o se resta si es un descuento), modificando el total resultante pagado.\n• Ya incluido: Se desglosa del importe introducido para mayor transparencia sin cambiar el total pagado.\n\nTodos los extras se reparten proporcionalmente entre los participantes según su cuota del gasto base.</string>
+    <string name="expense_step_info_add_ons_title">Extras y suplementos</string>
+    <string name="expense_step_info_add_ons_description">Desglosa propinas, comisiones, recargos o descuentos como un importe fijo o un porcentaje. Es opcional y está vacío por defecto. Todos los extras se reparten proporcionalmente según la parte de cada persona en el gasto base.</string>
+    <string name="expense_step_info_add_ons_item_on_top_title">Adicional</string>
+    <string name="expense_step_info_add_ons_item_on_top_description">Se suma al importe introducido (o se resta si es un descuento), cambiando el total pagado.</string>
+    <string name="expense_step_info_add_ons_item_included_title">Ya incluido</string>
+    <string name="expense_step_info_add_ons_item_included_description">Se desglosa del importe introducido para mayor claridad, sin cambiar el total pagado.</string>
 
     <string name="expense_step_info_review_title">Resumen y confirmación</string>
-    <string name="expense_step_info_review_description">Revisa el resumen completo de tu gasto —incluyendo el importe, la conversión de moneda, el origen de los fondos, el reparto y los extras— antes de guardarlo.\n\n¿Necesitas cambiar algo? Toca cualquier paso completado en la barra superior o pulsa \"Atrás\" para modificar cualquier dato antes de confirmar.</string>
+    <string name="expense_step_info_review_description">Comprueba el resumen completo de tu gasto, incluyendo el importe, la conversión de moneda, el origen de los fondos, el reparto y los extras, antes de guardar.\n\n¿Quieres ajustar algo ahora? Toca cualquier paso completado en la barra superior o pulsa \"Atrás\". También puedes editar cualquier gasto más adelante desde su pantalla de detalle.</string>
 
-    <!-- Category Spending -->
-    <string name="expenses_category_spending_title">Gastos por categoría</string>
-    <string name="expenses_category_expand">Mostrar subcategorías de %1$s</string>
-    <string name="expenses_category_collapse">Ocultar subcategorías de %1$s</string>
-    <string name="expenses_category_spending_total_spent">Total gastado</string>
-    <string name="expenses_category_spending_empty_title">Sin gastos todavía</string>
-    <string name="expenses_category_spending_empty_description">Los gastos registrados en este grupo aparecerán aquí desglosados por categoría.</string>
-    <string name="expenses_category_spending_filtered_empty_title">No se han encontrado gastos</string>
-    <string name="expenses_category_spending_filtered_empty_description">Prueba a ajustar o borrar los filtros activos en la pantalla de Gastos.</string>
-    <string name="expenses_extras_add_on_fee_plural">Comisiones</string>
-    <string name="expenses_extras_add_on_surcharge_plural">Recargos</string>
-    <string name="expenses_extras_add_on_tip_plural">Propinas</string>
+    <!-- Spending Insights Action -->
+    <string name="expenses_spending_insights_cd">Ver análisis de gastos</string>
 
     <!-- AI Receipt Monthly Quota -->
     <plurals name="expense_autofill_free_scans_remaining">
@@ -490,4 +505,13 @@
     <string name="expense_autofill_monthly_scans_exhausted">Límite mensual de escaneos alcanzado</string>
     <string name="expense_autofill_monthly_limit_reached">Límite mensual de escaneos IA gratis alcanzado (%1$d). Pásate a Pro para más.</string>
     <string name="expense_autofill_pro_monthly_limit_reached">Límite mensual de escaneos IA alcanzado (%1$d).</string>
+
+    <!-- Manual Receipt Monthly Quota -->
+    <plurals name="add_expense_receipt_free_attachments_remaining">
+        <item quantity="one">%1$d recibo gratis restante este mes</item>
+        <item quantity="other">%1$d recibos gratis restantes este mes</item>
+    </plurals>
+    <string name="add_expense_receipt_free_attachments_exhausted">0 recibos gratis restantes este mes</string>
+    <string name="add_expense_receipt_unlock_with_pro">Desbloquea recibos ilimitados con Pro</string>
+    <string name="add_expense_receipt_monthly_limit_reached">Has usado tus %1$d adjuntos de recibos mensuales.</string>
 </resources>

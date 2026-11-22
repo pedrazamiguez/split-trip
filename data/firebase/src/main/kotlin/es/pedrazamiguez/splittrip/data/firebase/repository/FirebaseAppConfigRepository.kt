@@ -55,6 +55,15 @@ class FirebaseAppConfigRepository(
     private val _aiReceiptMonthlyLimitPro = MutableStateFlow(DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO)
     override val aiReceiptMonthlyLimitPro: StateFlow<Int> = _aiReceiptMonthlyLimitPro.asStateFlow()
 
+    private val _manualReceiptMonthlyLimitFree = MutableStateFlow(DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE)
+    override val manualReceiptMonthlyLimitFree: StateFlow<Int> = _manualReceiptMonthlyLimitFree.asStateFlow()
+
+    private val _maxSubunitsPerGroupFree = MutableStateFlow(DEFAULT_MAX_SUBUNITS_PER_GROUP_FREE)
+    override val maxSubunitsPerGroupFree: StateFlow<Int> = _maxSubunitsPerGroupFree.asStateFlow()
+
+    private val _maxSubunitsPerGroupPro = MutableStateFlow(DEFAULT_MAX_SUBUNITS_PER_GROUP_PRO)
+    override val maxSubunitsPerGroupPro: StateFlow<Int> = _maxSubunitsPerGroupPro.asStateFlow()
+
     private val _extractedDateMaxFutureDays = MutableStateFlow(DEFAULT_EXTRACTED_DATE_MAX_FUTURE_DAYS)
     override val extractedDateMaxFutureDays: StateFlow<Int> = _extractedDateMaxFutureDays.asStateFlow()
 
@@ -236,8 +245,27 @@ class FirebaseAppConfigRepository(
         val aiLimitPro = remoteConfig.getLong("ai_receipt_monthly_limit_pro").toInt()
         _aiReceiptMonthlyLimitPro.value = if (aiLimitPro > 0) aiLimitPro else DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO
 
+        val manualReceiptLimitFree = remoteConfig.getLong("manual_receipt_monthly_limit_free").toInt()
+        _manualReceiptMonthlyLimitFree.value =
+            if (manualReceiptLimitFree >= 0) manualReceiptLimitFree else DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE
+
+        updateSubunitLimitFlows()
+
         val proAllowlistStr = remoteConfig.getString("pro_allowlist_email_hashes")
         _proAllowlistEmailHashes.value = parseAllowlistHashes(proAllowlistStr, DEFAULT_PRO_ALLOWLIST_EMAIL_HASHES)
+    }
+
+    private fun updateSubunitLimitFlows() {
+        val maxSubunitsFree = remoteConfig.getLong("max_subunits_per_group_free").toInt()
+        _maxSubunitsPerGroupFree.value =
+            if (maxSubunitsFree >= 0) maxSubunitsFree else DEFAULT_MAX_SUBUNITS_PER_GROUP_FREE
+
+        val maxSubunitsPro = remoteConfig.getLong("max_subunits_per_group_pro").toInt()
+        _maxSubunitsPerGroupPro.value = when {
+            maxSubunitsPro < 0 -> UNLIMITED_SUBUNITS_PER_GROUP
+            maxSubunitsPro > 0 -> maxSubunitsPro
+            else -> DEFAULT_MAX_SUBUNITS_PER_GROUP_PRO
+        }
     }
 
     private fun updateSubscriptionFlags() {
@@ -333,6 +361,10 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_MAX_MEMBERS_PER_GROUP_PRO = 20
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_FREE = 3
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO = 100
+        private const val DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE = 5
+        private const val DEFAULT_MAX_SUBUNITS_PER_GROUP_FREE = 1
+        private const val UNLIMITED_SUBUNITS_PER_GROUP = -1
+        private const val DEFAULT_MAX_SUBUNITS_PER_GROUP_PRO = UNLIMITED_SUBUNITS_PER_GROUP
         private const val DEFAULT_EXTRACTED_DATE_MAX_FUTURE_DAYS = 30
         private const val DEFAULT_SUPPORT_EMAIL = "support@splittrip.eu"
         private const val DEFAULT_SETTLEMENT_NUDGE_RATE_LIMIT_HOURS = 24L
@@ -408,23 +440,26 @@ class FirebaseAppConfigRepository(
                     "automatiçáô y la reçoluçión de problemâ de negoçio críticô en tó er stack."
             ),
             creditsMap = mapOf(
-                LANG_EN to "SplitTrip is a modular Android application designed for travellers to manage shared " +
-                    "expenses efficiently. It allows users to create expense groups, track spending in multiple " +
-                    "currencies, calculate debts, and sync data across devices.\n\n" +
-                    "Built with modern Android practices—including Jetpack Compose, Clean Architecture, and " +
-                    "Offline-First principles—the app serves as a reference for scalable, multi-module Android " +
+                LANG_EN to "SplitTrip is a modular Android application designed for groups to manage shared " +
+                    "expenses efficiently, from everyday shared living to trips abroad. It allows users to create " +
+                    "expense groups, track spending in multiple currencies, calculate debts, and sync data " +
+                    "across devices.\n\n" +
+                    "Built with modern Android practices, including Jetpack Compose, Clean Architecture, and " +
+                    "Offline-First principles, the app serves as a reference for scalable, multi-module Android " +
                     "development.",
-                LANG_ES to "SplitTrip es una aplicación modular de Android diseñada para que los viajeros gestionen " +
-                    "gastos compartidos de forma eficiente. Permite crear grupos de gastos, registrar pagos en " +
-                    "múltiples monedas, calcular deudas y sincronizar datos entre dispositivos.\n\n" +
-                    "Construida con las prácticas modernas de Android —incluyendo Jetpack Compose, Clean " +
-                    "Architecture y principios Offline-First—, la aplicación sirve como referencia para el " +
+                LANG_ES to "SplitTrip es una aplicación modular de Android diseñada para que los grupos gestionen " +
+                    "gastos compartidos de forma eficiente, desde la convivencia diaria hasta viajes al extranjero. " +
+                    "Permite crear grupos de gastos, registrar pagos en múltiples monedas, calcular deudas y " +
+                    "sincronizar datos entre dispositivos.\n\n" +
+                    "Construida con las prácticas modernas de Android, incluyendo Jetpack Compose, Clean " +
+                    "Architecture y principios Offline-First, la aplicación sirve como referencia para el " +
                     "desarrollo escalable y multimódulo en Android.",
-                LANG_ES_RAN to "SplîTTrîh êh una aplicaçión modulâh de Androîh diçeñá pa que lô biaherô hêttionen " +
-                    "gâttô compartíô de forma efiçiente. Permite creâh grupô de gâttô, rehîttrâh pagô en " +
-                    "múrtiplê monedâ, carculâh deudâ y çincroniçâh datô entre dîppoçitibô.\n\n" +
-                    "Côttruida con lâ prátticâ modênnâ de Androîh —incluyendo Hêppack Compoçe, Clean " +
-                    "Architecture y prinçipiô Ôffline-Firtt—, la aplicaçión çirbe como referençia pa er " +
+                LANG_ES_RAN to "SplîTTrîh êh una aplicaçión modulâh de Androîh diçeñá pa que lô grupô hêttionen " +
+                    "gâttô compartíô de forma efiçiente, dêdde la conbibençia diaria âtta biahê al êttranhero. " +
+                    "Permite creâh grupô de gâttô, rehîttrâh pagô en múrtiplê monedâ, carculâh deudâ y " +
+                    "çincroniçâh datô entre dîppoçitibô.\n\n" +
+                    "Côttruida con lâ prátticâ modênnâ de Androîh, incluyendo Jetpack Compose, Clean " +
+                    "Architecture y prinçipiô Ôffline-Firtt, la aplicaçión çirbe como referençia pa er " +
                     "deçarroyo êccalable y murtimódulo en Androîh."
             ),
             copyrightMap = mapOf(

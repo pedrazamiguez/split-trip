@@ -467,7 +467,7 @@ class AddExpenseOptionsUiMapperTest {
             every { formattingHelper.formatRateForDisplay(any()) } answers { firstArg() }
             every {
                 resourceProvider.getString(R.string.add_expense_cash_tranche_atm_label, "10 Jan")
-            } returns "ATM — 10 Jan"
+            } returns "ATM · 10 Jan"
             every {
                 resourceProvider.getString(R.string.add_expense_cash_tranche_atm_label_no_date)
             } returns "ATM"
@@ -485,14 +485,14 @@ class AddExpenseOptionsUiMapperTest {
         fun `falls back to ATM date label when title is null`() {
             val result = mapper.mapCashTranchePreviews(listOf(trancheNoTitle), sourceCurrency)
 
-            assertEquals("ATM — 10 Jan", result[0].withdrawalLabel)
+            assertEquals("ATM · 10 Jan", result[0].withdrawalLabel)
         }
 
         @Test
         fun `falls back to ATM date label when title is blank`() {
             val result = mapper.mapCashTranchePreviews(listOf(trancheBlankTitle), sourceCurrency)
 
-            assertEquals("ATM — 10 Jan", result[0].withdrawalLabel)
+            assertEquals("ATM · 10 Jan", result[0].withdrawalLabel)
         }
 
         @Test
@@ -535,7 +535,7 @@ class AddExpenseOptionsUiMapperTest {
 
             assertEquals(2, result.size)
             assertEquals("Airport ATM", result[0].withdrawalLabel)
-            assertEquals("ATM — 10 Jan", result[1].withdrawalLabel)
+            assertEquals("ATM · 10 Jan", result[1].withdrawalLabel)
         }
 
         @Test

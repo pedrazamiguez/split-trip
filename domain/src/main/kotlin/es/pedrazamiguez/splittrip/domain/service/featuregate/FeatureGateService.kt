@@ -13,7 +13,9 @@ interface FeatureGateService {
      *
      * For collaborative capabilities (e.g. [GatedFeature.SUBUNIT_CREATION]), access is enabled
      * if either the acting authenticated user or the group creator is on the Pro tier.
-     * For group-level creator-bound capabilities (e.g. cover photo uploads), if [groupId] is provided,
+     * For [GatedFeature.GROUP_COVER_UPLOAD], access evaluates the acting user's shared monthly
+     * media upload quota (`observeMediaUploadQuota().canUpload`).
+     * For group-level creator-bound capabilities, if [groupId] is provided,
      * access is evaluated against the group creator's tier.
      * For user-level capabilities (e.g. AI receipt OCR scanning), access is evaluated
      * against the acting authenticated user's tier. For [GatedFeature.AI_RECEIPT_SCANNING],
@@ -31,6 +33,23 @@ interface FeatureGateService {
     fun observeAiReceiptQuota(): Flow<AiReceiptQuota>
 
     /**
+     * Observes the acting user's monthly manual receipt attachment quota for the current calendar month.
+     */
+    fun observeManualReceiptQuota(): Flow<ManualReceiptQuota>
+
+    /**
+     * Observes the acting user's shared monthly media upload quota (manual receipt attachments
+     * and group cover photo uploads) for the current calendar month.
+     */
+    fun observeMediaUploadQuota(): Flow<MediaUploadQuota>
+
+    /**
+     * Observes a unified snapshot of the acting user's subscription tier, monthly AI receipt
+     * scan quota, shared monthly media upload quota, owned-group usage, and tier-level allowances.
+     */
+    fun observePlanAllowances(): Flow<PlanAllowances>
+
+    /**
      * Checks if the acting authenticated user is on the Pro subscription tier.
      */
     fun isActingUserPro(): Flow<Boolean>
@@ -38,6 +57,8 @@ interface FeatureGateService {
     /**
      * Checks if the user is allowed to perform an action, considering current counts against limits.
      *
+     * For collaborative limits (e.g. [GatedLimit.MAX_SUBUNITS_PER_GROUP]), collaborative Pro access
+     * is preserved: if either the acting user or the group creator is Pro, the Pro limit applies.
      * For group-level limits (e.g. [GatedLimit.MAX_MEMBERS_PER_GROUP]), if [groupId] is provided,
      * the limit is evaluated against the group creator's tier.
      * For user-level limits (e.g. [GatedLimit.MAX_OWNED_GROUPS_COUNT]), the limit is evaluated

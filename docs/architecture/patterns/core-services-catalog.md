@@ -79,6 +79,7 @@ All components are `@Composable` functions following Material 3 design. They acc
 | Component | File | Purpose |
 |---|---|---|
 | `StyledOutlinedTextField` | `input/StyledOutlinedTextField.kt` | App-standard "Soft Field" text field (Horizon §5): `surfaceContainerLow` background, no border at rest, ghost indicator on focus. Also provides `softFieldColors()`. **Use for:** All text inputs across the app. |
+| `SegmentedPillSelector<T>` | `input/SegmentedPillSelector.kt` | Horizon pill-shaped segmented control with tonal layering (no `1px` borders), spring-animated sliding indicator, slot-width-aware compact typography, `selectableGroup()` semantics, and `debouncedClickable`. Use `SegmentedPillSelectorDefaults.nestedColors()` when hosted inside an elevated `FlatCard`. **Use instead of:** Stock Material 3 `SingleChoiceSegmentedButtonRow` / `SegmentedButton`. |
 | `SearchableChipSelector<T>` | `input/SearchableChipSelector.kt` | A searchable dropdown that displays selected items as chips. Generic type `T` for any selectable item. **Use for:** Selecting members, categories, or other enumerable items from a local list. |
 | `AsyncSearchableChipSelector<T>` | `input/AsyncSearchableChipSelector.kt` | Like `SearchableChipSelector` but with async search support (debounced query → results callback). **Use for:** Searching users by email (remote lookup). |
 
@@ -127,12 +128,17 @@ All components are `@Composable` functions following Material 3 design. They acc
 
 | Component | File | Purpose |
 |---|---|---|
+| `HorizonModalBottomSheet` | `sheet/HorizonModalBottomSheet.kt` | Standardized Material 3 `ModalBottomSheet` wrapper with `dragHandle = null`, `surface` container color, bottom-only `WindowInsets.safeDrawing` insets, and `rememberHorizonBottomSheetState` (no `PartiallyExpanded` anchor). **Use instead of:** raw `ModalBottomSheet`. |
+| `rememberHorizonBottomSheetState` | `sheet/HorizonModalBottomSheet.kt` | State helper returning `SheetState` with `initialValue = SheetValue.Hidden` and `enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)`. |
 | `DestructiveConfirmationDialog` | `dialog/DestructiveConfirmationDialog.kt` | Confirmation dialog with a destructive (red) action button. **Use for:** Delete confirmations (Delete Group, Delete Expense). |
 | `ActionBottomSheet` | `sheet/ActionBottomSheet.kt` | Bottom sheet displaying a list of `SheetAction` items with icons. **Use for:** Contextual action menus (long-press on expense, group options). |
 | `CopyableTextSheet` | `sheet/CopyableTextSheet.kt` | Bottom sheet displaying text that can be copied to clipboard. **Use for:** Sharing group invite codes, debug info. |
+| `ProFeaturePreviewBottomSheet` | `sheet/ProFeaturePreviewBottomSheet.kt` | Horizon-styled contextual bottom sheet explaining a gated Pro feature or tier limit with an upgrade CTA (`GradientButton`) and dismiss action (`SecondaryButton`). **Use for:** Presenting Pro value before routing through `UpgradeNavigator`. |
 
-**Model class:**
+**Model classes:**
 - `SheetAction` — represents a single action in `ActionBottomSheet` (icon, label, onClick, optional destructive flag).
+- `ProFeaturePreviewType` — centralized enum mapping `GatedLimit` / `GatedFeature` to localized title, description, highlight copy, and Tabler icon.
+- `ProFeaturePreviewPrompt` — `@Immutable` payload pairing `ProFeaturePreviewType` with its `MonetizationTelemetry.EntrySource`.
 
 ### A.8 Shared Transitions
 
@@ -147,7 +153,8 @@ All components are `@Composable` functions following Material 3 design. They acc
 | Component | File | Purpose |
 |---|---|---|
 | `PassportChip` | `chip/PassportChip.kt` | Horizon Narrative signature travel chip — "collectible stamp" feel. Uses `secondaryFixedDim` (selected) / `surfaceContainerHigh` (unselected), `CircleShape`, no border (No-Line rule). Supports `leadingIcon` (checkmark) and `trailingIcon` (close/overflow). **Use instead of:** Stock `FilterChip` or `InputChip` for all selectable tags, categories, payment methods, and removable item chips. |
-| `PassportTag` | `chip/PassportTag.kt` | Standardized non-interactive metadata tag / status badge (`28.dp` height contract, `CircleShape`, borderless tonal container, `16.dp` icon, `labelSmall` font). Governed by `PassportTagStyle` (`PRIMARY`, `SECONDARY`, `TERTIARY`, `WARNING`, `SUCCESS`, `ERROR`, `NEUTRAL`). **Use instead of:** Ad-hoc category, payment method, date, or status badge chips. |
+| `PassportTag` | `chip/PassportTag.kt` | Standardized non-interactive metadata tag / status badge (`28.dp` height contract, `CircleShape`, borderless tonal container, `16.dp` icon, `labelSmall` font). Governed by semantic `PassportTagStyle` (`PRIMARY`, `TERTIARY`, `INFO`, `WARNING`, `SUCCESS`, `ERROR`, `NEUTRAL`). **Never** use `secondaryContainer`/`secondaryFixedDim` on read-only pills; prefer `INFO`, `SUCCESS`, `WARNING`, `ERROR`, `NEUTRAL`. **Use instead of:** Ad-hoc category, payment method, date, or status badge chips. |
+| `FormerMemberTag` | `chip/FormerMemberTag.kt` | Standardized read-only `"Former"` member badge delegating to `PassportTag(style = PassportTagStyle.NEUTRAL)`. **Use instead of:** Ad-hoc `Surface(CircleShape)` blocks whenever `MemberDisplay` is `MemberDisplay.Former`. |
 
 ### A.10 Foundation Utilities
 
@@ -332,6 +339,7 @@ A convenience wrapper around all the above formatters, injected with `LocaleProv
 | `scaffold/NavigationBarIconPreviews.kt` | `NavigationBarIcon` |
 | `sheet/ActionBottomSheetPreviews.kt` | `ActionBottomSheet` |
 | `sheet/CopyableTextSheetPreviews.kt` | `CopyableTextSheet` |
+| `sheet/ProFeaturePreviewBottomSheetPreviews.kt` | `ProFeaturePreviewBottomSheet` |
 
 ---
 

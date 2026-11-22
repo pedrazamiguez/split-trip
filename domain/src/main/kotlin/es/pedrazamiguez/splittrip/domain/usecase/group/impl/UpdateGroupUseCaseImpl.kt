@@ -5,12 +5,16 @@ import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveCurrencyException
 import es.pedrazamiguez.splittrip.domain.exception.GroupArchivedException
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupCurrenciesInUseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.UpdateGroupUseCase
+import java.time.YearMonth
 
 class UpdateGroupUseCaseImpl(
     private val groupRepository: GroupRepository,
-    private val getGroupCurrenciesInUseUseCase: GetGroupCurrenciesInUseUseCase
+    private val getGroupCurrenciesInUseUseCase: GetGroupCurrenciesInUseUseCase,
+    private val userPreferenceRepository: UserPreferenceRepository,
+    private val yearMonthProvider: () -> YearMonth = { YearMonth.now() }
 ) : UpdateGroupUseCase {
 
     override suspend operator fun invoke(group: Group): Result<Unit> = runCatching {
@@ -36,5 +40,10 @@ class UpdateGroupUseCaseImpl(
         }
 
         groupRepository.updateGroup(group)
+        val isNewOrReplacedCover = !group.mainImagePath.isNullOrBlank() &&
+            group.mainImagePath != existingGroup.mainImagePath
+        if (isNewOrReplacedCover) {
+            userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(yearMonthProvider())
+        }
     }
 }

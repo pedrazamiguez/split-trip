@@ -1,14 +1,13 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
-import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
-import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
-import es.pedrazamiguez.splittrip.features.group.R
+import es.pedrazamiguez.splittrip.domain.service.featuregate.MediaUploadQuota
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 import io.mockk.coEvery
@@ -54,7 +53,9 @@ class CreateEditGroupImageEventHandlerImplTest {
         Dispatchers.setMain(testDispatcher)
         groupImageStorageService = mockk(relaxed = true)
         featureGateService = mockk(relaxed = true) {
-            every { isFeatureEnabled(any(), any()) } returns flowOf(true)
+            every { observeMediaUploadQuota() } returns flowOf(
+                MediaUploadQuota(usedUploads = 0, monthlyFreeLimit = 5, isProTier = false)
+            )
         }
         telemetryTracker = mockk(relaxed = true)
         stateFlow = MutableStateFlow(CreateEditGroupUiState())
@@ -96,8 +97,10 @@ class CreateEditGroupImageEventHandlerImplTest {
         }
 
         @Test
-        fun `sets error and emits action when cover upload is disabled by feature gate`() = runTest(testDispatcher) {
-            every { featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, any()) } returns flowOf(false)
+        fun `sets proPreviewPrompt when monthly media upload quota is exhausted`() = runTest(testDispatcher) {
+            every { featureGateService.observeMediaUploadQuota() } returns flowOf(
+                MediaUploadQuota(usedUploads = 5, monthlyFreeLimit = 5, isProTier = false)
+            )
             handler.bind(stateFlow, actionsFlow, this)
 
             val actionsList = mutableListOf<CreateEditGroupUiAction>()
@@ -106,29 +109,23 @@ class CreateEditGroupImageEventHandlerImplTest {
             handler.handleGroupImagePicked("uri-123")
             advanceUntilIdle()
 
+            coVerify(exactly = 0) { groupImageStorageService.saveTempGroupImage(any()) }
             assertNull(stateFlow.value.localGroupImagePath)
             assertEquals(
-                UiText.StringResource(R.string.group_error_limit_cover_upload_disabled),
-                stateFlow.value.error
+                ProFeaturePreviewPrompt(
+                    previewType = ProFeaturePreviewType.GROUP_COVER_PHOTO,
+                    entrySource = MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD
+                ),
+                stateFlow.value.proPreviewPrompt
             )
-            assertTrue(stateFlow.value.showUpgradeDialog)
-            assertEquals(
-                UiText.StringResource(DesignSystemR.string.upgrade_dialog_title),
-                stateFlow.value.upgradeDialogTitle
-            )
-            assertEquals(
-                UiText.StringResource(R.string.group_error_limit_cover_upload_disabled),
-                stateFlow.value.upgradeDialogMessage
-            )
-            assertEquals(MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD, stateFlow.value.upgradeEntrySource)
             assertFalse(stateFlow.value.isLoading)
-            assertTrue(actionsList.any { it is CreateEditGroupUiAction.ShowError })
+            assertTrue(actionsList.none { it is CreateEditGroupUiAction.ShowError })
             verify(exactly = 1) {
                 telemetryTracker.trackEvent(
                     MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
                     mapOf(
-                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
-                        MonetizationTelemetry.Param.GATE_NAME to "group_cover_upload",
+                        MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                        MonetizationTelemetry.Param.GATE_NAME to "manual_receipt_monthly_attachments",
                         MonetizationTelemetry.Param.ENTRY_POINT to
                             MonetizationTelemetry.GateEntryPoint.GROUP_COVER_PICK,
                         MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
@@ -139,15 +136,17 @@ class CreateEditGroupImageEventHandlerImplTest {
         }
 
         @Test
-        fun `passes group id to feature gate when initial group is set`() = runTest(testDispatcher) {
+        fun `saves temp image when initial group is set and quota allows upload`() = runTest(testDispatcher) {
             val group = Group(id = "group-abc")
+            coEvery { groupImageStorageService.saveTempGroupImage("uri-123") } returns "temp-uri-123"
             handler.setInitialGroup(group)
             handler.bind(stateFlow, actionsFlow, this)
 
             handler.handleGroupImagePicked("uri-123")
             advanceUntilIdle()
 
-            verify { featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, "group-abc") }
+            assertEquals("temp-uri-123", stateFlow.value.localGroupImagePath)
+            verify { featureGateService.observeMediaUploadQuota() }
         }
     }
 

@@ -115,10 +115,10 @@
     <string name="preview_title_other_currencies">Other currencies</string>
     <string name="preview_search_currency">Search currency</string>
     <string name="preview_search_currency_hint">e.g. USD, EUR, Pound…</string>
-    <string name="preview_helper_currencies">Add the currencies you\'ll use on your trip</string>
+    <string name="preview_helper_currencies">Add any extra currencies your group will use</string>
     <string name="preview_remove_currency">Remove currency</string>
     <string name="preview_dialog_delete_title">Delete Group?</string>
-    <string name="preview_dialog_delete_text">Are you sure you want to delete \"Summer Trip 2026\"? This will remove all expenses and cannot be undone.</string>
+    <string name="preview_dialog_delete_text">Are you sure you want to delete \"Shared House\"? This will remove all expenses and cannot be undone.</string>
     <string name="preview_dialog_delete_short_title">Delete Item?</string>
     <string name="preview_dialog_delete_short_text">This action cannot be undone.</string>
     <string name="preview_dialog_logout_title">Log out?</string>
@@ -140,15 +140,15 @@
     <string name="receipt_attach_document">Attach document</string>
     <string name="camera_permission_required">Camera permission is required to take photos.</string>
 
-    <!-- Trip Closure -->
-    <string name="group_error_archived">This trip is archived and cannot be modified.</string>
-    <string name="group_detail_end_trip">End Trip</string>
-    <string name="group_detail_end_trip_title">End Trip?</string>
-    <string name="group_detail_end_trip_message">Are you sure you want to end this trip? This will lock all expenses, contributions, and withdrawals, making the trip read-only.</string>
-    <string name="group_detail_end_trip_confirm">End Trip</string>
+    <!-- Group Closure -->
+    <string name="group_error_archived">This group is archived and cannot be modified.</string>
+    <string name="group_detail_end_trip">End Group</string>
+    <string name="group_detail_end_trip_title">End Group?</string>
+    <string name="group_detail_end_trip_message">Are you sure you want to end this group? This will lock all expenses, contributions, and withdrawals, making the group read-only.</string>
+    <string name="group_detail_end_trip_confirm">End Group</string>
     <string name="group_detail_archived_label">Archived</string>
-    <string name="group_error_archiving_failed">Failed to end the trip. Please try again.</string>
-    <string name="group_error_archiving_unresolved_settlements">Cannot end trip while there are unresolved balances or settlements.</string>
+    <string name="group_error_archiving_failed">Failed to end the group. Please try again.</string>
+    <string name="group_error_archiving_unresolved_settlements">Cannot end group while there are unresolved balances or settlements.</string>
 
     <!-- Settlement Widget -->
     <string name="settlement_pocket_type_virtual">Virtual pocket</string>
@@ -169,7 +169,7 @@
     <!-- %1$s = formatted rate, %2$s = group currency, %3$s = source currency; e.g. "@ 0.027 EUR/THB" -->
     <string name="core_cash_breakdown_rate">@ %1$s %2$s/%3$s</string>
     <!-- Fallback label when a withdrawal has no title; %1$s = short date -->
-    <string name="core_cash_breakdown_atm_fallback">ATM — %1$s</string>
+    <string name="core_cash_breakdown_atm_fallback">ATM · %1$s</string>
     <string name="core_cash_breakdown_view_cd">View cash breakdown</string>
     <!-- Fallback when the subunit referenced by a withdrawal is no longer found (data integrity edge case) -->
     <string name="core_cash_breakdown_unknown_subunit">Unknown subunit</string>
@@ -198,6 +198,28 @@
     <string name="upgrade_dialog_dismiss">Not now</string>
     <string name="badge_pro">PRO</string>
 
+    <!-- Pro Feature Preview Bottom Sheet -->
+    <string name="pro_preview_badge_label">SplitTrip Pro</string>
+    <string name="pro_preview_cta_unlock">Unlock with SplitTrip Pro</string>
+    <string name="pro_preview_unlimited_groups_title">Create unlimited groups</string>
+    <string name="pro_preview_unlimited_groups_description">You\'ve reached the Free plan limit for active groups you own. Upgrade to SplitTrip Pro to organise as many shared budgets, households, and trips as you need.</string>
+    <string name="pro_preview_unlimited_groups_highlight">Unlimited active groups, plus an ad-free experience</string>
+    <string name="pro_preview_expanded_members_title">Include the whole group</string>
+    <string name="pro_preview_expanded_members_description">Free groups support a limited number of members. Unlock SplitTrip Pro to invite larger friend groups, households, and families into a single shared ledger.</string>
+    <string name="pro_preview_expanded_members_highlight">Add up to 20 members per group effortlessly</string>
+    <string name="pro_preview_group_cover_title">Personalise your group cover</string>
+    <string name="pro_preview_group_cover_description">Make every group easy to recognise with custom cover photos from your camera or gallery.</string>
+    <string name="pro_preview_group_cover_highlight">Custom cover photos synced across all group members</string>
+    <string name="pro_preview_subunit_creation_title">Split fairly by couples &amp; families</string>
+    <string name="pro_preview_subunit_creation_description">Group members into shared subunits with custom percentages so couples, families, or flatmates settle together automatically.</string>
+    <string name="pro_preview_subunit_creation_highlight">Automatic two-level splits and unified subunit balances</string>
+    <string name="pro_preview_ai_receipt_title">Auto-fill expenses with AI</string>
+    <string name="pro_preview_ai_receipt_description">Snap a photo or attach a receipt and let on-device AI extract the amount, currency, merchant, date, and category in seconds.</string>
+    <string name="pro_preview_ai_receipt_highlight">Private, on-device AI receipt scanning with no manual typing</string>
+    <string name="pro_preview_unlimited_receipts_title">Attach unlimited receipts</string>
+    <string name="pro_preview_unlimited_receipts_description">Keep every receipt photo and PDF safely attached and synced for your whole group, with no monthly attachment limit.</string>
+    <string name="pro_preview_unlimited_receipts_highlight">Unlimited receipt photos &amp; PDFs synced to the cloud for every group</string>
+
     <!-- Password Requirements Indicator -->
     <string name="password_requirement_min_length">At least 8 characters</string>
     <string name="password_requirement_uppercase">At least one uppercase letter (A-Z)</string>
@@ -220,6 +242,18 @@
     <string name="app_update_ready_title">Update ready</string>
     <string name="app_update_ready_description">A new version of SplitTrip has been downloaded.</string>
     <string name="app_update_ready_button">Restart to update</string>
+
+    <!-- Wizard Step Info -->
+    <string name="wizard_step_info_action">About this step</string>
+    <string name="wizard_step_info_dismiss">Got it</string>
+
+    <!-- Preview Samples (for component previews with locales) -->
+    <string name="preview_wizard_step_info_title">Step guidance</string>
+    <string name="preview_wizard_step_info_description">This bottom sheet explains what the current step does, its default values, and whether it is optional.</string>
+    <string name="preview_wizard_step_info_item_one_title">First option</string>
+    <string name="preview_wizard_step_info_item_one_description">Explains the first on-screen option in plain language.</string>
+    <string name="preview_wizard_step_info_item_two_title">Second option</string>
+    <string name="preview_wizard_step_info_item_two_description">Explains the second on-screen option in plain language.</string>
 
     <!-- App Name -->
     <string name="app_name" translatable="false">SplitTrip</string>

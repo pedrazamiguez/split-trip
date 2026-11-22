@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="balances_title">Balances</string>
-    <string name="balances_subtitle">Resumen del viaje</string>
+    <string name="balances_subtitle">Resumen del grupo</string>
     <string name="balances_search">Buscar</string>
     <string name="balances_info">Info</string>
     <string name="balances_placeholder">Balances</string>
@@ -18,7 +18,7 @@
     <string name="balances_error_loading">No se pudieron cargar los balances</string>
     <string name="balances_empty_title">Sin actividad todavía</string>
     <string name="balances_empty_description">Registra gastos pagados de tu bolsillo para ver quién debe a quién, o añade una aportación si compartís un pocket común.</string>
-    <string name="balances_archived_readonly_notice">Este viaje está archivado y es de solo lectura. Las aportaciones, retiradas y ediciones de actividad están desactivadas.</string>
+    <string name="balances_archived_readonly_notice">Este grupo está archivado y es de solo lectura. Las aportaciones, retiradas y ediciones de actividad están desactivadas.</string>
 
     <!-- Member Balances -->
     <string name="balances_member_balances_title">Balances por miembro</string>
@@ -56,7 +56,7 @@
     <string name="balances_metric_total_contributed_title">Total aportado</string>
     <string name="balances_metric_total_contributed_description">Suma acumulada de todas las aportaciones realizadas por los miembros, tanto para el pocket del grupo como para uso personal.\n\nEl detalle de cuánto ha aportado cada miembro y su balance individual puede consultarse en el desglose de balances por miembro.</string>
     <string name="balances_metric_total_spent_title">Total gastado</string>
-    <string name="balances_metric_total_spent_description">Importe total gastado en el viaje hasta la fecha.\n\nIncluye todos los gastos pagados, los gastos en efectivo y los gastos reembolsables, ya que el dinero ya ha salido del bolsillo. No incluye los gastos programados futuros ni los importes de extras.</string>
+    <string name="balances_metric_total_spent_description">Importe total gastado en el grupo hasta la fecha.\n\nIncluye todos los gastos pagados, los gastos en efectivo y los gastos reembolsables, ya que el dinero ya ha salido del bolsillo. No incluye los gastos programados futuros ni los importes de extras.</string>
     <string name="balances_metric_cash_in_hand_title">Efectivo en mano</string>
     <string name="balances_metric_cash_in_hand_description">El dinero físico retirado por los miembros que aún no se ha gastado.\n\nEl total de la cabecera muestra el valor acumulado convertido a la moneda principal del grupo, mientras que la lista inferior detalla el desglose en cada una de las monedas reales disponibles.</string>
     <string name="balances_metric_extras_title">Extras</string>
@@ -109,7 +109,7 @@
     <string name="balances_cash_breakdown_estimated_hint">Estimado · tu parte proporcional del efectivo del grupo</string>
     <string name="balances_cash_breakdown_empty">Sin retiradas activas</string>
     <string name="balances_cash_breakdown_rate">@ %1$s %2$s/%3$s</string>
-    <string name="balances_cash_breakdown_atm_fallback">ATM — %1$s</string>
+    <string name="balances_cash_breakdown_atm_fallback">Cajero · %1$s</string>
     <string name="balances_cash_breakdown_view_cd">Ver desglose de efectivo</string>
     <!-- Fallback cuando la subunidad referenciada por una retirada ya no existe (caso límite de integridad de datos) -->
     <string name="balances_cash_breakdown_unknown_subunit">Subunidad desconocida</string>
@@ -133,10 +133,72 @@
     <string name="balances_extras_add_on_surcharge_plural">Recargos</string>
     <string name="balances_extras_add_on_tip_plural">Propinas</string>
     <string name="balances_extras_expense_fallback">Gasto</string>
-    <string name="balances_extras_atm_fallback">Cajero — %1$s</string>
+    <string name="balances_extras_atm_fallback">Cajero · %1$s</string>
 
     <!-- Main Action -->
     <string name="balances_filter">Filtrar balances</string>
     <string name="balances_your_balance_title">Tu balance</string>
+
+    <!-- Spending Insights -->
+    <string name="balances_insights_title">Análisis de gastos</string>
+    <string name="balances_insights_action_cd">Ver análisis de gastos</string>
+    <string name="balances_insights_period_all_time">Todo el historial</string>
+    <string name="balances_insights_period_this_month">Este mes</string>
+    <string name="balances_insights_period_last_month">Mes pasado</string>
+    <string name="balances_insights_period_custom">Personalizado</string>
+    <string name="balances_insights_date_from">Desde</string>
+    <string name="balances_insights_date_to">Hasta</string>
+    <string name="balances_insights_date_start_dialog_title">Seleccionar fecha inicial</string>
+    <string name="balances_insights_date_end_dialog_title">Seleccionar fecha final</string>
+    <string name="balances_insights_period_range">%1$s – %2$s</string>
+    <string name="balances_insights_period_summary">%1$s · %2$s</string>
+    <string name="balances_insights_burn_rate_title">Ritmo de gasto</string>
+    <string name="balances_insights_total_spent_label">Total gastado</string>
+    <string name="balances_insights_add_ons_title">Extras y comisiones</string>
+    <string name="balances_insights_add_ons_share">%1$s del gasto</string>
+    <string name="balances_insights_add_ons_withdrawal_note">Incluye %1$s en comisiones de cajero</string>
+    <string name="balances_insights_add_ons_discounts_note">Ahorrado %1$s en descuentos</string>
+    <string name="balances_insights_daily_average_label">Media diaria</string>
+    <string name="balances_insights_daily_average_value">%1$s / día</string>
+    <string name="balances_insights_peak_day_label">Día de mayor gasto</string>
+    <string name="balances_insights_monthly_pace_projected_label">Ritmo mensual proyectado</string>
+    <string name="balances_insights_monthly_pace_completed_label">Total del mes</string>
+    <string name="balances_insights_monthly_pace_30d_label">Ritmo a 30 días</string>
+    <string name="balances_insights_monthly_pace_value">%1$s / mes</string>
+    <string name="balances_insights_daily_trend_title">Gasto diario</string>
+    <string name="balances_insights_daily_bar_detail">%1$s · %2$s · %3$s</string>
+    <string name="balances_insights_daily_bar_cd">%1$s, %2$s</string>
+    <string name="balances_insights_category_title">Por categoría</string>
+    <string name="balances_insights_category_expand_cd">Mostrar subcategorías de %1$s</string>
+    <string name="balances_insights_category_collapse_cd">Ocultar subcategorías de %1$s</string>
+    <string name="balances_insights_entity_title">Reparto del gasto</string>
+    <string name="balances_insights_mode_subunits">Subunidades</string>
+    <string name="balances_insights_mode_members">Miembros</string>
+    <string name="balances_insights_filtered_banner_title">Filtrado desde Gastos</string>
+    <string name="balances_insights_filtered_banner_clear">Ver todo</string>
+    <string name="balances_insights_empty_title">Todavía no hay análisis</string>
+    <string name="balances_insights_empty_description">Registra gastos en el grupo para ver el desglose por categorías, el ritmo de gasto y el reparto por miembro.</string>
+    <string name="balances_insights_empty_filtered_title">No se han encontrado gastos</string>
+    <string name="balances_insights_empty_filtered_description">Prueba a borrar o ajustar los filtros activos para ver el análisis de gastos.</string>
+    <string name="balances_insights_empty_period_title">Sin gastos en este periodo</string>
+    <string name="balances_insights_empty_period_description">Prueba a elegir otro periodo para consultar los gastos del grupo.</string>
+    <string name="balances_insights_error_loading">No se pudo cargar el análisis de gastos</string>
+
+    <plurals name="balances_insights_expense_count">
+        <item quantity="one">%1$d gasto</item>
+        <item quantity="other">%1$d gastos</item>
+    </plurals>
+    <plurals name="balances_insights_active_days">
+        <item quantity="one">%1$d día activo</item>
+        <item quantity="other">%1$d días activos</item>
+    </plurals>
+    <plurals name="balances_insights_member_count">
+        <item quantity="one">%1$d miembro</item>
+        <item quantity="other">%1$d miembros</item>
+    </plurals>
+    <plurals name="balances_insights_filter_count">
+        <item quantity="one">%1$d filtro</item>
+        <item quantity="other">%1$d filtros</item>
+    </plurals>
 
 </resources>

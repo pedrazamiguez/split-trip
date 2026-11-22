@@ -28,6 +28,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetDeveloperInfoUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObservePlanAllowancesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppThemeUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetBiometricLockEnabledUseCase
@@ -42,10 +43,12 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.AccountS
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.AccountStatusUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.DeveloperInfoUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.NotificationPreferencesUiMapper
+import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.PlanAllowancesUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.SubscriptionsUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.AccountSecurityUiMapperImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.AccountStatusUiMapperImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.NotificationPreferencesUiMapperImpl
+import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.PlanAllowancesUiMapperImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.SubscriptionsUiMapperImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.AccountSecurityScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.AccountStatusScreenUiProviderImpl
@@ -56,6 +59,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.Faq
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.LanguageScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.NotificationPreferencesScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.OpenSourceScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.PlanAllowancesScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.PrivacyPolicyScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.SettingsScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.SubscriptionsScreenUiProviderImpl
@@ -69,6 +73,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.Devel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.InstallationIdViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.LanguageViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.NotificationPreferencesViewModel
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.PlanAllowancesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SettingsViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SubscriptionsViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.ThemeViewModel
@@ -191,12 +196,10 @@ val settingsUiModule = module {
     viewModel {
         val getDeveloperInfoUseCase = get<GetDeveloperInfoUseCase>()
         val getAppLanguageUseCase = get<GetAppLanguageUseCase>()
-        val getDiagnosticLogsUseCase = get<GetDiagnosticLogsUseCase>()
         val developerInfoUiMapper = get<DeveloperInfoUiMapper>()
         DeveloperInfoViewModel(
             getDeveloperInfoUseCase = getDeveloperInfoUseCase,
             getAppLanguageUseCase = getAppLanguageUseCase,
-            getDiagnosticLogsUseCase = getDiagnosticLogsUseCase,
             developerInfoUiMapper = developerInfoUiMapper
         )
     }
@@ -204,6 +207,19 @@ val settingsUiModule = module {
     factory<AccountSecurityUiMapper> { AccountSecurityUiMapperImpl() }
 
     factory<SubscriptionsUiMapper> { SubscriptionsUiMapperImpl(localeProvider = get()) }
+
+    factory<PlanAllowancesUiMapper> {
+        PlanAllowancesUiMapperImpl(localeProvider = get())
+    }
+
+    viewModel {
+        val observePlanAllowancesUseCase = get<ObservePlanAllowancesUseCase>()
+        val planAllowancesUiMapper = get<PlanAllowancesUiMapper>()
+        PlanAllowancesViewModel(
+            observePlanAllowancesUseCase = observePlanAllowancesUseCase,
+            planAllowancesUiMapper = planAllowancesUiMapper
+        )
+    }
 
     viewModel {
         val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
@@ -256,6 +272,7 @@ val settingsUiModule = module {
     single { NotificationPreferencesScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { SettingsScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { SubscriptionsScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single { PlanAllowancesScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { DeveloperServicesScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { ThemeScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { AccountStatusScreenUiProviderImpl() } bind ScreenUiProvider::class

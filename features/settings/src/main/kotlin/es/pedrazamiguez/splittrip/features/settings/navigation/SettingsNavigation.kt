@@ -14,6 +14,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.feature.FaqFeat
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.LanguageFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.NotificationPreferencesFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.OpenSourceFeature
+import es.pedrazamiguez.splittrip.features.settings.presentation.feature.PlanAllowancesFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.PrivacyPolicyFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.SettingsFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.SubscriptionsFeature
@@ -25,6 +26,9 @@ fun NavGraphBuilder.settingsGraph() {
     }
     composable(Routes.SETTINGS_ACCOUNT_STATUS) {
         AccountStatusFeature()
+    }
+    composable(Routes.SETTINGS_PLAN_ALLOWANCES) {
+        PlanAllowancesFeature()
     }
     composable(
         route = Routes.SETTINGS_SUBSCRIPTIONS_ROUTE,

@@ -4,13 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
+import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackLimitGateBlocked
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
-import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
+import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.subunit.DeleteSubunitUseCase
@@ -70,18 +73,27 @@ class SubunitManagementViewModel(
             val groupName = group?.name ?: ""
             val currentUserId = authenticationService.currentUserId()
 
+            val subunitsFlow = getGroupSubunitsFlowUseCase(groupId)
+            val subunitLimitFlow = subunitsFlow.flatMapLatest { subunits ->
+                featureGateService.checkLimit(
+                    limit = GatedLimit.MAX_SUBUNITS_PER_GROUP,
+                    currentCount = subunits.size,
+                    groupId = groupId
+                )
+            }
+
             combine(
-                getGroupSubunitsFlowUseCase(groupId),
+                subunitsFlow,
                 groupFlow,
-                featureGateService.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION, groupId)
-            ) { subunits, reactiveGroup, isSubunitCreationEnabled ->
+                subunitLimitFlow
+            ) { subunits, reactiveGroup, limitResult ->
                 SubunitManagementUiState(
                     isLoading = false,
                     groupId = groupId,
                     groupName = groupName,
                     subunits = subunitUiMapper.toSubunitUiModelList(subunits, memberProfiles, currentUserId),
                     isGroupArchived = reactiveGroup?.status == GroupStatus.ARCHIVED,
-                    isSubunitCreationEnabled = isSubunitCreationEnabled
+                    isSubunitCreationEnabled = limitResult is LimitResult.Allowed
                 )
             }
         }
@@ -110,27 +122,39 @@ class SubunitManagementViewModel(
 
     private fun navigateToCreate() {
         viewModelScope.launch {
-            val isEnabled = featureGateService.isFeatureEnabled(
-                feature = GatedFeature.SUBUNIT_CREATION,
-                groupId = _groupId.value
+            val groupId = _groupId.value
+            val currentCount = getGroupSubunitsFlowUseCase(groupId).first().size
+            val limitResult = featureGateService.checkLimit(
+                limit = GatedLimit.MAX_SUBUNITS_PER_GROUP,
+                currentCount = currentCount,
+                groupId = groupId
             ).first()
-            if (isEnabled) {
-                _actions.emit(SubunitManagementUiAction.NavigateToCreateSubunit(_groupId.value))
-            } else {
-                val isPro = featureGateService.isActingUserPro().first()
-                telemetryTracker.trackFeatureGateBlocked(
-                    feature = GatedFeature.SUBUNIT_CREATION,
-                    entryPoint = MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_EVENT,
-                    upgradePrompted = !isPro
-                )
-                if (isPro) {
-                    _actions.emit(
-                        SubunitManagementUiAction.ShowError(
-                            UiText.StringResource(R.string.subunit_error_pro_required)
-                        )
+            when (limitResult) {
+                is LimitResult.Allowed -> {
+                    _actions.emit(SubunitManagementUiAction.NavigateToCreateSubunit(groupId))
+                }
+                is LimitResult.Blocked -> {
+                    telemetryTracker.trackLimitGateBlocked(
+                        limit = GatedLimit.MAX_SUBUNITS_PER_GROUP,
+                        entryPoint = MonetizationTelemetry.GateEntryPoint.SUBUNIT_CREATE_EVENT,
+                        upgradePrompted = limitResult.upgradeRequired
                     )
-                } else {
-                    _actions.emit(SubunitManagementUiAction.NavigateToSubscriptions)
+                    if (limitResult.upgradeRequired) {
+                        _actions.emit(
+                            SubunitManagementUiAction.ShowProFeaturePreview(
+                                ProFeaturePreviewPrompt(
+                                    previewType = ProFeaturePreviewType.SUBUNIT_CREATION,
+                                    entrySource = MonetizationTelemetry.EntrySource.SUBUNIT_CREATION
+                                )
+                            )
+                        )
+                    } else {
+                        _actions.emit(
+                            SubunitManagementUiAction.ShowError(
+                                UiText.StringResource(R.string.subunit_error_limit_reached)
+                            )
+                        )
+                    }
                 }
             }
         }

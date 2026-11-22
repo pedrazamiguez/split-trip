@@ -3,9 +3,9 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
-import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
 import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackLimitGateBlocked
 import es.pedrazamiguez.splittrip.core.logging.LogTag
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
@@ -14,9 +14,7 @@ import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
-import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
-import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
@@ -26,39 +24,29 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.GetNonRemovableGroupMembe
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetUserGroupsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetMemberProfilesUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.SearchUsersByEmailUseCase
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapper
 import es.pedrazamiguez.splittrip.features.group.presentation.model.LoadedGroupCurrencies
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupImageEventHandler
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupMemberEventHandler
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupNavigationEventHandler
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupSubmitEventHandler
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.buildPendingUserSearchResults
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.buildUpdatedExtraCurrencies
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.formatEventForLogging
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.loadEditGuard
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.mergeScannedMemberProfile
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.resolveIsCurrentUser
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.resolveMemberRemovalBlockReason
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.toUiText
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.toggleExtraCurrencySelection
-import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.updateMemberDisplayName
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.withInitialCreateState
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.support.withInitialEditState
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -76,11 +64,10 @@ class CreateEditGroupViewModel(
     private val navigationEventHandler: CreateEditGroupNavigationEventHandler,
     private val imageEventHandler: CreateEditGroupImageEventHandler,
     private val submitEventHandler: CreateEditGroupSubmitEventHandler,
+    private val createEditGroupMemberEventHandler: CreateEditGroupMemberEventHandler,
     private val getGroupByIdUseCase: GetGroupByIdUseCase,
     private val getSupportedCurrenciesUseCase: GetSupportedCurrenciesUseCase,
     private val getUserDefaultCurrencyUseCase: GetUserDefaultCurrencyUseCase,
-    private val searchUsersByEmailUseCase: SearchUsersByEmailUseCase,
-    private val emailValidationService: EmailValidationService,
     private val getMemberProfilesUseCase: GetMemberProfilesUseCase,
     private val groupUiMapper: GroupUiMapper,
     private val featureGateService: FeatureGateService,
@@ -99,13 +86,13 @@ class CreateEditGroupViewModel(
     private val _actions = MutableSharedFlow<CreateEditGroupUiAction>()
     val actions: SharedFlow<CreateEditGroupUiAction> = _actions.asSharedFlow()
 
-    private var memberSearchJob: Job? = null
     private var isInitialized = false
 
     init {
         navigationEventHandler.bind(_uiState, _actions, viewModelScope)
         imageEventHandler.bind(_uiState, _actions, viewModelScope)
         submitEventHandler.bind(_uiState, _actions, viewModelScope)
+        createEditGroupMemberEventHandler.bind(_uiState, _actions, viewModelScope)
 
         imageEventHandler.cleanTempImages()
     }
@@ -114,7 +101,7 @@ class CreateEditGroupViewModel(
         if (isInitialized) return
         isInitialized = true
 
-        observeCoverUploadGate(groupId)
+        observeCoverUploadGate()
 
         if (groupId == null) {
             checkGroupCreationLimit()
@@ -126,10 +113,10 @@ class CreateEditGroupViewModel(
         loadInitialUserData(groupId)
     }
 
-    private fun observeCoverUploadGate(groupId: String?) {
+    private fun observeCoverUploadGate() {
         viewModelScope.launch {
-            featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, groupId).collect { isEnabled ->
-                _uiState.update { it.copy(isCoverUploadEnabled = isEnabled) }
+            featureGateService.observeMediaUploadQuota().collect { quota ->
+                _uiState.update { it.copy(isCoverUploadEnabled = quota.canUpload) }
             }
         }
     }
@@ -152,10 +139,10 @@ class CreateEditGroupViewModel(
                 _uiState.update {
                     it.copy(
                         isCreationBlocked = true,
-                        showUpgradeDialog = true,
-                        upgradeDialogTitle = UiText.StringResource(DesignSystemR.string.upgrade_dialog_title),
-                        upgradeDialogMessage = UiText.StringResource(R.string.group_error_limit_groups_exceeded),
-                        upgradeEntrySource = MonetizationTelemetry.EntrySource.GROUP_CREATION
+                        proPreviewPrompt = ProFeaturePreviewPrompt(
+                            previewType = ProFeaturePreviewType.UNLIMITED_GROUPS,
+                            entrySource = MonetizationTelemetry.EntrySource.GROUP_CREATION
+                        )
                     )
                 }
             }
@@ -221,26 +208,31 @@ class CreateEditGroupViewModel(
             }
             is CreateEditGroupUiEvent.CurrencySelected -> handleCurrencySelected(event.code)
             is CreateEditGroupUiEvent.ExtraCurrencyToggled -> handleExtraCurrencyToggled(event.code)
-            is CreateEditGroupUiEvent.MemberSearchQueryChanged -> searchMembers(event.query)
-            is CreateEditGroupUiEvent.MemberSelected -> handleMemberSelected(event)
-            is CreateEditGroupUiEvent.MemberRemoved -> handleMemberRemoved(event)
-            is CreateEditGroupUiEvent.MemberScanned -> handleMemberScanned(event.userId, event.email)
+            is CreateEditGroupUiEvent.MemberSearchQueryChanged -> {
+                createEditGroupMemberEventHandler.handleSearchQueryChanged(event.query)
+            }
+            is CreateEditGroupUiEvent.MemberSelected -> {
+                createEditGroupMemberEventHandler.handleMemberSelected(event.user)
+            }
+            is CreateEditGroupUiEvent.MemberRemoved -> {
+                createEditGroupMemberEventHandler.handleMemberRemoved(event.user)
+            }
+            is CreateEditGroupUiEvent.MemberScanned -> {
+                createEditGroupMemberEventHandler.handleMemberScanned(event.userId, event.email)
+            }
             is CreateEditGroupUiEvent.UnregisteredMemberDisplayNameChanged -> {
-                _uiState.update { state ->
-                    state.copy(
-                        selectedMembers = updateMemberDisplayName(
-                            state.selectedMembers,
-                            event.userId,
-                            event.displayName
-                        )
-                    )
-                }
+                createEditGroupMemberEventHandler.handleUnregisteredMemberDisplayNameChanged(
+                    event.userId,
+                    event.displayName
+                )
             }
             is CreateEditGroupUiEvent.Submit -> submitEventHandler.handleSubmit(onSuccess)
             is CreateEditGroupUiEvent.NextStep,
             is CreateEditGroupUiEvent.PreviousStep,
             is CreateEditGroupUiEvent.CloseWizard,
             is CreateEditGroupUiEvent.JumpToStep -> navigationEventHandler.handleNavigation(event)
+            is CreateEditGroupUiEvent.ToggleStepInfoSheet ->
+                _uiState.update { it.copy(isStepInfoSheetVisible = event.visible) }
             is CreateEditGroupUiEvent.GroupImagePicked -> {
                 imageEventHandler.handleGroupImagePicked(event.uri)
             }
@@ -251,14 +243,15 @@ class CreateEditGroupViewModel(
                 event.show
             )
             is CreateEditGroupUiEvent.UpgradeClicked -> {
-                val source = _uiState.value.upgradeEntrySource ?: MonetizationTelemetry.EntrySource.GROUP_CREATION
-                _uiState.update { it.copy(showUpgradeDialog = false, upgradeEntrySource = null) }
+                val source = _uiState.value.proPreviewPrompt?.entrySource
+                    ?: MonetizationTelemetry.EntrySource.GROUP_CREATION
+                _uiState.update { it.copy(proPreviewPrompt = null) }
                 viewModelScope.launch {
                     _actions.emit(CreateEditGroupUiAction.NavigateToSubscriptions(source))
                 }
             }
-            is CreateEditGroupUiEvent.DismissUpgradeDialog -> {
-                _uiState.update { it.copy(showUpgradeDialog = false, upgradeEntrySource = null) }
+            is CreateEditGroupUiEvent.DismissProPreview -> {
+                _uiState.update { it.copy(proPreviewPrompt = null) }
                 if (_uiState.value.isCreationBlocked) {
                     viewModelScope.launch {
                         _actions.emit(CreateEditGroupUiAction.NavigateBack)
@@ -266,37 +259,22 @@ class CreateEditGroupViewModel(
                 }
             }
             is CreateEditGroupUiEvent.LockedCoverPhotoClicked -> {
-                telemetryTracker.trackFeatureGateBlocked(
-                    feature = GatedFeature.GROUP_COVER_UPLOAD,
+                telemetryTracker.trackLimitGateBlocked(
+                    limit = GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS,
                     entryPoint = MonetizationTelemetry.GateEntryPoint.GROUP_COVER_LOCKED_PREVIEW,
                     upgradePrompted = true
                 )
-                viewModelScope.launch {
-                    _actions.emit(
-                        CreateEditGroupUiAction.ShowError(
-                            UiText.StringResource(R.string.group_error_limit_cover_upload_disabled)
-                        )
-                    )
-                    _actions.emit(
-                        CreateEditGroupUiAction.NavigateToSubscriptions(
-                            MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD
+                _uiState.update {
+                    it.copy(
+                        proPreviewPrompt = ProFeaturePreviewPrompt(
+                            previewType = ProFeaturePreviewType.GROUP_COVER_PHOTO,
+                            entrySource = MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD
                         )
                     )
                 }
             }
             is CreateEditGroupUiEvent.MemberCapacityUpsellClicked -> {
-                telemetryTracker.trackLimitGateBlocked(
-                    limit = GatedLimit.MAX_MEMBERS_PER_GROUP,
-                    entryPoint = MonetizationTelemetry.GateEntryPoint.GROUP_MEMBER_UPSELL,
-                    upgradePrompted = true
-                )
-                viewModelScope.launch {
-                    _actions.emit(
-                        CreateEditGroupUiAction.NavigateToSubscriptions(
-                            MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT
-                        )
-                    )
-                }
+                createEditGroupMemberEventHandler.handleMemberCapacityUpsellClicked()
             }
         }
     }
@@ -335,88 +313,6 @@ class CreateEditGroupViewModel(
         _uiState.update { current ->
             val updatedExtras = toggleExtraCurrencySelection(code, current.availableCurrencies, current.extraCurrencies)
             current.copy(extraCurrencies = updatedExtras, error = null)
-        }
-    }
-
-    private fun handleMemberSelected(event: CreateEditGroupUiEvent.MemberSelected) {
-        if (isCurrentUser(event.user.userId, event.user.email)) return
-
-        val state = _uiState.value
-        if (state.selectedMembers.any { it.userId == event.user.userId }) {
-            return
-        }
-        if (state.selectedMembers.size >= state.maxMembersLimit) {
-            handleMemberLimitExceeded(
-                entryPoint = MonetizationTelemetry.GateEntryPoint.GROUP_MEMBER_SELECT,
-                clearSearchResults = true
-            )
-            return
-        }
-        _uiState.update {
-            it.copy(
-                selectedMembers = (it.selectedMembers + event.user).toImmutableList(),
-                memberSearchResults = persistentListOf()
-            )
-        }
-    }
-
-    private fun handleMemberRemoved(event: CreateEditGroupUiEvent.MemberRemoved) {
-        val state = _uiState.value
-        val blockReason = resolveMemberRemovalBlockReason(
-            isEditMode = state.isEditMode,
-            selectedMembersCount = state.selectedMembers.size,
-            nonRemovableMembers = state.nonRemovableMembers,
-            userId = event.user.userId
-        )
-        if (blockReason != null) {
-            viewModelScope.launch {
-                _actions.emit(CreateEditGroupUiAction.ShowError(blockReason.toUiText()))
-            }
-            return
-        }
-        _uiState.update { current ->
-            current.copy(
-                selectedMembers = current.selectedMembers
-                    .filter { it.userId != event.user.userId }
-                    .toImmutableList(),
-                error = null
-            )
-        }
-    }
-
-    private fun searchMembers(query: String) {
-        memberSearchJob?.cancel()
-
-        if (query.length < MEMBER_SEARCH_MIN_QUERY_LENGTH || !emailValidationService.isValidEmail(query)) {
-            _uiState.update { it.copy(memberSearchResults = persistentListOf(), isSearchingMembers = false) }
-            return
-        }
-
-        memberSearchJob = viewModelScope.launch {
-            delay(MEMBER_SEARCH_DEBOUNCE_MS)
-            _uiState.update { it.copy(isSearchingMembers = true) }
-
-            searchUsersByEmailUseCase(query).onSuccess { users ->
-                val selectedIds = _uiState.value.selectedMembers.map { it.userId }.toSet()
-                val filteredUsers = users.filter { u ->
-                    u.userId !in selectedIds && !isCurrentUser(u.userId, u.email)
-                }
-                val results = if (filteredUsers.isEmpty()) {
-                    val currentUserEmail = _uiState.value.currentUserEmail ?: authenticationService.currentUserEmail()
-                    buildPendingUserSearchResults(query, currentUserEmail, selectedIds)
-                } else {
-                    filteredUsers
-                }
-                _uiState.update {
-                    it.copy(
-                        memberSearchResults = results.toImmutableList(),
-                        isSearchingMembers = false
-                    )
-                }
-            }.onFailure { e ->
-                Timber.e(e, "Failed to search users by email")
-                _uiState.update { it.copy(memberSearchResults = persistentListOf(), isSearchingMembers = false) }
-            }
         }
     }
 
@@ -497,99 +393,8 @@ class CreateEditGroupViewModel(
         }
     }
 
-    private fun handleMemberScanned(userId: String, email: String) {
-        if (isCurrentUser(userId, email)) {
-            viewModelScope.launch {
-                _actions.emit(
-                    CreateEditGroupUiAction.ShowError(
-                        UiText.StringResource(R.string.group_error_cannot_add_self)
-                    )
-                )
-            }
-            return
-        }
-
-        val state = _uiState.value
-        val alreadySelected = state.selectedMembers.any { it.userId == userId }
-        if (alreadySelected) return
-
-        if (state.selectedMembers.size >= state.maxMembersLimit) {
-            handleMemberLimitExceeded(
-                entryPoint = MonetizationTelemetry.GateEntryPoint.GROUP_MEMBER_SCAN,
-                clearSearchResults = false
-            )
-            return
-        }
-
-        val partialUser = User(
-            userId = userId,
-            email = email,
-            displayName = null,
-            profileImagePath = null,
-            bio = null
-        )
-        _uiState.update {
-            it.copy(
-                selectedMembers = (it.selectedMembers + partialUser).toImmutableList()
-            )
-        }
-
-        viewModelScope.launch {
-            runCatching {
-                getMemberProfilesUseCase(listOf(userId))
-            }.onSuccess { profiles ->
-                val fullUser = profiles[userId] ?: return@onSuccess
-                _uiState.update { state ->
-                    state.copy(selectedMembers = mergeScannedMemberProfile(state.selectedMembers, userId, fullUser))
-                }
-            }.onFailure { e ->
-                Timber.e(e, "Failed to load profile for scanned user $userId")
-            }
-        }
-    }
-
-    private fun isCurrentUser(userId: String, email: String): Boolean = resolveIsCurrentUser(
-        userId = userId,
-        email = email,
-        currentUserId = authenticationService.currentUserId(),
-        currentUserEmail = _uiState.value.currentUserEmail ?: authenticationService.currentUserEmail()
-    )
-
-    private fun handleMemberLimitExceeded(
-        entryPoint: String,
-        clearSearchResults: Boolean
-    ) {
-        val state = _uiState.value
-        val upgradePrompted = !state.isGroupPro
-        telemetryTracker.trackLimitGateBlocked(
-            limit = GatedLimit.MAX_MEMBERS_PER_GROUP,
-            entryPoint = entryPoint,
-            upgradePrompted = upgradePrompted
-        )
-        val errorRes = UiText.StringResource(R.string.group_error_limit_members_exceeded)
-        if (upgradePrompted) {
-            _uiState.update {
-                it.copy(
-                    showUpgradeDialog = true,
-                    upgradeDialogTitle = UiText.StringResource(DesignSystemR.string.upgrade_dialog_title),
-                    upgradeDialogMessage = errorRes,
-                    upgradeEntrySource = MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT,
-                    memberSearchResults = if (clearSearchResults) persistentListOf() else it.memberSearchResults
-                )
-            }
-        }
-        viewModelScope.launch {
-            _actions.emit(CreateEditGroupUiAction.ShowError(errorRes))
-        }
-    }
-
     override fun onCleared() {
         super.onCleared()
         imageEventHandler.cleanTempImages()
-    }
-
-    companion object {
-        private const val MEMBER_SEARCH_DEBOUNCE_MS = 300L
-        private const val MEMBER_SEARCH_MIN_QUERY_LENGTH = 3
     }
 }

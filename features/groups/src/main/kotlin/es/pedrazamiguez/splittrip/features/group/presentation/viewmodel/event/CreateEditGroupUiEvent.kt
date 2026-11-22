@@ -22,9 +22,10 @@ sealed interface CreateEditGroupUiEvent {
     data object PreviousStep : CreateEditGroupUiEvent
     data object CloseWizard : CreateEditGroupUiEvent
     data class JumpToStep(val stepIndex: Int) : CreateEditGroupUiEvent
+    data class ToggleStepInfoSheet(val visible: Boolean) : CreateEditGroupUiEvent
     data object Submit : CreateEditGroupUiEvent
     data object UpgradeClicked : CreateEditGroupUiEvent
-    data object DismissUpgradeDialog : CreateEditGroupUiEvent
+    data object DismissProPreview : CreateEditGroupUiEvent
     data object LockedCoverPhotoClicked : CreateEditGroupUiEvent
     data object MemberCapacityUpsellClicked : CreateEditGroupUiEvent
 }

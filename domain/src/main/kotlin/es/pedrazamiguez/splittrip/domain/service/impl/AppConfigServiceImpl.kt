@@ -18,6 +18,12 @@ class AppConfigServiceImpl(
     override val maxMembersPerGroupPro: StateFlow<Int> = appConfigRepository.maxMembersPerGroupPro
     override val aiReceiptMonthlyLimitFree: StateFlow<Int> = appConfigRepository.aiReceiptMonthlyLimitFree
     override val aiReceiptMonthlyLimitPro: StateFlow<Int> = appConfigRepository.aiReceiptMonthlyLimitPro
+    override val manualReceiptMonthlyLimitFree: StateFlow<Int> =
+        appConfigRepository.manualReceiptMonthlyLimitFree
+    override val maxSubunitsPerGroupFree: StateFlow<Int> =
+        appConfigRepository.maxSubunitsPerGroupFree
+    override val maxSubunitsPerGroupPro: StateFlow<Int> =
+        appConfigRepository.maxSubunitsPerGroupPro
     override val extractedDateMaxFutureDays: StateFlow<Int> = appConfigRepository.extractedDateMaxFutureDays
     override val supportEmailAddress: StateFlow<String> = appConfigRepository.supportEmailAddress
     override val settlementNudgeRateLimitHours: StateFlow<Long> = appConfigRepository.settlementNudgeRateLimitHours

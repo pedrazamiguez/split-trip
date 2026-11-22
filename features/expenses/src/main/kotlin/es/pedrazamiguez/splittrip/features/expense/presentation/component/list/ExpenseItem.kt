@@ -10,10 +10,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -27,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedCombinedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.extension.sharedTextAnimation
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
@@ -37,6 +34,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.User
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.FormerMemberTag
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.icon.CategorySatelliteIcon
@@ -150,24 +148,10 @@ fun ExpenseItem(
                             )
                         }
                         if (expenseUiModel.formattedOriginalAmount != null) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(MaterialTheme.shapes.large)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                            ) {
-                                Text(
-                                    text = expenseUiModel.formattedOriginalAmount,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    modifier = Modifier.padding(
-                                        horizontal = MaterialTheme.spacing.Small,
-                                        vertical = ORIGINAL_AMOUNT_VERTICAL_PADDING
-                                    )
-                                )
-                            }
+                            PassportTag(
+                                text = expenseUiModel.formattedOriginalAmount,
+                                style = PassportTagStyle.NEUTRAL
+                            )
                         }
                     }
                 }
@@ -234,19 +218,7 @@ fun ExpenseItem(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 if (isFormer) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.surfaceVariant,
-                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(start = 2.dp)
-                                    ) {
-                                        Text(
-                                            text = stringResource(DesignSystemR.string.member_left_group_badge),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                        )
-                                    }
+                                    FormerMemberTag(modifier = Modifier.padding(start = 2.dp))
                                 }
                             }
                         }
@@ -289,6 +261,5 @@ private val CARD_VERTICAL_PADDING = 10.dp
 private val ROW_VERTICAL_GAP = 6.dp
 private val CATEGORY_ICON_SIZE = 38.dp
 private val AMOUNT_BADGE_GAP = 2.dp
-private val ORIGINAL_AMOUNT_VERTICAL_PADDING = 2.dp
 private val STATUS_BADGE_ICON_SIZE = 13.dp
 private const val CANCELLED_ALPHA = 0.5f

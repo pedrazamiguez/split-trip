@@ -16,8 +16,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavContr
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
-import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.features.subunit.presentation.screen.CreateEditSubunitScreen
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.CreateEditSubunitViewModel
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.action.CreateEditSubunitUiAction
@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
+@Suppress("LongMethod")
 @Composable
 fun CreateEditSubunitFeature(
     groupId: String,
@@ -40,6 +41,9 @@ fun CreateEditSubunitFeature(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showExitConfirmation by remember { mutableStateOf(false) }
+    var pendingProPreview by remember {
+        mutableStateOf<CreateEditSubunitUiAction.ShowProFeaturePreview?>(null)
+    }
 
     // Intercept system back — delegate to wizard navigation
     BackHandler {
@@ -71,11 +75,8 @@ fun CreateEditSubunitFeature(
                     showExitConfirmation = true
                 }
 
-                CreateEditSubunitUiAction.NavigateToSubscriptions -> {
-                    upgradeNavigator.navigateToUpgrade(
-                        rootNavController,
-                        source = MonetizationTelemetry.EntrySource.SUBUNIT_CREATION
-                    )
+                is CreateEditSubunitUiAction.ShowProFeaturePreview -> {
+                    pendingProPreview = action
                 }
             }
         }
@@ -91,6 +92,25 @@ fun CreateEditSubunitFeature(
                 navController.popBackStack()
             },
             onDismiss = { showExitConfirmation = false }
+        )
+    }
+
+    pendingProPreview?.let { previewAction ->
+        ProFeaturePreviewBottomSheet(
+            previewType = previewAction.prompt.previewType,
+            onUpgrade = {
+                pendingProPreview = null
+                upgradeNavigator.navigateToUpgrade(
+                    rootNavController,
+                    source = previewAction.prompt.entrySource
+                )
+            },
+            onDismiss = {
+                pendingProPreview = null
+                if (previewAction.navigateBackOnDismiss) {
+                    navController.popBackStack()
+                }
+            }
         )
     }
 

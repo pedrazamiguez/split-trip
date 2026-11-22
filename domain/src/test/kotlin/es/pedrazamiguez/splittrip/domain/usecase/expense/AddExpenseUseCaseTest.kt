@@ -15,10 +15,12 @@ import es.pedrazamiguez.splittrip.domain.model.CashTranche
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
@@ -35,6 +37,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import java.time.YearMonth
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -53,10 +56,12 @@ class AddExpenseUseCaseTest {
     private lateinit var authenticationService: AuthenticationService
     private lateinit var addOnCalculationService: AddOnCalculationService
     private lateinit var groupRepository: GroupRepository
+    private lateinit var userPreferenceRepository: UserPreferenceRepository
     private lateinit var useCase: AddExpenseUseCase
 
     private val groupId = "group-123"
     private val currentUserId = "current-user-456"
+    private val fixedYearMonth = YearMonth.of(2026, 11)
 
     private val baseExpense = Expense(
         id = "expense-1",
@@ -79,6 +84,7 @@ class AddExpenseUseCaseTest {
         authenticationService = mockk()
         addOnCalculationService = mockk()
         groupRepository = mockk()
+        userPreferenceRepository = mockk(relaxed = true)
 
         coEvery { groupMembershipService.requireMembership(any()) } just Runs
         every { authenticationService.requireUserId() } returns currentUserId
@@ -97,7 +103,9 @@ class AddExpenseUseCaseTest {
             groupMembershipService = groupMembershipService,
             contributionRepository = contributionRepository,
             authenticationService = authenticationService,
-            addOnCalculationService = addOnCalculationService
+            addOnCalculationService = addOnCalculationService,
+            userPreferenceRepository = userPreferenceRepository,
+            yearMonthProvider = { fixedYearMonth }
         )
 
         useCase = AddExpenseUseCaseImpl(
@@ -1473,6 +1481,57 @@ class AddExpenseUseCaseTest {
                     PayerType.GROUP,
                     null
                 )
+            }
+        }
+    }
+
+    @Nested
+    inner class ReceiptAttachmentQuota {
+
+        @Test
+        fun `increments monthly manual receipt count when expense has receipt attachment`() = runTest {
+            val expenseWithReceipt = baseExpense.copy(
+                receiptAttachment = ReceiptAttachment(
+                    localUri = "file:///receipts/r1.jpg",
+                    mimeType = "image/jpeg",
+                    capturedAtMillis = 1_000L
+                )
+            )
+
+            val result = useCase(groupId, expenseWithReceipt)
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 1) {
+                userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(fixedYearMonth)
+            }
+        }
+
+        @Test
+        fun `does not increment monthly manual receipt count when expense has no receipt`() = runTest {
+            val result = useCase(groupId, baseExpense.copy(receiptAttachment = null))
+
+            assertTrue(result.isSuccess)
+            coVerify(exactly = 0) {
+                userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(any())
+            }
+        }
+
+        @Test
+        fun `does not increment monthly manual receipt count when persistence fails`() = runTest {
+            coEvery { expenseRepository.addExpense(any(), any()) } throws IllegalStateException("DB error")
+            val expenseWithReceipt = baseExpense.copy(
+                receiptAttachment = ReceiptAttachment(
+                    localUri = "file:///receipts/r1.jpg",
+                    mimeType = "image/jpeg",
+                    capturedAtMillis = 1_000L
+                )
+            )
+
+            val result = useCase(groupId, expenseWithReceipt)
+
+            assertTrue(result.isFailure)
+            coVerify(exactly = 0) {
+                userPreferenceRepository.incrementMonthlyManualReceiptAttachmentCount(any())
             }
         }
     }

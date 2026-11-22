@@ -25,10 +25,11 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.receipt.ReceiptAttachmentHandler
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewBottomSheet
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
-import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.AddExpenseScreen
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.AddExpenseViewModel
@@ -66,6 +67,7 @@ fun AddExpenseFeature(
     }
     var showReceiptSourceSheet by remember { mutableStateOf(false) }
     var showExitConfirmation by remember { mutableStateOf(false) }
+    var proPreviewPrompt by remember { mutableStateOf<ProFeaturePreviewPrompt?>(null) }
 
     BackHandler { addExpenseViewModel.onEvent(AddExpenseUiEvent.PreviousStep) }
 
@@ -89,15 +91,27 @@ fun AddExpenseFeature(
 
                 AddExpenseUiAction.NavigateBack -> navController.popBackStack()
 
-                AddExpenseUiAction.NavigateToSubscriptions ->
-                    upgradeNavigator.navigateToUpgrade(
-                        rootNavController,
-                        source = MonetizationTelemetry.EntrySource.AI_RECEIPT_SCANNING
-                    )
+                is AddExpenseUiAction.ShowProFeaturePreview -> proPreviewPrompt = action.prompt
+
+                AddExpenseUiAction.OpenReceiptPickerSource -> showReceiptSourceSheet = true
 
                 AddExpenseUiAction.None -> Unit
             }
         }
+    }
+
+    proPreviewPrompt?.let { prompt ->
+        ProFeaturePreviewBottomSheet(
+            previewType = prompt.previewType,
+            onUpgrade = {
+                proPreviewPrompt = null
+                upgradeNavigator.navigateToUpgrade(
+                    rootNavController,
+                    source = prompt.entrySource
+                )
+            },
+            onDismiss = { proPreviewPrompt = null }
+        )
     }
 
     if (showExitConfirmation) {
@@ -171,12 +185,7 @@ fun AddExpenseFeature(
         groupId = selectedGroupId.value,
         uiState = state,
         onEvent = { event ->
-            // RequestPickerSource is a pure-UI concern — handle it in the Feature
-            // so the ViewModel never touches source selection or launcher APIs.
             when (event) {
-                is AddExpenseUiEvent.RequestPickerSource -> {
-                    showReceiptSourceSheet = true
-                }
                 is AddExpenseUiEvent.ViewReceiptFullScreen -> {
                     state.receiptUri?.let { uri ->
                         navController.navigate(

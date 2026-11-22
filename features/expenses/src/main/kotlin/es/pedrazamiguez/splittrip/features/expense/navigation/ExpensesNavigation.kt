@@ -12,14 +12,12 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavContro
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.presentation.feature.AddExpenseFeature
-import es.pedrazamiguez.splittrip.features.expense.presentation.feature.CategorySpendingFeature
 import es.pedrazamiguez.splittrip.features.expense.presentation.feature.ExpenseDetailFeature
 import es.pedrazamiguez.splittrip.features.expense.presentation.feature.ExpensesFeature
 import es.pedrazamiguez.splittrip.features.expense.presentation.feature.ExpensesFilterFeature
 import es.pedrazamiguez.splittrip.features.expense.presentation.feature.ReceiptViewerFeature
 import org.koin.compose.getKoin
 
-internal const val KEY_INITIAL_FILTER_CRITERIA = "initialFilterCriteria"
 internal const val KEY_APPLIED_FILTER_CRITERIA = "appliedFilterCriteria"
 internal const val KEY_EXPENSE_ADDED = "expenseAdded"
 internal const val KEY_RESET_FILTERS_REQUESTED = "resetFiltersRequested"
@@ -30,35 +28,23 @@ fun NavGraphBuilder.expensesGraph() {
         ExpensesFeature(backStackEntry = backStackEntry)
     }
 
-    sharedComposable(route = Routes.CATEGORY_SPENDING) { backStackEntry ->
-        val navController = LocalTabNavController.current
-        // Freeze filter criteria at entry so pop-exit animations do not flash unfiltered data.
-        val filterCriteria = remember(backStackEntry) {
-            navController.previousBackStackEntry
-                ?.savedStateHandle
-                ?.get<ExpenseFilterCriteria>(KEY_INITIAL_FILTER_CRITERIA)
-                ?: ExpenseFilterCriteria()
-        }
-        CategorySpendingFeature(filterCriteria = filterCriteria)
-    }
-
     sharedComposable(route = Routes.EXPENSES_FILTER) {
         val navController = LocalTabNavController.current
         val initialCriteria = navController.previousBackStackEntry
             ?.savedStateHandle
-            ?.get<ExpenseFilterCriteria>(KEY_INITIAL_FILTER_CRITERIA) ?: ExpenseFilterCriteria()
+            ?.get<ExpenseFilterCriteria>(Routes.KEY_EXPENSE_FILTER_CRITERIA) ?: ExpenseFilterCriteria()
         ExpensesFilterFeature(
             initialCriteria = initialCriteria,
             onApplyFilters = { appliedCriteria ->
                 val savedStateHandle = navController.previousBackStackEntry?.savedStateHandle
                 savedStateHandle?.set(KEY_APPLIED_FILTER_CRITERIA, appliedCriteria)
-                savedStateHandle?.set(KEY_INITIAL_FILTER_CRITERIA, appliedCriteria)
+                savedStateHandle?.set(Routes.KEY_EXPENSE_FILTER_CRITERIA, appliedCriteria)
                 navController.popBackStack()
             },
             onFiltersReset = { clearedCriteria ->
                 val savedStateHandle = navController.previousBackStackEntry?.savedStateHandle
                 savedStateHandle?.set(KEY_APPLIED_FILTER_CRITERIA, clearedCriteria)
-                savedStateHandle?.set(KEY_INITIAL_FILTER_CRITERIA, clearedCriteria)
+                savedStateHandle?.set(Routes.KEY_EXPENSE_FILTER_CRITERIA, clearedCriteria)
                 navController.popBackStack()
             },
             onNavigateBack = {

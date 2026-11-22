@@ -3,17 +3,19 @@ package es.pedrazamiguez.splittrip.features.subunit.presentation.feature
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewBottomSheet
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
-import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
-import es.pedrazamiguez.splittrip.features.subunit.R
 import es.pedrazamiguez.splittrip.features.subunit.presentation.screen.SubunitManagementScreen
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.SubunitManagementViewModel
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.action.SubunitManagementUiAction
@@ -31,9 +33,9 @@ fun SubunitManagementFeature(
     val rootNavController = LocalRootNavController.current
     val pillController = LocalTopPillController.current
     val context = LocalContext.current
-    val proRequiredMessage = stringResource(R.string.subunit_error_pro_required)
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var proPreviewPrompt by remember { mutableStateOf<ProFeaturePreviewPrompt?>(null) }
 
     // Set the groupId for the ViewModel
     LaunchedEffect(groupId) {
@@ -62,15 +64,25 @@ fun SubunitManagementFeature(
                     )
                 }
 
-                SubunitManagementUiAction.NavigateToSubscriptions -> {
-                    pillController.showPill(message = proRequiredMessage)
-                    upgradeNavigator.navigateToUpgrade(
-                        rootNavController,
-                        source = MonetizationTelemetry.EntrySource.SUBUNIT_MANAGEMENT
-                    )
+                is SubunitManagementUiAction.ShowProFeaturePreview -> {
+                    proPreviewPrompt = action.prompt
                 }
             }
         }
+    }
+
+    proPreviewPrompt?.let { prompt ->
+        ProFeaturePreviewBottomSheet(
+            previewType = prompt.previewType,
+            onUpgrade = {
+                proPreviewPrompt = null
+                upgradeNavigator.navigateToUpgrade(
+                    rootNavController,
+                    source = prompt.entrySource
+                )
+            },
+            onDismiss = { proPreviewPrompt = null }
+        )
     }
 
     SubunitManagementScreen(

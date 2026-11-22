@@ -2,7 +2,7 @@
 <resources>
     <!-- Subunit management -->
     <string name="subunit_manage_title">Subunidades</string>
-    <string name="subunit_empty_state">¡Aún no hay subunidades! Crea una para organizar tu grupo de viaje</string>
+    <string name="subunit_empty_state">¡Aún no hay subunidades! Crea una para organizar tu grupo</string>
     <string name="subunit_create">Crear subunidad</string>
     <string name="subunit_edit">Editar subunidad</string>
     <string name="subunit_create_edit_title">Subunidad</string>
@@ -19,6 +19,7 @@
     <string name="subunit_deleted_success">Subunidad eliminada</string>
     <string name="subunit_error_save_failed">Algo salió mal. Inténtalo de nuevo</string>
     <string name="subunit_error_pro_required">La creación de subunidades requiere SplitTrip Pro o un grupo creado por un suscriptor Pro.</string>
+    <string name="subunit_error_limit_reached">Has alcanzado el número máximo de subunidades para este grupo.</string>
     <string name="subunit_error_delete_failed">Error al eliminar la subunidad. Inténtalo de nuevo</string>
     <string name="subunit_delete_title">¿Eliminar subunidad?</string>
     <string name="subunit_delete_warning">¿Seguro que quieres eliminar \"%1$s\"?</string>
@@ -49,5 +50,15 @@
         <item quantity="one">%d miembro</item>
         <item quantity="other">%d miembros</item>
     </plurals>
+
+    <!-- Step Info Bottom Sheet -->
+    <string name="subunit_step_info_name_title">Nombre de la subunidad</string>
+    <string name="subunit_step_info_name_description">Dale a esta subunidad un nombre claro (como \"Familia\" o \"Álex y Sam\") para identificarla fácilmente al repartir gastos o consultar los balances del grupo.\n\nEste paso es obligatorio. Puedes cambiar el nombre de la subunidad más adelante.</string>
+    <string name="subunit_step_info_members_title">Miembros de la subunidad</string>
+    <string name="subunit_step_info_members_description">Selecciona al menos un miembro del grupo para incluirlo en esta subunidad. Los miembros de una subunidad comparten un balance conjunto y pueden repartir gastos unidos.\n\nEste paso es obligatorio. Cada miembro solo puede pertenecer a una subunidad a la vez, por lo que quienes ya están en otra aparecen deshabilitados.</string>
+    <string name="subunit_step_info_shares_title">Divisiones de los miembros</string>
+    <string name="subunit_step_info_shares_description">Define el porcentaje que cubre cada miembro dentro de la subunidad. Las divisiones empiezan repartidas a partes iguales entre los miembros seleccionados y deben sumar 100%.\n\nAl editar el porcentaje de un miembro se bloquea automáticamente y el resto se redistribuye entre los miembros desbloqueados. Toca el icono del candado cuando quieras para fijar o liberar una división.</string>
+    <string name="subunit_step_info_review_title">Resumen y confirmación</string>
+    <string name="subunit_step_info_review_description">Comprueba el nombre de la subunidad, los miembros seleccionados y sus porcentajes antes de guardar.\n\n¿Quieres ajustar algo ahora? Toca cualquier paso completado en la barra superior o pulsa \"Atrás\". También puedes editar o eliminar la subunidad más adelante desde la gestión de subunidades.</string>
 </resources>
 

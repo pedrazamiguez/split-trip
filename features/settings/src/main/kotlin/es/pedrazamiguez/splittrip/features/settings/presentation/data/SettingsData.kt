@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Bell
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Book
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Bug
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Bulb
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartBar
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Copy
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CreditCard
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CurrencyEuro
@@ -70,6 +71,14 @@ private fun accountSection(params: SettingsPreferencesParams, isAnonymous: Boole
                 )
             )
         }
+        add(
+            SettingsItemModel.Standard(
+                icon = TablerIcons.Outline.ChartBar,
+                titleRes = R.string.settings_account_plan_allowances_title,
+                descriptionRes = R.string.settings_account_plan_allowances_description,
+                onClick = params.onPlanAllowancesClick
+            )
+        )
         add(
             SettingsItemModel.Standard(
                 icon = TablerIcons.Outline.Shield,

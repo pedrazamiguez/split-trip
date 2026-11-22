@@ -11,6 +11,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.SegmentedPillSelectorDefaults
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
@@ -54,7 +55,8 @@ fun IntraSubunitSplitEditor(
         SplitTypeSelector(
             splitTypes = availableSplitTypes,
             selectedSplitType = entitySplitType,
-            onSplitTypeSelected = onSplitTypeChanged
+            onSplitTypeSelected = onSplitTypeChanged,
+            colors = SegmentedPillSelectorDefaults.nestedColors()
         )
 
         Column(

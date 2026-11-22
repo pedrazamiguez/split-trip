@@ -1,15 +1,24 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
+import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackLimitGateBlocked
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
+import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
+import es.pedrazamiguez.splittrip.domain.service.featuregate.ManualReceiptQuota
 import es.pedrazamiguez.splittrip.domain.usecase.expense.AttachReceiptUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ManualReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -18,6 +27,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -31,11 +42,14 @@ import timber.log.Timber
  * is routed via [formPostCallback], following the same pattern as
  * [ConfigEventHandler]'s [PostConfigAction] callback.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LongParameterList")
 class FormEventHandler(
     private val addExpenseUiMapper: AddExpenseUiMapper,
     private val addExpenseOptionsUiMapper: AddExpenseOptionsUiMapper,
-    private val attachReceiptUseCase: AttachReceiptUseCase
+    private val attachReceiptUseCase: AttachReceiptUseCase,
+    private val featureGateService: FeatureGateService,
+    private val manualReceiptQuotaUiMapper: ManualReceiptQuotaUiMapper,
+    private val telemetryTracker: TelemetryTracker
 ) : AddExpenseEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
@@ -50,6 +64,40 @@ class FormEventHandler(
     private var onReceiptAttached: ((ReceiptAttachment) -> Unit)? = null
 
     private var attachReceiptJob: Job? = null
+    private var quotaObserverJob: Job? = null
+
+    fun startObservingManualReceiptQuota() {
+        quotaObserverJob?.cancel()
+        quotaObserverJob = _scope.launch {
+            featureGateService.observeManualReceiptQuota().collectLatest { quota ->
+                val quotaUi = manualReceiptQuotaUiMapper.mapQuotaToUiModel(quota)
+                _uiState.update { state ->
+                    state.copy(
+                        isManualReceiptGated = quotaUi.isManualReceiptGated,
+                        isManualReceiptProFeature = quotaUi.isManualReceiptProFeature,
+                        manualReceiptRemainingLabel = quotaUi.remainingAttachmentsLabel
+                    )
+                }
+            }
+        }
+    }
+
+    fun handleRequestReceiptPicker() {
+        if (_uiState.value.isAiModeActive) {
+            _scope.launch {
+                _actionsFlow.emit(AddExpenseUiAction.OpenReceiptPickerSource)
+            }
+            return
+        }
+        _scope.launch {
+            val quota = featureGateService.observeManualReceiptQuota().first()
+            if (!quota.canAttach) {
+                handleManualReceiptQuotaBlocked(quota)
+            } else {
+                _actionsFlow.emit(AddExpenseUiAction.OpenReceiptPickerSource)
+            }
+        }
+    }
 
     override fun bind(
         stateFlow: MutableStateFlow<AddExpenseUiState>,
@@ -290,6 +338,13 @@ class FormEventHandler(
         // Copy + compress the file asynchronously so the UI thread is not blocked.
         // The state is updated when the use case resolves; if it fails a pill error is shown.
         attachReceiptJob = _scope.launch {
+            if (!_uiState.value.isAiModeActive) {
+                val quota = featureGateService.observeManualReceiptQuota().first()
+                if (!quota.canAttach) {
+                    handleManualReceiptQuotaBlocked(quota)
+                    return@launch
+                }
+            }
             attachReceiptUseCase(uri)
                 .onSuccess { attachment ->
                     _uiState.update {
@@ -307,6 +362,28 @@ class FormEventHandler(
                         AddExpenseUiAction.ShowError(UiText.StringResource(R.string.add_expense_receipt_attach_error))
                     )
                 }
+        }
+    }
+
+    private suspend fun handleManualReceiptQuotaBlocked(quota: ManualReceiptQuota) {
+        telemetryTracker.trackLimitGateBlocked(
+            limit = GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS,
+            entryPoint = MonetizationTelemetry.GateEntryPoint.MANUAL_RECEIPT_ATTACH,
+            upgradePrompted = quota.requiresUpgrade
+        )
+        if (quota.requiresUpgrade) {
+            _actionsFlow.emit(
+                AddExpenseUiAction.ShowProFeaturePreview(
+                    ProFeaturePreviewPrompt(
+                        previewType = ProFeaturePreviewType.UNLIMITED_RECEIPTS,
+                        entrySource = MonetizationTelemetry.EntrySource.MANUAL_RECEIPT_ATTACHMENT
+                    )
+                )
+            )
+        } else {
+            _actionsFlow.emit(
+                AddExpenseUiAction.ShowPill(manualReceiptQuotaUiMapper.mapBlockedMessage(quota))
+            )
         }
     }
 

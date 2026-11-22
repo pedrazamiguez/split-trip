@@ -17,7 +17,7 @@
     <string name="balances_error_loading">Failed to load balances</string>
     <string name="balances_empty_title">No activity yet</string>
     <string name="balances_empty_description">Log expenses paid out of pocket to see who owes whom, or add a contribution if your group shares a common pocket.</string>
-    <string name="balances_archived_readonly_notice">This trip is archived and read-only. Contributions, withdrawals, and activity edits are disabled.</string>
+    <string name="balances_archived_readonly_notice">This group is archived and read-only. Contributions, withdrawals, and activity edits are disabled.</string>
 
     <!-- Member Balances -->
     <string name="balances_member_balances_title">Member balances</string>
@@ -55,7 +55,7 @@
     <string name="balances_metric_total_contributed_title">Total contributed</string>
     <string name="balances_metric_total_contributed_description">Cumulative sum of all contributions made by members, including both group pocket funds and personal allowances.\n\nThe breakdown of how much each member contributed and their individual balance can be viewed in the member balances section.</string>
     <string name="balances_metric_total_spent_title">Total spent</string>
-    <string name="balances_metric_total_spent_description">Total amount spent on the trip to date.\n\nIncludes all settled expenses, cash expenses, and refundable expenses, since that money has already been spent. It does not include upcoming scheduled expenses or extras.</string>
+    <string name="balances_metric_total_spent_description">Total amount spent by the group to date.\n\nIncludes all settled expenses, cash expenses, and refundable expenses, since that money has already been spent. It does not include upcoming scheduled expenses or extras.</string>
     <string name="balances_metric_cash_in_hand_title">Cash in hand</string>
     <string name="balances_metric_cash_in_hand_description">Physical cash withdrawn by members that has not yet been spent.\n\nThe header total shows the cumulative value converted into the group\'s default currency, while the list below details the exact breakdown across each currency held.</string>
     <string name="balances_metric_extras_title">Extras</string>
@@ -110,7 +110,7 @@
     <!-- %1$s = formatted rate, %2$s = group currency, %3$s = source currency; e.g. "@ 0.027 EUR/THB" -->
     <string name="balances_cash_breakdown_rate">@ %1$s %2$s/%3$s</string>
     <!-- Fallback label when a withdrawal has no title; %1$s = short date -->
-    <string name="balances_cash_breakdown_atm_fallback">ATM — %1$s</string>
+    <string name="balances_cash_breakdown_atm_fallback">ATM · %1$s</string>
     <string name="balances_cash_breakdown_view_cd">View cash breakdown</string>
     <!-- Fallback when the subunit referenced by a withdrawal is no longer found (data integrity edge case) -->
     <string name="balances_cash_breakdown_unknown_subunit">Unknown subunit</string>
@@ -134,11 +134,73 @@
     <string name="balances_extras_add_on_surcharge_plural">Surcharges</string>
     <string name="balances_extras_add_on_tip_plural">Tips</string>
     <string name="balances_extras_expense_fallback">Expense</string>
-    <string name="balances_extras_atm_fallback">ATM — %1$s</string>
+    <string name="balances_extras_atm_fallback">ATM · %1$s</string>
 
     <!-- Main Action -->
     <string name="balances_filter">Filter balances</string>
     <string name="balances_your_balance_title">Your Position</string>
+
+    <!-- Spending Insights -->
+    <string name="balances_insights_title">Spending insights</string>
+    <string name="balances_insights_action_cd">View spending insights</string>
+    <string name="balances_insights_period_all_time">All time</string>
+    <string name="balances_insights_period_this_month">This month</string>
+    <string name="balances_insights_period_last_month">Last month</string>
+    <string name="balances_insights_period_custom">Custom</string>
+    <string name="balances_insights_date_from">From</string>
+    <string name="balances_insights_date_to">To</string>
+    <string name="balances_insights_date_start_dialog_title">Select start date</string>
+    <string name="balances_insights_date_end_dialog_title">Select end date</string>
+    <string name="balances_insights_period_range">%1$s – %2$s</string>
+    <string name="balances_insights_period_summary">%1$s · %2$s</string>
+    <string name="balances_insights_burn_rate_title">Spending pace</string>
+    <string name="balances_insights_total_spent_label">Total spent</string>
+    <string name="balances_insights_add_ons_title">Add-ons &amp; fees</string>
+    <string name="balances_insights_add_ons_share">%1$s of spend</string>
+    <string name="balances_insights_add_ons_withdrawal_note">Includes %1$s in withdrawal fees</string>
+    <string name="balances_insights_add_ons_discounts_note">Saved %1$s with discounts</string>
+    <string name="balances_insights_daily_average_label">Daily average</string>
+    <string name="balances_insights_daily_average_value">%1$s / day</string>
+    <string name="balances_insights_peak_day_label">Peak day</string>
+    <string name="balances_insights_monthly_pace_projected_label">Projected monthly pace</string>
+    <string name="balances_insights_monthly_pace_completed_label">Monthly total</string>
+    <string name="balances_insights_monthly_pace_30d_label">30-day pace</string>
+    <string name="balances_insights_monthly_pace_value">%1$s / mo</string>
+    <string name="balances_insights_daily_trend_title">Daily spending</string>
+    <string name="balances_insights_daily_bar_detail">%1$s · %2$s · %3$s</string>
+    <string name="balances_insights_daily_bar_cd">%1$s, %2$s</string>
+    <string name="balances_insights_category_title">By category</string>
+    <string name="balances_insights_category_expand_cd">Expand %1$s subcategories</string>
+    <string name="balances_insights_category_collapse_cd">Collapse %1$s subcategories</string>
+    <string name="balances_insights_entity_title">Spending share</string>
+    <string name="balances_insights_mode_subunits">Subunits</string>
+    <string name="balances_insights_mode_members">Members</string>
+    <string name="balances_insights_filtered_banner_title">Filtered by Expenses</string>
+    <string name="balances_insights_filtered_banner_clear">Show all</string>
+    <string name="balances_insights_empty_title">No spending insights yet</string>
+    <string name="balances_insights_empty_description">Log group expenses to explore category breakdowns, spending pace, and member shares.</string>
+    <string name="balances_insights_empty_filtered_title">No matching expenses</string>
+    <string name="balances_insights_empty_filtered_description">Try clearing or adjusting your active filters to explore spending insights.</string>
+    <string name="balances_insights_empty_period_title">No expenses in this period</string>
+    <string name="balances_insights_empty_period_description">Try selecting another time window to inspect your group\'s spending.</string>
+    <string name="balances_insights_error_loading">Failed to load spending insights</string>
+
+    <plurals name="balances_insights_expense_count">
+        <item quantity="one">%1$d expense</item>
+        <item quantity="other">%1$d expenses</item>
+    </plurals>
+    <plurals name="balances_insights_active_days">
+        <item quantity="one">%1$d active day</item>
+        <item quantity="other">%1$d active days</item>
+    </plurals>
+    <plurals name="balances_insights_member_count">
+        <item quantity="one">%1$d member</item>
+        <item quantity="other">%1$d members</item>
+    </plurals>
+    <plurals name="balances_insights_filter_count">
+        <item quantity="one">%1$d filter</item>
+        <item quantity="other">%1$d filters</item>
+    </plurals>
 
 </resources>
 

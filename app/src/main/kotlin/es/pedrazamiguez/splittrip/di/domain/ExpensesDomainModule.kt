@@ -70,7 +70,8 @@ val expensesDomainModule = module {
             groupMembershipService = get<GroupMembershipService>(),
             contributionRepository = get<ContributionRepository>(),
             authenticationService = get<AuthenticationService>(),
-            addOnCalculationService = get<AddOnCalculationService>()
+            addOnCalculationService = get<AddOnCalculationService>(),
+            userPreferenceRepository = get<UserPreferenceRepository>()
         )
     }
     factory<AddExpenseUseCase> {

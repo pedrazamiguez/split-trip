@@ -6,59 +6,52 @@
 
 ## Overview
 
-**SplitTrip** is a modular Android application designed for travelers to manage shared
-expenses efficiently. It allows users to create expense groups, track spending in multiple
-currencies, calculate debts, and sync data across devices.
+**SplitTrip** is a modular Android application built as a reliable shared-group companion for everyday life and multi-currency trips abroad. Whether you are a couple, flatmates, a household, a family, or a group of friends, it helps you organise shared expenses, track group pockets, calculate member positions, and synchronise data across devices.
 
-Built with modern Android practices—including **Jetpack Compose**, **Clean Architecture**, and
-**Offline-First** principles—the app serves as a reference for scalable, multi-module Android
-development.
+Built with modern Android practices, including **Jetpack Compose**, **Clean Architecture**, and **Offline-First** principles, the app serves as a reference for scalable, multi-module Android development.
 
 ### ✨ Key Features
 
-* **User Authentication**: Secure login (Email/Password) via Firebase Authentication.
-* **Group Management**: Create and join expense groups with unique invite codes.
-* **Smart Expense Tracking**: Support for custom split strategies (Equal, Percentage, Shares).
-* **Multi-Currency Support**: Real-time currency conversion using Open Exchange Rates.
-* **Debt Simplification**: Automatically calculates "Who owes Whom" balances.
-* **Offline-First**: Full functionality without internet; syncs automatically when online.
-* **Push Notifications**: Instant updates when members add or modify expenses.
+* **User Authentication**: Sign in with Email/Password, Google, or Guest mode via Firebase Authentication.
+* **Shared Groups & Subunits**: Create and join groups with invite codes, organise couples or families into subunits, and finalise groups when done.
+* **Group Pockets & Cash Tracking**: Manage virtual group pockets, member contributions, and FIFO cash withdrawals.
+* **Smart Expense Tracking & AI Receipt Scanning**: Split expenses by equal amounts, exact amounts, percentages, or shares, attach add-ons, and scan receipts.
+* **Multi-Currency Support**: Automatic exchange-rate sync handled server-side via Firebase Cloud Functions and Open Exchange Rates, backed by exact `BigDecimal` math.
+* **Your Position & Settlement Consensus**: Clear member balances and collaborative payment agreements (propose payment, confirm receipt, or request review).
+* **Spending Insights**: Visual breakdowns of group and member spending.
+* **Offline-First Sync**: Full offline functionality powered by Room as the single source of truth, with automatic background Firestore synchronisation.
+* **Push Notifications**: Instant updates when members record expenses or propose settlements.
 
 ## 🛠️ Tech Stack
 
 * **Language**: [Kotlin](https://kotlinlang.org/) (100%)
-* **UI**: [Jetpack Compose](https://developer.android.com/jetpack/compose) (Material 3 Expressive
-  Design)
+* **UI**: [Jetpack Compose](https://developer.android.com/jetpack/compose) (Material 3, Horizon Narrative design system)
 * **Architecture**: Clean Architecture + MVVM + MVI patterns
 * **Dependency Injection**: [Koin](https://insert-koin.io/)
 * **Asynchronous Programming**: Coroutines & Flow
-* **Local Data**: [Room Database](https://developer.android.com/training/data-storage/room) (Single
-  Source of Truth)
-* **Remote Data**: [Retrofit](https://square.github.io/retrofit/) (Currency APIs)
-* **Backend (BaaS)**: Firebase (Auth, Firestore, Cloud Messaging)
+* **Local Data**: [Room Database](https://developer.android.com/training/data-storage/room) (Single Source of Truth)
+* **Backend (BaaS)**: Firebase (Auth, Firestore, Cloud Functions, Cloud Messaging, Remote Config, Crashlytics)
 * **Navigation**: Jetpack Navigation Compose (Feature-based modular navigation)
 * **Code Quality**: Detekt, Ktlint, CPD, JaCoCo, Konsist, CodeQL
 
 ## 📂 Project Structure
 
-The app follows a strict **Multi-Module** architecture to ensure separation of concerns and faster
-build times:
+The app follows a strict **Multi-Module** architecture to ensure separation of concerns and faster build times:
 
-* **`:app`**: The application entry point. Wiring and DI setup.
-* **`:core`**: Shared foundational components.
-* **`:core:common`**: Utilities, Constants, and DataStore preferences.
-* **`:core:design-system`**: Reusable UI components (`ExpressiveFab`, `DynamicTopAppBar`), Themes,
-  and the `ScreenUiProvider` system.
-
-
-* **`:data`**: The Data Layer implementation.
-* **`:data:local`**: Room Database entities and DAOs.
-* **`:data:remote`**: Retrofit services for external APIs.
-* **`:data:firebase`**: Firestore and Auth implementations.
-
-
-* **`:domain`**: Pure Kotlin business logic (Use Cases, Models, Repository Interfaces).
-* **`:features`**: Standalone feature modules containing UI and ViewModels.
+* **`:app`**: Application entry point, Koin DI wiring, and `AppNavHost`.
+* **`:core`**: Shared foundational modules:
+  * **`:core:common`**: Utilities, constants, providers (`LocaleProvider`, `ResourceProvider`), and DataStore preferences.
+  * **`:core:design-system`**: Horizon Narrative UI components, themes, routes, `NavigationProvider`, `TabGraphContributor`, and `ScreenUiProvider`.
+  * **`:core:logging`**: Structured logging utilities.
+  * **`:core:performance`**: Performance monitoring utilities.
+* **`:data`**: Offline-first repository implementations and sync delegates:
+  * **`:data:local`**: Room database entities, DAOs, and DataStore.
+  * **`:data:firebase`**: Firestore, Auth, and Firebase cloud data sources.
+* **`:domain`**: Pure Kotlin business logic (models, repository interfaces, use cases, domain services, calculators).
+* **`:features`**: Standalone feature modules (`authentication`, `balances`, `contributions`, `expenses`, `groups`, `main-entry`, `onboarding`, `profile`, `settings`, `settlements`, `subunits`, `withdrawals`).
+* **`:konsist-tests`**: Automated architecture tests enforcing module visibility, naming conventions, and the 600-line file limit.
+* **`build-logic/`**: Gradle convention plugins shared across modules.
+* **`functions/`**: Firebase Cloud Functions (including scheduled Open Exchange Rates synchronisation in `functions/src/triggers/scheduled/syncExchangeRates.ts`).
 
 ## 🚀 Setup Instructions
 
@@ -66,9 +59,7 @@ build times:
 
 * Android Studio Ladybug or newer.
 * JDK 21.
-* A Firebase Project with Authentication (Email) and Firestore enabled.
-* An API Key from [Open Exchange Rates](https://openexchangerates.org/) (optional, for currency
-  features).
+* A Firebase Project with Authentication and Firestore enabled.
 
 ### Steps
 
@@ -93,19 +84,9 @@ make setup
 * Create a project and add an Android app (package: `es.pedrazamiguez.splittrip`).
 * Download `google-services.json` and place it in the `app/` directory.
 
-4. **API Keys (Secrets)**:
+> Open Exchange Rates integration runs server-side via Firebase Cloud Functions (`functions/src/triggers/scheduled/syncExchangeRates.ts` using `defineSecret("OER_APP_ID")`), so no Open Exchange Rates API key is needed for local Android builds.
 
-* The Open Exchange Rates key is a **Gradle property** read by `data/remote/build.gradle.kts` via `providers.gradleProperty()`. It must be added to your **user-level** `~/.gradle/gradle.properties` (not `local.properties`, which is only for `sdk.dir`):
-
-```properties
-# ~/.gradle/gradle.properties
-OER_APP_ID_DEBUG=your_debug_key_here
-OER_APP_ID_RELEASE=your_release_key_here
-```
-
-> For release CI builds, `OER_APP_ID_RELEASE` can also be supplied as an environment variable (env var takes precedence over the Gradle property).
-
-5. **Build & Run**:
+4. **Build & Run**:
 
 * Sync Gradle files in Android Studio.
 * Select the `app` configuration and run on an Emulator (API 26+ recommended).
@@ -113,8 +94,9 @@ OER_APP_ID_RELEASE=your_release_key_here
 ### Verify your setup
 
 ```bash
-make doctor   # checks JDK, SDK path, google-services.json, API key, and git hook
-make check    # runs Konsist architecture tests + unit tests + compilation
+make doctor      # checks JDK 21, app/google-services.json, sdk.dir in local.properties, pre-commit hook, AI taxonomy files, and local AI tooling
+make fast-check  # fast incremental check: Andaluz string generation (when available), Remote Config validation, ktlint, detekt, lintDebug, Konsist tests, and >= 80% JaCoCo line coverage
+make check       # full cold quality gate from a clean state mirroring CI
 ```
 
 ## 🧪 Testing

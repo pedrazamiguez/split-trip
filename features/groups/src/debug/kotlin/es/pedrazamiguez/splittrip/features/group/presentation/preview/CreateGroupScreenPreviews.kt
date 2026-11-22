@@ -33,8 +33,8 @@ private fun EditGroupScreenPreview() {
         CreateEditGroupScreen(
             uiState = CreateEditGroupUiState(
                 isEditMode = true,
-                groupName = "Japan Trip",
-                groupDescription = "Our trip to Japan",
+                groupName = "Flatshare Madrid",
+                groupDescription = "Monthly rent, utilities, and groceries",
                 availableCurrencies = persistentListOf(
                     CURRENCY_UI_EUR,
                     CURRENCY_UI_USD,

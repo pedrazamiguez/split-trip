@@ -1,7 +1,7 @@
 <resources>
     <!-- Subunit management -->
     <string name="subunit_manage_title">Subunits</string>
-    <string name="subunit_empty_state">No subunits yet! Create one to organise your travel group</string>
+    <string name="subunit_empty_state">No subunits yet! Create one to organise your group</string>
     <string name="subunit_create">Create subunit</string>
     <string name="subunit_edit">Edit subunit</string>
     <string name="subunit_create_edit_title">Subunit</string>
@@ -18,6 +18,7 @@
     <string name="subunit_deleted_success">Subunit deleted</string>
     <string name="subunit_error_save_failed">Something went wrong. Try again</string>
     <string name="subunit_error_pro_required">Subunit creation requires SplitTrip Pro or a group created by a Pro subscriber.</string>
+    <string name="subunit_error_limit_reached">You\'ve reached the maximum number of subunits for this group.</string>
     <string name="subunit_error_delete_failed">Failed to delete subunit. Try again</string>
     <string name="subunit_delete_title">Delete Subunit?</string>
     <string name="subunit_delete_warning">Are you sure you want to delete \"%1$s\"?</string>
@@ -48,5 +49,15 @@
         <item quantity="one">%d member</item>
         <item quantity="other">%d members</item>
     </plurals>
+
+    <!-- Step Info Bottom Sheet -->
+    <string name="subunit_step_info_name_title">Subunit name</string>
+    <string name="subunit_step_info_name_description">Give this subunit a clear name (like \"Family\" or \"Alex &amp; Sam\") so it\'s easy to recognise when splitting expenses or checking group balances.\n\nThis step is required. You can rename the subunit anytime later.</string>
+    <string name="subunit_step_info_members_title">Subunit members</string>
+    <string name="subunit_step_info_members_description">Select at least one group member to include in this subunit. Members of a subunit share a combined balance and can split expenses together.\n\nThis step is required. Each member can only belong to one subunit at a time, so members already assigned to another subunit appear disabled.</string>
+    <string name="subunit_step_info_shares_title">Member shares</string>
+    <string name="subunit_step_info_shares_description">Set the percentage each member covers within the subunit. Shares start divided evenly among the selected members and must add up to 100%.\n\nEditing a member\'s share automatically locks it and redistributes the remaining percentage across unlocked members. Tap the lock icon at any time to pin or unpin a share.</string>
+    <string name="subunit_step_info_review_title">Review &amp; confirm</string>
+    <string name="subunit_step_info_review_description">Check the subunit name, selected members, and percentage shares before saving.\n\nWant to adjust something now? Tap any completed step in the top bar or press \"Back\". You can also edit or delete the subunit later from Subunits management.</string>
 </resources>
 

@@ -6,7 +6,7 @@ This article defines the ubiquitous language for the SplitTrip domain model, pro
 
 | English | Spanish | Definition |
 | :--- | :--- | :--- |
-| **Group** | Grupo | A collection of users sharing a trip or event where expenses are tracked together. |
+| **Group** | Grupo | A collection of users sharing expenses together, whether for everyday life (couples, flatmates, households), events, or trips. |
 | **User** | Usuario | A person interacting with the application. Can be registered or a guest. |
 | **Subunit** | Subunidad | A distinct subset of group members (e.g., a couple or family) that can share expenses collectively. |
 | **Expense** | Gasto | A financial cost incurred by one or more members on behalf of others in the group. |
@@ -51,7 +51,7 @@ This article defines the ubiquitous language for the SplitTrip domain model, pro
 - **Always use "Acuerdo de pago" or "Consenso de pagos"**.
   - **Never use "Liquidación"**. In traditional financial tools, "liquidación" implies an aggressive unilateral clearance, debt foreclosure, or clearance sale. In SplitTrip, debt resolution is a collaborative consensus agreement between peers (proposing a payment, payer marking it as sent, payee confirming receipt, or requesting a review).
 - **Always use "Your Position" / "Tu posición" (or "Tu balance")**.
-  - **Never use "My Position" / "Mi posición"**. The application addresses the traveler in a natural, respectful second person ("Tu posición", "Tus preferencias"), avoiding first-person self-labeling.
+  - **Never use "My Position" / "Mi posición"**. The application addresses the user in a natural, respectful second person ("Tu posición", "Tus preferencias"), avoiding first-person self-labeling.
 - **Always use "Balance"**. Never use "Saldo" or "Posición neta" to keep the terminology approachable and less aggressively financial.
 - **Always use "Pocket" / "Pocket del grupo" / "Pocket virtual"**. Never use "Bote", "Bolsa", or "Cuenta" to ensure a consistent, branded, and modern concept for the group's collective pool.
 - **Always use "Adicional" for AddOnMode.ON_TOP (English: "On top")**.
@@ -59,4 +59,5 @@ This article defines the ubiquitous language for the SplitTrip domain model, pro
 - **Always use "Ya incluido" (in form fields/selectors) or "Incluido" (in compact badges) for AddOnMode.INCLUDED (English: "Already included" / "Included")**.
 - **Always use "Pedir revisión" / "Solicitar revisión" (action) and "En revisión" (status)** (English: **"Request review"** / **"Under review"**).
   - **Never use "Disputar" / "Disputa" / "Disputado"**. In Spanish, *"disputar"* conveys sports competition or legal litigation rather than collaborative peer consensus. Use *"Pedir revisión"* for compact action buttons, *"Solicitar revisión del pago"* for modal/dialog headers, and *"En revisión"* for status chips and section headings. (Internal enum `SettlementStatus.DISPUTED` and Firestore fields `disputedBy` / `disputeReason` are preserved for backward compatibility.)
+- **Always use group-neutral terminology ("Group" / "Grupo", "Member" / "Miembro", "End Group" / "Finalizar grupo")** in generic in-app flows instead of trip-locked phrasing (*"End Trip"*, *"Finalizar viaje"*, *"Compañeros de viaje"*), while preserving travel terminology for travel-specific expense subcategories and paired everyday + travel examples.
 - Maintain consistency across all UI text, push notifications, error messages, and API responses.

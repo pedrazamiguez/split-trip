@@ -18,7 +18,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.Share
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_APPLIED_FILTER_CRITERIA
 import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_EXPENSE_ADDED
-import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_INITIAL_FILTER_CRITERIA
 import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_RESET_FILTERS_REQUESTED
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.ExpensesScreen
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.ExpensesViewModel
@@ -59,7 +58,7 @@ fun ExpensesFeature(
 
     LaunchedEffect(expensesBackStackEntry, uiState.filterCriteria) {
         expensesBackStackEntry?.savedStateHandle?.set(
-            KEY_INITIAL_FILTER_CRITERIA,
+            Routes.KEY_EXPENSE_FILTER_CRITERIA,
             uiState.filterCriteria
         )
     }

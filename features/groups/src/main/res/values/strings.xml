@@ -1,6 +1,6 @@
 <resources>
     <string name="groups_title">Groups</string>
-    <string name="groups_subtitle">Travel companions</string>
+    <string name="groups_subtitle">Shared groups</string>
     <string name="groups_not_found">No groups yet! Create one and start splitting costs</string>
     <string name="groups_error_loading">Couldn\'t load your groups. Please try again later</string>
     <string name="groups_anonymous_warning">Using guest account. Link your account in Settings to prevent data loss.</string>
@@ -28,7 +28,7 @@
     <string name="group_field_name_required">Hey! Give your group a name</string>
     <string name="group_field_currency">Main currency</string>
     <string name="group_field_extra_currencies">Other currencies</string>
-    <string name="group_field_extra_currencies_hint">Add the currencies you\'ll use on your trip</string>
+    <string name="group_field_extra_currencies_hint">Add any extra currencies your group will use</string>
     <string name="group_extra_currency_search">Search currency</string>
     <string name="group_extra_currency_search_hint">e.g. USD, EUR, Pound…</string>
     <string name="group_extra_currency_remove">Remove currency</string>
@@ -42,10 +42,10 @@
     <string name="group_error_name_empty">Hey! Your group needs a name</string>
     <string name="group_error_creation_failed">Oops! Something went wrong. Try again</string>
     <string name="group_error_load_currencies">Couldn\'t load currencies. Are you online?</string>
-    <string name="group_created_success">Done! \"%1$s\" is ready for the trip</string>
+    <string name="group_created_success">Done! \"%1$s\" is ready to go</string>
     <plurals name="group_members_count">
-        <item quantity="one">%d traveller</item>
-        <item quantity="other">%d travellers</item>
+        <item quantity="one">%d member</item>
+        <item quantity="other">%d members</item>
     </plurals>
     <string name="group_delete_title">Delete Group?</string>
     <string name="group_delete_warning">Are you sure you want to delete \"%1$s\"? This will remove all expenses and cannot be undone.</string>
@@ -57,7 +57,7 @@
     <string name="action_delete_group">Delete group</string>
     <string name="action_select_active_group">Select as active group</string>
     <string name="action_deselect_group">Deselect group</string>
-    <string name="group_archived_successfully">Trip ended successfully</string>
+    <string name="group_archived_successfully">Group ended successfully</string>
 
     <!-- Group Detail screen -->
     <string name="group_detail_select_as_active">Set as active group</string>
@@ -86,7 +86,7 @@
     <string name="group_field_members">Members</string>
     <string name="group_member_search">Search by email</string>
     <string name="group_member_search_hint">Type a member\'s email address</string>
-    <string name="group_member_search_helper">Add travel companions by their email address</string>
+    <string name="group_member_search_helper">Add group members by their email address</string>
     <string name="group_member_search_no_results">No user found with that email</string>
     <string name="group_member_remove">Remove member</string>
     <string name="group_member_clear_search">Clear search</string>
@@ -124,15 +124,15 @@
     <string name="group_image_step_uploading">Uploading image…</string>
 
     <!-- Unregistered members display names step -->
-    <string name="group_wizard_step_unregistered_names">Travellers</string>
-    <string name="group_unregistered_names_title">Unregistered travellers</string>
+    <string name="group_wizard_step_unregistered_names">Names</string>
+    <string name="group_unregistered_names_title">Unregistered members</string>
     <string name="group_unregistered_names_subtitle">Assign display names for people who aren\'t registered yet so they are easier to recognise in splits and balances.</string>
 
     <!-- Guest limits/gating -->
     <string name="group_error_limit_groups_exceeded">Free accounts allow 1 group. Upgrade to SplitTrip Pro to create more.</string>
     <string name="group_error_limit_members_exceeded">Free groups allow up to 4 members. Upgrade to SplitTrip Pro to add more.</string>
     <string name="group_error_limit_members_registered_exceeded">Groups are limited to %1$d members.</string>
-    <string name="group_error_limit_cover_upload_disabled">Custom cover photos require SplitTrip Pro or a Pro group.</string>
+    <string name="group_error_limit_cover_upload_disabled">You\'ve used your monthly free uploads.</string>
 
     <!-- Edit Group -->
     <string name="group_edit_title">Edit group</string>
@@ -159,35 +159,6 @@
     <string name="group_leave_error_admin">As the group creator, you cannot leave the group. Delete it instead.</string>
     <string name="group_leave_error_general">Failed to leave the group. Please try again.</string>
 
-    <!-- Settlement Overview -->
-    <string name="settlement_overview_title">Settlements</string>
-    <string name="settlement_overview_subtitle">Review and resolve pending settlements before closing the trip</string>
-    <string name="settlement_overview_section_pending">Pending</string>
-    <string name="settlement_overview_section_disputed">Under review</string>
-    <string name="settlement_overview_section_resolved">Resolved</string>
-    <string name="settlement_overview_empty">All settlements resolved</string>
-    <string name="settlement_overview_confirm">Confirm</string>
-    <string name="settlement_overview_dispute">Request review</string>
-    <string name="settlement_overview_dispute_title">Request Settlement Review</string>
-    <string name="settlement_overview_dispute_reason_hint">Describe what needs to be reviewed…</string>
-    <string name="settlement_overview_dispute_submit">Request Review</string>
-    <string name="settlement_overview_dispute_cancel">Cancel</string>
-    <string name="settlement_overview_dispute_success">Review requested successfully</string>
-    <string name="settlement_overview_confirm_success">Settlement confirmed successfully</string>
-    <string name="settlement_overview_close_trip">Close Trip</string>
-    <string name="settlement_overview_closing_trip">Closing trip…</string>
-    <string name="settlement_overview_trip_closed">Trip closed successfully!</string>
-    <string name="settlement_overview_error_confirm">Failed to confirm settlement. Please try again</string>
-    <string name="settlement_overview_error_dispute">Failed to request review. Please try again</string>
-    <string name="settlement_overview_error_archive">Failed to close the trip. Please try again</string>
-    <string name="settlement_overview_error_loading">Couldn\'t load settlement data. Please try again</string>
-    <string name="settlement_overview_status_suggested">Pending</string>
-    <string name="settlement_overview_status_confirmed_by_payer">Awaiting Payee</string>
-    <string name="settlement_overview_status_disputed">Under review</string>
-    <string name="settlement_overview_status_resolved">Resolved</string>
-    <string name="settlement_overview_direction_owes_you">%1$s owes you</string>
-    <string name="settlement_overview_direction_you_owe">You owe %1$s</string>
-    <string name="settlement_overview_direction_other_owes">%1$s owes %2$s</string>
     <!-- Leave Group Wizard -->
     <string name="leave_wizard_step_balance">Balances</string>
     <string name="leave_wizard_step_settlements">Settlements</string>
@@ -221,14 +192,28 @@
     <string name="leave_wizard_unresolved_settlements_error">There are pending settlements that must be resolved before leaving.</string>
     <string name="leave_wizard_settlement_section_your_action">Your Action Required</string>
     <string name="leave_wizard_settlement_section_waiting">Waiting on Others</string>
-    <string name="leave_wizard_balances_with_members">Balances with other travellers</string>
+    <string name="leave_wizard_balances_with_members">Balances with other members</string>
     <string name="leave_wizard_go_to_settlements">Go to Settlements</string>
 
     <!-- Group Cover Photo Upfront Gate -->
     <string name="group_cover_photo_locked_pro_badge">Pro</string>
-    <string name="group_cover_photo_locked_description">Cover photos require SplitTrip Pro. Tap to upgrade.</string>
+    <string name="group_cover_photo_locked_description">Upgrade to SplitTrip Pro for unlimited cover photos and receipts.</string>
 
     <!-- Group Member Capacity Indicator -->
     <string name="group_members_capacity_counter">%1$d/%2$d members</string>
     <string name="group_members_capacity_pro_upsell">Free limit (%1$d max). Tap to upgrade for up to 20 members.</string>
+
+    <!-- Step Info Bottom Sheet -->
+    <string name="group_step_info_info_title">Group details</string>
+    <string name="group_step_info_info_description">Enter a clear name for your group (like \"Shared Flat\" or \"Summer Holiday\") and an optional short description.\n\nThe group name is required; the description is optional and starts empty. You can update both later from Edit group.</string>
+    <string name="group_step_info_currency_title">Currencies</string>
+    <string name="group_step_info_currency_description">Choose the main currency used for group totals and balances (pre-filled with your default currency).\n\nYou can also add optional extra currencies if the group will log expenses or withdrawals in more than one currency. When editing a group, currencies already used in existing transactions stay locked so past records remain accurate.</string>
+    <string name="group_step_info_members_title">Group members</string>
+    <string name="group_step_info_members_description">Invite people to your group by searching their email address or scanning their SplitTrip QR code. You can also add someone who doesn\'t have an account yet by typing their email.\n\nThis step is optional: you can start alone and add members later. Free groups support up to 4 members, while SplitTrip Pro supports up to 20. When editing, the group creator and members with unsettled balances can\'t be removed.</string>
+    <string name="group_step_info_unregistered_names_title">Unregistered member names</string>
+    <string name="group_step_info_unregistered_names_description">Shown only when you\'ve added members who aren\'t registered on SplitTrip yet. Assign a friendly display name for each email address so everyone is easy to recognise in splits and balances.\n\nThis step is optional: if you leave a name blank, their email address will be shown until they join.</string>
+    <string name="group_step_info_image_title">Cover photo</string>
+    <string name="group_step_info_image_description">Personalise your group with a cover photo from your camera or gallery so it stands out in your group list.\n\nThis step is optional and starts empty. Cover uploads use your account\'s monthly upload allowance, or are unlimited with SplitTrip Pro. You can add, change, or remove the cover photo anytime later.</string>
+    <string name="group_step_info_review_title">Review &amp; confirm</string>
+    <string name="group_step_info_review_description">Check your group name, description, currencies, members, and cover photo before saving.\n\nWant to change something now? Tap any completed step in the top bar or press \"Back\". You can also edit group details, currencies, and members later from the group detail screen.</string>
 </resources>

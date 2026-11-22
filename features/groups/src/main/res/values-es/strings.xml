@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="groups_title">Grupos</string>
-    <string name="groups_subtitle">Compañeros de viaje</string>
+    <string name="groups_subtitle">Grupos compartidos</string>
     <string name="groups_not_found">¡Aún no tienes ningún grupo! Crea uno y empieza a compartir gastos</string>
     <string name="groups_error_loading">No pudimos cargar tus grupos. Inténtalo de nuevo más tarde</string>
     <string name="groups_anonymous_warning">Usando cuenta de invitado. Vincula tu cuenta en Ajustes para evitar perder datos.</string>
@@ -29,7 +29,7 @@
     <string name="group_field_name_required">¡Ey! Dale un nombre a tu grupo</string>
     <string name="group_field_currency">Moneda principal</string>
     <string name="group_field_extra_currencies">Otras monedas</string>
-    <string name="group_field_extra_currencies_hint">Añade las monedas que usaréis en el viaje</string>
+    <string name="group_field_extra_currencies_hint">Añade las monedas adicionales que usará el grupo</string>
     <string name="group_extra_currency_search">Buscar moneda</string>
     <string name="group_extra_currency_search_hint">ej. USD, MXN, Libra…</string>
     <string name="group_extra_currency_remove">Quitar moneda</string>
@@ -43,10 +43,10 @@
     <string name="group_error_name_empty">¡Ey! Tu grupo necesita un nombre</string>
     <string name="group_error_creation_failed">¡Ups! Algo falló al crear el grupo. Inténtalo de nuevo</string>
     <string name="group_error_load_currencies">No pudimos cargar las monedas. ¿Tienes conexión?</string>
-    <string name="group_created_success">¡Listo! \"%1$s\" está preparado para el viaje</string>
+    <string name="group_created_success">¡Listo! \"%1$s\" está preparado</string>
     <plurals name="group_members_count">
-        <item quantity="one">%d viajero</item>
-        <item quantity="other">%d viajeros</item>
+        <item quantity="one">%d miembro</item>
+        <item quantity="other">%d miembros</item>
     </plurals>
     <string name="group_delete_title">¿Eliminar grupo?</string>
     <string name="group_delete_warning">¿Seguro que quieres eliminar \"%1$s\"? Se borrarán todos los gastos y no podrás deshacerlo.</string>
@@ -58,7 +58,7 @@
     <string name="action_delete_group">Eliminar grupo</string>
     <string name="action_select_active_group">Seleccionar como grupo activo</string>
     <string name="action_deselect_group">Deseleccionar grupo</string>
-    <string name="group_archived_successfully">Viaje finalizado correctamente</string>
+    <string name="group_archived_successfully">Grupo finalizado correctamente</string>
 
     <!-- Group Detail screen -->
     <string name="group_detail_select_as_active">Establecer como grupo activo</string>
@@ -87,7 +87,7 @@
     <string name="group_field_members">Miembros</string>
     <string name="group_member_search">Buscar por email</string>
     <string name="group_member_search_hint">Escribe el email de un miembro</string>
-    <string name="group_member_search_helper">Añade compañeros de viaje por su dirección de email</string>
+    <string name="group_member_search_helper">Añade miembros al grupo por su dirección de email</string>
     <string name="group_member_search_no_results">No se encontró ningún usuario con ese email</string>
     <string name="group_member_remove">Quitar miembro</string>
     <string name="group_member_clear_search">Limpiar búsqueda</string>
@@ -125,15 +125,15 @@
     <string name="group_image_step_uploading">Subiendo imagen…</string>
 
     <!-- Unregistered members display names step -->
-    <string name="group_wizard_step_unregistered_names">Viajeros</string>
-    <string name="group_unregistered_names_title">Viajeros no registrados</string>
-    <string name="group_unregistered_names_subtitle">Asigna nombres para los viajeros que aún no están registrados, así será más fácil identificarlos en los gastos y balances.</string>
+    <string name="group_wizard_step_unregistered_names">Nombres</string>
+    <string name="group_unregistered_names_title">Miembros no registrados</string>
+    <string name="group_unregistered_names_subtitle">Asigna nombres para las personas que aún no están registradas, así será más fácil identificarlas en los gastos y balances.</string>
 
     <!-- Guest limits/gating -->
     <string name="group_error_limit_groups_exceeded">Las cuentas gratuitas permiten 1 grupo. Mejora a SplitTrip Pro para crear más.</string>
     <string name="group_error_limit_members_exceeded">Los grupos gratuitos admiten hasta 4 miembros. Mejora a SplitTrip Pro para añadir más.</string>
     <string name="group_error_limit_members_registered_exceeded">Los grupos están limitados a %1$d miembros.</string>
-    <string name="group_error_limit_cover_upload_disabled">Las portadas personalizadas requieren SplitTrip Pro o un grupo Pro.</string>
+    <string name="group_error_limit_cover_upload_disabled">Has agotado tus subidas gratuitas de este mes.</string>
 
     <!-- Edit Group -->
     <string name="group_edit_title">Editar grupo</string>
@@ -160,35 +160,6 @@
     <string name="group_leave_error_admin">Como creador del grupo, no puedes abandonarlo. Elimínalo en su lugar.</string>
     <string name="group_leave_error_general">No se pudo abandonar el grupo. Inténtalo de nuevo.</string>
 
-    <!-- Settlement Overview -->
-    <string name="settlement_overview_title">Acuerdos de pago</string>
-    <string name="settlement_overview_subtitle">Revisa y resuelve los acuerdos de pago pendientes antes de cerrar el viaje</string>
-    <string name="settlement_overview_section_pending">Pendientes</string>
-    <string name="settlement_overview_section_disputed">En revisión</string>
-    <string name="settlement_overview_section_resolved">Resueltas</string>
-    <string name="settlement_overview_empty">Todos los acuerdos de pago resueltos</string>
-    <string name="settlement_overview_confirm">Confirmar</string>
-    <string name="settlement_overview_dispute">Pedir revisión</string>
-    <string name="settlement_overview_dispute_title">Solicitar revisión del pago</string>
-    <string name="settlement_overview_dispute_reason_hint">Describe qué debe revisarse…</string>
-    <string name="settlement_overview_dispute_submit">Pedir revisión</string>
-    <string name="settlement_overview_dispute_cancel">Cancelar</string>
-    <string name="settlement_overview_dispute_success">Revisión solicitada correctamente</string>
-    <string name="settlement_overview_confirm_success">Acuerdo de pago confirmado correctamente</string>
-    <string name="settlement_overview_close_trip">Cerrar viaje</string>
-    <string name="settlement_overview_closing_trip">Cerrando viaje…</string>
-    <string name="settlement_overview_trip_closed">¡Viaje cerrado correctamente!</string>
-    <string name="settlement_overview_error_confirm">Error al confirmar el acuerdo de pago. Inténtalo de nuevo</string>
-    <string name="settlement_overview_error_dispute">No se pudo solicitar la revisión. Inténtalo de nuevo</string>
-    <string name="settlement_overview_error_archive">Error al cerrar el viaje. Inténtalo de nuevo</string>
-    <string name="settlement_overview_error_loading">No pudimos cargar los datos de los acuerdos de pago. Inténtalo de nuevo</string>
-    <string name="settlement_overview_status_suggested">Pendiente</string>
-    <string name="settlement_overview_status_confirmed_by_payer">Esperando cobrador</string>
-    <string name="settlement_overview_status_disputed">En revisión</string>
-    <string name="settlement_overview_status_resolved">Resuelta</string>
-    <string name="settlement_overview_direction_owes_you">%1$s te debe</string>
-    <string name="settlement_overview_direction_you_owe">Debes a %1$s</string>
-    <string name="settlement_overview_direction_other_owes">%1$s debe a %2$s</string>
     <!-- Leave Group Wizard -->
     <string name="leave_wizard_step_balance">Balances</string>
     <string name="leave_wizard_step_settlements">Acuerdos de pago</string>
@@ -222,14 +193,28 @@
     <string name="leave_wizard_unresolved_settlements_error">Tienes acuerdos de pago pendientes que deben resolverse antes de poder salir.</string>
     <string name="leave_wizard_settlement_section_your_action">Tu acción requerida</string>
     <string name="leave_wizard_settlement_section_waiting">Esperando a otros</string>
-    <string name="leave_wizard_balances_with_members">Balances con otros viajeros</string>
+    <string name="leave_wizard_balances_with_members">Balances con otros miembros</string>
     <string name="leave_wizard_go_to_settlements">Ir a Acuerdos de pago</string>
 
     <!-- Group Cover Photo Upfront Gate -->
     <string name="group_cover_photo_locked_pro_badge">Pro</string>
-    <string name="group_cover_photo_locked_description">Las fotos de portada requieren SplitTrip Pro. Toca para desbloquear.</string>
+    <string name="group_cover_photo_locked_description">Mejora a SplitTrip Pro para subir portadas y recibos ilimitados.</string>
 
     <!-- Group Member Capacity Indicator -->
     <string name="group_members_capacity_counter">%1$d/%2$d miembros</string>
     <string name="group_members_capacity_pro_upsell">Límite Gratis (máx. %1$d). Toca para ampliar hasta 20 miembros con Pro.</string>
+
+    <!-- Step Info Bottom Sheet -->
+    <string name="group_step_info_info_title">Datos del grupo</string>
+    <string name="group_step_info_info_description">Introduce un nombre claro para el grupo (como \"Piso compartido\" o \"Vacaciones de verano\") y una breve descripción opcional.\n\nEl nombre del grupo es obligatorio; la descripción es opcional y empieza vacía. Puedes cambiar ambos más adelante desde Editar grupo.</string>
+    <string name="group_step_info_currency_title">Monedas</string>
+    <string name="group_step_info_currency_description">Elige la moneda principal que se usará para los totales y balances del grupo (preseleccionada con tu moneda por defecto).\n\nTambién puedes añadir otras monedas opcionales si el grupo va a registrar gastos o retiradas en más de una divisa. Al editar un grupo, las monedas que ya se usan en transacciones existentes permanecen bloqueadas para mantener la precisión del historial.</string>
+    <string name="group_step_info_members_title">Miembros del grupo</string>
+    <string name="group_step_info_members_description">Invita a personas a tu grupo buscando su correo electrónico o escaneando su código QR de SplitTrip. También puedes añadir a alguien que aún no tenga cuenta escribiendo su correo.\n\nEste paso es opcional: puedes empezar solo y añadir miembros más adelante. Los grupos gratuitos admiten hasta 4 miembros, mientras que SplitTrip Pro admite hasta 20. Al editar, el creador del grupo y los miembros con balances pendientes no se pueden eliminar.</string>
+    <string name="group_step_info_unregistered_names_title">Nombres de miembros no registrados</string>
+    <string name="group_step_info_unregistered_names_description">Solo aparece cuando has añadido miembros que aún no están registrados en SplitTrip. Asigna un nombre visible a cada correo electrónico para identificarlos fácilmente en los repartos y balances.\n\nEste paso es opcional: si dejas un nombre en blanco, se mostrará su correo hasta que se unan.</string>
+    <string name="group_step_info_image_title">Foto de portada</string>
+    <string name="group_step_info_image_description">Personaliza tu grupo con una foto de portada desde tu cámara o galería para que destaque en tu lista de grupos.\n\nEste paso es opcional y empieza vacío. Las subidas de portada usan el cupo mensual de tu cuenta o son ilimitadas con SplitTrip Pro. Puedes añadir, cambiar o quitar la portada cuando quieras más adelante.</string>
+    <string name="group_step_info_review_title">Resumen y confirmación</string>
+    <string name="group_step_info_review_description">Comprueba el nombre del grupo, la descripción, las monedas, los miembros y la foto de portada antes de guardar.\n\n¿Quieres cambiar algo ahora? Toca cualquier paso completado en la barra superior o pulsa \"Atrás\". También puedes editar los datos, monedas y miembros del grupo más adelante desde su pantalla de detalle.</string>
 </resources>

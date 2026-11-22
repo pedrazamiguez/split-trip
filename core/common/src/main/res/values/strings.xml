@@ -3,7 +3,7 @@
     
     <string name="support_email_subject">SplitTrip Bug Report</string>
     <string name="support_email_feature_subject">SplitTrip Feature Request</string>
-    <string name="support_email_feature_body_template">What feature would you like to see?\n\n\nHow would this feature help you on your trips?\n\n</string>
+    <string name="support_email_feature_body_template">What feature would you like to see?\n\n\nHow would this feature help you and your groups?\n\n</string>
     <string name="support_email_contact_subject">SplitTrip Support Request</string>
     <string name="support_email_contact_body_template">How can we help you?\n\n\nWhat happened or what questions do you have?\n\n</string>
     <string name="support_email_system_info_header">System Info (Do not modify):</string>

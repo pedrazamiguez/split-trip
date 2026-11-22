@@ -57,4 +57,18 @@
     <string name="contribution_detail_scope_personal_desc">Fondô reçerbáô êppeçíficamente pa gâttô perçonalê</string>
     <string name="contribution_detail_scope_group_desc">Fondô der pockêh der grupo dîpponiblê pa tôh lô gâttô</string>
     <string name="contribution_detail_scope_subunit_desc">Fondô reçerbáô pa la çubunidá %1$s</string>
+    <string name="contribution_step_info_amount_title">Importe de la aportaçión</string>
+    <string name="contribution_step_info_amount_description">Introduçe cuánto dinero çe añade ar pockêh der grupo en la moneda prinçipâh der grupo.\n\nÊtte paço êh obligatorio y el importe debe çêh mayôh que çero. Lâ aportaçionê aumentan er çardo der pockêh con er que çe pagan lô gâttô compartíô.</string>
+    <string name="contribution_step_info_scope_title">Miembro y ámbito</string>
+    <string name="contribution_step_info_scope_description">Elihe qué miembro añade lô fondô (por defêtto tú) y a quién çe le acredita en lô balançê der grupo (por defêtto \"Çolo pa ti\").</string>
+    <string name="contribution_step_info_scope_item_for_group_title">Pa tó er grupo</string>
+    <string name="contribution_step_info_scope_item_for_group_description">Añade fondô ar pockêh compartío pa tôh, acreditáô ar conhunto der grupo.</string>
+    <string name="contribution_step_info_scope_item_for_subunit_title">Pa una çubunidá</string>
+    <string name="contribution_step_info_scope_item_for_subunit_description">Apareçe cuando er miembro çelêççionao perteneçe a una çubunidá. Acredita er balançe compartío de eça çubunidá.</string>
+    <string name="contribution_step_info_scope_item_for_you_title">Çolo pa ti</string>
+    <string name="contribution_step_info_scope_item_for_you_description">Acredita er çardo perçonâh der miembro çelêççionao pa cubrîh çu propia parte de lô gâttô der grupo.</string>
+    <string name="contribution_step_info_date_title">Fexa de la aportaçión</string>
+    <string name="contribution_step_info_date_description">Elihe la fexa y ora en la que çe realiçó êtta aportaçión. Por defêtto çe çelêççiona la fexa y ora âttualê.\n\nMantenêh lâ fexâ preçiçâ façilita çegîh el îttoriâh de aportaçionê en la pêttaña de Balançê.</string>
+    <string name="contribution_step_info_review_title">Reçumen y confirmaçión</string>
+    <string name="contribution_step_info_review_description">Comprueba el importe, er miembro contribuyente, el ámbito y la fexa antê de guardâh la aportaçión.\n\n¿Quierê ahûttâh argo aora? Toca cuarquiêh paço completao en la barra çuperiôh o purça \"Atrâh\". También puedê editâh o eliminâh aportaçionê manualê mâh adelante dêdde la pêttaña de Balançê.</string>
 </resources>

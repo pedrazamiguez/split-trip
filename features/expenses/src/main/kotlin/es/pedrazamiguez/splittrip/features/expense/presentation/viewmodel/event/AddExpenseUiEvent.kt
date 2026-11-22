@@ -40,9 +40,10 @@ sealed interface AddExpenseUiEvent {
     data object DismissAutoFillBanner : AddExpenseUiEvent
 
     /**
-     * Signals the Feature layer to show the receipt source selection sheet
-     * (camera / gallery / document). Handled in [AddExpenseFeature] before
-     * reaching the ViewModel so the ViewModel stays context-free.
+     * Signals a request to show the receipt source selection sheet
+     * (camera / gallery / document). Evaluated by [AddExpenseViewModel] /
+     * [FormEventHandler] against the manual receipt quota before emitting
+     * [AddExpenseUiAction.OpenReceiptPickerSource].
      */
     data object RequestPickerSource : AddExpenseUiEvent
     data object ViewReceiptFullScreen : AddExpenseUiEvent

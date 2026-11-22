@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.BiometricAuthService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.impl.AppConfigServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.GetDiagnosticLogsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.impl.GetDiagnosticLogsUseCaseImpl
@@ -31,6 +32,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePi
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObservePlanAllowancesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetActiveAiEngineUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppThemeUseCase
@@ -60,6 +62,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetShouldShowLangu
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetUserDefaultCurrencyUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.IsOnboardingCompleteUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.ObserveDeveloperAccessUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.ObservePlanAllowancesUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetActiveAiEngineUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetAppLanguageUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetAppThemeUseCaseImpl
@@ -255,6 +258,13 @@ val settingsDomainModule = module {
             authenticationService = get<AuthenticationService>(),
             appConfigService = get<AppConfigService>(),
             isDebugBuild = BuildConfig.DEBUG
+        )
+    }
+
+    factory<ObservePlanAllowancesUseCase> {
+        val featureGateService = get<FeatureGateService>()
+        ObservePlanAllowancesUseCaseImpl(
+            featureGateService = featureGateService
         )
     }
 

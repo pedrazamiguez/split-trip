@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.expense.factory
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
@@ -11,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
 import es.pedrazamiguez.splittrip.domain.usecase.expense.strategy.AddExpensePersistStrategy
 import es.pedrazamiguez.splittrip.domain.usecase.expense.strategy.PersistExpenseStrategy
 import es.pedrazamiguez.splittrip.domain.usecase.expense.strategy.UpdateExpensePersistStrategy
+import java.time.YearMonth
 
 class PersistExpenseStrategyFactory(
     private val expenseRepository: ExpenseRepository,
@@ -20,7 +22,9 @@ class PersistExpenseStrategyFactory(
     private val groupMembershipService: GroupMembershipService,
     private val contributionRepository: ContributionRepository,
     private val authenticationService: AuthenticationService,
-    private val addOnCalculationService: AddOnCalculationService
+    private val addOnCalculationService: AddOnCalculationService,
+    private val userPreferenceRepository: UserPreferenceRepository,
+    private val yearMonthProvider: () -> YearMonth = { YearMonth.now() }
 ) {
     fun create(isUpdate: Boolean): PersistExpenseStrategy {
         return if (isUpdate) {
@@ -32,7 +36,9 @@ class PersistExpenseStrategyFactory(
                 groupMembershipService,
                 contributionRepository,
                 authenticationService,
-                addOnCalculationService
+                addOnCalculationService,
+                userPreferenceRepository,
+                yearMonthProvider
             )
         } else {
             AddExpensePersistStrategy(
@@ -43,7 +49,9 @@ class PersistExpenseStrategyFactory(
                 groupMembershipService,
                 contributionRepository,
                 authenticationService,
-                addOnCalculationService
+                addOnCalculationService,
+                userPreferenceRepository,
+                yearMonthProvider
             )
         }
     }

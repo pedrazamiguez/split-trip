@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -37,16 +38,14 @@ data class CreateEditGroupUiState(
     // Errors
     val error: UiText? = null,
     val isNameValid: Boolean = true,
-    val showUpgradeDialog: Boolean = false,
-    val upgradeDialogTitle: UiText? = null,
-    val upgradeDialogMessage: UiText? = null,
-    val upgradeEntrySource: String? = null,
+    val proPreviewPrompt: ProFeaturePreviewPrompt? = null,
     val isCreationBlocked: Boolean = false,
     val maxMembersLimit: Int = 4,
     val isGroupPro: Boolean = false,
 
     // Wizard
     val currentStep: CreateEditGroupStep = CreateEditGroupStep.INFO,
+    val isStepInfoSheetVisible: Boolean = false,
     val imageUrl: String? = null,
     val localGroupImagePath: String? = null,
     val showImageSourceSheet: Boolean = false,

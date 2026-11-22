@@ -18,13 +18,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -32,6 +30,8 @@ import coil3.request.crossfade
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.features.group.R
 
@@ -102,24 +102,13 @@ internal fun SelectedGroupCoverImage(
         if (showBadge) {
             when (status) {
                 GroupStatus.ACTIVE -> {
-                    Box(
+                    PassportTag(
+                        text = stringResource(R.string.group_active_badge),
+                        style = PassportTagStyle.SUCCESS,
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(MaterialTheme.spacing.Default)
-                            .clip(MaterialTheme.shapes.large)
-                            .background(MaterialTheme.colorScheme.secondaryContainer)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.group_active_badge),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.padding(
-                                horizontal = 10.dp,
-                                vertical = MaterialTheme.spacing.ExtraSmall
-                            )
-                        )
-                    }
+                    )
                 }
                 GroupStatus.ARCHIVED -> {
                     GroupArchivedTag(

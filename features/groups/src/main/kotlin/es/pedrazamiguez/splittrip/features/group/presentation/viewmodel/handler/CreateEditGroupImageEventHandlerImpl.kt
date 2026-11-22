@@ -1,20 +1,22 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
-import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
+import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackLimitGateBlocked
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
-import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -46,42 +48,35 @@ class CreateEditGroupImageEventHandlerImpl(
     override fun handleGroupImagePicked(uri: String) {
         scope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
-            featureGateService.isFeatureEnabled(
-                feature = GatedFeature.GROUP_COVER_UPLOAD,
-                groupId = initialGroup?.id
-            ).collect { isEnabled ->
-                if (!isEnabled) {
-                    telemetryTracker.trackFeatureGateBlocked(
-                        feature = GatedFeature.GROUP_COVER_UPLOAD,
-                        entryPoint = MonetizationTelemetry.GateEntryPoint.GROUP_COVER_PICK,
-                        upgradePrompted = true
+            val quota = featureGateService.observeMediaUploadQuota().first()
+            if (!quota.canUpload) {
+                telemetryTracker.trackLimitGateBlocked(
+                    limit = GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS,
+                    entryPoint = MonetizationTelemetry.GateEntryPoint.GROUP_COVER_PICK,
+                    upgradePrompted = quota.requiresUpgrade
+                )
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        proPreviewPrompt = ProFeaturePreviewPrompt(
+                            previewType = ProFeaturePreviewType.GROUP_COVER_PHOTO,
+                            entrySource = MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD
+                        )
                     )
-                    val errorRes = UiText.StringResource(R.string.group_error_limit_cover_upload_disabled)
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = errorRes,
-                            showUpgradeDialog = true,
-                            upgradeDialogTitle = UiText.StringResource(DesignSystemR.string.upgrade_dialog_title),
-                            upgradeDialogMessage = errorRes,
-                            upgradeEntrySource = MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD
-                        )
-                    }
-                    _actions.emit(CreateEditGroupUiAction.ShowError(errorRes))
-                    return@collect
                 }
-                runCatching {
-                    groupImageStorageService.saveTempGroupImage(uri)
-                }.onSuccess { tempUri ->
-                    _uiState.update { it.copy(localGroupImagePath = tempUri, imageUrl = null, isLoading = false) }
-                }.onFailure { e ->
-                    Timber.e(e, "Failed to process group image")
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = UiText.StringResource(R.string.group_error_image_processing_failed)
-                        )
-                    }
+                return@launch
+            }
+            runCatching {
+                groupImageStorageService.saveTempGroupImage(uri)
+            }.onSuccess { tempUri ->
+                _uiState.update { it.copy(localGroupImagePath = tempUri, imageUrl = null, isLoading = false) }
+            }.onFailure { e ->
+                Timber.e(e, "Failed to process group image")
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        error = UiText.StringResource(R.string.group_error_image_processing_failed)
+                    )
                 }
             }
         }

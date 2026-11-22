@@ -28,6 +28,7 @@ import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.ManualReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.ExchangeRateCalculationServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
@@ -59,6 +60,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpens
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceiptQuotaUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ManualReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnCrudDelegate
@@ -309,9 +311,14 @@ class AddExpenseViewModelTest {
                 isProTier = true
             )
         )
+        val manualQuotaFlow = MutableStateFlow(
+            ManualReceiptQuota(usedAttachments = 0, monthlyFreeLimit = 5, isProTier = true)
+        )
         featureGateService = mockk<FeatureGateService>(relaxed = true) {
             every { observeAiReceiptQuota() } returns quotaFlow
+            every { observeManualReceiptQuota() } returns manualQuotaFlow
         }
+        val manualReceiptQuotaUiMapper = ManualReceiptQuotaUiMapper(resourceProvider)
 
         configHandler = ConfigEventHandler(
             getGroupExpenseConfigUseCase = getGroupExpenseConfigUseCase,
@@ -325,7 +332,8 @@ class AddExpenseViewModelTest {
             addExpenseUiMapper = addExpenseUiMapper,
             receiptExtractionService = mockReceiptExtractionService,
             featureGateService = featureGateService,
-            aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper
+            aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper,
+            manualReceiptQuotaUiMapper = manualReceiptQuotaUiMapper
         )
 
         submitHandler = SubmitEventHandler(
@@ -384,7 +392,10 @@ class AddExpenseViewModelTest {
         formHandler = FormEventHandler(
             addExpenseUiMapper = addExpenseUiMapper,
             addExpenseOptionsUiMapper = addExpenseOptionsMapper,
-            attachReceiptUseCase = attachReceiptUseCase
+            attachReceiptUseCase = attachReceiptUseCase,
+            featureGateService = featureGateService,
+            manualReceiptQuotaUiMapper = manualReceiptQuotaUiMapper,
+            telemetryTracker = mockk(relaxed = true)
         )
 
         receiptAutoFillEventHandler = ReceiptAutoFillEventHandler(
@@ -2296,7 +2307,7 @@ class AddExpenseViewModelTest {
         }
 
         @Test
-        fun `SetAiModeActive true when gated emits NavigateToSubscriptions action`() = runTest {
+        fun `SetAiModeActive true when gated emits ShowProFeaturePreview action`() = runTest {
             quotaFlow.value = AiReceiptQuota(
                 usedScans = 3,
                 monthlyLimit = 3,
@@ -2312,7 +2323,7 @@ class AddExpenseViewModelTest {
             viewModel.onEvent(AddExpenseUiEvent.SetAiModeActive(true))
             advanceUntilIdle()
 
-            assertTrue(actions.any { it is AddExpenseUiAction.NavigateToSubscriptions })
+            assertTrue(actions.any { it is AddExpenseUiAction.ShowProFeaturePreview })
             assertFalse(viewModel.uiState.value.isAiModeActive)
             job.cancel()
         }
@@ -2395,6 +2406,24 @@ class AddExpenseViewModelTest {
 
             assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
             assertFalse(viewModel.uiState.value.isDirty)
+        }
+    }
+
+    @Nested
+    inner class RequestPickerSourceGating {
+
+        @Test
+        fun `RequestPickerSource emits OpenReceiptPickerSource when quota allows`() = runTest {
+            val emitted = mutableListOf<AddExpenseUiAction>()
+            val job = launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { emitted.add(it) }
+            }
+
+            viewModel.onEvent(AddExpenseUiEvent.RequestPickerSource)
+            advanceUntilIdle()
+
+            assertTrue(emitted.contains(AddExpenseUiAction.OpenReceiptPickerSource))
+            job.cancel()
         }
     }
 }

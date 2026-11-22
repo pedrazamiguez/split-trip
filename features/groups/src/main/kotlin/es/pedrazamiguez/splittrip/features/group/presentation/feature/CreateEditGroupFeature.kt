@@ -84,7 +84,7 @@ fun CreateEditGroupFeature(
             createEditGroupViewModel.onEvent(CreateEditGroupUiEvent.UpgradeClicked, onSuccess)
         },
         onDismissUpgrade = {
-            createEditGroupViewModel.onEvent(CreateEditGroupUiEvent.DismissUpgradeDialog, onSuccess)
+            createEditGroupViewModel.onEvent(CreateEditGroupUiEvent.DismissProPreview, onSuccess)
         }
     )
 

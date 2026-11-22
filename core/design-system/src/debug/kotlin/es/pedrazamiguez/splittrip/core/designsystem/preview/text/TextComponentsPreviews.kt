@@ -35,7 +35,7 @@ private fun TextComponentsGalleryPreview() {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            ScreenTitleText(text = "My Trips (headlineLarge Bold)")
+            ScreenTitleText(text = "My Groups (headlineLarge Bold)")
             SheetTitleText(text = "Select a Group (titleLarge Bold)")
             SectionHeadingText(text = "Recent Expenses (titleMedium Bold)")
             CardSectionLabelText(text = "Due Date (titleSmall Bold)")
@@ -66,7 +66,7 @@ private fun TextComponentsLocalePreview() {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            ScreenTitleText(text = "My Trips")
+            ScreenTitleText(text = "My Groups")
             SheetTitleText(text = "Select a Group")
             SectionHeadingText(text = "Recent Expenses")
             CardSectionLabelText(text = "Due Date")
@@ -88,7 +88,7 @@ private fun TextComponentsLocalePreview() {
 private fun ScreenTitleTextPreview() {
     PreviewThemeWrapper {
         ScreenTitleText(
-            text = "Your Trips",
+            text = "Your Groups",
             modifier = Modifier.padding(16.dp)
         )
     }

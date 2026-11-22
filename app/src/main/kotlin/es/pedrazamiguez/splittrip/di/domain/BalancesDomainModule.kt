@@ -15,14 +15,17 @@ import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.CashDebtScalingService
 import es.pedrazamiguez.splittrip.domain.service.DebtSimplificationService
+import es.pedrazamiguez.splittrip.domain.service.ExpenseFilterService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
 import es.pedrazamiguez.splittrip.domain.service.PocketDebtDistributionService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import es.pedrazamiguez.splittrip.domain.service.SettlementReconciliationService
+import es.pedrazamiguez.splittrip.domain.service.SpendingInsightsService
 import es.pedrazamiguez.splittrip.domain.service.impl.CashDebtScalingServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.DebtSimplificationServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.PocketDebtDistributionServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.SettlementReconciliationServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.SpendingInsightsServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AreGroupSettlementsResolvedUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AreMemberSettlementsResolvedUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.ConfirmSettlementUseCase
@@ -36,6 +39,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetContributionByExpens
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupContributionsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupPocketBalanceFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSettlementsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSpendingInsightsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetSettlementSuggestionsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.AreGroupSettlementsResolvedUseCaseImpl
@@ -51,6 +55,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetContributionByE
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetGroupContributionsFlowUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetGroupPocketBalanceFlowUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetGroupSettlementsFlowUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetGroupSpendingInsightsFlowUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetMemberBalancesFlowUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetSettlementSuggestionsUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.settlement.GetNudgeTimestampsFlowUseCase
@@ -227,6 +232,38 @@ val balancesDomainModule = module {
             settlementNudgeRepository = get<SettlementNudgeRepository>(),
             appConfigService = get<AppConfigService>(),
             authenticationService = get<AuthenticationService>()
+        )
+    }
+
+    factory<SpendingInsightsService> {
+        val addOnCalculationService = get<AddOnCalculationService>()
+        val remainderDistributionService = get<RemainderDistributionService>()
+        SpendingInsightsServiceImpl(
+            addOnCalculationService = addOnCalculationService,
+            remainderDistributionService = remainderDistributionService
+        )
+    }
+
+    factory<GetGroupSpendingInsightsFlowUseCase> {
+        val groupRepository = get<GroupRepository>()
+        val expenseRepository = get<ExpenseRepository>()
+        val subunitRepository = get<SubunitRepository>()
+        val cashWithdrawalRepository = get<CashWithdrawalRepository>()
+        val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
+        val spendingInsightsService = get<SpendingInsightsService>()
+        val expenseFilterService = get<ExpenseFilterService>()
+        val authenticationService = get<AuthenticationService>()
+        val appConfigService = get<AppConfigService>()
+        GetGroupSpendingInsightsFlowUseCaseImpl(
+            groupRepository = groupRepository,
+            expenseRepository = expenseRepository,
+            subunitRepository = subunitRepository,
+            cashWithdrawalRepository = cashWithdrawalRepository,
+            getMemberProfilesUseCase = getMemberProfilesUseCase,
+            spendingInsightsService = spendingInsightsService,
+            expenseFilterService = expenseFilterService,
+            authenticationService = authenticationService,
+            appConfigService = appConfigService
         )
     }
 }

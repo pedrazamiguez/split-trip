@@ -16,6 +16,8 @@
     <string name="settings_account_status_description">Your account info</string>
     <string name="settings_account_subscriptions_title">Subscriptions</string>
     <string name="settings_account_subscriptions_description">Manage your plan</string>
+    <string name="settings_account_plan_allowances_title">Plan &amp; Allowances</string>
+    <string name="settings_account_plan_allowances_description">View your limits &amp; usage</string>
     <string name="settings_account_security_title">Security &amp; Privacy</string>
     <string name="settings_account_security_description">Keep your account secure</string>
 
@@ -195,24 +197,24 @@
     <string name="account_status_link_email_sheet_email">Email Address</string>
     <string name="account_status_link_email_sheet_error_email_empty">Email cannot be empty</string>
     <string name="settings_logout_guest_dialog_title">Reset Guest Session?</string>
-    <string name="settings_logout_guest_dialog_text">Resetting or logging out will permanently delete all local trips, expenses, and balances. Make sure you link your account first to save your data!</string>
+    <string name="settings_logout_guest_dialog_text">Resetting or logging out will permanently delete all local groups, expenses, and balances. Make sure you link your account first to save your data!</string>
     <!-- FAQ Screen -->
     <string name="faq_title">FAQs</string>
     <string name="faq_question_1">What is SplitTrip?</string>
-    <string name="faq_answer_1">SplitTrip is a modern expense-sharing and group bill-splitting application designed to make group travel, dinners, and events stress-free. It calculates balances, tracks spending, and reconciles debts offline or online.</string>
+    <string name="faq_answer_1">SplitTrip is a modern expense-sharing and group budgeting application designed to make shared living, everyday expenses, dinners, and group travel stress-free. It calculates balances, tracks spending, and reconciles debts offline or online.</string>
     <string name="faq_question_2">How does the offline-first mode work?</string>
     <string name="faq_answer_2">SplitTrip is built on an offline-first architecture. Any transaction or group edit you make is saved instantly to your local database (Room) and propagates to the UI immediately. When a network connection becomes available, changes are safely synchronised in the background to our Cloud Firestore databases.</string>
     <string name="faq_question_3">Can I use multiple currencies?</string>
-    <string name="faq_answer_3">Yes! SplitTrip fully supports multi-currency trips. You can set a default currency for your profile, specify currencies for individual expenses, and see automatically converted balances based on real-time exchange rates.</string>
+    <string name="faq_answer_3">Yes! SplitTrip fully supports multi-currency groups. You can set a default currency for your profile, specify currencies for individual expenses, and see automatically converted balances based on real-time exchange rates.</string>
     <string name="faq_question_4">Is my data secure?</string>
-    <string name="faq_answer_4">Absolutely. SplitTrip uses Firebase Authentication to authenticate users securely. Your personal information, trip details, and financial transactions are protected using industry-standard transit encryption and robust Firestore security rules.</string>
+    <string name="faq_answer_4">Absolutely. SplitTrip uses Firebase Authentication to authenticate users securely. Your personal information, group details, and financial transactions are protected using industry-standard transit encryption and robust Firestore security rules.</string>
     <string name="faq_question_5">How do I link my guest account?</string>
     <string name="faq_answer_5">If you started as a guest, you can go to Settings &gt; Account Status and link either a Google Account or an Email &amp; Password. This merges your local guest session with a permanent cloud-backed account so you never lose your data.</string>
 
     <!-- Privacy Policy Screen -->
     <string name="privacy_title">Privacy Policy</string>
     <string name="privacy_section_1_title">1. Information We Collect</string>
-    <string name="privacy_section_1_body">We collect authentication information when you sign up (email, profile name, profile image) and financial sharing details (trips, expense descriptions, amounts, and member lists) to facilitate debt calculations. We do not collect credit card details, bank credentials, or connect to banking APIs. Debt settlements are informational calculations and no money is transferred within the app. Guest accounts store this data only on your device.</string>
+    <string name="privacy_section_1_body">We collect authentication information when you sign up (email, profile name, profile image) and financial sharing details (groups, expense descriptions, amounts, and member lists) to facilitate debt calculations. We do not collect credit card details, bank credentials, or connect to banking APIs. Debt settlements are informational calculations and no money is transferred within the app. Guest accounts store this data only on your device.</string>
     <string name="privacy_section_2_title">2. How We Use Data</string>
     <string name="privacy_section_2_body">Your data is processed on-device and synchronised to the cloud for real-time group collaboration. We do not sell or monetise your transaction logs, payment methods, or personal information.</string>
     <string name="privacy_section_3_title">3. Data Security</string>
@@ -286,12 +288,12 @@
 
     <!-- Subscriptions Screen -->
     <string name="subscriptions_title">Subscriptions</string>
-    <string name="subscriptions_subtitle">Choose the plan that fits your travel style</string>
+    <string name="subscriptions_subtitle">Choose the plan that fits your groups</string>
     <string name="subscriptions_interval_monthly">Monthly</string>
     <string name="subscriptions_interval_annual">Annual</string>
     <string name="subscriptions_annual_save_badge">Save 25%</string>
     <string name="subscriptions_tier_free_title">SplitTrip Free</string>
-    <string name="subscriptions_tier_free_description">Essential expense sharing for casual trips</string>
+    <string name="subscriptions_tier_free_description">Essential expense sharing for everyday groups and trips</string>
     <string name="subscriptions_tier_free_price">0 €</string>
     <string name="subscriptions_tier_free_period">Free forever</string>
     <string name="subscriptions_tier_pro_title">SplitTrip Pro</string>
@@ -329,14 +331,43 @@
     <string name="subscriptions_restore_none_found">No active subscriptions found to restore.</string>
     <string name="subscriptions_billing_error">Unable to complete purchase. Please try again later.</string>
     <string name="subscriptions_service_unavailable">Subscription options are currently unavailable. Please try again later.</string>
-    <string name="subscriptions_complimentary_pro_manage_info">You have complimentary SplitTrip Pro access—no Google Play subscription to manage.</string>
+    <string name="subscriptions_complimentary_pro_manage_info">You have complimentary SplitTrip Pro access, so there is no Google Play subscription to manage.</string>
 
     <!-- Developer Diagnostics -->
-    <string name="developer_diagnostics_title">Diagnostic Logs</string>
-    <string name="developer_diagnostics_description">Export sanitized in-memory logs for bug diagnosis and troubleshooting.</string>
-    <string name="developer_diagnostics_copy_action">Copy Diagnostics</string>
     <string name="developer_diagnostics_copied">Diagnostic logs copied to clipboard</string>
     <string name="settings_developer_diagnostics_title">Diagnostic Logs</string>
     <string name="settings_developer_diagnostics_description">Copy sanitized logs for debugging</string>
+
+    <!-- Plan & Allowances Screen -->
+    <string name="plan_allowances_title">Plan &amp; Allowances</string>
+    <string name="plan_allowances_subtitle">Your quotas and included features</string>
+    <string name="plan_allowances_tier_free_subtitle">Track your monthly quotas and group allowances. Upgrade anytime for more.</string>
+    <string name="plan_allowances_tier_pro_subtitle">You have access to expanded allowances and all Pro features.</string>
+    <string name="plan_allowances_tier_ungated_title">All Features Unlocked</string>
+    <string name="plan_allowances_tier_ungated_subtitle">Plan limits are currently lifted. Enjoy full access to all SplitTrip features.</string>
+    <string name="plan_allowances_badge_free">Free</string>
+    <string name="plan_allowances_badge_pro">Pro</string>
+    <string name="plan_allowances_badge_unlimited">Unlimited</string>
+    <string name="plan_allowances_section_usage">Usage &amp; Quotas</string>
+    <string name="plan_allowances_section_allowances">Tier Allowances &amp; Perks</string>
+    <string name="plan_allowances_quota_ai_scans_title">AI Receipt Scans</string>
+    <string name="plan_allowances_quota_ai_scans_subtitle">Resets every calendar month</string>
+    <string name="plan_allowances_quota_media_uploads_title">Media Uploads</string>
+    <string name="plan_allowances_quota_media_uploads_subtitle">Receipts &amp; group covers · Resets monthly</string>
+    <string name="plan_allowances_quota_owned_groups_title">Owned Groups</string>
+    <string name="plan_allowances_quota_owned_groups_subtitle">Groups created by you</string>
+    <string name="plan_allowances_usage_fraction">%1$s / %2$s</string>
+    <string name="plan_allowances_usage_unlimited">%1$s used · Unlimited</string>
+    <string name="plan_allowances_status_remaining">%1$s left</string>
+    <string name="plan_allowances_status_exhausted">Limit reached</string>
+    <string name="plan_allowances_perk_members_title">Members per group</string>
+    <string name="plan_allowances_perk_members_detail">Up to %1$s</string>
+    <string name="plan_allowances_perk_subunits_title">Subunits per group</string>
+    <string name="plan_allowances_perk_subunits_detail">Up to %1$s</string>
+    <string name="plan_allowances_perk_ad_free_title">Ad-free experience</string>
+    <string name="plan_allowances_perk_status_included">Included</string>
+    <string name="plan_allowances_perk_status_pro_only">Pro</string>
+    <string name="plan_allowances_upgrade_title">Need higher limits?</string>
+    <string name="plan_allowances_upgrade_description">Upgrade to SplitTrip Pro for more groups, larger member limits, more AI receipt scans, unlimited media uploads, unlimited subunits, and an ad-free experience.</string>
 </resources>
 

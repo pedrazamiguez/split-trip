@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepInfoBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.subunit.presentation.component.SubunitWizard
 import es.pedrazamiguez.splittrip.features.subunit.presentation.viewmodel.event.CreateEditSubunitUiEvent
@@ -26,5 +27,14 @@ fun CreateEditSubunitScreen(
         } else {
             SubunitWizard(uiState = uiState, onEvent = onEvent)
         }
+    }
+
+    if (uiState.isStepInfoSheetVisible) {
+        WizardStepInfoBottomSheet(
+            titleRes = uiState.currentStep.infoTitleRes,
+            descriptionRes = uiState.currentStep.infoDescriptionRes,
+            infoItems = uiState.currentStep.infoItems,
+            onDismiss = { onEvent(CreateEditSubunitUiEvent.ToggleStepInfoSheet(visible = false)) }
+        )
     }
 }

@@ -75,11 +75,13 @@ val subunitsUiModule = module {
     factory { SubunitsTabGraphContributorImpl() } bind TabGraphContributor::class
     single {
         val observeSelectedGroupUseCase = get<ObserveSelectedGroupUseCase>()
+        val getGroupSubunitsFlowUseCase = get<GetGroupSubunitsFlowUseCase>()
         val featureGateService = get<FeatureGateService>()
         val upgradeNavigator = get<UpgradeNavigator>()
         val telemetryTracker = get<TelemetryTracker>()
         SubunitManagementScreenUiProviderImpl(
             observeSelectedGroupUseCase = observeSelectedGroupUseCase,
+            getGroupSubunitsFlowUseCase = getGroupSubunitsFlowUseCase,
             featureGateService = featureGateService,
             upgradeNavigator = upgradeNavigator,
             telemetryTracker = telemetryTracker

@@ -22,6 +22,7 @@ data class CreateEditSubunitUiState(
 
     // ── Wizard ──────────────────────────────────────────────────────────
     val currentStep: CreateEditSubunitStep = CreateEditSubunitStep.NAME,
+    val isStepInfoSheetVisible: Boolean = false,
     val initialFormSnapshot: CreateEditSubunitFormSnapshot? = null
 ) {
     val isDirty: Boolean

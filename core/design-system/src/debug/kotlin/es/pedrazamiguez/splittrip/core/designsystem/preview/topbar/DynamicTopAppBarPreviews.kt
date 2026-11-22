@@ -30,8 +30,8 @@ private fun DynamicTopAppBarStandardPreview() {
 private fun DynamicTopAppBarWithSubtitlePreview() {
     PreviewThemeWrapper {
         DynamicTopAppBar(
-            title = "Trip to Tokyo",
-            subtitle = "Japan 2026",
+            title = "Shared Apartment",
+            subtitle = "Household 2026",
             onBack = {},
             actions = {
                 IconButton(onClick = {}) {
@@ -47,7 +47,7 @@ private fun DynamicTopAppBarWithSubtitlePreview() {
 private fun DynamicTopAppBarLongTitlePreview() {
     PreviewThemeWrapper {
         DynamicTopAppBar(
-            title = "Summer Road Trip Across the Pacific Coast Highway 2026",
+            title = "Monthly Household & Shared Living Expenses Group 2026",
             subtitle = "Active group with 12 members and multi-currency balances",
             onBack = {},
             actions = {

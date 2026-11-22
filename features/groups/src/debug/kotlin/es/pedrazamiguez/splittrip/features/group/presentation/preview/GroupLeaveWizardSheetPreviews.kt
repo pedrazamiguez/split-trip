@@ -16,7 +16,7 @@ import kotlinx.collections.immutable.persistentListOf
 private fun GroupLeaveWizardSheetUnresolvedPreview() {
     PreviewThemeWrapper {
         GroupLeaveWizardSheet(
-            groupName = "Summer Trip",
+            groupName = "Shared Apartment",
             leaveWizardState = LeaveWizardUiState(
                 showSheet = true,
                 currentStep = LeaveWizardStep.BALANCE_SUMMARY,
@@ -53,7 +53,7 @@ private fun GroupLeaveWizardSheetUnresolvedPreview() {
 private fun GroupLeaveWizardSheetSettledPreview() {
     PreviewThemeWrapper {
         GroupLeaveWizardSheet(
-            groupName = "Summer Trip",
+            groupName = "Shared Apartment",
             leaveWizardState = LeaveWizardUiState(
                 showSheet = true,
                 currentStep = LeaveWizardStep.BALANCE_SUMMARY,
@@ -83,7 +83,7 @@ private fun GroupLeaveWizardSheetSettledPreview() {
 private fun GroupLeaveWizardSheetConfirmationStepPreview() {
     PreviewThemeWrapper {
         GroupLeaveWizardSheet(
-            groupName = "Summer Trip",
+            groupName = "Shared Apartment",
             leaveWizardState = LeaveWizardUiState(
                 showSheet = true,
                 currentStep = LeaveWizardStep.CONFIRMATION,

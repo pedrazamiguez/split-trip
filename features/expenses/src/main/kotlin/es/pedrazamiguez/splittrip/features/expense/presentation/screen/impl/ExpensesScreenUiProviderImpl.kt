@@ -16,7 +16,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debounced
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.BasketPlus
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartDonut
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartBar
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
@@ -30,7 +30,6 @@ import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
-import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_INITIAL_FILTER_CRITERIA
 import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_RESET_FILTERS_REQUESTED
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.dialog.ResetFiltersConfirmationDialog
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.list.ExpensesFilterActionButton
@@ -57,7 +56,7 @@ class ExpensesScreenUiProviderImpl(
         }
         val filterCriteriaFlow = remember(expensesBackStackEntry) {
             expensesBackStackEntry?.savedStateHandle
-                ?.getStateFlow(KEY_INITIAL_FILTER_CRITERIA, ExpenseFilterCriteria())
+                ?.getStateFlow(Routes.KEY_EXPENSE_FILTER_CRITERIA, ExpenseFilterCriteria())
         }
         val filterCriteria by filterCriteriaFlow?.collectAsStateWithLifecycle()
             ?: remember { mutableStateOf(ExpenseFilterCriteria()) }
@@ -81,15 +80,15 @@ class ExpensesScreenUiProviderImpl(
                         }
                     }
                 )
-                val onCategorySpendingClick = debounced {
-                    tabNavController.navigate(Routes.CATEGORY_SPENDING) {
+                val onSpendingInsightsClick = debounced {
+                    tabNavController.navigate(Routes.SPENDING_INSIGHTS) {
                         launchSingleTop = true
                     }
                 }
-                IconButton(onClick = onCategorySpendingClick) {
+                IconButton(onClick = onSpendingInsightsClick) {
                     Icon(
-                        imageVector = TablerIcons.Outline.ChartDonut,
-                        contentDescription = stringResource(R.string.expenses_category_spending_title)
+                        imageVector = TablerIcons.Outline.ChartBar,
+                        contentDescription = stringResource(R.string.expenses_spending_insights_cd)
                     )
                 }
                 ProfileAvatarButton(

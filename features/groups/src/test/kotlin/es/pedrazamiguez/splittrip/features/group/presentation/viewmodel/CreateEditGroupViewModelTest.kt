@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
@@ -12,9 +14,9 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.EmailValidationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
-import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedLimit
 import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
+import es.pedrazamiguez.splittrip.domain.service.featuregate.MediaUploadQuota
 import es.pedrazamiguez.splittrip.domain.service.impl.EmailValidationServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.currency.GetSupportedCurrenciesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.AddGroupMembersUseCase
@@ -35,6 +37,7 @@ import es.pedrazamiguez.splittrip.features.group.presentation.mapper.GroupUiMapp
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupImageEventHandlerImpl
+import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupMemberEventHandlerImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupNavigationEventHandlerImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler.CreateEditGroupSubmitEventHandlerImpl
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupStep
@@ -58,6 +61,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -147,6 +151,9 @@ class CreateEditGroupViewModelTest {
         every { getUserDefaultCurrencyUseCase() } returns flowOf("EUR")
         every { getUserGroupsFlowUseCase() } returns flowOf(emptyList())
         every { featureGateService.isFeatureEnabled(any(), any()) } returns flowOf(true)
+        every { featureGateService.observeMediaUploadQuota() } returns flowOf(
+            MediaUploadQuota(usedUploads = 0, monthlyFreeLimit = 5, isProTier = false)
+        )
         every { featureGateService.isActingUserPro() } returns flowOf(false)
         coEvery { featureGateService.checkLimit(any(), any(), any()) } returns flowOf(LimitResult.Allowed)
         coEvery { getSupportedCurrenciesUseCase() } returns Result.success(emptyList())
@@ -178,15 +185,21 @@ class CreateEditGroupViewModelTest {
             getSelectedGroupIdUseCase = getSelectedGroupIdUseCase,
             authenticationService = authenticationService
         )
+        val createEditGroupMemberEventHandler = CreateEditGroupMemberEventHandlerImpl(
+            searchUsersByEmailUseCase = searchUsersByEmailUseCase,
+            emailValidationService = emailValidationService,
+            getMemberProfilesUseCase = getMemberProfilesUseCase,
+            authenticationService = authenticationService,
+            telemetryTracker = telemetryTracker
+        )
         return CreateEditGroupViewModel(
             navigationEventHandler = navigationEventHandler,
             imageEventHandler = imageEventHandler,
             submitEventHandler = submitEventHandler,
+            createEditGroupMemberEventHandler = createEditGroupMemberEventHandler,
             getGroupByIdUseCase = getGroupByIdUseCase,
             getSupportedCurrenciesUseCase = getSupportedCurrenciesUseCase,
             getUserDefaultCurrencyUseCase = getUserDefaultCurrencyUseCase,
-            searchUsersByEmailUseCase = searchUsersByEmailUseCase,
-            emailValidationService = emailValidationService,
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             groupUiMapper = groupUiMapper,
             featureGateService = featureGateService,
@@ -278,10 +291,22 @@ class CreateEditGroupViewModelTest {
         }
 
         @Test
-        fun `evaluates cover upload with groupId`() = runTest(testDispatcher) {
-            every {
-                featureGateService.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD, testGroupId)
-            } returns flowOf(false)
+        fun `enables cover upload when media upload quota has remaining uploads`() = runTest(testDispatcher) {
+            every { featureGateService.observeMediaUploadQuota() } returns flowOf(
+                MediaUploadQuota(usedUploads = 4, monthlyFreeLimit = 5, isProTier = false)
+            )
+            val vm = createViewModel()
+            vm.init(testGroupId)
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.isCoverUploadEnabled)
+        }
+
+        @Test
+        fun `disables cover upload when media upload quota is exhausted`() = runTest(testDispatcher) {
+            every { featureGateService.observeMediaUploadQuota() } returns flowOf(
+                MediaUploadQuota(usedUploads = 5, monthlyFreeLimit = 5, isProTier = false)
+            )
             val vm = createViewModel()
             vm.init(testGroupId)
             advanceUntilIdle()
@@ -1111,24 +1136,43 @@ class CreateEditGroupViewModelTest {
     }
 
     @Nested
-    inner class UpgradeDialog {
+    inner class ProPreview {
 
         @Test
-        fun `onEvent UpgradeClicked closes dialog and emits NavigateToSubscriptions`() =
+        fun `onEvent UpgradeClicked clears prompt and emits NavigateToSubscriptions with entrySource`() =
             runTest(testDispatcher) {
                 val actionsList = mutableListOf<CreateEditGroupUiAction>()
                 val job = launch {
                     viewModel.actions.collect { actionsList.add(it) }
                 }
 
+                // Default fallback when no prompt is set
                 viewModel.onEvent(CreateEditGroupUiEvent.UpgradeClicked) {}
                 advanceUntilIdle()
 
-                assertFalse(viewModel.uiState.value.showUpgradeDialog)
+                // GROUP_COVER_UPLOAD attribution
+                viewModel.onEvent(CreateEditGroupUiEvent.LockedCoverPhotoClicked) {}
+                advanceUntilIdle()
+                viewModel.onEvent(CreateEditGroupUiEvent.UpgradeClicked) {}
+                advanceUntilIdle()
+
+                // GROUP_MEMBER_LIMIT attribution
+                viewModel.onEvent(CreateEditGroupUiEvent.MemberCapacityUpsellClicked) {}
+                advanceUntilIdle()
+                viewModel.onEvent(CreateEditGroupUiEvent.UpgradeClicked) {}
+                advanceUntilIdle()
+
+                assertNull(viewModel.uiState.value.proPreviewPrompt)
                 assertEquals(
                     listOf(
                         CreateEditGroupUiAction.NavigateToSubscriptions(
                             MonetizationTelemetry.EntrySource.GROUP_CREATION
+                        ),
+                        CreateEditGroupUiAction.NavigateToSubscriptions(
+                            MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD
+                        ),
+                        CreateEditGroupUiAction.NavigateToSubscriptions(
+                            MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT
                         )
                     ),
                     actionsList
@@ -1137,16 +1181,26 @@ class CreateEditGroupViewModelTest {
             }
 
         @Test
-        fun `onEvent DismissUpgradeDialog closes upgrade dialog`() =
+        fun `onEvent DismissProPreview clears proPreviewPrompt`() =
             runTest(testDispatcher) {
-                viewModel.onEvent(CreateEditGroupUiEvent.DismissUpgradeDialog) {}
+                viewModel.onEvent(CreateEditGroupUiEvent.LockedCoverPhotoClicked) {}
+                advanceUntilIdle()
+                assertEquals(
+                    ProFeaturePreviewPrompt(
+                        previewType = ProFeaturePreviewType.GROUP_COVER_PHOTO,
+                        entrySource = MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD
+                    ),
+                    viewModel.uiState.value.proPreviewPrompt
+                )
+
+                viewModel.onEvent(CreateEditGroupUiEvent.DismissProPreview) {}
                 advanceUntilIdle()
 
-                assertFalse(viewModel.uiState.value.showUpgradeDialog)
+                assertNull(viewModel.uiState.value.proPreviewPrompt)
             }
 
         @Test
-        fun `onEvent DismissUpgradeDialog emits NavigateBack when isCreationBlocked is true`() =
+        fun `onEvent DismissProPreview emits NavigateBack when isCreationBlocked is true`() =
             runTest(testDispatcher) {
                 every { authenticationService.currentUserId() } returns "user-1"
                 every { getUserGroupsFlowUseCase() } returns flowOf(listOf(testGroup.copy(createdBy = "user-1")))
@@ -1164,12 +1218,18 @@ class CreateEditGroupViewModelTest {
                 advanceUntilIdle()
 
                 assertTrue(customVm.uiState.value.isCreationBlocked)
-                assertTrue(customVm.uiState.value.showUpgradeDialog)
+                assertEquals(
+                    ProFeaturePreviewPrompt(
+                        previewType = ProFeaturePreviewType.UNLIMITED_GROUPS,
+                        entrySource = MonetizationTelemetry.EntrySource.GROUP_CREATION
+                    ),
+                    customVm.uiState.value.proPreviewPrompt
+                )
 
-                customVm.onEvent(CreateEditGroupUiEvent.DismissUpgradeDialog) {}
+                customVm.onEvent(CreateEditGroupUiEvent.DismissProPreview) {}
                 advanceUntilIdle()
 
-                assertFalse(customVm.uiState.value.showUpgradeDialog)
+                assertNull(customVm.uiState.value.proPreviewPrompt)
                 assertEquals(
                     listOf(CreateEditGroupUiAction.NavigateBack),
                     actionsList
@@ -1178,7 +1238,7 @@ class CreateEditGroupViewModelTest {
             }
 
         @Test
-        fun `init with null groupId when owned groups limit reached blocks creation and shows upgrade dialog`() =
+        fun `init with null groupId when owned groups limit reached sets UNLIMITED_GROUPS prompt`() =
             runTest(testDispatcher) {
                 every { authenticationService.currentUserId() } returns "user-1"
                 every { getUserGroupsFlowUseCase() } returns flowOf(listOf(testGroup.copy(createdBy = "user-1")))
@@ -1191,10 +1251,12 @@ class CreateEditGroupViewModelTest {
                 advanceUntilIdle()
 
                 assertTrue(customVm.uiState.value.isCreationBlocked)
-                assertTrue(customVm.uiState.value.showUpgradeDialog)
                 assertEquals(
-                    MonetizationTelemetry.EntrySource.GROUP_CREATION,
-                    customVm.uiState.value.upgradeEntrySource
+                    ProFeaturePreviewPrompt(
+                        previewType = ProFeaturePreviewType.UNLIMITED_GROUPS,
+                        entrySource = MonetizationTelemetry.EntrySource.GROUP_CREATION
+                    ),
+                    customVm.uiState.value.proPreviewPrompt
                 )
                 verify(exactly = 1) {
                     telemetryTracker.trackEvent(
@@ -1211,7 +1273,7 @@ class CreateEditGroupViewModelTest {
             }
 
         @Test
-        fun `onEvent LockedCoverPhotoClicked emits ShowError and NavigateToSubscriptions`() =
+        fun `onEvent LockedCoverPhotoClicked sets GROUP_COVER_PHOTO proPreviewPrompt without navigating immediately`() =
             runTest(testDispatcher) {
                 val actionsList = mutableListOf<CreateEditGroupUiAction>()
                 val job = launch {
@@ -1222,22 +1284,20 @@ class CreateEditGroupViewModelTest {
                 advanceUntilIdle()
 
                 assertEquals(
-                    listOf(
-                        CreateEditGroupUiAction.ShowError(
-                            UiText.StringResource(R.string.group_error_limit_cover_upload_disabled)
-                        ),
-                        CreateEditGroupUiAction.NavigateToSubscriptions(
-                            MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD
-                        )
+                    ProFeaturePreviewPrompt(
+                        previewType = ProFeaturePreviewType.GROUP_COVER_PHOTO,
+                        entrySource = MonetizationTelemetry.EntrySource.GROUP_COVER_UPLOAD
                     ),
-                    actionsList
+                    viewModel.uiState.value.proPreviewPrompt
                 )
+                assertTrue(actionsList.none { it is CreateEditGroupUiAction.NavigateToSubscriptions })
+                assertTrue(actionsList.none { it is CreateEditGroupUiAction.ShowError })
                 verify(exactly = 1) {
                     telemetryTracker.trackEvent(
                         MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
                         mapOf(
-                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.FEATURE,
-                            MonetizationTelemetry.Param.GATE_NAME to "group_cover_upload",
+                            MonetizationTelemetry.Param.GATE_TYPE to MonetizationTelemetry.GateType.LIMIT,
+                            MonetizationTelemetry.Param.GATE_NAME to "manual_receipt_monthly_attachments",
                             MonetizationTelemetry.Param.ENTRY_POINT to
                                 MonetizationTelemetry.GateEntryPoint.GROUP_COVER_LOCKED_PREVIEW,
                             MonetizationTelemetry.Param.UPGRADE_PROMPTED to true
@@ -1248,7 +1308,7 @@ class CreateEditGroupViewModelTest {
             }
 
         @Test
-        fun `onEvent MemberCapacityUpsellClicked emits NavigateToSubscriptions`() =
+        fun `onEvent MemberCapacityUpsellClicked sets EXPANDED_GROUP_MEMBERS prompt without navigating`() =
             runTest(testDispatcher) {
                 val actionsList = mutableListOf<CreateEditGroupUiAction>()
                 val job = launch {
@@ -1259,13 +1319,13 @@ class CreateEditGroupViewModelTest {
                 advanceUntilIdle()
 
                 assertEquals(
-                    listOf(
-                        CreateEditGroupUiAction.NavigateToSubscriptions(
-                            MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT
-                        )
+                    ProFeaturePreviewPrompt(
+                        previewType = ProFeaturePreviewType.EXPANDED_GROUP_MEMBERS,
+                        entrySource = MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT
                     ),
-                    actionsList
+                    viewModel.uiState.value.proPreviewPrompt
                 )
+                assertTrue(actionsList.none { it is CreateEditGroupUiAction.NavigateToSubscriptions })
                 verify(exactly = 1) {
                     telemetryTracker.trackEvent(
                         MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
@@ -1282,7 +1342,7 @@ class CreateEditGroupViewModelTest {
             }
 
         @Test
-        fun `handleMemberSelected when limit reached triggers upgrade dialog and emits ShowError`() =
+        fun `handleMemberSelected when limit reached sets EXPANDED_GROUP_MEMBERS proPreviewPrompt and tracks gate`() =
             runTest(testDispatcher) {
                 val actionsList = mutableListOf<CreateEditGroupUiAction>()
                 val job = launch {
@@ -1307,12 +1367,14 @@ class CreateEditGroupViewModelTest {
                 advanceUntilIdle()
 
                 assertEquals(4, viewModel.uiState.value.selectedMembers.size)
-                assertTrue(viewModel.uiState.value.showUpgradeDialog)
                 assertEquals(
-                    MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT,
-                    viewModel.uiState.value.upgradeEntrySource
+                    ProFeaturePreviewPrompt(
+                        previewType = ProFeaturePreviewType.EXPANDED_GROUP_MEMBERS,
+                        entrySource = MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT
+                    ),
+                    viewModel.uiState.value.proPreviewPrompt
                 )
-                assertTrue(actionsList.any { it is CreateEditGroupUiAction.ShowError })
+                assertTrue(actionsList.none { it is CreateEditGroupUiAction.ShowError })
                 verify(exactly = 1) {
                     telemetryTracker.trackEvent(
                         MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
@@ -1329,7 +1391,7 @@ class CreateEditGroupViewModelTest {
             }
 
         @Test
-        fun `handleMemberScanned when limit reached triggers upgrade dialog, emits ShowError, and tracks gate`() =
+        fun `handleMemberScanned when limit reached sets EXPANDED_GROUP_MEMBERS proPreviewPrompt and tracks gate`() =
             runTest(testDispatcher) {
                 val actionsList = mutableListOf<CreateEditGroupUiAction>()
                 val job = launch {
@@ -1351,12 +1413,14 @@ class CreateEditGroupViewModelTest {
                 advanceUntilIdle()
 
                 assertEquals(4, viewModel.uiState.value.selectedMembers.size)
-                assertTrue(viewModel.uiState.value.showUpgradeDialog)
                 assertEquals(
-                    MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT,
-                    viewModel.uiState.value.upgradeEntrySource
+                    ProFeaturePreviewPrompt(
+                        previewType = ProFeaturePreviewType.EXPANDED_GROUP_MEMBERS,
+                        entrySource = MonetizationTelemetry.EntrySource.GROUP_MEMBER_LIMIT
+                    ),
+                    viewModel.uiState.value.proPreviewPrompt
                 )
-                assertTrue(actionsList.any { it is CreateEditGroupUiAction.ShowError })
+                assertTrue(actionsList.none { it is CreateEditGroupUiAction.ShowError })
                 verify(exactly = 1) {
                     telemetryTracker.trackEvent(
                         MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
@@ -1371,5 +1435,49 @@ class CreateEditGroupViewModelTest {
                 }
                 job.cancel()
             }
+    }
+
+    @Nested
+    inner class StepInfoSheetEvents {
+
+        @Test
+        fun `initial state has isStepInfoSheetVisible set to false`() = runTest(testDispatcher) {
+            assertFalse(viewModel.uiState.value.isStepInfoSheetVisible)
+        }
+
+        @Test
+        fun `ToggleStepInfoSheet with visible true updates isStepInfoSheetVisible to true`() =
+            runTest(testDispatcher) {
+                viewModel.onEvent(CreateEditGroupUiEvent.ToggleStepInfoSheet(visible = true)) {}
+                advanceUntilIdle()
+
+                assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+            }
+
+        @Test
+        fun `ToggleStepInfoSheet with visible false updates isStepInfoSheetVisible to false`() =
+            runTest(testDispatcher) {
+                viewModel.onEvent(CreateEditGroupUiEvent.ToggleStepInfoSheet(visible = true)) {}
+                advanceUntilIdle()
+                assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+
+                viewModel.onEvent(CreateEditGroupUiEvent.ToggleStepInfoSheet(visible = false)) {}
+                advanceUntilIdle()
+
+                assertFalse(viewModel.uiState.value.isStepInfoSheetVisible)
+            }
+
+        @Test
+        fun `ToggleStepInfoSheet does not mark form as dirty`() = runTest(testDispatcher) {
+            viewModel.init(null)
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.isDirty)
+
+            viewModel.onEvent(CreateEditGroupUiEvent.ToggleStepInfoSheet(visible = true)) {}
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+            assertFalse(viewModel.uiState.value.isDirty)
+        }
     }
 }
