@@ -1,12 +1,19 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.form.split
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
@@ -56,88 +63,114 @@ fun SplitSection(uiState: AddExpenseUiState, onEvent: (AddExpenseUiEvent) -> Uni
             )
         }
 
-        if (uiState.isSubunitMode && uiState.entitySplits.isNotEmpty()) {
-            // ── Subunit mode: Entity-level splits ───────────────
-            EntitySplitEditor(
-                entitySplits = uiState.entitySplits,
-                isEqualMode = isEqualMode,
-                isPercentMode = isPercentMode,
-                availableSplitTypes = uiState.availableSplitTypes,
-                events = EntitySplitEditorEvents(
-                    onAmountChanged = { entityId, amount ->
-                        onEvent(AddExpenseUiEvent.EntitySplitAmountChanged(entityId, amount))
+        val editorMode = resolveSplitEditorMode(
+            isSubunitMode = uiState.isSubunitMode,
+            hasEntitySplits = uiState.entitySplits.isNotEmpty(),
+            hasFlatSplits = uiState.splits.isNotEmpty()
+        )
+
+        AnimatedContent(
+            targetState = editorMode,
+            transitionSpec = { splitEditorModeContentTransform() },
+            label = "SplitEditorModeTransition"
+        ) { mode ->
+            when (mode) {
+                SplitEditorMode.SUBUNIT -> EntitySplitEditor(
+                    entitySplits = uiState.entitySplits,
+                    isEqualMode = isEqualMode,
+                    isPercentMode = isPercentMode,
+                    availableSplitTypes = uiState.availableSplitTypes,
+                    events = buildEntitySplitEditorEvents(onEvent),
+                    currencySymbol = currencySymbol,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                SplitEditorMode.FLAT -> SplitEditor(
+                    splits = uiState.splits,
+                    isEqualMode = isEqualMode,
+                    isPercentMode = isPercentMode,
+                    onAmountChanged = { userId, amount ->
+                        onEvent(AddExpenseUiEvent.SplitAmountChanged(userId, amount))
                     },
-                    onPercentageChanged = { entityId, percentage ->
-                        onEvent(AddExpenseUiEvent.EntitySplitPercentageChanged(entityId, percentage))
+                    onPercentageChanged = { userId, percentage ->
+                        onEvent(AddExpenseUiEvent.SplitPercentageChanged(userId, percentage))
                     },
-                    onExcludedToggled = { entityId ->
-                        onEvent(AddExpenseUiEvent.EntitySplitExcludedToggled(entityId))
+                    onExcludedToggled = { userId ->
+                        onEvent(AddExpenseUiEvent.SplitExcludedToggled(userId))
                     },
-                    onSoloSelected = { entityId ->
-                        onEvent(AddExpenseUiEvent.EntitySplitSoloSelected(entityId))
+                    onSoloSelected = { userId ->
+                        onEvent(AddExpenseUiEvent.SplitSoloSelected(userId))
                     },
-                    onShareLockToggled = { entityId ->
-                        onEvent(AddExpenseUiEvent.EntityShareLockToggled(entityId))
+                    onShareLockToggled = { userId ->
+                        onEvent(AddExpenseUiEvent.SplitShareLockToggled(userId))
                     },
-                    onAccordionToggled = { entityId ->
-                        onEvent(AddExpenseUiEvent.EntityAccordionToggled(entityId))
-                    },
-                    onIntraSubunitSplitTypeChanged = { subunitId, splitTypeId ->
-                        onEvent(AddExpenseUiEvent.IntraSubunitSplitTypeChanged(subunitId, splitTypeId))
-                    },
-                    onIntraSubunitAmountChanged = { subunitId, userId, amount ->
-                        onEvent(AddExpenseUiEvent.IntraSubunitAmountChanged(subunitId, userId, amount))
-                    },
-                    onIntraSubunitPercentageChanged = { subunitId, userId, percentage ->
-                        onEvent(AddExpenseUiEvent.IntraSubunitPercentageChanged(subunitId, userId, percentage))
-                    },
-                    onIntraSubunitShareLockToggled = { subunitId, userId ->
-                        onEvent(AddExpenseUiEvent.IntraSubunitShareLockToggled(subunitId, userId))
-                    }
-                ),
-                currencySymbol = currencySymbol,
-                modifier = Modifier.fillMaxWidth()
-            )
-        } else if (uiState.splits.isNotEmpty()) {
-            // ── Flat mode: Per-member splits ─────────────────────
-            SplitEditor(
-                splits = uiState.splits,
-                isEqualMode = isEqualMode,
-                isPercentMode = isPercentMode,
-                onAmountChanged = { userId, amount ->
-                    onEvent(AddExpenseUiEvent.SplitAmountChanged(userId, amount))
-                },
-                onPercentageChanged = { userId, percentage ->
-                    onEvent(AddExpenseUiEvent.SplitPercentageChanged(userId, percentage))
-                },
-                onExcludedToggled = { userId ->
-                    onEvent(AddExpenseUiEvent.SplitExcludedToggled(userId))
-                },
-                onSoloSelected = { userId ->
-                    onEvent(AddExpenseUiEvent.SplitSoloSelected(userId))
-                },
-                onShareLockToggled = { userId ->
-                    onEvent(AddExpenseUiEvent.SplitShareLockToggled(userId))
-                },
-                currencySymbol = currencySymbol,
-                modifier = Modifier.fillMaxWidth()
-            )
+                    currencySymbol = currencySymbol,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                SplitEditorMode.NONE -> Spacer(modifier = Modifier.fillMaxWidth())
+            }
         }
 
         // Split validation error
-        uiState.splitError?.let { errorUiText ->
-            FlatCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.errorContainer
-            ) {
-                Text(
-                    text = errorUiText.asString(),
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(MaterialTheme.spacing.Medium)
-                )
+        var displayedSplitError by remember { mutableStateOf(uiState.splitError) }
+        if (uiState.splitError != null) {
+            displayedSplitError = uiState.splitError
+        }
+
+        AnimatedVisibility(
+            visible = uiState.splitError != null,
+            enter = splitErrorEnterTransition(),
+            exit = splitErrorExitTransition()
+        ) {
+            displayedSplitError?.let { errorUiText ->
+                FlatCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.errorContainer
+                ) {
+                    Text(
+                        text = errorUiText.asString(),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(MaterialTheme.spacing.Medium)
+                    )
+                }
             }
         }
     }
 }
+
+private fun buildEntitySplitEditorEvents(onEvent: (AddExpenseUiEvent) -> Unit): EntitySplitEditorEvents =
+    EntitySplitEditorEvents(
+        onAmountChanged = { entityId, amount ->
+            onEvent(AddExpenseUiEvent.EntitySplitAmountChanged(entityId, amount))
+        },
+        onPercentageChanged = { entityId, percentage ->
+            onEvent(AddExpenseUiEvent.EntitySplitPercentageChanged(entityId, percentage))
+        },
+        onExcludedToggled = { entityId ->
+            onEvent(AddExpenseUiEvent.EntitySplitExcludedToggled(entityId))
+        },
+        onSoloSelected = { entityId ->
+            onEvent(AddExpenseUiEvent.EntitySplitSoloSelected(entityId))
+        },
+        onShareLockToggled = { entityId ->
+            onEvent(AddExpenseUiEvent.EntityShareLockToggled(entityId))
+        },
+        onAccordionToggled = { entityId ->
+            onEvent(AddExpenseUiEvent.EntityAccordionToggled(entityId))
+        },
+        onIntraSubunitSplitTypeChanged = { subunitId, splitTypeId ->
+            onEvent(AddExpenseUiEvent.IntraSubunitSplitTypeChanged(subunitId, splitTypeId))
+        },
+        onIntraSubunitAmountChanged = { subunitId, userId, amount ->
+            onEvent(AddExpenseUiEvent.IntraSubunitAmountChanged(subunitId, userId, amount))
+        },
+        onIntraSubunitPercentageChanged = { subunitId, userId, percentage ->
+            onEvent(AddExpenseUiEvent.IntraSubunitPercentageChanged(subunitId, userId, percentage))
+        },
+        onIntraSubunitShareLockToggled = { subunitId, userId ->
+            onEvent(AddExpenseUiEvent.IntraSubunitShareLockToggled(subunitId, userId))
+        }
+    )
