@@ -99,10 +99,6 @@ val HorizonOnInfoContainer = Color(0xFF00315A) // Light: deep Horizon blue (tone
 val HorizonInfoContainerDark = Color(0xFF00478D) // Dark: Horizon blue (tone-30)
 val HorizonOnInfoContainerDark = Color(0xFFD1E4FF) // Dark: soft sky blue (tone-90)
 
-val HorizonTagSecondaryContainer = Color(0xFFD0ECEF) // Light: muted sea-glass teal
-val HorizonTagSecondaryContainerDark = Color(0xFF004F58) // Dark: deep teal (tone-30)
-val HorizonTagOnSecondaryContainerDark = Color(0xFFD0ECEF) // Dark: muted sea-glass teal
-
 // --- Scrim ---
 val HorizonScrim = Color(0xFF000000)
 

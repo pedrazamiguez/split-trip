@@ -13,12 +13,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.HorizonOnInfoCont
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.HorizonOnInfoContainerDark
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.HorizonOnSuccessContainer
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.HorizonOnSuccessContainerDark
-import es.pedrazamiguez.splittrip.core.designsystem.foundation.HorizonOnTealDark
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.HorizonSuccessContainer
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.HorizonSuccessContainerDark
-import es.pedrazamiguez.splittrip.core.designsystem.foundation.HorizonTagOnSecondaryContainerDark
-import es.pedrazamiguez.splittrip.core.designsystem.foundation.HorizonTagSecondaryContainer
-import es.pedrazamiguez.splittrip.core.designsystem.foundation.HorizonTagSecondaryContainerDark
 
 private const val DARK_THEME_LUMINANCE_THRESHOLD = 0.5f
 
@@ -41,12 +37,6 @@ object PassportTagDefaults {
             PassportTagStyle.PRIMARY ->
                 MaterialTheme.colorScheme.primaryContainer to
                     MaterialTheme.colorScheme.onPrimaryContainer
-
-            PassportTagStyle.SECONDARY -> if (isDark) {
-                HorizonTagSecondaryContainerDark to HorizonTagOnSecondaryContainerDark
-            } else {
-                HorizonTagSecondaryContainer to HorizonOnTealDark
-            }
 
             PassportTagStyle.INFO -> if (isDark) {
                 HorizonInfoContainerDark to HorizonOnInfoContainerDark

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,6 +24,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronUp
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.AmountText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
@@ -82,18 +83,10 @@ fun AddOnItemCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        Surface(
-                            shape = MaterialTheme.shapes.extraSmall,
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh
-                        ) {
-                            Text(
-                                text = stringResource(addOn.mode.toStringRes()),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
+                        PassportTag(
+                            text = stringResource(addOn.mode.toStringRes()),
+                            style = PassportTagStyle.NEUTRAL
+                        )
                     }
 
                     if (addOn.description.isNotBlank()) {

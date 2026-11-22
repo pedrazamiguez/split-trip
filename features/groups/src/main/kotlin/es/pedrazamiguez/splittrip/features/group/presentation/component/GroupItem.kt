@@ -33,6 +33,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronRight
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
@@ -40,8 +42,6 @@ import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 
 private val THUMBNAIL_SIZE = 56.dp
-private val CURRENCY_HORIZONTAL_PADDING = 10.dp
-private val CURRENCY_VERTICAL_PADDING = 5.dp
 
 /**
  * Compact horizontal card for an **unselected** group in the groups list.
@@ -135,22 +135,10 @@ fun GroupItem(
                                 .weight(1f)
                                 .padding(end = MaterialTheme.spacing.Small)
                         )
-                        Box(
-                            modifier = Modifier
-                                .clip(MaterialTheme.shapes.large)
-                                .background(MaterialTheme.colorScheme.primaryContainer)
-                        ) {
-                            Text(
-                                text = groupUiModel.currency,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.padding(
-                                    horizontal = CURRENCY_HORIZONTAL_PADDING,
-                                    vertical = CURRENCY_VERTICAL_PADDING
-                                )
-                            )
-                        }
+                        PassportTag(
+                            text = groupUiModel.currency,
+                            style = PassportTagStyle.PRIMARY
+                        )
                     }
 
                     // Line 2: Meta & Secondary Currency Chips

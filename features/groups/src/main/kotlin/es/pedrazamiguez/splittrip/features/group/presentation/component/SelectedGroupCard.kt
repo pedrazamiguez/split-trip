@@ -1,7 +1,6 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.component
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,27 +10,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedCombinedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.AlignJustified
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SyncStatusBadge
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SheetTitleText
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupUiModel
 
-private val CURRENCY_HORIZONTAL_PADDING = 14.dp
-private val CURRENCY_VERTICAL_PADDING = 8.dp
 private val CARD_SHADOW_ELEVATION = 8.dp
 
 @Suppress("LongMethod", "CognitiveComplexMethod")
@@ -89,22 +86,10 @@ fun SelectedGroupCard(
                                 .weight(1f)
                                 .padding(end = MaterialTheme.spacing.Medium)
                         )
-                        Box(
-                            modifier = Modifier
-                                .clip(MaterialTheme.shapes.large)
-                                .background(MaterialTheme.colorScheme.primary)
-                        ) {
-                            Text(
-                                text = groupUiModel.currency,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.padding(
-                                    horizontal = CURRENCY_HORIZONTAL_PADDING,
-                                    vertical = CURRENCY_VERTICAL_PADDING
-                                )
-                            )
-                        }
+                        PassportTag(
+                            text = groupUiModel.currency,
+                            style = PassportTagStyle.PRIMARY
+                        )
                     }
 
                     // Description and secondary currencies row

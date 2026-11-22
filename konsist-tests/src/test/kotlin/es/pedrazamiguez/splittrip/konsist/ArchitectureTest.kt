@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.konsist
 
 import com.lemonappdev.konsist.api.Konsist
+import com.lemonappdev.konsist.api.ext.list.withName
 import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
 import com.lemonappdev.konsist.api.verify.assertTrue
 import org.junit.jupiter.api.Assertions
@@ -653,6 +654,32 @@ class ArchitectureTest {
                         "(INFO, SUCCESS, WARNING, ERROR, NEUTRAL), never secondaryContainer/secondaryFixedDim."
                 ) { file ->
                     forbiddenReadOnlyChipTokens.none { token -> file.text.contains(token) }
+                }
+        }
+
+        @Test
+        @DisplayName("PassportTagStyle must not define a SECONDARY style")
+        fun `PassportTagStyle must not define a SECONDARY style`() {
+            projectProductionScope
+                .classes()
+                .withName("PassportTagStyle")
+                .assertTrue(
+                    additionalMessage = "PassportTagStyle.SECONDARY is forbidden on read-only tags; " +
+                        "use semantic styles (PRIMARY, TERTIARY, INFO, WARNING, SUCCESS, ERROR, NEUTRAL)."
+                ) { enumClass ->
+                    enumClass.enumConstants.none { it.name == "SECONDARY" }
+                }
+        }
+
+        @Test
+        @DisplayName("Production code must not reference PassportTagStyle.SECONDARY")
+        fun `production code must not reference PassportTagStyle SECONDARY`() {
+            projectProductionScope
+                .files
+                .assertTrue(
+                    additionalMessage = "Production code must not reference PassportTagStyle.SECONDARY."
+                ) { file ->
+                    !file.text.contains("PassportTagStyle.SECONDARY")
                 }
         }
     }

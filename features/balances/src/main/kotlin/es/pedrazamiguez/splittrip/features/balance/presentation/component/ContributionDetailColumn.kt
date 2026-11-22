@@ -3,12 +3,9 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,13 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Link
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.User
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.FormerMemberTag
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberDisplay
@@ -58,20 +55,7 @@ internal fun ContributionDetailColumn(
                 fontWeight = FontWeight.Medium
             )
             if (contribution.memberDisplay is MemberDisplay.Former) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ) {
-                    Text(
-                        text = stringResource(
-                            DesignSystemR.string.member_left_group_badge
-                        ),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
+                FormerMemberTag()
             }
         }
 
