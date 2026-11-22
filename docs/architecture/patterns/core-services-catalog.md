@@ -79,6 +79,7 @@ All components are `@Composable` functions following Material 3 design. They acc
 | Component | File | Purpose |
 |---|---|---|
 | `StyledOutlinedTextField` | `input/StyledOutlinedTextField.kt` | App-standard "Soft Field" text field (Horizon §5): `surfaceContainerLow` background, no border at rest, ghost indicator on focus. Also provides `softFieldColors()`. **Use for:** All text inputs across the app. |
+| `SegmentedPillSelector<T>` | `input/SegmentedPillSelector.kt` | Horizon pill-shaped segmented control with tonal layering (no `1px` borders), spring-animated sliding indicator, slot-width-aware compact typography, `selectableGroup()` semantics, and `debouncedClickable`. Use `SegmentedPillSelectorDefaults.nestedColors()` when hosted inside an elevated `FlatCard`. **Use instead of:** Stock Material 3 `SingleChoiceSegmentedButtonRow` / `SegmentedButton`. |
 | `SearchableChipSelector<T>` | `input/SearchableChipSelector.kt` | A searchable dropdown that displays selected items as chips. Generic type `T` for any selectable item. **Use for:** Selecting members, categories, or other enumerable items from a local list. |
 | `AsyncSearchableChipSelector<T>` | `input/AsyncSearchableChipSelector.kt` | Like `SearchableChipSelector` but with async search support (debounced query → results callback). **Use for:** Searching users by email (remote lookup). |
 

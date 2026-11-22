@@ -1,20 +1,24 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.preview
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewNarrowThemes
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
+import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.split.EntitySplitEditor
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.split.EntitySplitEditorEvents
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.split.SplitEditor
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitUiModel
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
-private val PREVIEW_SPLIT_TYPES = persistentListOf(
-    SplitTypeUiModel("EQUAL", "Equal"),
-    SplitTypeUiModel("EXACT", "Exact"),
-    SplitTypeUiModel("PERCENT", "Percent")
+@Composable
+private fun previewSplitTypes(): ImmutableList<SplitTypeUiModel> = persistentListOf(
+    SplitTypeUiModel("EQUAL", stringResource(R.string.split_type_equal)),
+    SplitTypeUiModel("EXACT", stringResource(R.string.split_type_exact)),
+    SplitTypeUiModel("PERCENT", stringResource(R.string.split_type_percent))
 )
 
 private val PREVIEW_EVENTS = EntitySplitEditorEvents(
@@ -30,7 +34,8 @@ private val PREVIEW_EVENTS = EntitySplitEditorEvents(
     onIntraSubunitShareLockToggled = { _, _ -> }
 )
 
-private val PREVIEW_ENTITY_SPLITS = persistentListOf(
+@Composable
+private fun previewEntitySplits(): ImmutableList<SplitUiModel> = persistentListOf(
     SplitUiModel(
         userId = "subunit-1",
         displayName = "Cantalobos",
@@ -40,7 +45,7 @@ private val PREVIEW_ENTITY_SPLITS = persistentListOf(
         percentageInput = "50",
         isEntityRow = true,
         isExpanded = true,
-        entitySplitType = SplitTypeUiModel("EXACT", "Exact"),
+        entitySplitType = SplitTypeUiModel("EXACT", stringResource(R.string.split_type_exact)),
         entityMembers = persistentListOf(
             SplitUiModel(
                 userId = "user-1",
@@ -78,10 +83,10 @@ private val PREVIEW_ENTITY_SPLITS = persistentListOf(
 private fun EntitySplitEditorEqualPreview() {
     PreviewThemeWrapper {
         EntitySplitEditor(
-            entitySplits = PREVIEW_ENTITY_SPLITS,
+            entitySplits = previewEntitySplits(),
             isEqualMode = true,
             isPercentMode = false,
-            availableSplitTypes = PREVIEW_SPLIT_TYPES,
+            availableSplitTypes = previewSplitTypes(),
             events = PREVIEW_EVENTS
         )
     }
@@ -92,10 +97,10 @@ private fun EntitySplitEditorEqualPreview() {
 private fun EntitySplitEditorExactPreview() {
     PreviewThemeWrapper {
         EntitySplitEditor(
-            entitySplits = PREVIEW_ENTITY_SPLITS,
+            entitySplits = previewEntitySplits(),
             isEqualMode = false,
             isPercentMode = false,
-            availableSplitTypes = PREVIEW_SPLIT_TYPES,
+            availableSplitTypes = previewSplitTypes(),
             events = PREVIEW_EVENTS,
             currencySymbol = "€"
         )
@@ -107,10 +112,10 @@ private fun EntitySplitEditorExactPreview() {
 private fun EntitySplitEditorPercentagePreview() {
     PreviewThemeWrapper {
         EntitySplitEditor(
-            entitySplits = PREVIEW_ENTITY_SPLITS,
+            entitySplits = previewEntitySplits(),
             isEqualMode = false,
             isPercentMode = true,
-            availableSplitTypes = PREVIEW_SPLIT_TYPES,
+            availableSplitTypes = previewSplitTypes(),
             events = PREVIEW_EVENTS,
             currencySymbol = "€"
         )
@@ -122,10 +127,10 @@ private fun EntitySplitEditorPercentagePreview() {
 private fun EntitySplitEditorExactNarrowPreview() {
     PreviewThemeWrapper {
         EntitySplitEditor(
-            entitySplits = PREVIEW_ENTITY_SPLITS,
+            entitySplits = previewEntitySplits(),
             isEqualMode = false,
             isPercentMode = false,
-            availableSplitTypes = PREVIEW_SPLIT_TYPES,
+            availableSplitTypes = previewSplitTypes(),
             events = PREVIEW_EVENTS,
             currencySymbol = "€"
         )
@@ -137,7 +142,7 @@ private fun EntitySplitEditorExactNarrowPreview() {
 private fun SplitEditorExactNarrowPreview() {
     PreviewThemeWrapper {
         SplitEditor(
-            splits = PREVIEW_ENTITY_SPLITS.first().entityMembers,
+            splits = previewEntitySplits().first().entityMembers,
             isEqualMode = false,
             isPercentMode = false,
             onAmountChanged = { _, _ -> },
