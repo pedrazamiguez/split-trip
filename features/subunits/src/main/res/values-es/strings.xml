@@ -50,18 +50,5 @@
         <item quantity="one">%d miembro</item>
         <item quantity="other">%d miembros</item>
     </plurals>
-
-    <!-- Step Info Bottom Sheet -->
-    <string name="subunit_step_info_name_title">Nombre de la subunidad</string>
-    <string name="subunit_step_info_name_description">Dale a esta subunidad un nombre reconocible (como \"Antonio y Andrés\" o \"Familia\") para elegirla fácilmente al dividir gastos, aportaciones o retiradas.\n\nLas subunidades agrupan a miembros que comparten costes juntos, como parejas, familias o compañeros de piso. Este paso es obligatorio.</string>
-
-    <string name="subunit_step_info_members_title">Miembros de la subunidad</string>
-    <string name="subunit_step_info_members_description">Selecciona los miembros del grupo que pertenecen a esta subunidad. Se requiere al menos un miembro.\n\nCuando un gasto se divide por subunidad, solo los miembros que elijas aquí compartirán la parte de esta subunidad.</string>
-
-    <string name="subunit_step_info_shares_title">Participaciones</string>
-    <string name="subunit_step_info_shares_description">Define cómo se reparten los gastos asignados a esta subunidad entre sus miembros, sumando un 100%.\n\nLas participaciones empiezan iguales por defecto. Puedes editar cualquier porcentaje manualmente y pulsar el candado para fijar cuotas concretas mientras el resto se redistribuye automáticamente.</string>
-
-    <string name="subunit_step_info_review_title">Revisar y confirmar</string>
-    <string name="subunit_step_info_review_description">Comprueba el nombre de la subunidad, los miembros seleccionados y el reparto de porcentajes antes de guardar.\n\n¿Quieres cambiar algo? Toca cualquier paso completado en la barra superior o pulsa \"Atrás\". También puedes editar o eliminar subunidades más tarde desde Gestión de subunidades.</string>
 </resources>
 

@@ -45,12 +45,4 @@
         <item quantity="one">%d miembro</item>
         <item quantity="other">%d miembrô</item>
     </plurals>
-    <string name="subunit_step_info_name_title">Nombre de la çubunidá</string>
-    <string name="subunit_step_info_name_description">Dale a êtta çubunidá un nombre reconoçible (como \"Antonio y Andrêh\" o \"Familia\") pa elehîl-la fáçirmente ar dibidîh gâttô, aportaçionê o retirâh.\n\nLâ çubunidâh agrupan a miembrô que comparten côttê huntô, como parehâ, familiâ o compañerô de piço. Êtte paço êh obligatorio.</string>
-    <string name="subunit_step_info_members_title">Miembrô de la çubunidá</string>
-    <string name="subunit_step_info_members_description">Çeleççiona lô miembrô der grupo que perteneçen a êtta çubunidá. Çe requiere ar menô un miembro.\n\nCuando un gâtto çe dibide por çubunidá, çolo lô miembrô que elihâ aquí compartirán la parte de êtta çubunidá.</string>
-    <string name="subunit_step_info_shares_title">Partiçipaçionê</string>
-    <string name="subunit_step_info_shares_description">Define cómo çe reparten lô gâttô açîgnaô a êtta çubunidá entre çû miembrô, çumando un 100%.\n\nLâ partiçipaçionê empieçan igualê por defêtto. Puêh editâh cuarquiêh porçentahe manualmente y purçâh er candao pa fihâh cuotâ concretâ mientrâ er rêtto çe redîttribuye automáticamente.</string>
-    <string name="subunit_step_info_review_title">Rebiçâh y confirmâh</string>
-    <string name="subunit_step_info_review_description">Comprueba er nombre de la çubunidá, lô miembrô çeleççionaô y er reparto de porçentahê antê de guardâh.\n\n¿Quierê cambiâh argo? Toca cuarquiêh paço completao en la barra çuperiôh o purça \"Atrâh\". Tamién puêh editâh o eliminâh çubunidâh mâh tarde dêdde Hêttión de çubunidâh.</string>
 </resources>

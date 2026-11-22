@@ -50,10 +50,6 @@
     <string name="wizard_exit_dialog_message">Tienes cambios sin guardar. ¿Salir y descartarlos?</string>
     <string name="wizard_exit_dialog_confirm">Descartar</string>
 
-    <!-- Wizard Step Info -->
-    <string name="wizard_step_info_action">Sobre este paso</string>
-    <string name="wizard_step_info_dismiss">Entendido</string>
-
     <!-- Empty States -->
     <string name="empty_state_no_expenses_title">Sin gastos aún</string>
     <string name="empty_state_no_expenses_description">¡Añade tu primer gasto para empezar!</string>

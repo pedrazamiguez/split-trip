@@ -49,18 +49,5 @@
         <item quantity="one">%d member</item>
         <item quantity="other">%d members</item>
     </plurals>
-
-    <!-- Step Info Bottom Sheet -->
-    <string name="subunit_step_info_name_title">Subunit name</string>
-    <string name="subunit_step_info_name_description">Give this subunit a recognizable name (like \"Antonio &amp; Andrés\" or \"Family\") so you can easily pick it when splitting expenses, contributions, or withdrawals.\n\nSubunits group members who share costs together—such as couples, families, or roommates. This step is required.</string>
-
-    <string name="subunit_step_info_members_title">Subunit members</string>
-    <string name="subunit_step_info_members_description">Select the group members who belong to this subunit. At least one member is required.\n\nWhen an expense is split by subunit, only the members you pick here will share that subunit\'s portion.</string>
-
-    <string name="subunit_step_info_shares_title">Member shares</string>
-    <string name="subunit_step_info_shares_description">Define how expenses assigned to this subunit are divided among its members, totaling 100%.\n\nShares start equal by default. You can edit any percentage manually and tap the lock icon to pin specific shares while the remaining percentages redistribute automatically.</string>
-
-    <string name="subunit_step_info_review_title">Review &amp; confirm</string>
-    <string name="subunit_step_info_review_description">Check the subunit name, selected members, and percentage breakdown before saving.\n\nWant to adjust something? Tap any completed step in the top bar or press \"Back\". You can also edit or delete subunits later from Subunit Management.</string>
 </resources>
 

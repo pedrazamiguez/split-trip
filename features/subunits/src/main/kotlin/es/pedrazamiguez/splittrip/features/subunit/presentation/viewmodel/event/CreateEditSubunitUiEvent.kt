@@ -14,5 +14,4 @@ sealed interface CreateEditSubunitUiEvent {
 
     /** Jumps directly to a previously completed step by its zero-based index. */
     data class JumpToStep(val stepIndex: Int) : CreateEditSubunitUiEvent
-    data class ToggleStepInfoSheet(val visible: Boolean) : CreateEditSubunitUiEvent
 }
