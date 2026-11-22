@@ -21,7 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartDonut
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChartBar
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicTopAppBar
@@ -185,8 +185,8 @@ private fun ExpensesScreenCompactViewportWithChromePreview() {
                         )
                         IconButton(onClick = {}) {
                             Icon(
-                                imageVector = TablerIcons.Outline.ChartDonut,
-                                contentDescription = stringResource(R.string.expenses_category_spending_title)
+                                imageVector = TablerIcons.Outline.ChartBar,
+                                contentDescription = stringResource(R.string.expenses_spending_insights_cd)
                             )
                         }
                         ProfileAvatarButton(

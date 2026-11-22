@@ -9,11 +9,13 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.BasketFilled
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Basket
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.TabGraphContributor
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.NavigationBarIcon
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.navigation.expensesGraph
 
 class ExpensesNavigationProviderImpl(
+    private val graphContributors: List<TabGraphContributor> = emptyList(),
     override val route: String = Routes.EXPENSES,
     override val requiresSelectedGroup: Boolean = true,
     override val order: Int = 50
@@ -32,5 +34,6 @@ class ExpensesNavigationProviderImpl(
 
     override fun buildGraph(builder: NavGraphBuilder) {
         builder.expensesGraph()
+        graphContributors.forEach { it.contributeGraph(builder) }
     }
 }

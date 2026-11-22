@@ -496,18 +496,8 @@
     <string name="expense_step_info_review_title">Review &amp; confirm</string>
     <string name="expense_step_info_review_description">Check the full summary of your expense, including the amount, currency conversion, funding source, split, and any extras, before saving.\n\nWant to tweak something now? Tap any completed step in the top bar or press \"Back\". You can also edit any expense later from the expense detail screen.</string>
 
-    <!-- Category Spending -->
-    <string name="expenses_category_spending_title">Category spending</string>
-    <string name="expenses_category_expand">Show subcategories for %1$s</string>
-    <string name="expenses_category_collapse">Hide subcategories for %1$s</string>
-    <string name="expenses_category_spending_total_spent">Total spent</string>
-    <string name="expenses_category_spending_empty_title">No spending yet</string>
-    <string name="expenses_category_spending_empty_description">Expenses logged in this group will appear here broken down by category.</string>
-    <string name="expenses_category_spending_filtered_empty_title">No matching expenses</string>
-    <string name="expenses_category_spending_filtered_empty_description">Try adjusting or clearing your active filters on the Expenses screen.</string>
-    <string name="expenses_extras_add_on_fee_plural">Fees</string>
-    <string name="expenses_extras_add_on_surcharge_plural">Surcharges</string>
-    <string name="expenses_extras_add_on_tip_plural">Tips</string>
+    <!-- Spending Insights Action -->
+    <string name="expenses_spending_insights_cd">View spending insights</string>
 
     <!-- AI Receipt Monthly Quota -->
     <plurals name="expense_autofill_free_scans_remaining">
