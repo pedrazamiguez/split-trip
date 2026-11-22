@@ -398,7 +398,7 @@ A non-interactive display tag component designed for metadata labels, dates, cat
   - `TERTIARY`: `tertiaryContainer` / `onTertiaryContainer` (e.g., pending statuses)
   - `INFO`: soft Horizon sky blue (`HorizonInfoContainer` / `HorizonOnInfoContainer` in light; `HorizonInfoContainerDark` / `HorizonOnInfoContainerDark` in dark) (e.g., informational allowances, unlimited quotas)
   - `WARNING`: `tertiaryContainer` / `onTertiaryContainer` (e.g., awaiting confirmation, approaching limit)
-  - `SUCCESS`: soft sage green (`HorizonSuccessContainer` / `HorizonOnSuccessContainer` in light; `HorizonSuccessContainerDark` / `HorizonOnSuccessContainerDark` in dark) (e.g., confirmed/settled, healthy quotas)
+  - `SUCCESS`: Horizon seafoam emerald (`HorizonSuccessContainer` / `HorizonOnSuccessContainer` in light; `HorizonSuccessContainerDark` / `HorizonOnSuccessContainerDark` in dark) (e.g., confirmed/settled, healthy quotas)
   - `ERROR`: `errorContainer` / `onErrorContainer` (e.g., under review, limit reached)
   - `NEUTRAL`: `surfaceContainerHigh` / `onSurfaceVariant` (e.g., dates, unstyled tags, pockets)
 

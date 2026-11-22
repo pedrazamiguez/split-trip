@@ -16,7 +16,7 @@ internal fun GroupArchivedTag(
     PassportTag(
         text = stringResource(DesignR.string.group_detail_archived_label),
         icon = TablerIcons.Outline.Lock,
-        style = PassportTagStyle.NEUTRAL,
+        style = PassportTagStyle.WARNING,
         iconContentDescription = null,
         modifier = modifier
     )
