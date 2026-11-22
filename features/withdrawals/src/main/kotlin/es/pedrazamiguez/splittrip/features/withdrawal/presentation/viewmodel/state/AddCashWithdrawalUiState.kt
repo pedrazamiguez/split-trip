@@ -65,6 +65,7 @@ data class AddCashWithdrawalUiState(
 
     // ── Wizard ──────────────────────────────────────────────────────────
     val currentStep: CashWithdrawalStep = CashWithdrawalStep.AMOUNT,
+    val isStepInfoSheetVisible: Boolean = false,
     /**
      * When non-null, the user jumped from this step to REVIEW via "Skip to Review".
      * Pressing Back on REVIEW returns to this step instead of the previous sequential one.

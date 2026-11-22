@@ -357,8 +357,6 @@
     <string name="expense_detail_expected_with_shift">Êttimao: %1$s (dêbbiaçión: %2$s)</string>
     <string name="expense_autofill_unlock_with_pro">Dêbbloquea êccaneo IA con Pro</string>
     <string name="add_expense_receipt_manual_description">Foto o PDF ôççionâh pa lô miembrô der grupo.</string>
-    <string name="action_step_info">Çobre êtte paço</string>
-    <string name="expense_step_info_dismiss">Entendío</string>
     <string name="expense_step_info_title_title">Conçêtto der gâtto</string>
     <string name="expense_step_info_title_description">Dale ar gâtto un nombre claro (como \"Çena de pîçça margarita\" o \"Tâççi al aeropuerto\") pa que tôh en er grupo lo identifiquen rápido en la lîtta de gâttô.\n\nÊtte paço êh obligatorio. En dîppoçitibô compatiblê, también puedê uçâh el êccánê de reçibô con IA pa reyenâh er conçêtto, el importe, la moneda y la fexa automáticamente a partîh de un reçibo.</string>
     <string name="expense_step_info_payment_method_title">Método de pago</string>

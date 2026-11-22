@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.InfoCircle
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
@@ -60,7 +61,7 @@ class AddExpenseScreenUiProviderImpl(override val route: String = Routes.ADD_EXP
                 ) {
                     Icon(
                         imageVector = TablerIcons.Outline.InfoCircle,
-                        contentDescription = stringResource(R.string.action_step_info)
+                        contentDescription = stringResource(DesignSystemR.string.wizard_step_info_action)
                     )
                 }
             }

@@ -172,4 +172,16 @@
     <string name="group_cover_photo_locked_description">Mehora a SplîTTrîh Pro pa çubîh portâh y reçibô ilimitáô.</string>
     <string name="group_members_capacity_counter">%1$d/%2$d miembrô</string>
     <string name="group_members_capacity_pro_upsell">Límite Gratî (mâh. %1$d). Toca pa ampliâh âtta 20 miembrô con Pro.</string>
+    <string name="group_step_info_info_title">Datô der grupo</string>
+    <string name="group_step_info_info_description">Introduçe un nombre claro pa er grupo (como \"Piço compartío\" o \"Bacaçionê de berano\") y una brebe dêccrîççión ôççionâh.\n\nÊh nombre der grupo êh obligatorio; la dêccrîççión êh ôççionâh y empieça baçía. Puedê cambiâh ambô mâh adelante dêdde Editâh grupo.</string>
+    <string name="group_step_info_currency_title">Monedâ</string>
+    <string name="group_step_info_currency_description">Elihe la moneda prinçipâh que çe uçará pa lô totalê y balançê der grupo (preçelêççioná con tu moneda por defêtto).\n\nTambién puedê añadîh otrâ monedâ ôççionalê çi er grupo ba a rehîttrâh gâttô o retirâh en mâh de una dibiça. Al editâh un grupo, lâ monedâ que ya çe uçan en trançâççionê êççîttentê permaneçen bloqueâh pa mantenêh la preçiçión del îttoriâh.</string>
+    <string name="group_step_info_members_title">Miembrô der grupo</string>
+    <string name="group_step_info_members_description">Imbita a perçonâ a tu grupo bûccando çu correo elêttrónico o êccaneando çu código QR de SplîTTrîh. También puedê añadîh a argien que aún no tenga cuenta êccribiendo çu correo.\n\nÊtte paço êh ôççionâh: puedê empeçâh çolo y añadîh miembrô mâh adelante. Lô grupô gratuitô âmmiten âtta 4 miembrô, mientrâ que SplîTTrîh Pro âmmite âtta 20. Al editâh, er creadôh der grupo y lô miembrô con balançê pendientê no çe pueden eliminâh.</string>
+    <string name="group_step_info_unregistered_names_title">Nombrê de miembrô no rehîttráô</string>
+    <string name="group_step_info_unregistered_names_description">Çolo apareçe cuando âh añadío miembrô que aún no êttán rehîttráô en SplîTTrîh. Açînna un nombre biçible a cá correo elêttrónico pa identificâl-lô fáçirmente en lô repartô y balançê.\n\nÊtte paço êh ôççionâh: çi dehâ un nombre en blanco, çe môttrará çu correo âtta que çe unan.</string>
+    <string name="group_step_info_image_title">Foto de portá</string>
+    <string name="group_step_info_image_description">Perçonaliça tu grupo con una foto de portá dêdde tu cámara o galería pa que dêttaque en tu lîtta de grupô.\n\nÊtte paço êh ôççionâh y empieça baçío. Lâ çubidâ de portá uçan er cupo mençuâh de tu cuenta o çon ilimitâh con SplîTTrîh Pro. Puedê añadîh, cambiâh o quitâh la portá cuando quierâ mâh adelante.</string>
+    <string name="group_step_info_review_title">Reçumen y confirmaçión</string>
+    <string name="group_step_info_review_description">Comprueba er nombre der grupo, la dêccrîççión, lâ monedâ, lô miembrô y la foto de portá antê de guardâh.\n\n¿Quierê cambiâh argo aora? Toca cuarquiêh paço completao en la barra çuperiôh o purça \"Atrâh\". También puedê editâh lô datô, monedâ y miembrô der grupo mâh adelante dêdde çu pantaya de detaye.</string>
 </resources>

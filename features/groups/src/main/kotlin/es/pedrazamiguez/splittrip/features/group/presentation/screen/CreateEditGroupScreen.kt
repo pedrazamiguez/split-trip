@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.screen
 
 import androidx.compose.runtime.Composable
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepInfoBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.group.presentation.component.CreateEditGroupForm
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
@@ -19,6 +20,15 @@ fun CreateEditGroupScreen(
             uiState = uiState,
             onEvent = onEvent,
             onScannerClick = onScannerClick
+        )
+    }
+
+    if (uiState.isStepInfoSheetVisible) {
+        WizardStepInfoBottomSheet(
+            titleRes = uiState.currentStep.infoTitleRes,
+            descriptionRes = uiState.currentStep.infoDescriptionRes,
+            infoItems = uiState.currentStep.infoItems,
+            onDismiss = { onEvent(CreateEditGroupUiEvent.ToggleStepInfoSheet(visible = false)) }
         )
     }
 }

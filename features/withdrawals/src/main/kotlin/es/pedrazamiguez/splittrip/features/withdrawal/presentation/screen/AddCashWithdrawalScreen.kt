@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPaddin
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepInfoBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.component.WithdrawalConfigLoadFailedContent
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.component.WithdrawalWizard
@@ -50,5 +51,14 @@ fun AddCashWithdrawalScreen(
                 ShimmerLoadingList(modifier = Modifier.padding(top = topPadding))
             }
         }
+    }
+
+    if (uiState.isStepInfoSheetVisible) {
+        WizardStepInfoBottomSheet(
+            titleRes = uiState.currentStep.infoTitleRes,
+            descriptionRes = uiState.currentStep.infoDescriptionRes,
+            infoItems = uiState.currentStep.infoItems,
+            onDismiss = { onEvent(AddCashWithdrawalUiEvent.ToggleStepInfoSheet(visible = false)) }
+        )
     }
 }

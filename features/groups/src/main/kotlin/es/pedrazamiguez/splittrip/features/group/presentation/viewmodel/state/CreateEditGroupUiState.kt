@@ -45,6 +45,7 @@ data class CreateEditGroupUiState(
 
     // Wizard
     val currentStep: CreateEditGroupStep = CreateEditGroupStep.INFO,
+    val isStepInfoSheetVisible: Boolean = false,
     val imageUrl: String? = null,
     val localGroupImagePath: String? = null,
     val showImageSourceSheet: Boolean = false,

@@ -202,4 +202,18 @@
     <!-- Group Member Capacity Indicator -->
     <string name="group_members_capacity_counter">%1$d/%2$d members</string>
     <string name="group_members_capacity_pro_upsell">Free limit (%1$d max). Tap to upgrade for up to 20 members.</string>
+
+    <!-- Step Info Bottom Sheet -->
+    <string name="group_step_info_info_title">Group details</string>
+    <string name="group_step_info_info_description">Enter a clear name for your group (like \"Shared Flat\" or \"Summer Holiday\") and an optional short description.\n\nThe group name is required; the description is optional and starts empty. You can update both later from Edit group.</string>
+    <string name="group_step_info_currency_title">Currencies</string>
+    <string name="group_step_info_currency_description">Choose the main currency used for group totals and balances (pre-filled with your default currency).\n\nYou can also add optional extra currencies if the group will log expenses or withdrawals in more than one currency. When editing a group, currencies already used in existing transactions stay locked so past records remain accurate.</string>
+    <string name="group_step_info_members_title">Group members</string>
+    <string name="group_step_info_members_description">Invite people to your group by searching their email address or scanning their SplitTrip QR code. You can also add someone who doesn\'t have an account yet by typing their email.\n\nThis step is optional: you can start alone and add members later. Free groups support up to 4 members, while SplitTrip Pro supports up to 20. When editing, the group creator and members with unsettled balances can\'t be removed.</string>
+    <string name="group_step_info_unregistered_names_title">Unregistered member names</string>
+    <string name="group_step_info_unregistered_names_description">Shown only when you\'ve added members who aren\'t registered on SplitTrip yet. Assign a friendly display name for each email address so everyone is easy to recognise in splits and balances.\n\nThis step is optional: if you leave a name blank, their email address will be shown until they join.</string>
+    <string name="group_step_info_image_title">Cover photo</string>
+    <string name="group_step_info_image_description">Personalise your group with a cover photo from your camera or gallery so it stands out in your group list.\n\nThis step is optional and starts empty. Cover uploads use your account\'s monthly upload allowance, or are unlimited with SplitTrip Pro. You can add, change, or remove the cover photo anytime later.</string>
+    <string name="group_step_info_review_title">Review &amp; confirm</string>
+    <string name="group_step_info_review_description">Check your group name, description, currencies, members, and cover photo before saving.\n\nWant to change something now? Tap any completed step in the top bar or press \"Back\". You can also edit group details, currencies, and members later from the group detail screen.</string>
 </resources>

@@ -31,6 +31,7 @@ data class AddContributionUiState(
     val contributionDateMillis: Long = System.currentTimeMillis(),
     val formattedContributionDate: String = "",
     val currentStep: AddContributionStep = AddContributionStep.AMOUNT,
+    val isStepInfoSheetVisible: Boolean = false,
     val initialFormSnapshot: AddContributionFormSnapshot? = null
 ) {
     val isEditMode: Boolean get() = contributionId != null
