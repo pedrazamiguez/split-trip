@@ -132,6 +132,8 @@ class AddCashWithdrawalViewModel(
             AddCashWithdrawalUiEvent.CloseWizard -> handleCloseWizard()
             AddCashWithdrawalUiEvent.JumpToReview -> navigateToReview()
             is AddCashWithdrawalUiEvent.JumpToStep -> navigateToStep(event.stepIndex)
+            is AddCashWithdrawalUiEvent.ToggleStepInfoSheet ->
+                _uiState.update { it.copy(isStepInfoSheetVisible = event.visible) }
         }
     }
 

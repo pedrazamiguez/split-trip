@@ -231,6 +231,8 @@ class CreateEditGroupViewModel(
             is CreateEditGroupUiEvent.PreviousStep,
             is CreateEditGroupUiEvent.CloseWizard,
             is CreateEditGroupUiEvent.JumpToStep -> navigationEventHandler.handleNavigation(event)
+            is CreateEditGroupUiEvent.ToggleStepInfoSheet ->
+                _uiState.update { it.copy(isStepInfoSheetVisible = event.visible) }
             is CreateEditGroupUiEvent.GroupImagePicked -> {
                 imageEventHandler.handleGroupImagePicked(event.uri)
             }

@@ -192,5 +192,13 @@
     <string name="app_update_ready_title">Âttualiçaçión lîtta</string>
     <string name="app_update_ready_description">Çe a dêccargao una nueba berçión de SplîTTrîh.</string>
     <string name="app_update_ready_button">Reiniçiâh pa âttualiçâh</string>
+    <string name="wizard_step_info_action">Çobre êtte paço</string>
+    <string name="wizard_step_info_dismiss">Entendío</string>
+    <string name="preview_wizard_step_info_title">Ayuda der paço</string>
+    <string name="preview_wizard_step_info_description">Êtte panêh êpplica qué açe er paço âttuâh, çû balorê por defêtto y çi êh ôççionâh.</string>
+    <string name="preview_wizard_step_info_item_one_title">Primera ôççión</string>
+    <string name="preview_wizard_step_info_item_one_description">Êpplica la primera ôççión de la pantaya en lenguahe claro.</string>
+    <string name="preview_wizard_step_info_item_two_title">Çegunda ôççión</string>
+    <string name="preview_wizard_step_info_item_two_description">Êpplica la çegunda ôççión de la pantaya en lenguahe claro.</string>
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>

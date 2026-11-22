@@ -93,6 +93,8 @@ class AddContributionViewModel(
             AddContributionUiEvent.PreviousStep -> handlePreviousStep()
             AddContributionUiEvent.CloseWizard -> handleCloseWizard()
             is AddContributionUiEvent.JumpToStep -> handleJumpToStep(event.stepIndex)
+            is AddContributionUiEvent.ToggleStepInfoSheet ->
+                _uiState.update { it.copy(isStepInfoSheetVisible = event.visible) }
         }
     }
 

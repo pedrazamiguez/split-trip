@@ -243,6 +243,18 @@
     <string name="app_update_ready_description">Se ha descargado una nueva versión de SplitTrip.</string>
     <string name="app_update_ready_button">Reiniciar para actualizar</string>
 
+    <!-- Wizard Step Info -->
+    <string name="wizard_step_info_action">Sobre este paso</string>
+    <string name="wizard_step_info_dismiss">Entendido</string>
+
+    <!-- Preview Samples (for component previews with locales) -->
+    <string name="preview_wizard_step_info_title">Ayuda del paso</string>
+    <string name="preview_wizard_step_info_description">Este panel explica qué hace el paso actual, sus valores por defecto y si es opcional.</string>
+    <string name="preview_wizard_step_info_item_one_title">Primera opción</string>
+    <string name="preview_wizard_step_info_item_one_description">Explica la primera opción de la pantalla en lenguaje claro.</string>
+    <string name="preview_wizard_step_info_item_two_title">Segunda opción</string>
+    <string name="preview_wizard_step_info_item_two_description">Explica la segunda opción de la pantalla en lenguaje claro.</string>
+
     <!-- App Name -->
     <string name="app_name" translatable="false">SplitTrip</string>
 </resources>

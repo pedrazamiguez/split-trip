@@ -426,9 +426,6 @@
     <string name="add_expense_receipt_manual_description">Foto o PDF opcional para los miembros del grupo.</string>
 
     <!-- Step Info Bottom Sheet -->
-    <string name="action_step_info">Sobre este paso</string>
-    <string name="expense_step_info_dismiss">Entendido</string>
-
     <string name="expense_step_info_title_title">Concepto del gasto</string>
     <string name="expense_step_info_title_description">Dale al gasto un nombre claro (como \"Cena de pizza margarita\" o \"Taxi al aeropuerto\") para que todos en el grupo lo identifiquen rápido en la lista de gastos.\n\nEste paso es obligatorio. En dispositivos compatibles, también puedes usar el escáner de recibos con IA para rellenar el concepto, el importe, la moneda y la fecha automáticamente a partir de un recibo.</string>
 

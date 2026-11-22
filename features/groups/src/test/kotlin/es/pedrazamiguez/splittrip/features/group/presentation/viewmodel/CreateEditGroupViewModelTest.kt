@@ -1436,4 +1436,48 @@ class CreateEditGroupViewModelTest {
                 job.cancel()
             }
     }
+
+    @Nested
+    inner class StepInfoSheetEvents {
+
+        @Test
+        fun `initial state has isStepInfoSheetVisible set to false`() = runTest(testDispatcher) {
+            assertFalse(viewModel.uiState.value.isStepInfoSheetVisible)
+        }
+
+        @Test
+        fun `ToggleStepInfoSheet with visible true updates isStepInfoSheetVisible to true`() =
+            runTest(testDispatcher) {
+                viewModel.onEvent(CreateEditGroupUiEvent.ToggleStepInfoSheet(visible = true)) {}
+                advanceUntilIdle()
+
+                assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+            }
+
+        @Test
+        fun `ToggleStepInfoSheet with visible false updates isStepInfoSheetVisible to false`() =
+            runTest(testDispatcher) {
+                viewModel.onEvent(CreateEditGroupUiEvent.ToggleStepInfoSheet(visible = true)) {}
+                advanceUntilIdle()
+                assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+
+                viewModel.onEvent(CreateEditGroupUiEvent.ToggleStepInfoSheet(visible = false)) {}
+                advanceUntilIdle()
+
+                assertFalse(viewModel.uiState.value.isStepInfoSheetVisible)
+            }
+
+        @Test
+        fun `ToggleStepInfoSheet does not mark form as dirty`() = runTest(testDispatcher) {
+            viewModel.init(null)
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.isDirty)
+
+            viewModel.onEvent(CreateEditGroupUiEvent.ToggleStepInfoSheet(visible = true)) {}
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+            assertFalse(viewModel.uiState.value.isDirty)
+        }
+    }
 }

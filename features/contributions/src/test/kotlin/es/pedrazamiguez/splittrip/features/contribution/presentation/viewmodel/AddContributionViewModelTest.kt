@@ -801,4 +801,52 @@ class AddContributionViewModelTest {
             }
         }
     }
+
+    @Nested
+    inner class StepInfoSheetEvents {
+
+        @Test
+        fun `initial state has isStepInfoSheetVisible set to false`() = runTest(testDispatcher) {
+            assertFalse(viewModel.uiState.value.isStepInfoSheetVisible)
+        }
+
+        @Test
+        fun `ToggleStepInfoSheet with visible true updates isStepInfoSheetVisible to true`() =
+            runTest(testDispatcher) {
+                viewModel.onEvent(AddContributionUiEvent.ToggleStepInfoSheet(visible = true))
+                advanceUntilIdle()
+
+                assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+            }
+
+        @Test
+        fun `ToggleStepInfoSheet with visible false updates isStepInfoSheetVisible to false`() =
+            runTest(testDispatcher) {
+                viewModel.onEvent(AddContributionUiEvent.ToggleStepInfoSheet(visible = true))
+                advanceUntilIdle()
+                assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+
+                viewModel.onEvent(AddContributionUiEvent.ToggleStepInfoSheet(visible = false))
+                advanceUntilIdle()
+
+                assertFalse(viewModel.uiState.value.isStepInfoSheetVisible)
+            }
+
+        @Test
+        fun `ToggleStepInfoSheet does not mark form as dirty`() = runTest(testDispatcher) {
+            coEvery { getGroupByIdUseCase("group-1") } returns testGroup
+            coEvery { authenticationService.currentUserId() } returns "user-1"
+            coEvery { getGroupSubunitsUseCase("group-1") } returns listOf(testSubunit)
+
+            viewModel.setGroupContext("group-1", null, "EUR")
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.isDirty)
+
+            viewModel.onEvent(AddContributionUiEvent.ToggleStepInfoSheet(visible = true))
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+            assertFalse(viewModel.uiState.value.isDirty)
+        }
+    }
 }

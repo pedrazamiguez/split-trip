@@ -426,9 +426,6 @@
     <string name="add_expense_receipt_manual_description">Optional photo or PDF for group members.</string>
 
     <!-- Step Info Bottom Sheet -->
-    <string name="action_step_info">About this step</string>
-    <string name="expense_step_info_dismiss">Got it</string>
-
     <string name="expense_step_info_title_title">Expense title</string>
     <string name="expense_step_info_title_description">Give this expense a clear name (like \"Margherita pizza dinner\" or \"Airport taxi\") so everyone in the group can spot it easily in the expense list.\n\nThis step is required. On supported devices, you can also use AI Receipt Scan to fill in the title, amount, currency, and date automatically from a receipt.</string>
 

@@ -1,12 +1,17 @@
 package es.pedrazamiguez.splittrip.features.withdrawal.presentation.screen.impl
 
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.InfoCircle
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
@@ -39,7 +44,17 @@ class AddCashWithdrawalScreenUiProviderImpl(override val route: String = Routes.
             title = stringResource(R.string.withdrawal_cash_title),
             subtitle = groupName,
             onBack = { vm?.onEvent(AddCashWithdrawalUiEvent.PreviousStep) ?: navController.popBackStack() },
-            onBackLongPress = { vm?.onEvent(AddCashWithdrawalUiEvent.CloseWizard) }
+            onBackLongPress = { vm?.onEvent(AddCashWithdrawalUiEvent.CloseWizard) },
+            actions = {
+                IconButton(
+                    onClick = { vm?.onEvent(AddCashWithdrawalUiEvent.ToggleStepInfoSheet(visible = true)) }
+                ) {
+                    Icon(
+                        imageVector = TablerIcons.Outline.InfoCircle,
+                        contentDescription = stringResource(DesignSystemR.string.wizard_step_info_action)
+                    )
+                }
+            }
         )
     }
 }

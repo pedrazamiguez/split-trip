@@ -65,5 +65,21 @@
     <string name="contribution_detail_scope_personal_desc">Funds reserved specifically for personal expenses</string>
     <string name="contribution_detail_scope_group_desc">Shared pocket funds available for all group expenses</string>
     <string name="contribution_detail_scope_subunit_desc">Pocket funds reserved for %1$s subunit</string>
+
+    <!-- Step Info Bottom Sheet -->
+    <string name="contribution_step_info_amount_title">Contribution amount</string>
+    <string name="contribution_step_info_amount_description">Enter how much money is being added to the group pocket in the group\'s main currency.\n\nThis step is required and must be greater than zero. Contributions build up the pocket balance used to fund shared expenses.</string>
+    <string name="contribution_step_info_scope_title">Contributing member &amp; scope</string>
+    <string name="contribution_step_info_scope_description">Choose which member is adding the funds (defaults to you) and who gets credit in the group balances (defaults to \"Only for you\").</string>
+    <string name="contribution_step_info_scope_item_for_group_title">For the whole group</string>
+    <string name="contribution_step_info_scope_item_for_group_description">Adds funds to the shared group pocket for everyone, credited across the whole group.</string>
+    <string name="contribution_step_info_scope_item_for_subunit_title">For a subunit</string>
+    <string name="contribution_step_info_scope_item_for_subunit_description">Shown when the selected member belongs to a subunit. Credits that subunit\'s shared balance.</string>
+    <string name="contribution_step_info_scope_item_for_you_title">Only for you</string>
+    <string name="contribution_step_info_scope_item_for_you_description">Credits the selected member\'s personal pocket balance so it offsets their own share of group expenses.</string>
+    <string name="contribution_step_info_date_title">Contribution date</string>
+    <string name="contribution_step_info_date_description">Pick the date and time when this contribution took place. Defaults to today\'s current date and time.\n\nKeeping dates accurate makes the contribution timeline in the Balances tab easier to follow.</string>
+    <string name="contribution_step_info_review_title">Review &amp; confirm</string>
+    <string name="contribution_step_info_review_description">Check the amount, contributing member, scope, and date before saving the contribution.\n\nWant to adjust something now? Tap any completed step in the top bar or press \"Back\". You can also edit or delete manual contributions later from the Balances tab.</string>
 </resources>
 

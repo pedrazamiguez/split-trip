@@ -66,5 +66,27 @@
     <!-- Member Picker -->
     <string name="withdrawal_member_picker_title">Miembro que retira</string>
     <string name="withdrawal_member_picker_you_label">Tú</string>
+
+    <!-- Step Info Bottom Sheet -->
+    <string name="withdrawal_step_info_amount_title">Importe y moneda de la retirada</string>
+    <string name="withdrawal_step_info_amount_description">Introduce la cantidad de efectivo sacada del cajero y la moneda que recibiste (por defecto la moneda principal del grupo).\n\nEste paso es obligatorio. Registrar retiradas de efectivo permite a SplitTrip llevar el control del efectivo en mano y fijar tipos de cambio reales para los gastos en efectivo.</string>
+    <string name="withdrawal_step_info_exchange_rate_title">Conversión de la retirada</string>
+    <string name="withdrawal_step_info_exchange_rate_description">Solo aparece cuando la moneda retirada es distinta a la moneda principal del grupo. Viene preconfigurado con el último tipo de cambio disponible.\n\nIntroduce el tipo de cambio o el importe exacto descontado por tu banco en la moneda del grupo y el otro campo se actualizará solo. Los gastos en efectivo pagados con esta retirada usarán este cambio fijado.</string>
+    <string name="withdrawal_step_info_scope_title">Miembro y ámbito</string>
+    <string name="withdrawal_step_info_scope_description">Elige qué miembro hizo la retirada (por defecto tú) y a qué fondo de efectivo pertenece (por defecto \"Para todo el grupo\").</string>
+    <string name="withdrawal_step_info_scope_item_for_group_title">Para todo el grupo</string>
+    <string name="withdrawal_step_info_scope_item_for_group_description">Añade el efectivo al fondo compartido del grupo, disponible para gastos en efectivo del grupo.</string>
+    <string name="withdrawal_step_info_scope_item_for_subunit_title">Para una subunidad</string>
+    <string name="withdrawal_step_info_scope_item_for_subunit_description">Aparece cuando el miembro seleccionado pertenece a una subunidad. Registra este efectivo en el fondo de esa subunidad.</string>
+    <string name="withdrawal_step_info_scope_item_for_you_title">Solo para ti</string>
+    <string name="withdrawal_step_info_scope_item_for_you_description">Registra el efectivo en el fondo personal del miembro seleccionado para sus propios gastos en efectivo.</string>
+    <string name="withdrawal_step_info_details_title">Comisión y detalles</string>
+    <string name="withdrawal_step_info_details_description">Activa \"Comisión del cajero\" si el cajero cobró una comisión por la retirada; así aparecerán los pasos de comisión a continuación. También puedes añadir un título corto (como la ubicación del cajero) y notas opcionales.\n\nEste paso es opcional, empieza vacío y con la comisión desactivada. Toca \"Ir al resumen\" cuando quieras si no necesitas añadir comisión ni notas.</string>
+    <string name="withdrawal_step_info_atm_fee_title">Importe de la comisión</string>
+    <string name="withdrawal_step_info_atm_fee_description">Solo aparece cuando activaste la comisión del cajero en el paso de Detalles. Introduce la comisión que cobró el cajero y su moneda.\n\nLa comisión se registra junto con la retirada para que los balances del grupo reflejen el coste real de sacar efectivo.</string>
+    <string name="withdrawal_step_info_fee_exchange_rate_title">Conversión de la comisión</string>
+    <string name="withdrawal_step_info_fee_exchange_rate_description">Solo aparece cuando la moneda de la comisión es distinta a la moneda principal del grupo. Viene preconfigurado con el último tipo de cambio disponible.\n\nEdita el tipo de cambio o el importe convertido de la comisión en la moneda del grupo y el otro campo se actualizará solo.</string>
+    <string name="withdrawal_step_info_review_title">Resumen y confirmación</string>
+    <string name="withdrawal_step_info_review_description">Comprueba el importe retirado, la conversión de moneda, el ámbito, cualquier comisión del cajero y los detalles antes de registrar la retirada.\n\n¿Quieres ajustar algo ahora? Toca cualquier paso completado en la barra superior o pulsa \"Atrás\" antes de guardar.</string>
 </resources>
 

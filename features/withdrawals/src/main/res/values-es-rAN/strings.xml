@@ -54,4 +54,24 @@
     <string name="withdrawal_review_none">—</string>
     <string name="withdrawal_member_picker_title">Miembro que retira</string>
     <string name="withdrawal_member_picker_you_label">Tú</string>
+    <string name="withdrawal_step_info_amount_title">Importe y moneda de la retirá</string>
+    <string name="withdrawal_step_info_amount_description">Introduçe la cantidá de efêttibo çacá der cahero y la moneda que reçibîtte (por defêtto la moneda prinçipâh der grupo).\n\nÊtte paço êh obligatorio. Rehîttrâh retirâh de efêttibo permite a SplîTTrîh yebâh er contrôh del efêttibo en mano y fihâh tipô de cambio realê pa lô gâttô en efêttibo.</string>
+    <string name="withdrawal_step_info_exchange_rate_title">Comberçión de la retirá</string>
+    <string name="withdrawal_step_info_exchange_rate_description">Çolo apareçe cuando la moneda retirá êh dîttinta a la moneda prinçipâh der grupo. Biene preconfigurao con el úrtimo tipo de cambio dîpponible.\n\nIntroduçe er tipo de cambio o el importe êççâtto dêccontao por tu banco en la moneda der grupo y el otro campo çe âttualiçará çolo. Lô gâttô en efêttibo pagáô con êtta retirá uçarán êtte cambio fihao.</string>
+    <string name="withdrawal_step_info_scope_title">Miembro y ámbito</string>
+    <string name="withdrawal_step_info_scope_description">Elihe qué miembro iço la retirá (por defêtto tú) y a qué fondo de efêttibo perteneçe (por defêtto \"Pa tó er grupo\").</string>
+    <string name="withdrawal_step_info_scope_item_for_group_title">Pa tó er grupo</string>
+    <string name="withdrawal_step_info_scope_item_for_group_description">Añade el efêttibo ar fondo compartío der grupo, dîpponible pa gâttô en efêttibo der grupo.</string>
+    <string name="withdrawal_step_info_scope_item_for_subunit_title">Pa una çubunidá</string>
+    <string name="withdrawal_step_info_scope_item_for_subunit_description">Apareçe cuando er miembro çelêççionao perteneçe a una çubunidá. Rehîttra êtte efêttibo en er fondo de eça çubunidá.</string>
+    <string name="withdrawal_step_info_scope_item_for_you_title">Çolo pa ti</string>
+    <string name="withdrawal_step_info_scope_item_for_you_description">Rehîttra el efêttibo en er fondo perçonâh der miembro çelêççionao pa çû propiô gâttô en efêttibo.</string>
+    <string name="withdrawal_step_info_details_title">Comiçión y detayê</string>
+    <string name="withdrawal_step_info_details_description">Âttiba \"Comiçión der cahero\" çi er cahero cobró una comiçión por la retirá; açí apareçerán lô paçô de comiçión a continuaçión. También puedê añadîh un título corto (como la ubicaçión der cahero) y notâ ôççionalê.\n\nÊtte paço êh ôççionâh, empieça baçío y con la comiçión deçâttibá. Toca \"Îh al reçumen\" cuando quierâ çi no neçeçitâ añadîh comiçión ni notâ.</string>
+    <string name="withdrawal_step_info_atm_fee_title">Importe de la comiçión</string>
+    <string name="withdrawal_step_info_atm_fee_description">Çolo apareçe cuando âttibâtte la comiçión der cahero en er paço de Detayê. Introduçe la comiçión que cobró er cahero y çu moneda.\n\nLa comiçión çe rehîttra hunto con la retirá pa que lô balançê der grupo reflehen er côtte reâh de çacâh efêttibo.</string>
+    <string name="withdrawal_step_info_fee_exchange_rate_title">Comberçión de la comiçión</string>
+    <string name="withdrawal_step_info_fee_exchange_rate_description">Çolo apareçe cuando la moneda de la comiçión êh dîttinta a la moneda prinçipâh der grupo. Biene preconfigurao con el úrtimo tipo de cambio dîpponible.\n\nEdita er tipo de cambio o el importe combertío de la comiçión en la moneda der grupo y el otro campo çe âttualiçará çolo.</string>
+    <string name="withdrawal_step_info_review_title">Reçumen y confirmaçión</string>
+    <string name="withdrawal_step_info_review_description">Comprueba el importe retirao, la comberçión de moneda, el ámbito, cuarquiêh comiçión der cahero y lô detayê antê de rehîttrâh la retirá.\n\n¿Quierê ahûttâh argo aora? Toca cuarquiêh paço completao en la barra çuperiôh o purça \"Atrâh\" antê de guardâh.</string>
 </resources>

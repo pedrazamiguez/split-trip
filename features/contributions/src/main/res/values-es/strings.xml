@@ -66,5 +66,21 @@
     <string name="contribution_detail_scope_personal_desc">Fondos reservados específicamente para gastos personales</string>
     <string name="contribution_detail_scope_group_desc">Fondos del pocket del grupo disponibles para todos los gastos</string>
     <string name="contribution_detail_scope_subunit_desc">Fondos reservados para la subunidad %1$s</string>
+
+    <!-- Step Info Bottom Sheet -->
+    <string name="contribution_step_info_amount_title">Importe de la aportación</string>
+    <string name="contribution_step_info_amount_description">Introduce cuánto dinero se añade al pocket del grupo en la moneda principal del grupo.\n\nEste paso es obligatorio y el importe debe ser mayor que cero. Las aportaciones aumentan el saldo del pocket con el que se pagan los gastos compartidos.</string>
+    <string name="contribution_step_info_scope_title">Miembro y ámbito</string>
+    <string name="contribution_step_info_scope_description">Elige qué miembro añade los fondos (por defecto tú) y a quién se le acredita en los balances del grupo (por defecto \"Solo para ti\").</string>
+    <string name="contribution_step_info_scope_item_for_group_title">Para todo el grupo</string>
+    <string name="contribution_step_info_scope_item_for_group_description">Añade fondos al pocket compartido para todos, acreditados al conjunto del grupo.</string>
+    <string name="contribution_step_info_scope_item_for_subunit_title">Para una subunidad</string>
+    <string name="contribution_step_info_scope_item_for_subunit_description">Aparece cuando el miembro seleccionado pertenece a una subunidad. Acredita el balance compartido de esa subunidad.</string>
+    <string name="contribution_step_info_scope_item_for_you_title">Solo para ti</string>
+    <string name="contribution_step_info_scope_item_for_you_description">Acredita el saldo personal del miembro seleccionado para cubrir su propia parte de los gastos del grupo.</string>
+    <string name="contribution_step_info_date_title">Fecha de la aportación</string>
+    <string name="contribution_step_info_date_description">Elige la fecha y hora en la que se realizó esta aportación. Por defecto se selecciona la fecha y hora actuales.\n\nMantener las fechas precisas facilita seguir el historial de aportaciones en la pestaña de Balances.</string>
+    <string name="contribution_step_info_review_title">Resumen y confirmación</string>
+    <string name="contribution_step_info_review_description">Comprueba el importe, el miembro contribuyente, el ámbito y la fecha antes de guardar la aportación.\n\n¿Quieres ajustar algo ahora? Toca cualquier paso completado en la barra superior o pulsa \"Atrás\". También puedes editar o eliminar aportaciones manuales más adelante desde la pestaña de Balances.</string>
 </resources>
 

@@ -203,4 +203,18 @@
     <!-- Group Member Capacity Indicator -->
     <string name="group_members_capacity_counter">%1$d/%2$d miembros</string>
     <string name="group_members_capacity_pro_upsell">Límite Gratis (máx. %1$d). Toca para ampliar hasta 20 miembros con Pro.</string>
+
+    <!-- Step Info Bottom Sheet -->
+    <string name="group_step_info_info_title">Datos del grupo</string>
+    <string name="group_step_info_info_description">Introduce un nombre claro para el grupo (como \"Piso compartido\" o \"Vacaciones de verano\") y una breve descripción opcional.\n\nEl nombre del grupo es obligatorio; la descripción es opcional y empieza vacía. Puedes cambiar ambos más adelante desde Editar grupo.</string>
+    <string name="group_step_info_currency_title">Monedas</string>
+    <string name="group_step_info_currency_description">Elige la moneda principal que se usará para los totales y balances del grupo (preseleccionada con tu moneda por defecto).\n\nTambién puedes añadir otras monedas opcionales si el grupo va a registrar gastos o retiradas en más de una divisa. Al editar un grupo, las monedas que ya se usan en transacciones existentes permanecen bloqueadas para mantener la precisión del historial.</string>
+    <string name="group_step_info_members_title">Miembros del grupo</string>
+    <string name="group_step_info_members_description">Invita a personas a tu grupo buscando su correo electrónico o escaneando su código QR de SplitTrip. También puedes añadir a alguien que aún no tenga cuenta escribiendo su correo.\n\nEste paso es opcional: puedes empezar solo y añadir miembros más adelante. Los grupos gratuitos admiten hasta 4 miembros, mientras que SplitTrip Pro admite hasta 20. Al editar, el creador del grupo y los miembros con balances pendientes no se pueden eliminar.</string>
+    <string name="group_step_info_unregistered_names_title">Nombres de miembros no registrados</string>
+    <string name="group_step_info_unregistered_names_description">Solo aparece cuando has añadido miembros que aún no están registrados en SplitTrip. Asigna un nombre visible a cada correo electrónico para identificarlos fácilmente en los repartos y balances.\n\nEste paso es opcional: si dejas un nombre en blanco, se mostrará su correo hasta que se unan.</string>
+    <string name="group_step_info_image_title">Foto de portada</string>
+    <string name="group_step_info_image_description">Personaliza tu grupo con una foto de portada desde tu cámara o galería para que destaque en tu lista de grupos.\n\nEste paso es opcional y empieza vacío. Las subidas de portada usan el cupo mensual de tu cuenta o son ilimitadas con SplitTrip Pro. Puedes añadir, cambiar o quitar la portada cuando quieras más adelante.</string>
+    <string name="group_step_info_review_title">Resumen y confirmación</string>
+    <string name="group_step_info_review_description">Comprueba el nombre del grupo, la descripción, las monedas, los miembros y la foto de portada antes de guardar.\n\n¿Quieres cambiar algo ahora? Toca cualquier paso completado en la barra superior o pulsa \"Atrás\". También puedes editar los datos, monedas y miembros del grupo más adelante desde su pantalla de detalle.</string>
 </resources>

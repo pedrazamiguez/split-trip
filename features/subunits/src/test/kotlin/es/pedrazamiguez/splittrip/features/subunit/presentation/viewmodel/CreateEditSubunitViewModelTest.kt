@@ -1151,4 +1151,68 @@ class CreateEditSubunitViewModelTest {
             actionsJob.cancel()
         }
     }
+
+    @Nested
+    inner class StepInfoSheetEvents {
+
+        @Test
+        fun `initial state has isStepInfoSheetVisible set to false`() = runTest(testDispatcher) {
+            setupDefaultMocks()
+            createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            assertFalse(viewModel.uiState.value.isStepInfoSheetVisible)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `ToggleStepInfoSheet with visible true updates isStepInfoSheetVisible to true`() =
+            runTest(testDispatcher) {
+                setupDefaultMocks()
+                createViewModel()
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+                viewModel.onEvent(CreateEditSubunitUiEvent.ToggleStepInfoSheet(visible = true))
+                advanceUntilIdle()
+
+                assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `ToggleStepInfoSheet with visible false updates isStepInfoSheetVisible to false`() =
+            runTest(testDispatcher) {
+                setupDefaultMocks()
+                createViewModel()
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+                viewModel.onEvent(CreateEditSubunitUiEvent.ToggleStepInfoSheet(visible = true))
+                advanceUntilIdle()
+                assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+
+                viewModel.onEvent(CreateEditSubunitUiEvent.ToggleStepInfoSheet(visible = false))
+                advanceUntilIdle()
+
+                assertFalse(viewModel.uiState.value.isStepInfoSheetVisible)
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `ToggleStepInfoSheet does not mark form as dirty`() = runTest(testDispatcher) {
+            setupDefaultMocks()
+            createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.init("group-1", null)
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.isDirty)
+
+            viewModel.onEvent(CreateEditSubunitUiEvent.ToggleStepInfoSheet(visible = true))
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
+            assertFalse(viewModel.uiState.value.isDirty)
+            collectJob.cancel()
+        }
+    }
 }

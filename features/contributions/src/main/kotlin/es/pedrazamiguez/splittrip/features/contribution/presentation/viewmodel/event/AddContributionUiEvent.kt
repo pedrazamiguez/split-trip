@@ -17,4 +17,6 @@ sealed interface AddContributionUiEvent {
 
     /** Jumps directly to a previously completed step by its zero-based index. */
     data class JumpToStep(val stepIndex: Int) : AddContributionUiEvent
+
+    data class ToggleStepInfoSheet(val visible: Boolean) : AddContributionUiEvent
 }
