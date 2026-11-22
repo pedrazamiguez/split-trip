@@ -89,10 +89,10 @@ val HorizonOnSecondaryFixed = Color(0xFF001F24) // T10 — onSecondaryFixed (sel
 val HorizonOnSecondaryFixedVariant = Color(0xFF004F58) // T30 — onSecondaryFixedVariant
 
 // --- Semantic Tag & Status Tonal Pairs (soft Horizon tonal containers) ---
-val HorizonSuccessContainer = Color(0xFFD2F1DC) // Light: soft sage green (tone-90)
-val HorizonOnSuccessContainer = Color(0xFF0A3D21) // Light: deep forest green (tone-10)
-val HorizonSuccessContainerDark = Color(0xFF174D2E) // Dark: forest green (tone-30)
-val HorizonOnSuccessContainerDark = Color(0xFFD2F1DC) // Dark: soft sage green (tone-90)
+val HorizonSuccessContainer = Color(0xFF1D7A5F) // Light: Horizon seafoam emerald
+val HorizonOnSuccessContainer = Color(0xFFFFFFFF) // Light: crisp white
+val HorizonSuccessContainerDark = Color(0xFF248567) // Dark: lifted Horizon seafoam emerald
+val HorizonOnSuccessContainerDark = Color(0xFFFFFFFF) // Dark: crisp white
 
 val HorizonInfoContainer = Color(0xFFD6E6FA) // Light: soft sky blue (tone-90)
 val HorizonOnInfoContainer = Color(0xFF00315A) // Light: deep Horizon blue (tone-20)
