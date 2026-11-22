@@ -46,6 +46,8 @@
     <string name="wizard_exit_dialog_title">¿Dêccartâh cambiô?</string>
     <string name="wizard_exit_dialog_message">Tienê cambiô çin guardâh. ¿Çalîh y dêccartâl-lô?</string>
     <string name="wizard_exit_dialog_confirm">Dêccartâh</string>
+    <string name="wizard_step_info_action">Çobre êtte paço</string>
+    <string name="wizard_step_info_dismiss">Entendío</string>
     <string name="empty_state_no_expenses_title">Çin gâttô aún</string>
     <string name="empty_state_no_expenses_description">¡Añade tu primêh gâtto pa empeçâh!</string>
     <string name="nav_groups">Grupô</string>

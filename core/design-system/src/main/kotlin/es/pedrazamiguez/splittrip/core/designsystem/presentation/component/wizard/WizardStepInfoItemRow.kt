@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.features.expense.presentation.component
+package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,11 +10,10 @@ import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardTitleText
-import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpenseStepInfoItem
 
 @Composable
-internal fun ExpenseStepInfoItemRow(
-    item: ExpenseStepInfoItem,
+internal fun WizardStepInfoItemRow(
+    item: WizardStepInfoItem,
     modifier: Modifier = Modifier
 ) {
     Column(

@@ -393,18 +393,31 @@ A non-interactive display tag component designed for metadata labels, dates, cat
 - **No border:** Background tonal containers define tag boundaries (Horizon No-Line rule).
 - **Typography & Icon:** Standard `16.dp` icon size, `4.dp` spacing, `8.dp` horizontal padding, and `labelSmall` Medium typography.
 - **Semantic Styles (`PassportTagStyle`):**
-  - `PRIMARY`: `primaryContainer` / `onPrimaryContainer` (e.g., categories, scopes)
-  - `SECONDARY`: soft sea-glass teal (`HorizonTagSecondaryContainer` / `HorizonOnTealDark` in light; `HorizonTagSecondaryContainerDark` / `HorizonTagOnSecondaryContainerDark` in dark) (e.g., payment methods)
+  - `PRIMARY`: `primaryContainer` / `onPrimaryContainer` (e.g., categories, scopes, primary currencies, creator badges)
   - `TERTIARY`: `tertiaryContainer` / `onTertiaryContainer` (e.g., pending statuses)
-  - `INFO`: soft Horizon sky blue (`HorizonInfoContainer` / `HorizonOnInfoContainer` in light; `HorizonInfoContainerDark` / `HorizonOnInfoContainerDark` in dark) (e.g., informational allowances, unlimited quotas)
+  - `INFO`: soft Horizon sky blue (`HorizonInfoContainer` / `HorizonOnInfoContainer` in light; `HorizonInfoContainerDark` / `HorizonOnInfoContainerDark` in dark) (e.g., payment methods, informational allowances, unlimited quotas, developer role)
   - `WARNING`: `tertiaryContainer` / `onTertiaryContainer` (e.g., awaiting confirmation, approaching limit)
-  - `SUCCESS`: Horizon seafoam emerald (`HorizonSuccessContainer` / `HorizonOnSuccessContainer` in light; `HorizonSuccessContainerDark` / `HorizonOnSuccessContainerDark` in dark) (e.g., confirmed/settled, healthy quotas)
+  - `SUCCESS`: Horizon seafoam emerald (`HorizonSuccessContainer` / `HorizonOnSuccessContainer` in light; `HorizonSuccessContainerDark` / `HorizonOnSuccessContainerDark` in dark) (e.g., confirmed/settled, healthy quotas, verified security status)
   - `ERROR`: `errorContainer` / `onErrorContainer` (e.g., under review, limit reached)
-  - `NEUTRAL`: `surfaceContainerHigh` / `onSurfaceVariant` (e.g., dates, unstyled tags, pockets)
+  - `NEUTRAL`: `surfaceContainerHigh` / `onSurfaceVariant` (e.g., dates, unstyled tags, pockets, extra currencies, former member tags, add-on modes)
 
-Used across: `HeroSection` (expense details), `ContributionHeroSection`, `SplitBreakdownSection`, `SubunitGroup`, `GroupSettlementItem`, `SettlementConsensusCard`.
+Used across: `HeroSection` (expense details), `ContributionHeroSection`, `SplitBreakdownSection`, `BreakdownCardSection`, `AddOnItemCard`, `AddOnsImpactSummaryCard`, `AiRemainingScansBadge`, `ExpenseItem`, `GroupItem`, `SelectedGroupCard`, `GroupExtraCurrencyChip`, `GroupDetailInfoSection`, `GroupMemberItem`, `AuthStatusBadge`, `DeveloperHeroCard`, `PlanComparisonCard`, `SubunitItem`, `SubunitGroup`, `GroupSettlementItem`, `SettlementConsensusCard`, `FormerMemberTag`.
 
-> **Implementation:** `PassportTag.kt`, `PassportTagDefaults.kt`, `PassportTagStyle.kt` in `core/design-system/.../component/chip/`
+> **Implementation:** `PassportTag.kt`, `PassportTagDefaults.kt`, `PassportTagStyle.kt`, `FormerMemberTag.kt` in `core/design-system/.../component/chip/`
+
+#### 5.4.2 Intentional Exceptions (Not Migrated to `PassportTag`)
+
+| Component / Location | Visual Role | Rationale for Exception |
+|---|---|---|
+| `ProBadge` (`:core:design-system`), `ProMicroBadge` (`ProfileAvatarButton`), `ProfileAvatarBadge` (`:features:profile`) | Brand premium tier micro-badge (`tertiary`/`onTertiary`, `7–11.sp` ExtraBold, optional surface cutout border) | Compact brand mark designed to sit inline next to titles or overlay circular avatars; `28.dp` `PassportTag` would break proportions and overlap avatar bounds. |
+| `PassportChip` (`:core:design-system`), `CategoryGridTile` (`:features:expenses`) | Interactive selection / filter controls (`secondaryFixedDim` when selected) | Interactive controls; explicitly out of scope per §5.4. |
+| `ExpensesFilterActionButton` active filter count dot (`:features:expenses`) | `16.dp` circular numeric overlay badge on an interactive top-bar icon button | Interactive active-filter indicator overlaid on an icon button (not a standalone read-only text pill). |
+| `ExpenseItem` primary hero amount pill (`:features:expenses`) | Primary monetary amount (`titleSmall` ExtraBold, `sharedTextAnimation`, cancelled `TextDecoration.LineThrough`) | Requires shared-element text transition, `titleSmall` ExtraBold emphasis, and strikethrough support incompatible with `PassportTag`'s sealed `labelSmall` contract. |
+| `SyncStatusIndicator` / `SyncStatusBadge` (`:core:design-system`) | Floating scalloped-circle (`RoundedPolygonShape`) offline/error sync indicator with delayed `AnimatedVisibility` | Expressive floating corner overlay badge with custom polygon shape and debounce animation. |
+| `MemberAvatarStack` overflow counter (`:features:groups`) | `36.dp` circular `+N` counter overlapping member avatars | Avatar overflow counter matching `36.dp` avatar geometry. |
+| `SelectedGroupCoverImage` (`Active Now`) & `GroupArchivedTag` (`Archived`) (`:features:groups`) | Group status badges | Already implemented on `PassportTag` (tracked separately). |
+| Full-width banners (`AutoFillBanner`, `ArchivedReadOnlyNotice`, `SettlementDisputeBanner`, `ReceiptStep` AI disclaimer, `GroupMembersStep` upsell row, `AppUpdateReadyBanner`, `FormErrorBanner`, `InlineWarningBanner`, `TopPillNotification`) | Full-width informational / warning / error banners & notifications | Full-width banner layouts outside the inline pill contract. |
+| Circular/rounded icon & avatar containers (`SubunitItem` avatar, `GroupDetailSubunitCard`, `GroupMemberItem` avatar, `ProfileAvatar`, `AvatarEditor`, `GuestProfileContent`, `DeveloperAvatar`, `SettingsRow`, `FundingSourceOptionCard`, insights category/entity circles) | Icon & avatar backdrops | Non-pill icon and avatar containers. |
 
 ### 5.5 Glassmorphism — Atmospheric Glass-Blur
 

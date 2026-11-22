@@ -152,7 +152,8 @@ All components are `@Composable` functions following Material 3 design. They acc
 | Component | File | Purpose |
 |---|---|---|
 | `PassportChip` | `chip/PassportChip.kt` | Horizon Narrative signature travel chip — "collectible stamp" feel. Uses `secondaryFixedDim` (selected) / `surfaceContainerHigh` (unselected), `CircleShape`, no border (No-Line rule). Supports `leadingIcon` (checkmark) and `trailingIcon` (close/overflow). **Use instead of:** Stock `FilterChip` or `InputChip` for all selectable tags, categories, payment methods, and removable item chips. |
-| `PassportTag` | `chip/PassportTag.kt` | Standardized non-interactive metadata tag / status badge (`28.dp` height contract, `CircleShape`, borderless tonal container, `16.dp` icon, `labelSmall` font). Governed by semantic `PassportTagStyle` (`PRIMARY`, `SECONDARY`, `TERTIARY`, `INFO`, `WARNING`, `SUCCESS`, `ERROR`, `NEUTRAL`). **Never** use `secondaryContainer`/`secondaryFixedDim` on read-only pills; prefer `INFO`, `SUCCESS`, `WARNING`, `ERROR`, `NEUTRAL`. **Use instead of:** Ad-hoc category, payment method, date, or status badge chips. |
+| `PassportTag` | `chip/PassportTag.kt` | Standardized non-interactive metadata tag / status badge (`28.dp` height contract, `CircleShape`, borderless tonal container, `16.dp` icon, `labelSmall` font). Governed by semantic `PassportTagStyle` (`PRIMARY`, `TERTIARY`, `INFO`, `WARNING`, `SUCCESS`, `ERROR`, `NEUTRAL`). **Never** use `secondaryContainer`/`secondaryFixedDim` on read-only pills; prefer `INFO`, `SUCCESS`, `WARNING`, `ERROR`, `NEUTRAL`. **Use instead of:** Ad-hoc category, payment method, date, or status badge chips. |
+| `FormerMemberTag` | `chip/FormerMemberTag.kt` | Standardized read-only `"Former"` member badge delegating to `PassportTag(style = PassportTagStyle.NEUTRAL)`. **Use instead of:** Ad-hoc `Surface(CircleShape)` blocks whenever `MemberDisplay` is `MemberDisplay.Former`. |
 
 ### A.10 Foundation Utilities
 

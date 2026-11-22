@@ -50,6 +50,10 @@
     <string name="wizard_exit_dialog_message">You have unsaved changes. Discard them and exit?</string>
     <string name="wizard_exit_dialog_confirm">Discard</string>
 
+    <!-- Wizard Step Info -->
+    <string name="wizard_step_info_action">About this step</string>
+    <string name="wizard_step_info_dismiss">Got it</string>
+
     <!-- Empty States -->
     <string name="empty_state_no_expenses_title">No expenses yet</string>
     <string name="empty_state_no_expenses_description">Add your first expense to get started!</string>
