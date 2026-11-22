@@ -56,7 +56,10 @@ internal fun CategoryBreakdownCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = MaterialTheme.spacing.Small),
+                    .padding(
+                        top = MaterialTheme.spacing.Small,
+                        bottom = MaterialTheme.spacing.Large
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 DonutChart(

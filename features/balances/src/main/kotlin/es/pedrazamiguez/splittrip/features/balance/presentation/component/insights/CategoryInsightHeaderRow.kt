@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickableNoRipple
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChevronDown
@@ -43,7 +43,7 @@ internal fun CategoryInsightHeaderRow(
     modifier: Modifier = Modifier
 ) {
     val rowModifier = if (hasSubcategories) {
-        modifier.fillMaxWidth().debouncedClickable(onClick = onToggle)
+        modifier.fillMaxWidth().debouncedClickableNoRipple(onClick = onToggle)
     } else {
         modifier.fillMaxWidth()
     }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -15,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debounced
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
@@ -32,6 +34,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
+
+private const val DARK_THEME_LUMINANCE_THRESHOLD = 0.5f
 
 @OptIn(ExperimentalLayoutApi::class)
 @Suppress("LongMethod", "LongParameterList")
@@ -60,7 +64,14 @@ internal fun SpendingInsightsPeriodCard(
         SpendingPeriodPreset.CUSTOM to R.string.balances_insights_period_custom
     )
 
-    FlatCard(modifier = modifier.fillMaxWidth()) {
+    // Elevate card background above surfaceContainerLow so nested Soft Field inputs retain contrast (§5.3).
+    val cardContainerColor = resolvePeriodCardContainerColor(MaterialTheme.colorScheme)
+
+    FlatCard(
+        modifier = modifier.fillMaxWidth(),
+        color = cardContainerColor,
+        ghostBorder = true
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -156,3 +167,10 @@ internal fun SpendingInsightsPeriodCard(
         )
     }
 }
+
+private fun resolvePeriodCardContainerColor(colorScheme: ColorScheme) =
+    if (colorScheme.surface.luminance() < DARK_THEME_LUMINANCE_THRESHOLD) {
+        colorScheme.surfaceContainerHighest
+    } else {
+        colorScheme.surfaceContainerLowest
+    }

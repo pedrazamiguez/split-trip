@@ -61,6 +61,9 @@ class SpendingInsightsViewModel(
 
     private var latestOldestExpenseDate: LocalDate? = null
     private var latestNewestExpenseDate: LocalDate? = null
+    private var lastAppliedInitialCriteria: ExpenseFilterCriteria? = null
+    private var pendingOpenStartFromFilter: Boolean = false
+    private var pendingOpenEndFromFilter: Boolean = false
 
     private val periodFlow: Flow<SpendingInsightsPeriod> = _selectionState
         .map(::resolvePeriod)
@@ -81,6 +84,10 @@ class SpendingInsightsViewModel(
             ) { insights, selection, filterCriteria ->
                 latestOldestExpenseDate = insights.oldestExpenseDate
                 latestNewestExpenseDate = insights.newestExpenseDate
+                resolvePendingOpenDateBounds(
+                    oldestExpenseDate = insights.oldestExpenseDate,
+                    newestExpenseDate = insights.newestExpenseDate
+                )
 
                 val effectiveFilterCount = filterCriteria.activeFilterCount +
                     if (filterCriteria.isSearchFiltered) 1 else 0
@@ -129,26 +136,34 @@ class SpendingInsightsViewModel(
                 _selectionState.value = SpendingInsightsSelectionState()
                 latestOldestExpenseDate = null
                 latestNewestExpenseDate = null
+                lastAppliedInitialCriteria = null
+                pendingOpenStartFromFilter = false
+                pendingOpenEndFromFilter = false
             }
             _selectedGroupId.value = groupId
         }
     }
 
     fun setFilterCriteria(criteria: ExpenseFilterCriteria) {
-        if (criteria != _filterCriteria.value) {
-            _filterCriteria.value = criteria
-            if (criteria.startDate != null && criteria.endDate != null) {
-                val start = minOf(criteria.startDate!!, criteria.endDate!!)
-                val end = maxOf(criteria.startDate!!, criteria.endDate!!)
-                _selectionState.update { current ->
-                    current.copy(
-                        preset = SpendingPeriodPreset.CUSTOM,
-                        customStartDate = start,
-                        customEndDate = end,
-                        selectedDayBarId = null
-                    )
-                }
-            }
+        if (criteria == lastAppliedInitialCriteria) return
+        lastAppliedInitialCriteria = criteria
+
+        // Period selector is the single source of truth for dates in Spending Insights;
+        // pre-fill it from incoming date filters instead of double-filtering underneath.
+        val nonDateCriteria = if (criteria.isDateFiltered) {
+            criteria.copy(startDate = null, endDate = null)
+        } else {
+            criteria
+        }
+        if (nonDateCriteria != _filterCriteria.value) {
+            _filterCriteria.value = nonDateCriteria
+        }
+
+        if (criteria.isDateFiltered) {
+            seedPeriodFromDateFilter(
+                startDate = criteria.startDate,
+                endDate = criteria.endDate
+            )
         }
     }
 
@@ -173,23 +188,82 @@ class SpendingInsightsViewModel(
     }
 
     private fun handleClearExpenseFilters() {
-        val wasDateFiltered = _filterCriteria.value.isDateFiltered
         _filterCriteria.value = ExpenseFilterCriteria()
         _selectionState.update { current ->
-            if (wasDateFiltered && current.preset == SpendingPeriodPreset.CUSTOM) {
-                current.copy(
-                    preset = SpendingPeriodPreset.ALL_TIME,
-                    customStartDate = null,
-                    customEndDate = null,
-                    selectedDayBarId = null
-                )
-            } else {
-                current.copy(selectedDayBarId = null)
+            current.copy(selectedDayBarId = null)
+        }
+    }
+
+    private fun seedPeriodFromDateFilter(startDate: LocalDate?, endDate: LocalDate?) {
+        when {
+            startDate != null && endDate != null -> {
+                val start = minOf(startDate, endDate)
+                val end = maxOf(startDate, endDate)
+                pendingOpenStartFromFilter = false
+                pendingOpenEndFromFilter = false
+                _selectionState.update { current ->
+                    current.copy(
+                        preset = SpendingPeriodPreset.CUSTOM,
+                        customStartDate = start,
+                        customEndDate = end,
+                        selectedDayBarId = null
+                    )
+                }
+            }
+
+            startDate != null -> {
+                val resolvedEnd = maxOf(latestNewestExpenseDate ?: todayProvider(), startDate)
+                pendingOpenStartFromFilter = false
+                pendingOpenEndFromFilter = latestNewestExpenseDate == null
+                _selectionState.update { current ->
+                    current.copy(
+                        preset = SpendingPeriodPreset.CUSTOM,
+                        customStartDate = startDate,
+                        customEndDate = resolvedEnd,
+                        selectedDayBarId = null
+                    )
+                }
+            }
+
+            endDate != null -> {
+                val resolvedStart = minOf(latestOldestExpenseDate ?: endDate, endDate)
+                pendingOpenStartFromFilter = latestOldestExpenseDate == null
+                pendingOpenEndFromFilter = false
+                _selectionState.update { current ->
+                    current.copy(
+                        preset = SpendingPeriodPreset.CUSTOM,
+                        customStartDate = resolvedStart,
+                        customEndDate = endDate,
+                        selectedDayBarId = null
+                    )
+                }
+            }
+        }
+    }
+
+    private fun resolvePendingOpenDateBounds(
+        oldestExpenseDate: LocalDate?,
+        newestExpenseDate: LocalDate?
+    ) {
+        if (pendingOpenStartFromFilter && oldestExpenseDate != null) {
+            pendingOpenStartFromFilter = false
+            _selectionState.update { current ->
+                val end = current.customEndDate ?: oldestExpenseDate
+                current.copy(customStartDate = minOf(oldestExpenseDate, end))
+            }
+        }
+        if (pendingOpenEndFromFilter && newestExpenseDate != null) {
+            pendingOpenEndFromFilter = false
+            _selectionState.update { current ->
+                val start = current.customStartDate ?: newestExpenseDate
+                current.copy(customEndDate = maxOf(newestExpenseDate, start))
             }
         }
     }
 
     private fun handleSelectPeriodPreset(preset: SpendingPeriodPreset) {
+        pendingOpenStartFromFilter = false
+        pendingOpenEndFromFilter = false
         _selectionState.update { current ->
             if (preset == SpendingPeriodPreset.CUSTOM) {
                 val defaultEnd = latestNewestExpenseDate ?: todayProvider()
@@ -210,6 +284,8 @@ class SpendingInsightsViewModel(
     }
 
     private fun handleSelectCustomStartDate(date: LocalDate) {
+        pendingOpenStartFromFilter = false
+        pendingOpenEndFromFilter = false
         _selectionState.update { current ->
             val clampedEnd = maxOf(current.customEndDate ?: date, date)
             current.copy(
@@ -222,6 +298,8 @@ class SpendingInsightsViewModel(
     }
 
     private fun handleSelectCustomEndDate(date: LocalDate) {
+        pendingOpenStartFromFilter = false
+        pendingOpenEndFromFilter = false
         _selectionState.update { current ->
             val clampedStart = minOf(current.customStartDate ?: date, date)
             current.copy(

@@ -1,9 +1,17 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.component.insights
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -53,49 +61,58 @@ internal fun SpendingInsightsBodyContent(
         ),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
-        if (uiState.isFiltered) {
-            item(key = "active-filter-banner") {
-                SpendingInsightsFilterBanner(
-                    activeFilterCount = uiState.activeFilterCount,
-                    onClearFilters = { onEvent(SpendingInsightsUiEvent.ClearExpenseFilters) }
-                )
-            }
-        }
+        topControlsSection(uiState = uiState, onEvent = onEvent)
+
+        // Slot reserved right beneath the period selector for #2023 Budget Pacing card.
 
         if (!uiState.hasAnyGroupExpenses) {
             filteredEmptySection()
+        } else if (!uiState.hasPeriodExpenses) {
+            periodEmptySection()
         } else {
-            periodSelectorSection(uiState = uiState, onEvent = onEvent)
-
-            // Slot reserved right beneath the period selector for #2023 Budget Pacing card.
-
-            if (!uiState.hasPeriodExpenses) {
-                periodEmptySection()
-            } else {
-                insightsSections(uiState = uiState, onEvent = onEvent)
-            }
+            insightsSections(uiState = uiState, onEvent = onEvent)
         }
     }
 }
 
-private fun LazyListScope.periodSelectorSection(
+private fun LazyListScope.topControlsSection(
     uiState: SpendingInsightsUiState,
     onEvent: (SpendingInsightsUiEvent) -> Unit
 ) {
-    item(key = "period-selector") {
-        SpendingInsightsPeriodCard(
-            selectedPreset = uiState.selectedPreset,
-            periodSummaryLabel = uiState.periodSummaryLabel,
-            customStartDate = uiState.customStartDate,
-            customEndDate = uiState.customEndDate,
-            formattedCustomStartDate = uiState.formattedCustomStartDate,
-            formattedCustomEndDate = uiState.formattedCustomEndDate,
-            oldestExpenseDate = uiState.oldestExpenseDate,
-            newestExpenseDate = uiState.newestExpenseDate,
-            onSelectPreset = { preset -> onEvent(SpendingInsightsUiEvent.SelectPeriodPreset(preset)) },
-            onSelectCustomStartDate = { date -> onEvent(SpendingInsightsUiEvent.SelectCustomStartDate(date)) },
-            onSelectCustomEndDate = { date -> onEvent(SpendingInsightsUiEvent.SelectCustomEndDate(date)) }
-        )
+    item(key = "top-controls") {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            AnimatedVisibility(
+                visible = uiState.isFiltered,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    SpendingInsightsFilterBanner(
+                        activeFilterCount = uiState.activeFilterCount,
+                        onClearFilters = { onEvent(SpendingInsightsUiEvent.ClearExpenseFilters) }
+                    )
+                    if (uiState.hasAnyGroupExpenses) {
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.Medium))
+                    }
+                }
+            }
+
+            if (uiState.hasAnyGroupExpenses) {
+                SpendingInsightsPeriodCard(
+                    selectedPreset = uiState.selectedPreset,
+                    periodSummaryLabel = uiState.periodSummaryLabel,
+                    customStartDate = uiState.customStartDate,
+                    customEndDate = uiState.customEndDate,
+                    formattedCustomStartDate = uiState.formattedCustomStartDate,
+                    formattedCustomEndDate = uiState.formattedCustomEndDate,
+                    oldestExpenseDate = uiState.oldestExpenseDate,
+                    newestExpenseDate = uiState.newestExpenseDate,
+                    onSelectPreset = { preset -> onEvent(SpendingInsightsUiEvent.SelectPeriodPreset(preset)) },
+                    onSelectCustomStartDate = { date -> onEvent(SpendingInsightsUiEvent.SelectCustomStartDate(date)) },
+                    onSelectCustomEndDate = { date -> onEvent(SpendingInsightsUiEvent.SelectCustomEndDate(date)) }
+                )
+            }
+        }
     }
 }
 
@@ -105,7 +122,9 @@ private fun LazyListScope.filteredEmptySection() {
             title = stringResource(R.string.balances_insights_empty_filtered_title),
             description = stringResource(R.string.balances_insights_empty_filtered_description),
             icon = TablerIcons.Outline.Search,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateItem()
         )
     }
 }
@@ -116,7 +135,9 @@ private fun LazyListScope.periodEmptySection() {
             title = stringResource(R.string.balances_insights_empty_period_title),
             description = stringResource(R.string.balances_insights_empty_period_description),
             icon = TablerIcons.Outline.Calendar,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateItem()
         )
     }
 }
@@ -127,14 +148,18 @@ private fun LazyListScope.insightsSections(
 ) {
     uiState.burnRate?.let { burnRate ->
         item(key = "burn-rate") {
-            SpendingBurnRateCard(burnRate = burnRate)
+            SpendingBurnRateSection(
+                burnRate = burnRate,
+                modifier = Modifier.animateItem()
+            )
         }
         if (burnRate.dailyBars.isNotEmpty()) {
             item(key = "daily-trend") {
                 DailySpendingTrendCard(
                     dailyBars = burnRate.dailyBars,
                     selectedBarId = uiState.selectedDayBarId,
-                    onSelectBar = { barId -> onEvent(SpendingInsightsUiEvent.SelectDayBar(barId)) }
+                    onSelectBar = { barId -> onEvent(SpendingInsightsUiEvent.SelectDayBar(barId)) },
+                    modifier = Modifier.animateItem()
                 )
             }
         }
@@ -144,7 +169,8 @@ private fun LazyListScope.insightsSections(
         item(key = "category-breakdown") {
             CategoryBreakdownCard(
                 items = uiState.categoryItems,
-                totalFormattedAmount = uiState.burnRate?.formattedTotalSpent.orEmpty()
+                totalFormattedAmount = uiState.burnRate?.formattedTotalSpent.orEmpty(),
+                modifier = Modifier.animateItem()
             )
         }
     }
@@ -163,7 +189,8 @@ private fun LazyListScope.insightsSections(
                 hasSubunits = uiState.hasSubunits,
                 selectedMode = uiState.entityBreakdownMode,
                 items = activeBreakdownItems,
-                onSelectMode = { mode -> onEvent(SpendingInsightsUiEvent.SelectEntityBreakdownMode(mode)) }
+                onSelectMode = { mode -> onEvent(SpendingInsightsUiEvent.SelectEntityBreakdownMode(mode)) },
+                modifier = Modifier.animateItem()
             )
         }
     }

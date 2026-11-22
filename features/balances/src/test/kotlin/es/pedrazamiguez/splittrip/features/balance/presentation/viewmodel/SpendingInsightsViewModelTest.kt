@@ -306,7 +306,7 @@ class SpendingInsightsViewModelTest {
     }
 
     @Test
-    fun `setFilterCriteria seeds custom date preset and ClearExpenseFilters resets filter state`() =
+    fun `setFilterCriteria seeds custom date strips banner dates and keeps period on clear`() =
         runTest(testDispatcher) {
             val start = LocalDate.of(2026, 11, 2)
             val end = LocalDate.of(2026, 11, 10)
@@ -324,7 +324,7 @@ class SpendingInsightsViewModelTest {
             advanceUntilIdle()
 
             assertTrue(viewModel.uiState.value.isFiltered)
-            assertEquals(2, viewModel.uiState.value.activeFilterCount)
+            assertEquals(1, viewModel.uiState.value.activeFilterCount)
             assertEquals(SpendingPeriodPreset.CUSTOM, viewModel.uiState.value.selectedPreset)
             assertEquals(start, viewModel.uiState.value.customStartDate)
             assertEquals(end, viewModel.uiState.value.customEndDate)
@@ -334,7 +334,113 @@ class SpendingInsightsViewModelTest {
 
             assertFalse(viewModel.uiState.value.isFiltered)
             assertEquals(0, viewModel.uiState.value.activeFilterCount)
+            assertEquals(SpendingPeriodPreset.CUSTOM, viewModel.uiState.value.selectedPreset)
+            assertEquals(start, viewModel.uiState.value.customStartDate)
+            assertEquals(end, viewModel.uiState.value.customEndDate)
+            collectJob.cancel()
+        }
+
+    @Test
+    fun `setFilterCriteria with date-only filter pre-fills custom period without activating filter banner`() =
+        runTest(testDispatcher) {
+            val start = LocalDate.of(2026, 11, 3)
+            val end = LocalDate.of(2026, 11, 14)
+            val capturedFilters = mutableListOf<ExpenseFilterCriteria>()
+            every { getGroupSpendingInsightsFlowUseCase(any(), any(), any(), any()) } answers {
+                val groupId = firstArg<String>()
+                val periodFlow = secondArg<Flow<SpendingInsightsPeriod>>()
+                val filterFlow = thirdArg<Flow<ExpenseFilterCriteria>>()
+                filterFlow.map { filter ->
+                    capturedFilters.add(filter)
+                    createInsights(
+                        groupId = groupId,
+                        period = SpendingInsightsPeriod.AllTime,
+                        isFiltered = filter.isActive
+                    )
+                }
+            }
+
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setFilterCriteria(ExpenseFilterCriteria(startDate = start, endDate = end))
+            viewModel.setSelectedGroup("group-1")
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.isFiltered)
+            assertEquals(0, viewModel.uiState.value.activeFilterCount)
+            assertEquals(SpendingPeriodPreset.CUSTOM, viewModel.uiState.value.selectedPreset)
+            assertEquals(start, viewModel.uiState.value.customStartDate)
+            assertEquals(end, viewModel.uiState.value.customEndDate)
+            assertTrue(capturedFilters.all { !it.isDateFiltered && !it.isActive })
+
+            viewModel.onEvent(SpendingInsightsUiEvent.SelectPeriodPreset(SpendingPeriodPreset.ALL_TIME))
+            advanceUntilIdle()
+
             assertEquals(SpendingPeriodPreset.ALL_TIME, viewModel.uiState.value.selectedPreset)
+            collectJob.cancel()
+        }
+
+    @Test
+    fun `setFilterCriteria with start-date-only resolves open end date from group insights`() =
+        runTest(testDispatcher) {
+            val start = LocalDate.of(2026, 11, 5)
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setFilterCriteria(ExpenseFilterCriteria(startDate = start))
+            viewModel.setSelectedGroup("group-1")
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.isFiltered)
+            assertEquals(SpendingPeriodPreset.CUSTOM, viewModel.uiState.value.selectedPreset)
+            assertEquals(start, viewModel.uiState.value.customStartDate)
+            assertEquals(LocalDate.of(2026, 11, 18), viewModel.uiState.value.customEndDate)
+            collectJob.cancel()
+        }
+
+    @Test
+    fun `setFilterCriteria with end-date-only resolves open start date from group insights`() =
+        runTest(testDispatcher) {
+            val end = LocalDate.of(2026, 11, 15)
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setFilterCriteria(ExpenseFilterCriteria(endDate = end))
+            viewModel.setSelectedGroup("group-1")
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.isFiltered)
+            assertEquals(SpendingPeriodPreset.CUSTOM, viewModel.uiState.value.selectedPreset)
+            assertEquals(LocalDate.of(2026, 11, 1), viewModel.uiState.value.customStartDate)
+            assertEquals(end, viewModel.uiState.value.customEndDate)
+            collectJob.cancel()
+        }
+
+    @Test
+    fun `re-invoking setFilterCriteria with identical criteria preserves user period and clear changes`() =
+        runTest(testDispatcher) {
+            val criteria = ExpenseFilterCriteria(
+                selectedCategories = setOf(ExpenseCategory.FOOD),
+                startDate = LocalDate.of(2026, 11, 2),
+                endDate = LocalDate.of(2026, 11, 10)
+            )
+            viewModel = createViewModel()
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setFilterCriteria(criteria)
+            viewModel.setSelectedGroup("group-1")
+            advanceUntilIdle()
+
+            viewModel.onEvent(SpendingInsightsUiEvent.ClearExpenseFilters)
+            viewModel.onEvent(SpendingInsightsUiEvent.SelectPeriodPreset(SpendingPeriodPreset.THIS_MONTH))
+            advanceUntilIdle()
+
+            viewModel.setFilterCriteria(criteria)
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.isFiltered)
+            assertEquals(SpendingPeriodPreset.THIS_MONTH, viewModel.uiState.value.selectedPreset)
             collectJob.cancel()
         }
 
