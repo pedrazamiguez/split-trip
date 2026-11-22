@@ -585,6 +585,7 @@ The Horizon Narrative was implemented across 7 focused sub-issues:
 | `FlatCard.kt` | `core/design-system/.../component/layout/` | Standard card wrapper with tonal layering |
 | `SectionCard.kt` | `core/design-system/.../component/layout/` | Titled card section (built on `FlatCard`) |
 | `PassportChip.kt` | `core/design-system/.../component/chip/` | Signature travel chip with tone-stable colours |
+| `SegmentedPillSelector.kt` | `core/design-system/.../component/input/` | Animated pill segmented control with tonal layering |
 | `StyledOutlinedTextField.kt` | `core/design-system/.../component/input/` | Soft Field text input with `softFieldColors()` |
 | `TextComponents.kt` | `core/design-system/.../component/text/` | Semantic text wrappers (§3.3) |
 
@@ -601,6 +602,7 @@ All Horizon Narrative components include `@PreviewThemes` previews (light + dark
 | `FlatCardPreviews.kt` | Default card, ghost border variant, `SectionCard` |
 | `GradientButtonPreviews.kt` | Enabled, disabled, loading states |
 | `PassportChipPreviews.kt` | Selected/unselected, removable, overflow variants |
+| `SegmentedPillSelectorPreviews.kt` | Standalone, nested in `FlatCard`, binary/unselected/disabled, locales, and narrow `320dp` variants |
 | `TextComponentsPreviews.kt` | All semantic text wrappers (gallery + per-wrapper light/dark + locale variants) |
 
 ---
