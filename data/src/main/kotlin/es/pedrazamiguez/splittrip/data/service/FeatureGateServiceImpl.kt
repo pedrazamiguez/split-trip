@@ -327,8 +327,6 @@ private fun buildPlanAllowances(
     } else {
         groups.count { it.createdBy == currentUserId }
     }
-    val maxOwnedGroups = (if (isPro) limits.maxOwnedGroupsPro else limits.maxOwnedGroupsFree)
-        .coerceAtLeast(0)
     val maxMembersPerGroup = (if (isPro) limits.maxMembersPerGroupPro else limits.maxMembersPerGroupFree)
         .coerceAtLeast(0)
 
@@ -339,11 +337,21 @@ private fun buildPlanAllowances(
         mediaUploadQuota = mediaQuota,
         reportExportQuota = reportExportQuota,
         ownedGroupsUsed = ownedGroupsUsed,
-        maxOwnedGroups = maxOwnedGroups,
+        maxOwnedGroups = resolveMaxOwnedGroups(isGatingEnabled, isPro, limits),
         maxMembersPerGroup = maxMembersPerGroup,
         maxSubunitsPerGroup = resolveMaxSubunitsPerGroup(isGatingEnabled, isPro, limits),
         isAdFreeEnabled = !isGatingEnabled || isPro
     )
+}
+
+private fun resolveMaxOwnedGroups(
+    isGatingEnabled: Boolean,
+    isPro: Boolean,
+    limits: TierGroupLimits
+): Int? = when {
+    !isGatingEnabled -> null
+    isPro -> limits.maxOwnedGroupsPro.takeIf { it > 0 }
+    else -> limits.maxOwnedGroupsFree.coerceAtLeast(0)
 }
 
 private fun resolveMaxSubunitsPerGroup(
@@ -382,5 +390,6 @@ private fun isUnlimitedProLimit(
     if (effectiveTier != SubscriptionTier.PRO) return false
     return limit == GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS ||
         limit == GatedLimit.REPORT_EXPORT_MONTHLY_COUNT ||
+        (limit == GatedLimit.MAX_OWNED_GROUPS_COUNT && maxAllowed < 0) ||
         (limit == GatedLimit.MAX_SUBUNITS_PER_GROUP && maxAllowed < 0)
 }

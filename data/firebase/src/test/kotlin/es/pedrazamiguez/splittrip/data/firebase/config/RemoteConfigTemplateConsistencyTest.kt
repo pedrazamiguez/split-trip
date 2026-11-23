@@ -126,6 +126,12 @@ class RemoteConfigTemplateConsistencyTest {
     }
 
     @Test
+    fun `max_owned_groups_pro defaults to -1 in template and XML`() {
+        assertEquals("-1", templateParameters["max_owned_groups_pro"]?.defaultValue)
+        assertEquals("-1", xmlDefaults["max_owned_groups_pro"])
+    }
+
+    @Test
     fun `every parameter specifies a valid valueType and non-empty description`() {
         val validTypes = setOf("STRING", "BOOLEAN", "NUMBER", "JSON")
         templateParameters.forEach { (key, param) ->

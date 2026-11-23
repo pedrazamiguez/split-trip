@@ -16,7 +16,7 @@ private object DefaultAppConfigService : AppConfigService {
     override val subscriptionGatingEnabled: StateFlow<Boolean> = MutableStateFlow(true)
     override val billingSimulationEnabled: StateFlow<Boolean> = MutableStateFlow(false)
     override val maxOwnedGroupsFree: StateFlow<Int> = MutableStateFlow(1)
-    override val maxOwnedGroupsPro: StateFlow<Int> = MutableStateFlow(100)
+    override val maxOwnedGroupsPro: StateFlow<Int> = MutableStateFlow(-1)
     override val maxMembersPerGroupFree: StateFlow<Int> = MutableStateFlow(4)
     override val maxMembersPerGroupPro: StateFlow<Int> = MutableStateFlow(20)
     override val aiReceiptMonthlyLimitFree: StateFlow<Int> = MutableStateFlow(0)

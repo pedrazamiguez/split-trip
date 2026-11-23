@@ -202,7 +202,7 @@
     <string name="pro_preview_badge_label">SplitTrip Pro</string>
     <string name="pro_preview_cta_unlock">Desbloquear con SplitTrip Pro</string>
     <string name="pro_preview_unlimited_groups_title">Crea grupos ilimitados</string>
-    <string name="pro_preview_unlimited_groups_description">Has alcanzado el límite de grupos propios del plan gratuito. Mejora a SplitTrip Pro para organizar todos los presupuestos compartidos, hogares y viajes que necesites.</string>
+    <string name="pro_preview_unlimited_groups_description">Has alcanzado el límite de grupos propios del plan gratuito. Mejora a SplitTrip Pro para organizar todos los presupuestos compartidos, hogares y planes del día a día que necesites.</string>
     <string name="pro_preview_unlimited_groups_highlight">Grupos activos ilimitados y una experiencia sin anuncios</string>
     <string name="pro_preview_expanded_members_title">Incluye a todo el grupo</string>
     <string name="pro_preview_expanded_members_description">Los grupos gratuitos admiten un número limitado de miembros. Desbloquea SplitTrip Pro para invitar a grupos más grandes de amigos, hogares y familias.</string>

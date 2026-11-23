@@ -103,7 +103,7 @@ class PlanAllowancesViewModelTest {
                 usedScans = 12,
                 aiMonthlyLimit = 100,
                 usedUploads = 18,
-                maxOwnedGroups = 100,
+                maxOwnedGroups = null,
                 maxMembersPerGroup = 20,
                 maxSubunitsPerGroup = null,
                 isAdFreeEnabled = true
@@ -115,6 +115,7 @@ class PlanAllowancesViewModelTest {
         assertTrue(state.isProTier)
         assertFalse(state.showUpgradeCta)
         assertEquals(AllowanceUsageStatus.UNLIMITED, state.quotas[1].status)
+        assertEquals(AllowanceUsageStatus.UNLIMITED, state.quotas[3].status)
 
         collectJob.cancel()
     }
@@ -191,7 +192,7 @@ class PlanAllowancesViewModelTest {
         usedExports: Int = 0,
         reportExportMonthlyFreeLimit: Int = 1,
         ownedGroupsUsed: Int = 0,
-        maxOwnedGroups: Int = 1,
+        maxOwnedGroups: Int? = 1,
         maxMembersPerGroup: Int = 4,
         maxSubunitsPerGroup: Int? = 1,
         isAdFreeEnabled: Boolean = tier == SubscriptionTier.PRO || !isGatingEnabled

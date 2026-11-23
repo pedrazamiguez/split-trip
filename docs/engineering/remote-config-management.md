@@ -53,7 +53,7 @@ SplitTrip parameters are organized into 5 functional groups:
 |---|---|---|---|
 | `subscription_gating_enabled` | `BOOLEAN` | `true` | Master operational killswitch to enforce or bypass feature gating and tier quotas. |
 | `max_owned_groups_free` | `NUMBER` | `1` | Maximum number of groups a Free tier user can own concurrently. |
-| `max_owned_groups_pro` | `NUMBER` | `100` | Maximum number of groups a Pro tier user can own concurrently. |
+| `max_owned_groups_pro` | `NUMBER` | `-1` | Maximum number of groups a Pro tier user can own concurrently (`-1` for unlimited). |
 | `max_members_per_group_free` | `NUMBER` | `4` | Maximum member cap for groups owned by a Free user. |
 | `max_members_per_group_pro` | `NUMBER` | `20` | Maximum member cap for groups owned by a Pro user. |
 | `ai_receipt_monthly_limit_free` | `NUMBER` | `3` | Monthly quota of AI receipt scans allocated to Free users. |
