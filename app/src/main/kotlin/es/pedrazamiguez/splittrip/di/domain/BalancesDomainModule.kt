@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.repository.GroupRepository
 import es.pedrazamiguez.splittrip.domain.repository.SettlementNudgeRepository
 import es.pedrazamiguez.splittrip.domain.repository.SettlementRepository
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
+import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AddOnCalculationService
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -44,6 +45,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSettlementsFlow
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSpendingInsightsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetSettlementSuggestionsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.RecordReportExportUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.AreGroupSettlementsResolvedUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.AreMemberSettlementsResolvedUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.BuildGroupTripReportUseCaseImpl
@@ -61,6 +63,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetGroupSettlement
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetGroupSpendingInsightsFlowUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetMemberBalancesFlowUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.GetSettlementSuggestionsUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.RecordReportExportUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.settlement.GetNudgeTimestampsFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.settlement.NudgeDebtorUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.settlement.impl.GetNudgeTimestampsFlowUseCaseImpl
@@ -292,6 +295,13 @@ val balancesDomainModule = module {
             expenseCalculatorService = expenseCalculatorService,
             authenticationService = authenticationService,
             appConfigService = appConfigService
+        )
+    }
+
+    factory<RecordReportExportUseCase> {
+        val userPreferenceRepository = get<UserPreferenceRepository>()
+        RecordReportExportUseCaseImpl(
+            userPreferenceRepository = userPreferenceRepository
         )
     }
 }

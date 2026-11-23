@@ -69,8 +69,10 @@ fun SpendingInsightsFeature(
             ?.getStateFlow(KEY_EXPORT_REPORT_REQUESTED, false)
             ?.collectLatest { requested ->
                 if (requested) {
+                    // Reset to false instead of remove() so the SavedStateHandle StateFlow
+                    // remains subscribed for subsequent Share taps.
+                    insightsBackStackEntry.savedStateHandle[KEY_EXPORT_REPORT_REQUESTED] = false
                     spendingInsightsViewModel.onEvent(SpendingInsightsUiEvent.RequestExportReport)
-                    insightsBackStackEntry.savedStateHandle.remove<Boolean>(KEY_EXPORT_REPORT_REQUESTED)
                 }
             }
     }

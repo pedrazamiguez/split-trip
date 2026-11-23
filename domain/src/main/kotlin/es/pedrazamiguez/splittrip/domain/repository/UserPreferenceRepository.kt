@@ -41,5 +41,8 @@ interface UserPreferenceRepository {
     fun getMonthlyManualReceiptAttachmentCount(yearMonth: YearMonth): Flow<Int>
     suspend fun incrementMonthlyManualReceiptAttachmentCount(yearMonth: YearMonth)
 
+    fun getMonthlyReportExportCount(yearMonth: YearMonth): Flow<Int>
+    suspend fun incrementMonthlyReportExportCount(yearMonth: YearMonth)
+
     suspend fun clearAll()
 }

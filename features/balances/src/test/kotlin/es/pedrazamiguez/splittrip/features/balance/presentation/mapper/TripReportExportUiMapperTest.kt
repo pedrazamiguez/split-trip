@@ -29,6 +29,7 @@ import es.pedrazamiguez.splittrip.domain.model.report.TripReportExpenseItem
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportMemberBalanceItem
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportSettlementItem
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportSubunitBalanceItem
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportTone
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportWithdrawalItem
 import es.pedrazamiguez.splittrip.features.balance.R
 import io.mockk.every
@@ -39,6 +40,7 @@ import java.time.LocalDateTime
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -55,18 +57,25 @@ class TripReportExportUiMapperTest {
 
     private val stringMap by lazy {
         mapOf(
-            R.string.balances_export_report_title to "Group Financial Statement",
-            R.string.balances_export_period_all_time to "Full ledger",
-            R.string.balances_export_empty_section to "No entries in this period",
+            R.string.balances_export_report_title_pro to "Group summary & itemised ledger",
+            R.string.balances_export_report_title_free to "Group summary",
+            R.string.balances_export_period_all_time to "All history",
+            R.string.balances_export_empty_section to "No activity recorded in this period",
             R.string.balances_export_page_footer to "Page %1\$d of %2\$d",
-            R.string.balances_export_summary_section_title to "Financial Summary",
-            R.string.balances_export_summary_base_currency to "Base currency",
+            R.string.balances_export_summary_section_title to "Group overview",
             R.string.balances_export_summary_total_contributed to "Total contributed",
             R.string.balances_export_summary_total_expenses to "Total expenses",
-            R.string.balances_export_summary_virtual_pocket to "Virtual pocket balance",
+            R.string.balances_export_summary_virtual_pocket to "Virtual pocket",
             R.string.balances_export_summary_cash_equivalent to "Cash in hand",
-            R.string.balances_export_summary_total_extras to "Extras",
-            R.string.balances_export_section_expenses to "Itemized Expenses",
+            R.string.balances_export_summary_total_extras to "Extras & fees",
+            R.string.balances_export_section_expenses to "Itemised expenses",
+            R.string.balances_export_pro_callout_badge to "PRO",
+            R.string.balances_export_pro_callout_title to "Itemised breakdown reserved for SplitTrip Pro",
+            R.string.balances_export_pro_callout_body to "Upgrade to SplitTrip Pro.",
+            R.string.balances_export_brand_tagline to "Split expenses without borders",
+            R.string.balances_export_brand_cta_headline to "Share expenses fairly. Zero stress.",
+            R.string.balances_export_brand_cta_subtitle to "Offline-first multi-currency group pockets.",
+            R.string.balances_export_brand_qr_caption to "Scan to get SplitTrip",
             R.string.balances_export_payment_status_finished to "Finished",
             CommonR.string.expense_category_food to "Food",
             CommonR.string.expense_subcategory_restaurant to "Restaurant",
@@ -107,12 +116,15 @@ class TripReportExportUiMapperTest {
 
         val payload = mapper.mapToExportPayload(report = report, referenceYear = 2026)
 
-        val pdfRow = payload.expensesSection.rows.single()
-        assertEquals("Dinner", pdfRow[1])
-        assertTrue(pdfRow[4].contains("125,50"))
-        assertTrue(pdfRow[5].contains("130,00"))
+        val pdfRow = requireNotNull(payload.expensesSection).rows.single()
+        assertEquals("Dinner", pdfRow[1].text)
+        assertTrue(pdfRow[4].text.contains("125,50"))
+        assertTrue(pdfRow[5].text.contains("130,00"))
+        assertEquals(TripReportTone.NEGATIVE, pdfRow[5].tone)
+        assertEquals("https://splittrip.eu", payload.brandFooter.qrUrl)
+        assertNull(payload.proUpsellCallout)
 
-        val expensesCsv = payload.csvSections.first { it.title == "Itemized Expenses" }
+        val expensesCsv = payload.csvSections.first { it.title == "Itemised expenses" }
         val csvRow = expensesCsv.rows.single()
         assertEquals("2026-11-12", csvRow[0])
         assertEquals("125.50", csvRow[5])
@@ -124,12 +136,31 @@ class TripReportExportUiMapperTest {
     }
 
     @Test
+    fun `mapToExportPayload on Free tier omits itemised sections and includes Pro upsell callout`() {
+        val report = createRichReport()
+
+        val payload = mapper.mapToExportPayload(
+            report = report,
+            referenceYear = 2026,
+            includeItemisedDetails = false
+        )
+
+        assertEquals("Group summary", payload.reportTitle)
+        assertNull(payload.expensesSection)
+        assertNull(payload.contributionsSection)
+        assertNull(payload.withdrawalsSection)
+        assertNotNull(payload.proUpsellCallout)
+        assertEquals("PRO", payload.proUpsellCallout?.badge)
+        assertEquals("https://splittrip.eu", payload.brandFooter.qrUrl)
+    }
+
+    @Test
     fun `mapToExportPayload builds sanitized fileBaseName from group name and date`() {
         val report = createReport(groupName = "Café & Flatmates #1!")
 
         val payload = mapper.mapToExportPayload(report = report, referenceYear = 2026)
 
-        assertEquals("splittrip-statement-cafe-flatmates-1-2026-11-20", payload.fileBaseName)
+        assertEquals("splittrip-summary-cafe-flatmates-1-2026-11-20", payload.fileBaseName)
     }
 
     @Test
@@ -139,11 +170,12 @@ class TripReportExportUiMapperTest {
         val payload = mapper.mapToExportPayload(report = report, referenceYear = 2026)
 
         assertEquals(1, payload.memberBalancesSection.rows.size)
+        assertEquals(6, payload.memberBalancesSection.columnWeights.size)
         assertNotNull(payload.subunitBalancesSection)
         assertEquals(4, payload.settlementsSection.rows.size)
-        assertEquals(6, payload.expensesSection.rows.size)
-        assertEquals(3, payload.contributionsSection.rows.size)
-        assertEquals(1, payload.withdrawalsSection.rows.size)
+        assertEquals(6, requireNotNull(payload.expensesSection).rows.size)
+        assertEquals(3, requireNotNull(payload.contributionsSection).rows.size)
+        assertEquals(1, requireNotNull(payload.withdrawalsSection).rows.size)
         assertEquals(7, payload.csvSections.size)
 
         val thisMonthPayload = mapper.mapToExportPayload(
@@ -173,7 +205,7 @@ class TripReportExportUiMapperTest {
         assertTrue(thisMonthPayload.periodLabel.isNotBlank())
         assertTrue(lastMonthPayload.periodLabel.isNotBlank())
         assertTrue(singleDayPayload.periodLabel.isNotBlank())
-        assertEquals("Full ledger", noDatesAllTime.periodLabel)
+        assertEquals("All history", noDatesAllTime.periodLabel)
         assertTrue(mapper.formatShortDate(LocalDate.of(2026, 11, 5), 2026).isNotBlank())
     }
 

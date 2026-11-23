@@ -18,7 +18,33 @@ private fun TripReportExportBottomSheetDefaultPreview() {
             sheetState = TripReportExportSheetState(
                 isVisible = true,
                 selectedPreset = SpendingPeriodPreset.ALL_TIME,
-                selectedFormat = TripReportFormat.PDF
+                selectedFormat = TripReportFormat.PDF,
+                isCsvLocked = false,
+                includesItemisedDetails = true
+            ),
+            onSelectPreset = {},
+            onSelectCustomStartDate = {},
+            onSelectCustomEndDate = {},
+            onSelectFormat = {},
+            onConfirmExport = {},
+            onDismiss = {}
+        )
+    }
+}
+
+@PreviewThemes
+@Composable
+private fun TripReportExportBottomSheetFreeTierPreview() {
+    PreviewThemeWrapper {
+        TripReportExportBottomSheet(
+            sheetState = TripReportExportSheetState(
+                isVisible = true,
+                selectedPreset = SpendingPeriodPreset.ALL_TIME,
+                selectedFormat = TripReportFormat.PDF,
+                isCsvLocked = true,
+                includesItemisedDetails = false,
+                remainingFreeExports = 1,
+                monthlyFreeExportLimit = 1
             ),
             onSelectPreset = {},
             onSelectCustomStartDate = {},
@@ -42,7 +68,9 @@ private fun TripReportExportBottomSheetCustomCsvPreview() {
                 customEndDate = LocalDate.of(2026, 11, 20),
                 formattedCustomStartDate = "1 Nov",
                 formattedCustomEndDate = "20 Nov",
-                selectedFormat = TripReportFormat.CSV
+                selectedFormat = TripReportFormat.CSV,
+                isCsvLocked = false,
+                includesItemisedDetails = true
             ),
             onSelectPreset = {},
             onSelectCustomStartDate = {},

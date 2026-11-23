@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
@@ -52,7 +53,8 @@ fun TripReportExportBottomSheet(
     val scope = rememberCoroutineScope()
     val formats = remember { TripReportFormat.entries.toImmutableList() }
     val pdfLabel = stringResource(R.string.balances_export_format_pdf)
-    val csvLabel = stringResource(R.string.balances_export_format_csv)
+    val csvLabel = stringResource(resolveCsvFormatLabelRes(sheetState.isCsvLocked))
+    val subtitleText = stringResource(resolveExportSubtitleRes(sheetState.includesItemisedDetails))
 
     HorizonModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -64,14 +66,24 @@ fun TripReportExportBottomSheet(
                 .padding(MaterialTheme.spacing.ExtraLarge),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default)
         ) {
-            PassportTag(
-                text = stringResource(R.string.balances_export_sheet_badge),
-                style = PassportTagStyle.TERTIARY
-            )
-
             SheetTitleText(text = stringResource(R.string.balances_export_sheet_title))
 
-            SecondaryBodyText(text = stringResource(R.string.balances_export_sheet_subtitle))
+            SecondaryBodyText(
+                text = subtitleText,
+                maxLines = Int.MAX_VALUE
+            )
+
+            resolveFreeQuotaDisplay(sheetState)?.let { quota ->
+                PassportTag(
+                    text = pluralStringResource(
+                        R.plurals.balances_export_free_quota_badge,
+                        quota.remaining,
+                        quota.remaining,
+                        quota.monthlyLimit
+                    ),
+                    style = resolveQuotaTagStyle(quota.remaining)
+                )
+            }
 
             LabelText(text = stringResource(R.string.balances_export_period_label))
 
@@ -95,14 +107,17 @@ fun TripReportExportBottomSheet(
                 options = formats,
                 selectedOption = sheetState.selectedFormat,
                 onOptionSelected = onSelectFormat,
-                optionLabel = { format ->
-                    when (format) {
-                        TripReportFormat.PDF -> pdfLabel
-                        TripReportFormat.CSV -> csvLabel
-                    }
-                },
+                optionLabel = { format -> resolveFormatOptionLabel(format, pdfLabel, csvLabel) },
+                isOptionLocked = { format -> format == TripReportFormat.CSV && sheetState.isCsvLocked },
                 enabled = !sheetState.isExporting
             )
+
+            if (!sheetState.includesItemisedDetails) {
+                SecondaryBodyText(
+                    text = stringResource(R.string.balances_export_free_pro_hint),
+                    maxLines = Int.MAX_VALUE
+                )
+            }
 
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
 
@@ -125,4 +140,36 @@ fun TripReportExportBottomSheet(
             )
         }
     }
+}
+
+private fun resolveCsvFormatLabelRes(isCsvLocked: Boolean): Int =
+    if (isCsvLocked) R.string.balances_export_format_csv_pro else R.string.balances_export_format_csv
+
+private fun resolveExportSubtitleRes(includesItemisedDetails: Boolean): Int = if (includesItemisedDetails) {
+    R.string.balances_export_sheet_subtitle
+} else {
+    R.string.balances_export_sheet_subtitle_free
+}
+
+private data class FreeExportQuotaDisplay(
+    val remaining: Int,
+    val monthlyLimit: Int
+)
+
+private fun resolveFreeQuotaDisplay(sheetState: TripReportExportSheetState): FreeExportQuotaDisplay? {
+    val remaining = sheetState.remainingFreeExports ?: return null
+    val monthlyLimit = sheetState.monthlyFreeExportLimit ?: return null
+    return FreeExportQuotaDisplay(remaining = remaining, monthlyLimit = monthlyLimit)
+}
+
+private fun resolveQuotaTagStyle(remaining: Int): PassportTagStyle =
+    if (remaining > 0) PassportTagStyle.INFO else PassportTagStyle.WARNING
+
+private fun resolveFormatOptionLabel(
+    format: TripReportFormat,
+    pdfLabel: String,
+    csvLabel: String
+): String = when (format) {
+    TripReportFormat.PDF -> pdfLabel
+    TripReportFormat.CSV -> csvLabel
 }

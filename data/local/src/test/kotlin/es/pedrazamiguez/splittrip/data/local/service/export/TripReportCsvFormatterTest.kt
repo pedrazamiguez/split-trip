@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.data.local.service.export
 
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportBrandFooter
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportCsvSection
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportExportPayload
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportTableSection
@@ -13,16 +14,16 @@ class TripReportCsvFormatterTest {
 
     @Test
     fun `format serializes sections with CRLF line endings and preserves BigDecimal plain strings`() {
-        val emptySection = TripReportTableSection("Empty", emptyList(), emptyList())
+        val emptySection = TripReportTableSection(title = "Empty", headers = emptyList(), rows = emptyList())
         val payload = TripReportExportPayload(
-            fileBaseName = "splittrip-statement-flat-2026-11-20",
-            reportTitle = "Group Financial Statement",
+            fileBaseName = "splittrip-summary-flat-2026-11-20",
+            reportTitle = "Group summary & itemised ledger",
             groupName = "Shared Flat",
             groupDescription = "Monthly utilities",
-            periodLabel = "Full ledger",
+            periodLabel = "All history",
             generatedAtLabel = "Generated 20 Nov 2026",
             baseCurrency = "EUR",
-            summarySectionTitle = "Financial Summary",
+            summarySectionTitle = "Group overview",
             summaryMetrics = emptyList(),
             memberBalancesSection = emptySection,
             subunitBalancesSection = null,
@@ -30,11 +31,20 @@ class TripReportCsvFormatterTest {
             expensesSection = emptySection,
             contributionsSection = emptySection,
             withdrawalsSection = emptySection,
-            emptySectionLabel = "No entries",
+            proUpsellCallout = null,
+            brandFooter = TripReportBrandFooter(
+                brandTagline = "Split expenses without borders",
+                ctaHeadline = "Share expenses fairly. Zero stress.",
+                ctaSubtitle = "Offline-first multi-currency group pockets.",
+                websiteDisplay = "splittrip.eu",
+                qrUrl = "https://splittrip.eu",
+                qrCaption = "Scan to get SplitTrip"
+            ),
+            emptySectionLabel = "No activity recorded in this period",
             pageFooterTemplate = "Page %1\$d of %2\$d",
             csvSections = listOf(
                 TripReportCsvSection(
-                    title = "Itemized Expenses",
+                    title = "Itemised expenses",
                     headers = listOf("Title", "Amount", "Rate"),
                     rows = listOf(
                         listOf("Electricity", "125.50", "0.027193")
@@ -46,10 +56,10 @@ class TripReportCsvFormatterTest {
         val csv = formatter.format(payload)
 
         assertTrue(csv.endsWith("\r\n"))
-        assertTrue(csv.contains("ReportTitle,Group Financial Statement\r\n"))
+        assertTrue(csv.contains("ReportTitle,Group summary & itemised ledger\r\n"))
         assertTrue(csv.contains("GroupName,Shared Flat\r\n"))
         assertTrue(csv.contains("BaseCurrency,EUR\r\n"))
-        assertTrue(csv.contains("\r\nItemized Expenses\r\nTitle,Amount,Rate\r\nElectricity,125.50,0.027193\r\n"))
+        assertTrue(csv.contains("\r\nItemised expenses\r\nTitle,Amount,Rate\r\nElectricity,125.50,0.027193\r\n"))
     }
 
     @Test

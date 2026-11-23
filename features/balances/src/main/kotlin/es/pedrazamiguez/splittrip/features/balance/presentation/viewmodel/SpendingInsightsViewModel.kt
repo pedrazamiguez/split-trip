@@ -224,7 +224,11 @@ class SpendingInsightsViewModel(
     private fun handleExportEvent(event: SpendingInsightsUiEvent) {
         when (event) {
             SpendingInsightsUiEvent.RequestExportReport -> {
-                val groupId = _selectedGroupId.value ?: return
+                val groupId = _selectedGroupId.value
+                if (groupId == null) {
+                    emitExportGroupNotReadyError()
+                    return
+                }
                 val selection = _selectionState.value
                 tripReportExportEventHandler.handleExportRequested(
                     groupId = groupId,
@@ -247,10 +251,24 @@ class SpendingInsightsViewModel(
             is SpendingInsightsUiEvent.SelectExportFormat ->
                 tripReportExportEventHandler.handleSelectFormat(event.format)
             SpendingInsightsUiEvent.ConfirmExportReport -> {
-                val groupId = _selectedGroupId.value ?: return
+                val groupId = _selectedGroupId.value
+                if (groupId == null) {
+                    emitExportGroupNotReadyError()
+                    return
+                }
                 tripReportExportEventHandler.handleConfirmExport(groupId)
             }
             else -> Unit
+        }
+    }
+
+    private fun emitExportGroupNotReadyError() {
+        viewModelScope.launch {
+            _actions.emit(
+                SpendingInsightsUiAction.ShowExportError(
+                    UiText.StringResource(R.string.balances_export_error_group_not_ready)
+                )
+            )
         }
     }
 

@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.core.common.presentation
 
 import android.content.Context
+import android.content.res.Resources
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -141,6 +142,59 @@ class UiTextTest {
             val a = UiText.StringResource(resId)
             val b = UiText.StringResource(resId2)
             assertNotEquals(a.hashCode(), b.hashCode())
+        }
+    }
+
+    // ── PluralResource ────────────────────────────────────────────────────
+
+    @Nested
+    inner class PluralResourceTests {
+
+        private val resId = 77
+        private val resId2 = 88
+
+        @Test
+        fun `asString resolves via resources getQuantityString without args`() {
+            val resources = mockk<Resources>()
+            val context = mockk<Context> {
+                every { this@mockk.resources } returns resources
+            }
+            every { resources.getQuantityString(resId, 1) } returns "1 item"
+
+            val uiText = UiText.PluralResource(resId, 1)
+
+            assertEquals("1 item", uiText.asString(context))
+        }
+
+        @Test
+        fun `asString resolves via resources getQuantityString with plain and nested UiText args`() {
+            val resources = mockk<Resources>()
+            val context = mockk<Context> {
+                every { this@mockk.resources } returns resources
+            }
+            val nested = UiText.DynamicString("PDF")
+            every { resources.getQuantityString(resId, 2, "2", "PDF") } returns "Quedan 2 PDF"
+
+            val uiText = UiText.PluralResource(resId, 2, "2", nested)
+
+            assertEquals("Quedan 2 PDF", uiText.asString(context))
+        }
+
+        @Test
+        fun `equals and hashCode compare resId quantity and args`() {
+            val same1 = UiText.PluralResource(resId, 1, "1")
+            val same2 = UiText.PluralResource(resId, 1, "1")
+            val diffQty = UiText.PluralResource(resId, 2, "1")
+            val diffRes = UiText.PluralResource(resId2, 1, "1")
+            val diffArgs = UiText.PluralResource(resId, 1, "2")
+
+            assertTrue(same1 == same1)
+            assertEquals(same1, same2)
+            assertEquals(same1.hashCode(), same2.hashCode())
+            assertNotEquals(same1, diffQty)
+            assertNotEquals(same1, diffRes)
+            assertNotEquals(same1, diffArgs)
+            assertFalse(same1.equals("not a PluralResource"))
         }
     }
 }

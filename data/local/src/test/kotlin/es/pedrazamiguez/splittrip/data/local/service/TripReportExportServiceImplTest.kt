@@ -3,11 +3,14 @@ package es.pedrazamiguez.splittrip.data.local.service
 import android.content.Context
 import es.pedrazamiguez.splittrip.data.local.service.export.TripReportCsvFormatter
 import es.pedrazamiguez.splittrip.data.local.service.export.TripReportPdfRenderer
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportBrandFooter
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportCell
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportCsvSection
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportExportPayload
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportFormat
-import es.pedrazamiguez.splittrip.domain.model.report.TripReportKeyValueRow
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportMetricCard
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportTableSection
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportTone
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -62,10 +65,10 @@ class TripReportExportServiceImplTest {
 
             val result = service.export(payload, TripReportFormat.CSV)
 
-            val expectedFile = File(File(tempCacheDir, "exports"), "splittrip-statement-flat-2026-11-20.csv")
+            val expectedFile = File(File(tempCacheDir, "exports"), "splittrip-summary-flat-2026-11-20.csv")
             assertTrue(expectedFile.exists())
             val content = expectedFile.readText(Charsets.UTF_8)
-            assertTrue(content.contains("ReportTitle,Group Financial Statement\r\n"))
+            assertTrue(content.contains("ReportTitle,Group summary & itemised ledger\r\n"))
             assertTrue(content.contains("Coffee,3.50,Item 1\r\n"))
             assertEquals("text/csv", result.mimeType)
             assertEquals(expectedFile.name, result.fileName)
@@ -86,7 +89,7 @@ class TripReportExportServiceImplTest {
 
             val result = service.export(payload, TripReportFormat.PDF)
 
-            val expectedFile = File(File(tempCacheDir, "exports"), "splittrip-statement-flat-2026-11-20.pdf")
+            val expectedFile = File(File(tempCacheDir, "exports"), "splittrip-summary-flat-2026-11-20.pdf")
             verify(exactly = 1) { pdfRenderer.render(payload, expectedFile) }
             assertEquals("application/pdf", result.mimeType)
             assertEquals(expectedFile.name, result.fileName)
@@ -96,47 +99,46 @@ class TripReportExportServiceImplTest {
             )
         }
 
-    @Test
-    fun `buildPagePlans paginates large ledger across multiple pages`() {
-        val realRenderer = TripReportPdfRenderer()
-        val payload = createSamplePayload(expenseRowCount = 60)
-
-        val pages = realRenderer.buildPagePlans(payload, maxLinesPerPage = 20)
-
-        assertTrue(pages.size > 3)
-        assertTrue(pages.all { it.isNotEmpty() })
-    }
-
     private fun createSamplePayload(expenseRowCount: Int): TripReportExportPayload {
         val expenseRows = (1..expenseRowCount).map { index ->
             listOf("Coffee", "3.50", "Item $index")
         }
-        val emptyTable = TripReportTableSection("Empty", listOf("Col"), emptyList())
+        val expenseCells = expenseRows.map { row -> row.map { TripReportCell(it) } }
+        val emptyTable = TripReportTableSection(title = "Empty", headers = listOf("Col"), rows = emptyList())
         return TripReportExportPayload(
-            fileBaseName = "splittrip-statement-flat-2026-11-20",
-            reportTitle = "Group Financial Statement",
+            fileBaseName = "splittrip-summary-flat-2026-11-20",
+            reportTitle = "Group summary & itemised ledger",
             groupName = "Shared Flat",
             groupDescription = "Utilities & groceries",
-            periodLabel = "Full ledger",
+            periodLabel = "All history",
             generatedAtLabel = "Generated 20 Nov 2026",
             baseCurrency = "EUR",
-            summarySectionTitle = "Financial Summary",
-            summaryMetrics = listOf(TripReportKeyValueRow("Total contributed", "€100.00")),
+            summarySectionTitle = "Group overview",
+            summaryMetrics = listOf(TripReportMetricCard("Total contributed", "€100.00", TripReportTone.POSITIVE)),
             memberBalancesSection = emptyTable,
             subunitBalancesSection = null,
             settlementsSection = emptyTable,
             expensesSection = TripReportTableSection(
-                title = "Itemized Expenses",
+                title = "Itemised expenses",
                 headers = listOf("Title", "Amount", "Note"),
-                rows = expenseRows
+                rows = expenseCells
             ),
             contributionsSection = emptyTable,
             withdrawalsSection = emptyTable,
-            emptySectionLabel = "No entries",
+            proUpsellCallout = null,
+            brandFooter = TripReportBrandFooter(
+                brandTagline = "Split expenses without borders",
+                ctaHeadline = "Share expenses fairly. Zero stress.",
+                ctaSubtitle = "Offline-first multi-currency group pockets.",
+                websiteDisplay = "splittrip.eu",
+                qrUrl = "https://splittrip.eu",
+                qrCaption = "Scan to get SplitTrip"
+            ),
+            emptySectionLabel = "No activity recorded in this period",
             pageFooterTemplate = "Page %1\$d of %2\$d",
             csvSections = listOf(
                 TripReportCsvSection(
-                    title = "Itemized Expenses",
+                    title = "Itemised expenses",
                     headers = listOf("Title", "Amount", "Note"),
                     rows = expenseRows
                 )

@@ -2,9 +2,14 @@ package es.pedrazamiguez.splittrip.data.local.service.export
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportBrandFooter
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportCell
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportCellAlign
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportExportPayload
-import es.pedrazamiguez.splittrip.domain.model.report.TripReportKeyValueRow
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportMetricCard
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportProUpsellCallout
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportTableSection
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportTone
 import java.io.File
 import java.io.OutputStream
 import java.nio.file.Files
@@ -53,7 +58,7 @@ class TripReportPdfRendererTest {
         tempDir = Files.createTempDirectory("pdf-renderer-test").toFile()
         val bitmap = Bitmap.createBitmap(595, 842, Bitmap.Config.ARGB_8888)
         fakeSession = FakePdfDocumentSession(Canvas(bitmap))
-        renderer = TripReportPdfRenderer(sessionFactory = { fakeSession })
+        renderer = TripReportPdfRenderer(context = null, sessionFactory = { fakeSession })
     }
 
     @After
@@ -62,8 +67,8 @@ class TripReportPdfRendererTest {
     }
 
     @Test
-    fun `render writes valid multi-page PDF with all section types and truncated text`() {
-        val outputFile = File(tempDir, "statement.pdf")
+    fun `render writes valid multi-page Pro PDF with all section types and QR brand footer`() {
+        val outputFile = File(tempDir, "summary-pro.pdf")
         val payload = createFullPayload(expenseRowsCount = 55)
 
         renderer.render(payload, outputFile)
@@ -78,90 +83,161 @@ class TripReportPdfRendererTest {
     }
 
     @Test
-    fun `render writes PDF cleanly when optional sections are empty or null`() {
-        val outputFile = File(tempDir, "empty-statement.pdf")
-        val emptyTable = TripReportTableSection("Section", listOf("Col"), emptyList())
-        val payload = TripReportExportPayload(
-            fileBaseName = "empty",
-            reportTitle = "Group Financial Statement",
-            groupName = "Solo Group",
-            groupDescription = "",
-            periodLabel = "Full ledger",
-            generatedAtLabel = "Generated 20 Nov 2026",
-            baseCurrency = "EUR",
-            summarySectionTitle = "Summary",
-            summaryMetrics = listOf(TripReportKeyValueRow("Total", "€0.00")),
-            memberBalancesSection = emptyTable,
-            subunitBalancesSection = null,
-            settlementsSection = emptyTable,
-            expensesSection = emptyTable,
-            contributionsSection = emptyTable,
-            withdrawalsSection = emptyTable,
-            emptySectionLabel = "No entries in this period",
-            pageFooterTemplate = "invalid-%z",
-            csvSections = emptyList()
+    fun `render writes Free summary PDF with Pro upsell callout and no itemised sections`() {
+        val outputFile = File(tempDir, "summary-free.pdf")
+        val payload = createFullPayload(expenseRowsCount = 0).copy(
+            expensesSection = null,
+            contributionsSection = null,
+            withdrawalsSection = null,
+            proUpsellCallout = TripReportProUpsellCallout(
+                badge = "PRO",
+                title = "Itemised breakdown reserved for SplitTrip Pro",
+                body = "Upgrade to SplitTrip Pro for unlimited itemised PDFs and CSV spreadsheets."
+            )
         )
+
+        val pages = renderer.buildPagePlans(payload)
+        assertTrue(pages.flatten().any { it is PdfBlock.ProUpsellCard })
+        assertTrue(pages.flatten().any { it is PdfBlock.BrandFooterCard })
 
         renderer.render(payload, outputFile)
 
         assertTrue(outputFile.exists())
         assertTrue(outputFile.length() > 0L)
-        assertEquals(1, fakeSession.startedPages)
-        assertEquals(1, fakeSession.finishedPages)
+        assertEquals(fakeSession.startedPages, fakeSession.finishedPages)
         assertTrue(fakeSession.closed)
+    }
+
+    @Test
+    fun `resolveColumnWidths distributes table width proportionally without overflow`() {
+        val weights = listOf(0.22f, 0.16f, 0.16f, 0.16f, 0.14f, 0.16f)
+        val widths = TripReportPdfSectionDrawers.resolveColumnWidths(6, weights)
+
+        assertEquals(6, widths.size)
+        assertEquals(TripReportPdfMetrics.TABLE_INNER_WIDTH_PT, widths.sum(), 0.01f)
+        assertTrue(widths.all { it >= 60f })
     }
 
     private fun createFullPayload(expenseRowsCount: Int): TripReportExportPayload {
         val longTitle = "Very long restaurant and entertainment description exceeding single column width"
         val expenseRows = (1..expenseRowsCount).map { index ->
-            listOf("20 Nov", "$longTitle #$index", "Food", "Alice", "€12.50", "€14.00", "Finished")
+            listOf(
+                TripReportCell("20 Nov", TripReportTone.MUTED),
+                TripReportCell("$longTitle #$index"),
+                TripReportCell("Food", TripReportTone.MUTED),
+                TripReportCell("Alice"),
+                TripReportCell("€12.50", TripReportTone.MUTED, TripReportCellAlign.END),
+                TripReportCell("€14.00", TripReportTone.NEGATIVE, TripReportCellAlign.END),
+                TripReportCell("Finished", TripReportTone.BADGE_SUCCESS, TripReportCellAlign.END)
+            )
         }
         return TripReportExportPayload(
-            fileBaseName = "splittrip-statement-flat-2026-11-20",
-            reportTitle = "Group Financial Statement",
+            fileBaseName = "splittrip-summary-flat-2026-11-20",
+            reportTitle = "Group summary & itemised ledger",
             groupName = "Shared Flat & Household Budget",
             groupDescription = "Monthly recurring household ledger",
-            periodLabel = "1 Nov - 20 Nov",
+            periodLabel = "1 Nov – 20 Nov",
             generatedAtLabel = "Generated 20 Nov 2026",
             baseCurrency = "EUR",
-            summarySectionTitle = "Financial Summary",
-            summaryMetrics = listOf(
-                TripReportKeyValueRow("Base currency", "EUR"),
-                TripReportKeyValueRow("Total contributed", "€500.00")
-            ),
-            memberBalancesSection = TripReportTableSection(
-                title = "Member Balances",
-                headers = listOf("Member", "Contributed", "Spent", "Pocket", "Cash", "Net"),
-                rows = listOf(listOf("Alice", "€500.00", "€120.00", "€380.00", "€0.00", "€380.00"))
-            ),
-            subunitBalancesSection = TripReportTableSection(
-                title = "Subunit Balances",
-                headers = listOf("Subunit", "Contributed", "Spent", "Pocket", "Cash", "Net"),
-                rows = listOf(listOf("Couple", "€500.00", "€120.00", "€380.00", "€0.00", "€380.00"))
-            ),
-            settlementsSection = TripReportTableSection(
-                title = "Settlement Consensus",
-                headers = listOf("From", "To", "Source", "Amount", "Status"),
-                rows = listOf(listOf("Bob", "Alice", "Net", "€50.00", "Pending"))
-            ),
+            summarySectionTitle = "Group overview",
+            summaryMetrics = createSampleMetrics(),
+            memberBalancesSection = createSampleBalanceSection("Member balances", "Member", "Alice"),
+            subunitBalancesSection = createSampleBalanceSection("Subunit balances", "Subunit", "Couple"),
+            settlementsSection = createSampleSettlementsSection(),
             expensesSection = TripReportTableSection(
-                title = "Itemized Expenses",
+                title = "Itemised expenses",
+                accentTone = TripReportTone.NEGATIVE,
                 headers = listOf("Date", "Title", "Category", "Paid by", "Source", "Effective", "Status"),
                 rows = expenseRows
             ),
             contributionsSection = TripReportTableSection(
                 title = "Contributions",
+                accentTone = TripReportTone.POSITIVE,
                 headers = emptyList(),
                 rows = emptyList()
             ),
-            withdrawalsSection = TripReportTableSection(
-                title = "Cash Withdrawals",
-                headers = listOf("Date", "Member", "Amount", "Remaining", "Deducted"),
-                rows = listOf(listOf("2 Nov", "Alice", "€100.00", "€40.00", "€102.00"))
-            ),
-            emptySectionLabel = "No entries in this period",
+            withdrawalsSection = createSampleWithdrawalsSection(),
+            proUpsellCallout = null,
+            brandFooter = createSampleBrandFooter(),
+            emptySectionLabel = "No activity recorded in this period",
             pageFooterTemplate = "Page %1\$d of %2\$d",
             csvSections = emptyList()
         )
     }
+
+    private fun createSampleMetrics(): List<TripReportMetricCard> = listOf(
+        TripReportMetricCard("Virtual pocket", "€380.00", TripReportTone.PRIMARY),
+        TripReportMetricCard("Total contributed", "€500.00", TripReportTone.POSITIVE),
+        TripReportMetricCard("Total expenses", "€120.00", TripReportTone.NEGATIVE),
+        TripReportMetricCard("Cash in hand", "€40.00", TripReportTone.TEAL),
+        TripReportMetricCard("Extras & fees", "€4.50", TripReportTone.AMBER)
+    )
+
+    private fun createSampleBalanceSection(
+        title: String,
+        entityHeader: String,
+        entityName: String
+    ): TripReportTableSection = TripReportTableSection(
+        title = title,
+        accentTone = TripReportTone.PRIMARY,
+        columnWeights = listOf(0.22f, 0.16f, 0.16f, 0.16f, 0.14f, 0.16f),
+        columnAlignments = listOf(
+            TripReportCellAlign.START,
+            TripReportCellAlign.END,
+            TripReportCellAlign.END,
+            TripReportCellAlign.END,
+            TripReportCellAlign.END,
+            TripReportCellAlign.END
+        ),
+        headers = listOf(entityHeader, "Contributed", "Spent", "Pocket", "Cash", "Net"),
+        rows = listOf(
+            listOf(
+                TripReportCell(entityName),
+                TripReportCell("€500.00", TripReportTone.POSITIVE, TripReportCellAlign.END),
+                TripReportCell("€120.00", TripReportTone.NEGATIVE, TripReportCellAlign.END),
+                TripReportCell("€380.00", TripReportTone.POSITIVE, TripReportCellAlign.END),
+                TripReportCell("€0.00", TripReportTone.TEAL, TripReportCellAlign.END),
+                TripReportCell("€380.00", TripReportTone.POSITIVE, TripReportCellAlign.END)
+            )
+        )
+    )
+
+    private fun createSampleSettlementsSection(): TripReportTableSection = TripReportTableSection(
+        title = "Settlements",
+        accentTone = TripReportTone.TEAL,
+        headers = listOf("From", "To", "Source", "Amount", "Status"),
+        rows = listOf(
+            listOf(
+                TripReportCell("Bob"),
+                TripReportCell("Alice"),
+                TripReportCell("Net", TripReportTone.MUTED),
+                TripReportCell("€50.00", TripReportTone.PRIMARY, TripReportCellAlign.END),
+                TripReportCell("Pending", TripReportTone.BADGE_WARNING, TripReportCellAlign.END)
+            )
+        )
+    )
+
+    private fun createSampleWithdrawalsSection(): TripReportTableSection = TripReportTableSection(
+        title = "Cash withdrawals",
+        accentTone = TripReportTone.AMBER,
+        headers = listOf("Date", "Member", "Amount", "Remaining", "Deducted"),
+        rows = listOf(
+            listOf(
+                TripReportCell("2 Nov", TripReportTone.MUTED),
+                TripReportCell("Alice"),
+                TripReportCell("€100.00", TripReportTone.AMBER, TripReportCellAlign.END),
+                TripReportCell("€40.00", TripReportTone.TEAL, TripReportCellAlign.END),
+                TripReportCell("€102.00", TripReportTone.DEFAULT, TripReportCellAlign.END)
+            )
+        )
+    )
+
+    private fun createSampleBrandFooter(): TripReportBrandFooter = TripReportBrandFooter(
+        brandTagline = "Split expenses without borders",
+        ctaHeadline = "Share expenses fairly. Zero stress.",
+        ctaSubtitle = "Offline-first multi-currency group pockets on Android.",
+        websiteDisplay = "splittrip.eu",
+        qrUrl = "https://splittrip.eu",
+        qrCaption = "Scan to get SplitTrip"
+    )
 }

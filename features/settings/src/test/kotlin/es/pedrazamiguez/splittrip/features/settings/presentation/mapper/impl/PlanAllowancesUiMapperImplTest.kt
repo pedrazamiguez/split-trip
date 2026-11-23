@@ -6,9 +6,12 @@ import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.MediaUploadQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.PlanAllowances
+import es.pedrazamiguez.splittrip.domain.service.featuregate.ReportExportQuota
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowancePerkType
+import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowancePerkUiModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowanceQuotaType
+import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowanceQuotaUiModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowanceUsageStatus
 import io.mockk.every
 import io.mockk.mockk
@@ -57,48 +60,52 @@ class PlanAllowancesUiMapperImplTest {
         assertEquals(UiText.StringResource(R.string.plan_allowances_tier_free_subtitle), result.tierSubtitle)
         assertEquals(UiText.StringResource(R.string.plan_allowances_badge_free), result.tierBadge)
 
-        assertEquals(3, result.quotas.size)
-
-        val aiQuota = result.quotas[0]
-        assertEquals(AllowanceQuotaType.AI_RECEIPT_SCANS, aiQuota.type)
-        assertEquals(AllowanceUsageStatus.HEALTHY, aiQuota.status)
-        assertEquals(0.3333f, aiQuota.progressFraction, 0.0001f)
-        assertTrue(aiQuota.showProgressBar)
-        assertEquals(UiText.StringResource(R.string.plan_allowances_usage_fraction, "1", "3"), aiQuota.usageText)
-        assertEquals(UiText.StringResource(R.string.plan_allowances_status_remaining, "2"), aiQuota.statusBadge)
-
-        val mediaQuota = result.quotas[1]
-        assertEquals(AllowanceQuotaType.MEDIA_UPLOADS, mediaQuota.type)
-        assertEquals(AllowanceUsageStatus.HEALTHY, mediaQuota.status)
-        assertEquals(0.4000f, mediaQuota.progressFraction, 0.0001f)
-        assertTrue(mediaQuota.showProgressBar)
-        assertEquals(UiText.StringResource(R.string.plan_allowances_usage_fraction, "2", "5"), mediaQuota.usageText)
-        assertEquals(UiText.StringResource(R.string.plan_allowances_status_remaining, "3"), mediaQuota.statusBadge)
-
-        val groupsQuota = result.quotas[2]
-        assertEquals(AllowanceQuotaType.OWNED_GROUPS, groupsQuota.type)
-        assertEquals(AllowanceUsageStatus.HEALTHY, groupsQuota.status)
-        assertEquals(0f, groupsQuota.progressFraction, 0.0001f)
-        assertTrue(groupsQuota.showProgressBar)
-        assertEquals(UiText.StringResource(R.string.plan_allowances_usage_fraction, "0", "1"), groupsQuota.usageText)
-        assertEquals(UiText.StringResource(R.string.plan_allowances_status_remaining, "1"), groupsQuota.statusBadge)
+        assertEquals(4, result.quotas.size)
+        assertHealthyQuota(
+            quota = result.quotas[0],
+            expectedType = AllowanceQuotaType.AI_RECEIPT_SCANS,
+            expectedProgress = 0.3333f,
+            expectedUsage = UiText.StringResource(R.string.plan_allowances_usage_fraction, "1", "3"),
+            expectedBadge = UiText.PluralResource(R.plurals.plan_allowances_status_remaining, 2, "2")
+        )
+        assertHealthyQuota(
+            quota = result.quotas[1],
+            expectedType = AllowanceQuotaType.MEDIA_UPLOADS,
+            expectedProgress = 0.4000f,
+            expectedUsage = UiText.StringResource(R.string.plan_allowances_usage_fraction, "2", "5"),
+            expectedBadge = UiText.PluralResource(R.plurals.plan_allowances_status_remaining, 3, "3")
+        )
+        assertHealthyQuota(
+            quota = result.quotas[2],
+            expectedType = AllowanceQuotaType.REPORT_EXPORTS,
+            expectedProgress = 0f,
+            expectedUsage = UiText.StringResource(R.string.plan_allowances_usage_fraction, "0", "1"),
+            expectedBadge = UiText.PluralResource(R.plurals.plan_allowances_status_remaining, 1, "1")
+        )
+        assertHealthyQuota(
+            quota = result.quotas[3],
+            expectedType = AllowanceQuotaType.OWNED_GROUPS,
+            expectedProgress = 0f,
+            expectedUsage = UiText.StringResource(R.string.plan_allowances_usage_fraction, "0", "1"),
+            expectedBadge = UiText.PluralResource(R.plurals.plan_allowances_status_remaining, 1, "1")
+        )
 
         assertEquals(3, result.perks.size)
+        assertFreePerks(result.perks)
+    }
 
-        val membersPerk = result.perks[0]
-        assertEquals(AllowancePerkType.MEMBERS_PER_GROUP, membersPerk.type)
-        assertTrue(membersPerk.isIncluded)
-        assertEquals(UiText.StringResource(R.string.plan_allowances_perk_members_detail, "4"), membersPerk.detail)
+    private fun assertFreePerks(perks: List<AllowancePerkUiModel>) {
+        assertEquals(AllowancePerkType.MEMBERS_PER_GROUP, perks[0].type)
+        assertTrue(perks[0].isIncluded)
+        assertEquals(UiText.StringResource(R.string.plan_allowances_perk_members_detail, "4"), perks[0].detail)
 
-        val subunitsPerk = result.perks[1]
-        assertEquals(AllowancePerkType.SUBUNITS_PER_GROUP, subunitsPerk.type)
-        assertTrue(subunitsPerk.isIncluded)
-        assertEquals(UiText.StringResource(R.string.plan_allowances_perk_subunits_detail, "1"), subunitsPerk.detail)
+        assertEquals(AllowancePerkType.SUBUNITS_PER_GROUP, perks[1].type)
+        assertTrue(perks[1].isIncluded)
+        assertEquals(UiText.StringResource(R.string.plan_allowances_perk_subunits_detail, "1"), perks[1].detail)
 
-        val adFreePerk = result.perks[2]
-        assertEquals(AllowancePerkType.AD_FREE, adFreePerk.type)
-        assertFalse(adFreePerk.isIncluded)
-        assertEquals(UiText.StringResource(R.string.plan_allowances_perk_status_pro_only), adFreePerk.detail)
+        assertEquals(AllowancePerkType.AD_FREE, perks[2].type)
+        assertFalse(perks[2].isIncluded)
+        assertEquals(UiText.StringResource(R.string.plan_allowances_perk_status_pro_only), perks[2].detail)
     }
 
     @Test
@@ -116,12 +123,18 @@ class PlanAllowancesUiMapperImplTest {
         val aiQuota = result.quotas[0]
         assertEquals(AllowanceUsageStatus.APPROACHING_LIMIT, aiQuota.status)
         assertEquals(0.6667f, aiQuota.progressFraction, 0.0001f)
-        assertEquals(UiText.StringResource(R.string.plan_allowances_status_remaining, "1"), aiQuota.statusBadge)
+        assertEquals(
+            UiText.PluralResource(R.plurals.plan_allowances_status_remaining, 1, "1"),
+            aiQuota.statusBadge
+        )
 
         val mediaQuota = result.quotas[1]
         assertEquals(AllowanceUsageStatus.APPROACHING_LIMIT, mediaQuota.status)
         assertEquals(0.8000f, mediaQuota.progressFraction, 0.0001f)
-        assertEquals(UiText.StringResource(R.string.plan_allowances_status_remaining, "1"), mediaQuota.statusBadge)
+        assertEquals(
+            UiText.PluralResource(R.plurals.plan_allowances_status_remaining, 1, "1"),
+            mediaQuota.statusBadge
+        )
     }
 
     @Test
@@ -132,6 +145,8 @@ class PlanAllowancesUiMapperImplTest {
             aiMonthlyLimit = 3,
             usedUploads = 5,
             mediaMonthlyFreeLimit = 5,
+            usedExports = 1,
+            reportExportMonthlyFreeLimit = 1,
             ownedGroupsUsed = 1,
             maxOwnedGroups = 1
         )
@@ -196,7 +211,7 @@ class PlanAllowancesUiMapperImplTest {
         assertEquals(AllowanceUsageStatus.EXHAUSTED, mediaQuota.status)
         assertEquals(1f, mediaQuota.progressFraction, 0.0001f)
 
-        val groupsQuota = result.quotas[2]
+        val groupsQuota = result.quotas[3]
         assertEquals(AllowanceUsageStatus.EXHAUSTED, groupsQuota.status)
         assertEquals(1f, groupsQuota.progressFraction, 0.0001f)
     }
@@ -237,7 +252,13 @@ class PlanAllowancesUiMapperImplTest {
         assertEquals(UiText.StringResource(R.string.plan_allowances_usage_unlimited, "18"), mediaQuota.usageText)
         assertEquals(UiText.StringResource(R.string.plan_allowances_badge_unlimited), mediaQuota.statusBadge)
 
-        val groupsQuota = result.quotas[2]
+        val reportExportQuota = result.quotas[2]
+        assertEquals(AllowanceQuotaType.REPORT_EXPORTS, reportExportQuota.type)
+        assertEquals(AllowanceUsageStatus.UNLIMITED, reportExportQuota.status)
+        assertFalse(reportExportQuota.showProgressBar)
+        assertEquals(UiText.StringResource(R.string.plan_allowances_badge_unlimited), reportExportQuota.statusBadge)
+
+        val groupsQuota = result.quotas[3]
         assertEquals(AllowanceUsageStatus.HEALTHY, groupsQuota.status)
         assertTrue(groupsQuota.showProgressBar)
         assertEquals(0.0400f, groupsQuota.progressFraction, 0.0001f)
@@ -322,6 +343,21 @@ class PlanAllowancesUiMapperImplTest {
         )
     }
 
+    private fun assertHealthyQuota(
+        quota: AllowanceQuotaUiModel,
+        expectedType: AllowanceQuotaType,
+        expectedProgress: Float,
+        expectedUsage: UiText,
+        expectedBadge: UiText
+    ) {
+        assertEquals(expectedType, quota.type)
+        assertEquals(AllowanceUsageStatus.HEALTHY, quota.status)
+        assertEquals(expectedProgress, quota.progressFraction, 0.0001f)
+        assertTrue(quota.showProgressBar)
+        assertEquals(expectedUsage, quota.usageText)
+        assertEquals(expectedBadge, quota.statusBadge)
+    }
+
     @Suppress("LongParameterList")
     private fun createAllowances(
         tier: SubscriptionTier = SubscriptionTier.FREE,
@@ -330,6 +366,8 @@ class PlanAllowancesUiMapperImplTest {
         aiMonthlyLimit: Int = 3,
         usedUploads: Int = 2,
         mediaMonthlyFreeLimit: Int = 5,
+        usedExports: Int = 0,
+        reportExportMonthlyFreeLimit: Int = 1,
         ownedGroupsUsed: Int = 0,
         maxOwnedGroups: Int = 1,
         maxMembersPerGroup: Int = 4,
@@ -349,6 +387,12 @@ class PlanAllowancesUiMapperImplTest {
             mediaUploadQuota = MediaUploadQuota(
                 usedUploads = usedUploads,
                 monthlyFreeLimit = mediaMonthlyFreeLimit,
+                isProTier = isPro,
+                isGatingEnabled = isGatingEnabled
+            ),
+            reportExportQuota = ReportExportQuota(
+                usedExports = usedExports,
+                monthlyFreeLimit = reportExportMonthlyFreeLimit,
                 isProTier = isPro,
                 isGatingEnabled = isGatingEnabled
             ),

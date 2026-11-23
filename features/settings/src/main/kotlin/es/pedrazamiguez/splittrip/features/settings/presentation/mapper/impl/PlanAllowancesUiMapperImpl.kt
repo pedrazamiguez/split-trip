@@ -83,6 +83,18 @@ class PlanAllowancesUiMapperImpl(
                 isGatingEnabled = allowances.isGatingEnabled
             ),
             mapQuota(
+                type = AllowanceQuotaType.REPORT_EXPORTS,
+                titleRes = R.string.plan_allowances_quota_report_exports_title,
+                subtitleRes = if (allowances.reportExportQuota.isUnlimited) {
+                    R.string.plan_allowances_quota_report_exports_subtitle_pro
+                } else {
+                    R.string.plan_allowances_quota_report_exports_subtitle_free
+                },
+                used = allowances.reportExportQuota.usedExports,
+                limit = allowances.reportExportQuota.monthlyLimit,
+                isGatingEnabled = allowances.isGatingEnabled
+            ),
+            mapQuota(
                 type = AllowanceQuotaType.OWNED_GROUPS,
                 titleRes = R.string.plan_allowances_quota_owned_groups_title,
                 subtitleRes = R.string.plan_allowances_quota_owned_groups_subtitle,
@@ -132,8 +144,9 @@ class PlanAllowancesUiMapperImpl(
         val statusBadge = when (status) {
             AllowanceUsageStatus.EXHAUSTED -> UiText.StringResource(R.string.plan_allowances_status_exhausted)
             AllowanceUsageStatus.HEALTHY,
-            AllowanceUsageStatus.APPROACHING_LIMIT -> UiText.StringResource(
-                R.string.plan_allowances_status_remaining,
+            AllowanceUsageStatus.APPROACHING_LIMIT -> UiText.PluralResource(
+                resId = R.plurals.plan_allowances_status_remaining,
+                quantity = remaining,
                 formatInt(remaining)
             )
             AllowanceUsageStatus.UNLIMITED -> UiText.StringResource(R.string.plan_allowances_badge_unlimited)

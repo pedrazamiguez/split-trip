@@ -37,6 +37,7 @@ class BalancesScreenUiProviderImpl(
         val currentBackStackEntry by tabNavController.currentBackStackEntryAsState()
         val balancesBackStackEntry = remember(currentBackStackEntry, tabNavController) {
             runCatching { tabNavController.getBackStackEntry(Routes.BALANCES) }.getOrNull()
+                ?: currentBackStackEntry
         }
         val onExportClick = debounced {
             balancesBackStackEntry?.savedStateHandle?.set(KEY_EXPORT_REPORT_REQUESTED, true)

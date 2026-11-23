@@ -11,11 +11,13 @@ interface FeatureGateService {
     /**
      * Checks if a specific premium or restricted feature is enabled.
      *
-     * For collaborative capabilities (e.g. [GatedFeature.SUBUNIT_CREATION],
-     * [GatedFeature.TRIP_REPORT_EXPORT]), access is enabled if either the acting authenticated
-     * user or the group creator is on the Pro tier.
+     * For collaborative capabilities (e.g. [GatedFeature.SUBUNIT_CREATION]), access is enabled
+     * if either the acting authenticated user or the group creator is on the Pro tier.
      * For [GatedFeature.GROUP_COVER_UPLOAD], access evaluates the acting user's shared monthly
      * media upload quota (`observeMediaUploadQuota().canUpload`).
+     * For [GatedFeature.TRIP_REPORT_EXPORT], access evaluates the acting user's personal monthly
+     * report export quota (`observeReportExportQuota().canExportPdf`) strictly on the acting
+     * user's tier (not inherited from the group creator).
      * For group-level creator-bound capabilities, if [groupId] is provided,
      * access is evaluated against the group creator's tier.
      * For user-level capabilities (e.g. AI receipt OCR scanning), access is evaluated
@@ -45,8 +47,15 @@ interface FeatureGateService {
     fun observeMediaUploadQuota(): Flow<MediaUploadQuota>
 
     /**
+     * Observes the acting user's monthly group report export quota (1 summary PDF/month on Free;
+     * unlimited full itemised PDF & CSV on Pro) for the current calendar month.
+     */
+    fun observeReportExportQuota(): Flow<ReportExportQuota>
+
+    /**
      * Observes a unified snapshot of the acting user's subscription tier, monthly AI receipt
-     * scan quota, shared monthly media upload quota, owned-group usage, and tier-level allowances.
+     * scan quota, shared monthly media upload quota, monthly report export quota, owned-group
+     * usage, and tier-level allowances.
      */
     fun observePlanAllowances(): Flow<PlanAllowances>
 

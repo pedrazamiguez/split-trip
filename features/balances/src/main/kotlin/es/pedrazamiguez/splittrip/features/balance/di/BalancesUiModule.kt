@@ -19,6 +19,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteCashWithdrawalUse
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteContributionUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetBalancesDashboardFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSpendingInsightsFlowUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.RecordReportExportUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetLastSeenBalanceUseCase
@@ -73,12 +74,14 @@ val balancesUiModule = module {
     factory<TripReportExportEventHandler> {
         val featureGateService = get<FeatureGateService>()
         val buildGroupTripReportUseCase = get<BuildGroupTripReportUseCase>()
+        val recordReportExportUseCase = get<RecordReportExportUseCase>()
         val tripReportExportUiMapper = get<TripReportExportUiMapper>()
         val tripReportExportService = get<TripReportExportService>()
         val telemetryTracker = get<TelemetryTracker>()
         TripReportExportEventHandlerImpl(
             featureGateService = featureGateService,
             buildGroupTripReportUseCase = buildGroupTripReportUseCase,
+            recordReportExportUseCase = recordReportExportUseCase,
             tripReportExportUiMapper = tripReportExportUiMapper,
             tripReportExportService = tripReportExportService,
             telemetryTracker = telemetryTracker

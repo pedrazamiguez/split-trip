@@ -219,9 +219,9 @@
     <string name="pro_preview_unlimited_receipts_title">Adjunta recibos ilimitados</string>
     <string name="pro_preview_unlimited_receipts_description">Guarda todas las fotos y PDF de tus recibos adjuntos y sincronizados para todo tu grupo, sin límite mensual de adjuntos.</string>
     <string name="pro_preview_unlimited_receipts_highlight">Fotos y PDF de recibos ilimitados sincronizados en la nube para cada grupo</string>
-    <string name="pro_preview_group_report_export_title">Exporta estados de cuentas del grupo</string>
-    <string name="pro_preview_group_report_export_description">Genera estados de cuentas en PDF y libros contables en CSV listos para hojas de cálculo con gastos detallados, conversiones de divisa, balances y liquidaciones de cualquier periodo.</string>
-    <string name="pro_preview_group_report_export_highlight">Estados de cuentas en PDF y exportaciones CSV para el historial completo o rangos de fechas personalizados</string>
+    <string name="pro_preview_group_report_export_title">Exportaciones completas en PDF y CSV</string>
+    <string name="pro_preview_group_report_export_description">El plan Gratis incluye 1 resumen PDF al mes. Pásate a SplitTrip Pro para obtener exportaciones ilimitadas con gastos detallados, aportaciones, retiradas de efectivo y archivos CSV listos para hojas de cálculo.</string>
+    <string name="pro_preview_group_report_export_highlight">Resúmenes PDF detallados ilimitados y hojas CSV para cualquier periodo</string>
 
     <!-- Password Requirements Indicator -->
     <string name="password_requirement_min_length">Al menos 8 caracteres</string>

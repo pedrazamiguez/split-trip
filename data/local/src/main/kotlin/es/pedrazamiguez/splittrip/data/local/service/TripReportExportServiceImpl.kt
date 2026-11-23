@@ -16,7 +16,7 @@ import kotlinx.coroutines.withContext
 class TripReportExportServiceImpl(
     private val context: Context,
     private val csvFormatter: TripReportCsvFormatter = TripReportCsvFormatter(),
-    private val pdfRenderer: TripReportPdfRenderer = TripReportPdfRenderer(),
+    private val pdfRenderer: TripReportPdfRenderer = TripReportPdfRenderer(context = context),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val uriResolver: (Context, File) -> String = { ctx, file ->
         FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file).toString()
@@ -66,7 +66,7 @@ class TripReportExportServiceImpl(
 
     private companion object {
         const val EXPORTS_DIR_NAME = "exports"
-        const val DEFAULT_FILE_BASE_NAME = "splittrip-statement"
+        const val DEFAULT_FILE_BASE_NAME = "splittrip-summary"
         const val STALE_EXPORT_MAX_AGE_MS = 24L * 60L * 60L * 1000L
         val INVALID_FILENAME_CHARS_REGEX = Regex("[^a-zA-Z0-9._-]")
     }

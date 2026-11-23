@@ -65,8 +65,11 @@ fun BalancesFeature(
             ?.getStateFlow(KEY_EXPORT_REPORT_REQUESTED, false)
             ?.collectLatest { requested ->
                 if (requested) {
+                    // Reset to false instead of remove(): SavedStateHandle.remove() drops the
+                    // backing StateFlow from SavedStateHandleImpl.flows, silently breaking all
+                    // subsequent taps on the Share action.
+                    balancesBackStackEntry.savedStateHandle[KEY_EXPORT_REPORT_REQUESTED] = false
                     balancesViewModel.onEvent(BalancesUiEvent.RequestExportReport)
-                    balancesBackStackEntry.savedStateHandle.remove<Boolean>(KEY_EXPORT_REPORT_REQUESTED)
                 }
             }
     }

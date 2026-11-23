@@ -14,6 +14,12 @@ data class PlanAllowances(
     val isGatingEnabled: Boolean,
     val aiReceiptQuota: AiReceiptQuota,
     val mediaUploadQuota: MediaUploadQuota,
+    val reportExportQuota: ReportExportQuota = ReportExportQuota(
+        usedExports = 0,
+        monthlyFreeLimit = 1,
+        isProTier = tier == SubscriptionTier.PRO,
+        isGatingEnabled = isGatingEnabled
+    ),
     val ownedGroupsUsed: Int,
     val maxOwnedGroups: Int,
     val maxMembersPerGroup: Int,

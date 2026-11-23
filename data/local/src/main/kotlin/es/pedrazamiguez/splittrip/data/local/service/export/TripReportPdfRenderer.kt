@@ -1,12 +1,16 @@
 package es.pedrazamiguez.splittrip.data.local.service.export
 
+import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportBrandFooter
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportCell
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportCellAlign
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportExportPayload
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportMetricCard
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportProUpsellCallout
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportTableSection
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportTone
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -43,42 +47,99 @@ private class AndroidPdfDocumentSession : PdfDocumentSession {
     }
 }
 
-internal data class PdfLineItem(
-    val type: PdfLineType,
-    val columns: List<String>
-)
+internal sealed interface PdfBlock {
+    val heightPt: Float
 
-internal enum class PdfLineType {
-    TITLE,
-    SUBTITLE,
-    SECTION_HEADER,
-    KEY_VALUE,
-    TABLE_HEADER,
-    TABLE_ROW,
-    EMPTY_HINT,
-    SPACER
+    data class BrandHeader(
+        val brandTagline: String,
+        val periodLabel: String
+    ) : PdfBlock {
+        override val heightPt: Float = TripReportPdfMetrics.BRAND_HEADER_HEIGHT_PT
+    }
+
+    data class HeroGroupCard(
+        val reportTitle: String,
+        val groupName: String,
+        val groupDescription: String,
+        val metaLine: String,
+        override val heightPt: Float
+    ) : PdfBlock
+
+    data class SummaryMetricsGrid(
+        val metrics: List<TripReportMetricCard>,
+        override val heightPt: Float
+    ) : PdfBlock
+
+    data class SectionHeading(
+        val title: String,
+        val accentTone: TripReportTone
+    ) : PdfBlock {
+        override val heightPt: Float = TripReportPdfMetrics.SECTION_HEADING_HEIGHT_PT
+    }
+
+    data class TableHeader(
+        val headers: List<String>,
+        val columnWeights: List<Float>,
+        val columnAlignments: List<TripReportCellAlign>
+    ) : PdfBlock {
+        override val heightPt: Float = TripReportPdfMetrics.TABLE_HEADER_HEIGHT_PT
+    }
+
+    data class TableRow(
+        val cells: List<TripReportCell>,
+        val columnWeights: List<Float>,
+        val columnAlignments: List<TripReportCellAlign>,
+        val rowIndex: Int
+    ) : PdfBlock {
+        override val heightPt: Float = TripReportPdfMetrics.TABLE_ROW_HEIGHT_PT
+    }
+
+    data class EmptySection(val text: String) : PdfBlock {
+        override val heightPt: Float = TripReportPdfMetrics.EMPTY_SECTION_HEIGHT_PT
+    }
+
+    data class ProUpsellCard(val callout: TripReportProUpsellCallout) : PdfBlock {
+        override val heightPt: Float = TripReportPdfMetrics.PRO_UPSELL_CARD_HEIGHT_PT + 10f
+    }
+
+    data class BrandFooterCard(val brandFooter: TripReportBrandFooter) : PdfBlock {
+        override val heightPt: Float = TripReportPdfMetrics.BRAND_FOOTER_CARD_HEIGHT_PT
+    }
+
+    data object Spacer : PdfBlock {
+        override val heightPt: Float = TripReportPdfMetrics.SPACER_HEIGHT_PT
+    }
 }
 
 class TripReportPdfRenderer internal constructor(
+    private val context: Context?,
     private val sessionFactory: () -> PdfDocumentSession
 ) {
 
-    constructor() : this(sessionFactory = { AndroidPdfDocumentSession() })
+    constructor(context: Context? = null) : this(
+        context = context,
+        sessionFactory = { AndroidPdfDocumentSession() }
+    )
 
     fun render(payload: TripReportExportPayload, outputFile: File) {
-        val pagePlans = buildPagePlans(payload)
+        val paints = TripReportPdfTheme.createPaints(context)
+        val pagePlans = buildPagePlans(payload, paints)
         val totalPages = pagePlans.size.coerceAtLeast(1)
         val session = sessionFactory()
-        val paints = createPaints()
 
         try {
-            pagePlans.forEachIndexed { index, items ->
+            pagePlans.forEachIndexed { index, blocks ->
                 val pageNumber = index + 1
-                val canvas = session.startPage(A4_WIDTH_PT, A4_HEIGHT_PT, pageNumber)
+                val canvas = session.startPage(
+                    TripReportPdfMetrics.A4_WIDTH_PT,
+                    TripReportPdfMetrics.A4_HEIGHT_PT,
+                    pageNumber
+                )
                 renderPage(
                     canvas = canvas,
-                    items = items,
+                    blocks = blocks,
                     paints = paints,
+                    websiteDisplay = payload.brandFooter.websiteDisplay,
                     footerText = formatFooter(payload.pageFooterTemplate, pageNumber, totalPages)
                 )
                 session.finishCurrentPage()
@@ -94,353 +155,298 @@ class TripReportPdfRenderer internal constructor(
 
     internal fun buildPagePlans(
         payload: TripReportExportPayload,
-        maxLinesPerPage: Int = DEFAULT_MAX_LINES_PER_PAGE
-    ): List<List<PdfLineItem>> {
-        val effectiveLimit = maxLinesPerPage.coerceAtLeast(MIN_LINES_PER_PAGE)
-        val allLines = flattenPayload(payload)
-        if (allLines.isEmpty()) return listOf(emptyList())
+        paints: TripReportPdfPaints = TripReportPdfTheme.createPaints(context)
+    ): List<List<PdfBlock>> {
+        val allBlocks = flattenPayload(payload, paints)
+        if (allBlocks.isEmpty()) return listOf(emptyList())
 
-        val accumulator = PagePlanAccumulator(effectiveLimit)
-        allLines.forEach(accumulator::accept)
-        return accumulator.finish()
+        val availableHeight = TripReportPdfMetrics.MAX_CONTENT_Y_PT - TripReportPdfMetrics.MARGIN_TOP_PT
+        val paginator = HeightPaginator(availableHeight)
+        allBlocks.forEach(paginator::accept)
+        return paginator.finish()
     }
 
-    private class PagePlanAccumulator(private val maxLinesPerPage: Int) {
-        private val pages = mutableListOf<List<PdfLineItem>>()
-        private var currentPage = mutableListOf<PdfLineItem>()
-        private var currentSectionHeader: PdfLineItem? = null
-        private var currentTableHeader: PdfLineItem? = null
-
-        fun accept(item: PdfLineItem) {
-            if (currentPage.isEmpty() && item.type == PdfLineType.SPACER) return
-            updateHeaders(item)
-            if (currentPage.size >= maxLinesPerPage) {
-                flushPage(nextItem = item)
-            }
-            if (currentPage.isNotEmpty() || item.type != PdfLineType.SPACER) {
-                currentPage.add(item)
-            }
-        }
-
-        fun finish(): List<List<PdfLineItem>> {
-            if (currentPage.isNotEmpty()) {
-                pages.add(currentPage)
-            }
-            return pages
-        }
-
-        private fun updateHeaders(item: PdfLineItem) {
-            when (item.type) {
-                PdfLineType.SECTION_HEADER -> {
-                    currentSectionHeader = item
-                    currentTableHeader = null
-                }
-                PdfLineType.TABLE_HEADER -> currentTableHeader = item
-                else -> Unit
-            }
-        }
-
-        private fun flushPage(nextItem: PdfLineItem) {
-            pages.add(currentPage)
-            currentPage = mutableListOf()
-            if (nextItem.type == PdfLineType.TABLE_ROW) {
-                currentSectionHeader?.let(currentPage::add)
-                currentTableHeader?.let(currentPage::add)
-            }
-        }
-    }
-
-    private fun flattenPayload(payload: TripReportExportPayload): List<PdfLineItem> {
-        val lines = mutableListOf<PdfLineItem>()
-        lines.add(PdfLineItem(PdfLineType.TITLE, listOf(payload.reportTitle)))
-        lines.add(PdfLineItem(PdfLineType.SUBTITLE, listOf(payload.groupName)))
-        if (payload.groupDescription.isNotBlank()) {
-            lines.add(PdfLineItem(PdfLineType.SUBTITLE, listOf(payload.groupDescription)))
-        }
-        lines.add(
-            PdfLineItem(
-                PdfLineType.SUBTITLE,
-                listOf("${payload.periodLabel}  |  ${payload.generatedAtLabel}")
+    private fun flattenPayload(
+        payload: TripReportExportPayload,
+        paints: TripReportPdfPaints
+    ): List<PdfBlock> = buildList {
+        add(
+            PdfBlock.BrandHeader(
+                brandTagline = payload.brandFooter.brandTagline,
+                periodLabel = payload.periodLabel
             )
         )
-        lines.add(PdfLineItem(PdfLineType.SPACER, emptyList()))
-
-        lines.add(PdfLineItem(PdfLineType.SECTION_HEADER, listOf(payload.summarySectionTitle)))
-        payload.summaryMetrics.forEach { metric ->
-            lines.add(PdfLineItem(PdfLineType.KEY_VALUE, listOf(metric.label, metric.value)))
+        val heroHeight = TripReportPdfBrandDrawers.measureHeroGroupCardHeight(payload.groupDescription, paints) + 10f
+        val metaLine = "${payload.generatedAtLabel}  ·  ${payload.baseCurrency}"
+        add(
+            PdfBlock.HeroGroupCard(
+                reportTitle = payload.reportTitle,
+                groupName = payload.groupName,
+                groupDescription = payload.groupDescription,
+                metaLine = metaLine,
+                heightPt = heroHeight
+            )
+        )
+        if (payload.summaryMetrics.isNotEmpty()) {
+            add(
+                PdfBlock.SummaryMetricsGrid(
+                    metrics = payload.summaryMetrics,
+                    heightPt = TripReportPdfBrandDrawers.measureSummaryGridHeight(payload.summaryMetrics)
+                )
+            )
         }
 
-        appendTableSection(lines, payload.memberBalancesSection, payload.emptySectionLabel)
-        payload.subunitBalancesSection?.let { appendTableSection(lines, it, payload.emptySectionLabel) }
-        appendTableSection(lines, payload.settlementsSection, payload.emptySectionLabel)
-        appendTableSection(lines, payload.expensesSection, payload.emptySectionLabel)
-        appendTableSection(lines, payload.contributionsSection, payload.emptySectionLabel)
-        appendTableSection(lines, payload.withdrawalsSection, payload.emptySectionLabel)
-        return lines
+        appendTableSection(this, payload.memberBalancesSection, payload.emptySectionLabel)
+        payload.subunitBalancesSection?.let { appendTableSection(this, it, payload.emptySectionLabel) }
+        appendTableSection(this, payload.settlementsSection, payload.emptySectionLabel)
+
+        val upsellCallout = payload.proUpsellCallout
+        if (upsellCallout != null) {
+            add(PdfBlock.Spacer)
+            add(PdfBlock.ProUpsellCard(upsellCallout))
+        } else {
+            payload.expensesSection?.let { appendTableSection(this, it, payload.emptySectionLabel) }
+            payload.contributionsSection?.let { appendTableSection(this, it, payload.emptySectionLabel) }
+            payload.withdrawalsSection?.let { appendTableSection(this, it, payload.emptySectionLabel) }
+        }
+
+        add(PdfBlock.Spacer)
+        add(PdfBlock.BrandFooterCard(payload.brandFooter))
     }
 
     private fun appendTableSection(
-        lines: MutableList<PdfLineItem>,
+        blocks: MutableList<PdfBlock>,
         section: TripReportTableSection,
         emptySectionLabel: String
     ) {
-        lines.add(PdfLineItem(PdfLineType.SPACER, emptyList()))
-        lines.add(PdfLineItem(PdfLineType.SECTION_HEADER, listOf(section.title)))
+        blocks.add(PdfBlock.Spacer)
+        blocks.add(PdfBlock.SectionHeading(title = section.title, accentTone = section.accentTone))
         if (section.headers.isNotEmpty()) {
-            lines.add(PdfLineItem(PdfLineType.TABLE_HEADER, section.headers))
+            blocks.add(
+                PdfBlock.TableHeader(
+                    headers = section.headers,
+                    columnWeights = section.columnWeights,
+                    columnAlignments = section.columnAlignments
+                )
+            )
         }
         if (section.rows.isEmpty()) {
-            lines.add(PdfLineItem(PdfLineType.EMPTY_HINT, listOf(emptySectionLabel)))
+            blocks.add(PdfBlock.EmptySection(emptySectionLabel))
         } else {
-            section.rows.forEach { row ->
-                lines.add(PdfLineItem(PdfLineType.TABLE_ROW, row))
+            section.rows.forEachIndexed { rowIndex, row ->
+                blocks.add(
+                    PdfBlock.TableRow(
+                        cells = row,
+                        columnWeights = section.columnWeights,
+                        columnAlignments = section.columnAlignments,
+                        rowIndex = rowIndex
+                    )
+                )
             }
         }
     }
 
     private fun renderPage(
         canvas: Canvas,
-        items: List<PdfLineItem>,
-        paints: PdfPaints,
+        blocks: List<PdfBlock>,
+        paints: TripReportPdfPaints,
+        websiteDisplay: String,
         footerText: String
     ) {
-        var cursorY = MARGIN_TOP_PT
-        items.forEach { item ->
-            cursorY = drawLineItem(canvas, item, paints, cursorY)
-        }
-
-        val footerY = A4_HEIGHT_PT - MARGIN_BOTTOM_PT
-        canvas.drawLine(
-            MARGIN_X_PT,
-            footerY - FOOTER_RULE_OFFSET_PT,
-            RIGHT_EDGE_PT,
-            footerY - FOOTER_RULE_OFFSET_PT,
-            paints.divider
-        )
-        canvas.drawText(footerText, MARGIN_X_PT, footerY, paints.footer)
-    }
-
-    private fun drawLineItem(
-        canvas: Canvas,
-        item: PdfLineItem,
-        paints: PdfPaints,
-        cursorY: Float
-    ): Float = when (item.type) {
-        PdfLineType.TITLE -> {
-            canvas.drawText(
-                fitText(item.columns.firstOrNull().orEmpty(), CONTENT_WIDTH_PT, paints.title),
-                MARGIN_X_PT,
-                cursorY,
-                paints.title
-            )
-            cursorY + TITLE_STEP_PT
-        }
-        PdfLineType.SUBTITLE,
-        PdfLineType.EMPTY_HINT -> {
-            canvas.drawText(
-                fitText(item.columns.firstOrNull().orEmpty(), CONTENT_WIDTH_PT, paints.subtitle),
-                MARGIN_X_PT,
-                cursorY,
-                paints.subtitle
-            )
-            if (item.type == PdfLineType.SUBTITLE) cursorY + SUBTITLE_STEP_PT else cursorY + ROW_STEP_PT
-        }
-        PdfLineType.SECTION_HEADER -> drawSectionHeader(canvas, item, paints, cursorY)
-        PdfLineType.KEY_VALUE -> drawKeyValueRow(canvas, item, paints, cursorY)
-        PdfLineType.TABLE_HEADER -> drawTableHeader(canvas, item, paints, cursorY)
-        PdfLineType.TABLE_ROW -> {
-            drawTableColumns(canvas, item.columns, paints.tableCell, cursorY)
-            cursorY + ROW_STEP_PT
-        }
-        PdfLineType.SPACER -> cursorY + SPACER_STEP_PT
-    }
-
-    private fun drawSectionHeader(
-        canvas: Canvas,
-        item: PdfLineItem,
-        paints: PdfPaints,
-        cursorY: Float
-    ): Float {
         canvas.drawRect(
-            MARGIN_X_PT,
-            cursorY - SECTION_BG_TOP_OFFSET_PT,
-            RIGHT_EDGE_PT,
-            cursorY + SECTION_BG_BOTTOM_OFFSET_PT,
-            paints.sectionBg
+            0f,
+            0f,
+            TripReportPdfMetrics.A4_WIDTH_PT.toFloat(),
+            TripReportPdfMetrics.A4_HEIGHT_PT.toFloat(),
+            paints.pageBg
         )
-        canvas.drawText(
-            fitText(item.columns.firstOrNull().orEmpty(), CONTENT_WIDTH_PT - CELL_PAD_PT, paints.sectionHeader),
-            MARGIN_X_PT + CELL_PAD_PT,
-            cursorY,
-            paints.sectionHeader
-        )
-        return cursorY + SECTION_STEP_PT
-    }
 
-    private fun drawKeyValueRow(
-        canvas: Canvas,
-        item: PdfLineItem,
-        paints: PdfPaints,
-        cursorY: Float
-    ): Float {
-        val label = item.columns.getOrNull(0).orEmpty()
-        val value = item.columns.getOrNull(1).orEmpty()
-        canvas.drawText(
-            fitText(label, KEY_VALUE_LABEL_WIDTH_PT, paints.body),
-            MARGIN_X_PT,
-            cursorY,
-            paints.body
-        )
-        canvas.drawText(
-            fitText(value, CONTENT_WIDTH_PT - KEY_VALUE_LABEL_WIDTH_PT, paints.boldBody),
-            MARGIN_X_PT + KEY_VALUE_LABEL_WIDTH_PT,
-            cursorY,
-            paints.boldBody
-        )
-        return cursorY + ROW_STEP_PT
-    }
-
-    private fun drawTableHeader(
-        canvas: Canvas,
-        item: PdfLineItem,
-        paints: PdfPaints,
-        cursorY: Float
-    ): Float {
-        drawTableColumns(canvas, item.columns, paints.tableHeader, cursorY)
-        canvas.drawLine(
-            MARGIN_X_PT,
-            cursorY + HEADER_RULE_OFFSET_PT,
-            RIGHT_EDGE_PT,
-            cursorY + HEADER_RULE_OFFSET_PT,
-            paints.divider
-        )
-        return cursorY + ROW_STEP_PT
-    }
-
-    private fun drawTableColumns(
-        canvas: Canvas,
-        columns: List<String>,
-        paint: Paint,
-        cursorY: Float
-    ) {
-        if (columns.isEmpty()) return
-        val colWidth = CONTENT_WIDTH_PT / columns.size.toFloat()
-        columns.forEachIndexed { colIndex, text ->
-            val x = MARGIN_X_PT + colIndex * colWidth
-            val maxTextWidth = (colWidth - CELL_PAD_PT).coerceAtLeast(MIN_COLUMN_WIDTH_PT)
-            canvas.drawText(fitText(text, maxTextWidth, paint), x, cursorY, paint)
+        var cursorY = TripReportPdfMetrics.MARGIN_TOP_PT
+        blocks.forEach { block ->
+            cursorY = drawBlock(canvas, block, paints, cursorY)
         }
+
+        TripReportPdfBrandDrawers.drawRunningPageFooter(
+            canvas = canvas,
+            websiteDisplay = websiteDisplay,
+            pageFooterText = footerText,
+            paints = paints
+        )
     }
 
-    private fun fitText(text: String, maxWidth: Float, paint: Paint): String {
-        if (text.isEmpty() || paint.measureText(text) <= maxWidth) return text
-        val ellipsisWidth = paint.measureText(ELLIPSIS)
-        val available = (maxWidth - ellipsisWidth).coerceAtLeast(0f)
-        val count = paint.breakText(text, true, available, null)
-        return text.take(count) + ELLIPSIS
+    private fun drawBlock(
+        canvas: Canvas,
+        block: PdfBlock,
+        paints: TripReportPdfPaints,
+        cursorY: Float
+    ): Float = when (block) {
+        is PdfBlock.BrandHeader,
+        is PdfBlock.HeroGroupCard,
+        is PdfBlock.SummaryMetricsGrid,
+        is PdfBlock.ProUpsellCard,
+        is PdfBlock.BrandFooterCard -> drawEditorialBlock(canvas, block, paints, cursorY)
+        is PdfBlock.SectionHeading,
+        is PdfBlock.TableHeader,
+        is PdfBlock.TableRow,
+        is PdfBlock.EmptySection -> drawSectionBlock(canvas, block, paints, cursorY)
+        PdfBlock.Spacer -> cursorY + TripReportPdfMetrics.SPACER_HEIGHT_PT
+    }
+
+    private fun drawEditorialBlock(
+        canvas: Canvas,
+        block: PdfBlock,
+        paints: TripReportPdfPaints,
+        cursorY: Float
+    ): Float = when (block) {
+        is PdfBlock.BrandHeader -> TripReportPdfBrandDrawers.drawBrandHeader(
+            canvas,
+            block.brandTagline,
+            block.periodLabel,
+            paints,
+            cursorY
+        )
+        is PdfBlock.HeroGroupCard -> TripReportPdfBrandDrawers.drawHeroGroupCard(
+            canvas,
+            block.reportTitle,
+            block.groupName,
+            block.groupDescription,
+            block.metaLine,
+            paints,
+            cursorY
+        )
+        is PdfBlock.SummaryMetricsGrid -> TripReportPdfBrandDrawers.drawSummaryMetricsGrid(
+            canvas,
+            block.metrics,
+            paints,
+            cursorY
+        )
+        is PdfBlock.ProUpsellCard -> TripReportPdfBrandDrawers.drawProUpsellCard(
+            canvas,
+            block.callout,
+            paints,
+            cursorY
+        )
+        is PdfBlock.BrandFooterCard -> TripReportPdfBrandDrawers.drawBrandFooterCard(
+            canvas,
+            block.brandFooter,
+            paints,
+            cursorY
+        )
+        else -> cursorY
+    }
+
+    private fun drawSectionBlock(
+        canvas: Canvas,
+        block: PdfBlock,
+        paints: TripReportPdfPaints,
+        cursorY: Float
+    ): Float = when (block) {
+        is PdfBlock.SectionHeading -> TripReportPdfSectionDrawers.drawSectionHeading(
+            canvas,
+            block.title,
+            block.accentTone,
+            paints,
+            cursorY
+        )
+        is PdfBlock.TableHeader -> TripReportPdfSectionDrawers.drawTableHeader(
+            canvas,
+            block.headers,
+            block.columnWeights,
+            block.columnAlignments,
+            paints,
+            cursorY
+        )
+        is PdfBlock.TableRow -> TripReportPdfSectionDrawers.drawTableRow(
+            canvas,
+            block.cells,
+            block.columnWeights,
+            block.columnAlignments,
+            block.rowIndex,
+            paints,
+            cursorY
+        )
+        is PdfBlock.EmptySection -> TripReportPdfSectionDrawers.drawEmptySectionCard(
+            canvas,
+            block.text,
+            paints,
+            cursorY
+        )
+        else -> cursorY
     }
 
     private fun formatFooter(template: String, pageNumber: Int, totalPages: Int): String =
         runCatching { String.format(template, pageNumber, totalPages) }
             .getOrElse { "$pageNumber / $totalPages" }
 
-    private fun createPaints(): PdfPaints = PdfPaints(
-        title = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor(COLOR_PRIMARY_INK)
-            textSize = TITLE_TEXT_SIZE_PT
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        },
-        subtitle = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor(COLOR_MUTED_INK)
-            textSize = SUBTITLE_TEXT_SIZE_PT
-        },
-        sectionHeader = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor(COLOR_PRIMARY_INK)
-            textSize = SECTION_TEXT_SIZE_PT
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        },
-        sectionBg = Paint().apply {
-            color = Color.parseColor(COLOR_SECTION_BG)
-            style = Paint.Style.FILL
-        },
-        body = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor(COLOR_BODY_INK)
-            textSize = BODY_TEXT_SIZE_PT
-        },
-        boldBody = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor(COLOR_PRIMARY_INK)
-            textSize = BODY_TEXT_SIZE_PT
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        },
-        tableHeader = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor(COLOR_MUTED_INK)
-            textSize = TABLE_TEXT_SIZE_PT
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        },
-        tableCell = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor(COLOR_BODY_INK)
-            textSize = TABLE_TEXT_SIZE_PT
-        },
-        divider = Paint().apply {
-            color = Color.parseColor(COLOR_DIVIDER)
-            strokeWidth = DIVIDER_WIDTH_PT
-        },
-        footer = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor(COLOR_MUTED_INK)
-            textSize = FOOTER_TEXT_SIZE_PT
+    private class HeightPaginator(private val maxHeightPt: Float) {
+        private val pages = mutableListOf<List<PdfBlock>>()
+        private var currentPage = mutableListOf<PdfBlock>()
+        private var usedHeightPt = 0f
+        private var currentSectionHeading: PdfBlock.SectionHeading? = null
+        private var currentTableHeader: PdfBlock.TableHeader? = null
+
+        fun accept(block: PdfBlock) {
+            if (currentPage.isEmpty() && block is PdfBlock.Spacer) return
+            updateActiveHeaders(block)
+
+            val requiredHeight = requiredHeightWithLookahead(block)
+            if (currentPage.isNotEmpty() && usedHeightPt + requiredHeight > maxHeightPt) {
+                flushPage(nextBlock = block)
+            }
+
+            if (currentPage.isNotEmpty() || block !is PdfBlock.Spacer) {
+                currentPage.add(block)
+                usedHeightPt += block.heightPt
+            }
         }
-    )
 
-    private data class PdfPaints(
-        val title: Paint,
-        val subtitle: Paint,
-        val sectionHeader: Paint,
-        val sectionBg: Paint,
-        val body: Paint,
-        val boldBody: Paint,
-        val tableHeader: Paint,
-        val tableCell: Paint,
-        val divider: Paint,
-        val footer: Paint
-    )
+        fun finish(): List<List<PdfBlock>> {
+            if (currentPage.isNotEmpty()) {
+                pages.add(currentPage)
+            }
+            return pages
+        }
 
-    private companion object {
-        const val A4_WIDTH_PT = 595
-        const val A4_HEIGHT_PT = 842
-        const val DEFAULT_MAX_LINES_PER_PAGE = 42
-        const val MIN_LINES_PER_PAGE = 10
-        const val MARGIN_X_PT = 36f
-        const val MARGIN_TOP_PT = 44f
-        const val MARGIN_BOTTOM_PT = 28f
-        const val RIGHT_EDGE_PT = A4_WIDTH_PT - MARGIN_X_PT
-        const val CONTENT_WIDTH_PT = RIGHT_EDGE_PT - MARGIN_X_PT
-        const val KEY_VALUE_LABEL_WIDTH_PT = 240f
-        const val CELL_PAD_PT = 6f
-        const val MIN_COLUMN_WIDTH_PT = 16f
+        private fun requiredHeightWithLookahead(block: PdfBlock): Float = when (block) {
+            // Keep section heading together with at least its table header and one row
+            is PdfBlock.SectionHeading ->
+                block.heightPt +
+                    TripReportPdfMetrics.TABLE_HEADER_HEIGHT_PT +
+                    TripReportPdfMetrics.TABLE_ROW_HEIGHT_PT
+            is PdfBlock.TableHeader -> block.heightPt + TripReportPdfMetrics.TABLE_ROW_HEIGHT_PT
+            else -> block.heightPt
+        }
 
-        const val TITLE_TEXT_SIZE_PT = 16f
-        const val SUBTITLE_TEXT_SIZE_PT = 9.5f
-        const val SECTION_TEXT_SIZE_PT = 11f
-        const val BODY_TEXT_SIZE_PT = 9.5f
-        const val TABLE_TEXT_SIZE_PT = 8f
-        const val FOOTER_TEXT_SIZE_PT = 8.5f
+        private fun updateActiveHeaders(block: PdfBlock) {
+            when (block) {
+                is PdfBlock.SectionHeading -> {
+                    currentSectionHeading = block
+                    currentTableHeader = null
+                }
+                is PdfBlock.TableHeader -> currentTableHeader = block
+                is PdfBlock.ProUpsellCard,
+                is PdfBlock.BrandFooterCard -> {
+                    currentSectionHeading = null
+                    currentTableHeader = null
+                }
+                else -> Unit
+            }
+        }
 
-        const val TITLE_STEP_PT = 20f
-        const val SUBTITLE_STEP_PT = 14f
-        const val SECTION_STEP_PT = 20f
-        const val ROW_STEP_PT = 16f
-        const val SPACER_STEP_PT = 10f
-        const val SECTION_BG_TOP_OFFSET_PT = 11f
-        const val SECTION_BG_BOTTOM_OFFSET_PT = 5f
-        const val HEADER_RULE_OFFSET_PT = 4f
-        const val FOOTER_RULE_OFFSET_PT = 12f
-        const val DIVIDER_WIDTH_PT = 0.75f
-
-        const val COLOR_PRIMARY_INK = "#111827"
-        const val COLOR_BODY_INK = "#1F2937"
-        const val COLOR_MUTED_INK = "#4B5563"
-        const val COLOR_SECTION_BG = "#EEF2F7"
-        const val COLOR_DIVIDER = "#D1D5DB"
-        const val ELLIPSIS = "..."
+        private fun flushPage(nextBlock: PdfBlock) {
+            pages.add(currentPage)
+            currentPage = mutableListOf()
+            usedHeightPt = 0f
+            if (nextBlock is PdfBlock.TableRow) {
+                currentSectionHeading?.let { heading ->
+                    currentPage.add(heading)
+                    usedHeightPt += heading.heightPt
+                }
+                currentTableHeader?.let { header ->
+                    currentPage.add(header)
+                    usedHeightPt += header.heightPt
+                }
+            }
+        }
     }
 }

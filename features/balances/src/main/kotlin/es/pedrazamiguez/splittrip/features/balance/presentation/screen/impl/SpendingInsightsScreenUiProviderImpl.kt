@@ -38,6 +38,7 @@ class SpendingInsightsScreenUiProviderImpl(
         val currentBackStackEntry by tabNavController.currentBackStackEntryAsState()
         val insightsBackStackEntry = remember(currentBackStackEntry, tabNavController) {
             runCatching { tabNavController.getBackStackEntry(Routes.SPENDING_INSIGHTS) }.getOrNull()
+                ?: currentBackStackEntry
         }
         val onExportClick = debounced {
             insightsBackStackEntry?.savedStateHandle?.set(KEY_EXPORT_REPORT_REQUESTED, true)

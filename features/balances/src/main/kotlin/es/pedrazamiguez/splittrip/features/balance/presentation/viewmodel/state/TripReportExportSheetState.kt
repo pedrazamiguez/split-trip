@@ -16,5 +16,9 @@ data class TripReportExportSheetState(
     val oldestExpenseDate: LocalDate? = null,
     val newestExpenseDate: LocalDate? = null,
     val selectedFormat: TripReportFormat = TripReportFormat.PDF,
+    val isCsvLocked: Boolean = false,
+    val includesItemisedDetails: Boolean = true,
+    val remainingFreeExports: Int? = null,
+    val monthlyFreeExportLimit: Int? = null,
     val isExporting: Boolean = false
 )

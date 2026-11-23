@@ -15,6 +15,7 @@ interface AppConfigService {
     val aiReceiptMonthlyLimitFree: StateFlow<Int>
     val aiReceiptMonthlyLimitPro: StateFlow<Int>
     val manualReceiptMonthlyLimitFree: StateFlow<Int>
+    val reportExportMonthlyLimitFree: StateFlow<Int>
     val maxSubunitsPerGroupFree: StateFlow<Int>
     val maxSubunitsPerGroupPro: StateFlow<Int>
     val extractedDateMaxFutureDays: StateFlow<Int>

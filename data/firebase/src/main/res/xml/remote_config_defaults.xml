@@ -49,6 +49,10 @@
         <value>5</value>
     </entry>
     <entry>
+        <key>report_export_monthly_limit_free</key>
+        <value>1</value>
+    </entry>
+    <entry>
         <key>max_subunits_per_group_free</key>
         <value>1</value>
     </entry>

@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.MediaUploadQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.PlanAllowances
+import es.pedrazamiguez.splittrip.domain.service.featuregate.ReportExportQuota
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObservePlanAllowancesUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.PlanAllowancesUiMapperImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowanceUsageStatus
@@ -80,7 +81,7 @@ class PlanAllowancesViewModelTest {
         assertFalse(state.isLoading)
         assertFalse(state.isProTier)
         assertTrue(state.showUpgradeCta)
-        assertEquals(3, state.quotas.size)
+        assertEquals(4, state.quotas.size)
         assertEquals(AllowanceUsageStatus.HEALTHY, state.quotas[0].status)
 
         collectJob.cancel()
@@ -131,6 +132,8 @@ class PlanAllowancesViewModelTest {
                 aiMonthlyLimit = 3,
                 usedUploads = 5,
                 mediaMonthlyFreeLimit = 5,
+                usedExports = 1,
+                reportExportMonthlyFreeLimit = 1,
                 ownedGroupsUsed = 1,
                 maxOwnedGroups = 1
             )
@@ -185,6 +188,8 @@ class PlanAllowancesViewModelTest {
         aiMonthlyLimit: Int = 3,
         usedUploads: Int = 2,
         mediaMonthlyFreeLimit: Int = 5,
+        usedExports: Int = 0,
+        reportExportMonthlyFreeLimit: Int = 1,
         ownedGroupsUsed: Int = 0,
         maxOwnedGroups: Int = 1,
         maxMembersPerGroup: Int = 4,
@@ -204,6 +209,12 @@ class PlanAllowancesViewModelTest {
             mediaUploadQuota = MediaUploadQuota(
                 usedUploads = usedUploads,
                 monthlyFreeLimit = mediaMonthlyFreeLimit,
+                isProTier = isPro,
+                isGatingEnabled = isGatingEnabled
+            ),
+            reportExportQuota = ReportExportQuota(
+                usedExports = usedExports,
+                monthlyFreeLimit = reportExportMonthlyFreeLimit,
                 isProTier = isPro,
                 isGatingEnabled = isGatingEnabled
             ),

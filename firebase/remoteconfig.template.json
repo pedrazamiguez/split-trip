@@ -74,6 +74,13 @@
           "description": "Shared monthly quota of Free media uploads (manual receipt attachments and group cover photo uploads).",
           "valueType": "NUMBER"
         },
+        "report_export_monthly_limit_free": {
+          "defaultValue": {
+            "value": "1"
+          },
+          "description": "Monthly quota of Free group summary PDF exports (excluding itemised breakdowns and CSV spreadsheets).",
+          "valueType": "NUMBER"
+        },
         "max_subunits_per_group_free": {
           "defaultValue": {
             "value": "1"

@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.domain.service.featuregate.LimitResult
 import es.pedrazamiguez.splittrip.domain.service.featuregate.ManualReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.MediaUploadQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.PlanAllowances
+import es.pedrazamiguez.splittrip.domain.service.featuregate.ReportExportQuota
 import java.time.YearMonth
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -62,6 +63,11 @@ internal class FeatureGateServiceImpl(
                 .map { it.canUpload }
                 .distinctUntilChanged()
         }
+        if (feature == GatedFeature.TRIP_REPORT_EXPORT) {
+            return observeReportExportQuota()
+                .map { it.canExportPdf }
+                .distinctUntilChanged()
+        }
 
         return combine(
             appConfigRepository.subscriptionGatingEnabled,
@@ -73,11 +79,11 @@ internal class FeatureGateServiceImpl(
             } else {
                 val effectiveTier = when (feature) {
                     GatedFeature.AI_RECEIPT_SCANNING,
+                    GatedFeature.TRIP_REPORT_EXPORT,
                     GatedFeature.AD_FREE -> actingTier
                     GatedFeature.GROUP_COVER_UPLOAD ->
                         resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
-                    GatedFeature.SUBUNIT_CREATION,
-                    GatedFeature.TRIP_REPORT_EXPORT -> if (actingTier == SubscriptionTier.PRO) {
+                    GatedFeature.SUBUNIT_CREATION -> if (actingTier == SubscriptionTier.PRO) {
                         SubscriptionTier.PRO
                     } else {
                         resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
@@ -133,16 +139,33 @@ internal class FeatureGateServiceImpl(
             )
         }.distinctUntilChanged()
 
+    override fun observeReportExportQuota(): Flow<ReportExportQuota> =
+        combine(
+            appConfigRepository.subscriptionGatingEnabled,
+            observeActingUserTier(),
+            appConfigRepository.reportExportMonthlyLimitFree,
+            userPreferenceRepository.getMonthlyReportExportCount(yearMonthProvider())
+        ) { gatingEnabled, actingTier, freeLimit, usedExports ->
+            ReportExportQuota(
+                usedExports = usedExports.coerceAtLeast(0),
+                monthlyFreeLimit = freeLimit.coerceAtLeast(0),
+                isProTier = actingTier == SubscriptionTier.PRO,
+                isGatingEnabled = gatingEnabled
+            )
+        }.distinctUntilChanged()
+
     override fun observePlanAllowances(): Flow<PlanAllowances> =
         combine(
             observeAiReceiptQuota(),
             observeMediaUploadQuota(),
+            observeReportExportQuota(),
             groupRepository.getAllGroupsFlow(),
             observeTierGroupLimits()
-        ) { aiQuota, mediaQuota, groups, limits ->
+        ) { aiQuota, mediaQuota, reportExportQuota, groups, limits ->
             buildPlanAllowances(
                 aiQuota = aiQuota,
                 mediaQuota = mediaQuota,
+                reportExportQuota = reportExportQuota,
                 groups = groups,
                 currentUserId = authenticationService.currentUserId(),
                 limits = limits
@@ -177,29 +200,7 @@ internal class FeatureGateServiceImpl(
             .distinctUntilChanged()
 
     override fun checkLimit(limit: GatedLimit, currentCount: Int, groupId: String?): Flow<LimitResult> {
-        val (freeLimitFlow, proLimitFlow) = when (limit) {
-            GatedLimit.MAX_OWNED_GROUPS_COUNT -> TierLimitFlows(
-                freeLimitFlow = appConfigRepository.maxOwnedGroupsFree,
-                proLimitFlow = appConfigRepository.maxOwnedGroupsPro
-            )
-            GatedLimit.MAX_MEMBERS_PER_GROUP -> TierLimitFlows(
-                freeLimitFlow = appConfigRepository.maxMembersPerGroupFree,
-                proLimitFlow = appConfigRepository.maxMembersPerGroupPro
-            )
-            GatedLimit.AI_RECEIPT_MONTHLY_SCANS -> TierLimitFlows(
-                freeLimitFlow = appConfigRepository.aiReceiptMonthlyLimitFree,
-                proLimitFlow = appConfigRepository.aiReceiptMonthlyLimitPro
-            )
-            GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS -> TierLimitFlows(
-                freeLimitFlow = appConfigRepository.manualReceiptMonthlyLimitFree,
-                proLimitFlow = flowOf(Int.MAX_VALUE)
-            )
-            GatedLimit.MAX_SUBUNITS_PER_GROUP -> TierLimitFlows(
-                freeLimitFlow = appConfigRepository.maxSubunitsPerGroupFree,
-                proLimitFlow = appConfigRepository.maxSubunitsPerGroupPro
-            )
-        }
-
+        val (freeLimitFlow, proLimitFlow) = resolveTierLimitFlows(limit)
         return combine(
             appConfigRepository.subscriptionGatingEnabled,
             observeActingUserTier(),
@@ -210,18 +211,7 @@ internal class FeatureGateServiceImpl(
             if (!gatingEnabled) {
                 LimitResult.Allowed
             } else {
-                val effectiveTier = when (limit) {
-                    GatedLimit.MAX_OWNED_GROUPS_COUNT,
-                    GatedLimit.AI_RECEIPT_MONTHLY_SCANS,
-                    GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS -> actingTier
-                    GatedLimit.MAX_MEMBERS_PER_GROUP ->
-                        resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
-                    GatedLimit.MAX_SUBUNITS_PER_GROUP -> if (actingTier == SubscriptionTier.PRO) {
-                        SubscriptionTier.PRO
-                    } else {
-                        resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
-                    }
-                }
+                val effectiveTier = resolveEffectiveTierForLimit(limit, groupId, actingTier, allowlistHashes)
                 evaluateLimit(
                     limit = limit,
                     currentCount = currentCount,
@@ -233,32 +223,50 @@ internal class FeatureGateServiceImpl(
         }.distinctUntilChanged()
     }
 
-    private fun evaluateLimit(
-        limit: GatedLimit,
-        currentCount: Int,
-        effectiveTier: SubscriptionTier,
-        freeLimit: Int,
-        proLimit: Int
-    ): LimitResult {
-        val maxAllowed = if (effectiveTier == SubscriptionTier.PRO) proLimit else freeLimit
-        if (isUnlimitedProLimit(limit, effectiveTier, maxAllowed)) {
-            return LimitResult.Allowed
-        }
-        return if (currentCount >= maxAllowed) {
-            LimitResult.Blocked(limit, upgradeRequired = effectiveTier != SubscriptionTier.PRO)
-        } else {
-            LimitResult.Allowed
-        }
+    private fun resolveTierLimitFlows(limit: GatedLimit): TierLimitFlows = when (limit) {
+        GatedLimit.MAX_OWNED_GROUPS_COUNT -> TierLimitFlows(
+            freeLimitFlow = appConfigRepository.maxOwnedGroupsFree,
+            proLimitFlow = appConfigRepository.maxOwnedGroupsPro
+        )
+        GatedLimit.MAX_MEMBERS_PER_GROUP -> TierLimitFlows(
+            freeLimitFlow = appConfigRepository.maxMembersPerGroupFree,
+            proLimitFlow = appConfigRepository.maxMembersPerGroupPro
+        )
+        GatedLimit.AI_RECEIPT_MONTHLY_SCANS -> TierLimitFlows(
+            freeLimitFlow = appConfigRepository.aiReceiptMonthlyLimitFree,
+            proLimitFlow = appConfigRepository.aiReceiptMonthlyLimitPro
+        )
+        GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS -> TierLimitFlows(
+            freeLimitFlow = appConfigRepository.manualReceiptMonthlyLimitFree,
+            proLimitFlow = flowOf(Int.MAX_VALUE)
+        )
+        GatedLimit.REPORT_EXPORT_MONTHLY_COUNT -> TierLimitFlows(
+            freeLimitFlow = appConfigRepository.reportExportMonthlyLimitFree,
+            proLimitFlow = flowOf(Int.MAX_VALUE)
+        )
+        GatedLimit.MAX_SUBUNITS_PER_GROUP -> TierLimitFlows(
+            freeLimitFlow = appConfigRepository.maxSubunitsPerGroupFree,
+            proLimitFlow = appConfigRepository.maxSubunitsPerGroupPro
+        )
     }
 
-    private fun isUnlimitedProLimit(
+    private suspend fun resolveEffectiveTierForLimit(
         limit: GatedLimit,
-        effectiveTier: SubscriptionTier,
-        maxAllowed: Int
-    ): Boolean {
-        if (effectiveTier != SubscriptionTier.PRO) return false
-        return limit == GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS ||
-            (limit == GatedLimit.MAX_SUBUNITS_PER_GROUP && maxAllowed < 0)
+        groupId: String?,
+        actingTier: SubscriptionTier,
+        allowlistHashes: Set<String>
+    ): SubscriptionTier = when (limit) {
+        GatedLimit.MAX_OWNED_GROUPS_COUNT,
+        GatedLimit.AI_RECEIPT_MONTHLY_SCANS,
+        GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS,
+        GatedLimit.REPORT_EXPORT_MONTHLY_COUNT -> actingTier
+        GatedLimit.MAX_MEMBERS_PER_GROUP ->
+            resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
+        GatedLimit.MAX_SUBUNITS_PER_GROUP -> if (actingTier == SubscriptionTier.PRO) {
+            SubscriptionTier.PRO
+        } else {
+            resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
+        }
     }
 
     private fun observeActingUserTier(): Flow<SubscriptionTier> =
@@ -302,9 +310,11 @@ internal class FeatureGateServiceImpl(
     }
 }
 
+@Suppress("LongParameterList")
 private fun buildPlanAllowances(
     aiQuota: AiReceiptQuota,
     mediaQuota: MediaUploadQuota,
+    reportExportQuota: ReportExportQuota,
     groups: List<Group>,
     currentUserId: String?,
     limits: TierGroupLimits
@@ -327,6 +337,7 @@ private fun buildPlanAllowances(
         isGatingEnabled = isGatingEnabled,
         aiReceiptQuota = aiQuota,
         mediaUploadQuota = mediaQuota,
+        reportExportQuota = reportExportQuota,
         ownedGroupsUsed = ownedGroupsUsed,
         maxOwnedGroups = maxOwnedGroups,
         maxMembersPerGroup = maxMembersPerGroup,
@@ -343,4 +354,33 @@ private fun resolveMaxSubunitsPerGroup(
     !isGatingEnabled -> null
     isPro -> limits.maxSubunitsPerGroupPro.takeIf { it > 0 }
     else -> limits.maxSubunitsPerGroupFree.coerceAtLeast(0)
+}
+
+private fun evaluateLimit(
+    limit: GatedLimit,
+    currentCount: Int,
+    effectiveTier: SubscriptionTier,
+    freeLimit: Int,
+    proLimit: Int
+): LimitResult {
+    val maxAllowed = if (effectiveTier == SubscriptionTier.PRO) proLimit else freeLimit
+    if (isUnlimitedProLimit(limit, effectiveTier, maxAllowed)) {
+        return LimitResult.Allowed
+    }
+    return if (currentCount >= maxAllowed) {
+        LimitResult.Blocked(limit, upgradeRequired = effectiveTier != SubscriptionTier.PRO)
+    } else {
+        LimitResult.Allowed
+    }
+}
+
+private fun isUnlimitedProLimit(
+    limit: GatedLimit,
+    effectiveTier: SubscriptionTier,
+    maxAllowed: Int
+): Boolean {
+    if (effectiveTier != SubscriptionTier.PRO) return false
+    return limit == GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS ||
+        limit == GatedLimit.REPORT_EXPORT_MONTHLY_COUNT ||
+        (limit == GatedLimit.MAX_SUBUNITS_PER_GROUP && maxAllowed < 0)
 }

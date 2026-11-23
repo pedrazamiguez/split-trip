@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.domain.service.TripReportExportService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.usecase.balance.BuildGroupTripReportUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.RecordReportExportUseCase
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.TripReportExportUiMapper
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.SpendingPeriodPreset
@@ -27,9 +28,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
+@Suppress("LongParameterList")
 class TripReportExportEventHandlerImpl(
     private val featureGateService: FeatureGateService,
     private val buildGroupTripReportUseCase: BuildGroupTripReportUseCase,
+    private val recordReportExportUseCase: RecordReportExportUseCase,
     private val tripReportExportUiMapper: TripReportExportUiMapper,
     private val tripReportExportService: TripReportExportService,
     private val telemetryTracker: TelemetryTracker,
@@ -41,6 +44,7 @@ class TripReportExportEventHandlerImpl(
 
     private var coroutineScope: CoroutineScope? = null
     private var actionEmitter: (suspend (TripReportExportAction) -> Unit)? = null
+    private var activeGateEntryPoint: String = MonetizationTelemetry.GateEntryPoint.BALANCES_EXPORT_ACTION
 
     override fun bind(
         scope: CoroutineScope,
@@ -61,28 +65,21 @@ class TripReportExportEventHandlerImpl(
         newestExpenseDate: LocalDate?
     ) {
         val scope = coroutineScope ?: return
+        activeGateEntryPoint = gateEntryPoint
         scope.launch {
-            val isEnabled = featureGateService
-                .isFeatureEnabled(GatedFeature.TRIP_REPORT_EXPORT, groupId)
-                .first()
-            if (!isEnabled) {
-                telemetryTracker.trackFeatureGateBlocked(
-                    feature = GatedFeature.TRIP_REPORT_EXPORT,
-                    entryPoint = gateEntryPoint,
-                    upgradePrompted = true
-                )
-                actionEmitter?.invoke(
-                    TripReportExportAction.ShowProFeaturePreview(
-                        ProFeaturePreviewPrompt(
-                            previewType = ProFeaturePreviewType.TRIP_REPORT_EXPORT,
-                            entrySource = MonetizationTelemetry.EntrySource.TRIP_REPORT_EXPORT
-                        )
-                    )
-                )
+            val quota = featureGateService.observeReportExportQuota().first()
+            if (!quota.canExportPdf) {
+                emitProFeaturePreview(gateEntryPoint)
                 return@launch
             }
 
             val referenceYear = todayProvider().year
+            val isCsvLocked = !quota.canExportCsv
+            val resolvedFormat = if (isCsvLocked) {
+                TripReportFormat.PDF
+            } else {
+                _exportSheetState.value.selectedFormat
+            }
             _exportSheetState.value = TripReportExportSheetState(
                 isVisible = true,
                 selectedPreset = initialPreset,
@@ -98,7 +95,11 @@ class TripReportExportEventHandlerImpl(
                 ),
                 oldestExpenseDate = oldestExpenseDate,
                 newestExpenseDate = newestExpenseDate,
-                selectedFormat = _exportSheetState.value.selectedFormat,
+                selectedFormat = resolvedFormat,
+                isCsvLocked = isCsvLocked,
+                includesItemisedDetails = quota.includesItemisedDetails,
+                remainingFreeExports = if (quota.isFreeQuotaTracked) quota.remainingExports else null,
+                monthlyFreeExportLimit = if (quota.isFreeQuotaTracked) quota.monthlyFreeLimit else null,
                 isExporting = false
             )
         }
@@ -159,6 +160,14 @@ class TripReportExportEventHandlerImpl(
     }
 
     override fun handleSelectFormat(format: TripReportFormat) {
+        if (format == TripReportFormat.CSV && _exportSheetState.value.isCsvLocked) {
+            val scope = coroutineScope ?: return
+            _exportSheetState.update { it.copy(isVisible = false, isExporting = false) }
+            scope.launch {
+                emitProFeaturePreview(activeGateEntryPoint)
+            }
+            return
+        }
         _exportSheetState.update { it.copy(selectedFormat = format) }
     }
 
@@ -170,6 +179,15 @@ class TripReportExportEventHandlerImpl(
         _exportSheetState.update { it.copy(isExporting = true) }
         scope.launch {
             try {
+                val quota = featureGateService.observeReportExportQuota().first()
+                val blockedByQuota = !quota.canExportPdf
+                val blockedByFormat = currentState.selectedFormat == TripReportFormat.CSV && !quota.canExportCsv
+                if (blockedByQuota || blockedByFormat) {
+                    _exportSheetState.update { it.copy(isVisible = false, isExporting = false) }
+                    emitProFeaturePreview(activeGateEntryPoint)
+                    return@launch
+                }
+
                 val today = todayProvider()
                 val period = resolvePeriod(currentState, today)
                 val report = buildGroupTripReportUseCase(
@@ -179,12 +197,14 @@ class TripReportExportEventHandlerImpl(
                 )
                 val payload = tripReportExportUiMapper.mapToExportPayload(
                     report = report,
-                    referenceYear = today.year
+                    referenceYear = today.year,
+                    includeItemisedDetails = quota.includesItemisedDetails
                 )
                 val exportedFile = tripReportExportService.export(
                     payload = payload,
                     format = currentState.selectedFormat
                 )
+                recordReportExportUseCase()
                 _exportSheetState.update { it.copy(isVisible = false, isExporting = false) }
                 actionEmitter?.invoke(
                     TripReportExportAction.ShareExportedReport(
@@ -196,7 +216,7 @@ class TripReportExportEventHandlerImpl(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Timber.e(e, "Failed to export group statement for group $groupId")
+                Timber.e(e, "Failed to export group summary for group $groupId")
                 _exportSheetState.update { it.copy(isExporting = false) }
                 actionEmitter?.invoke(
                     TripReportExportAction.ShowExportError(
@@ -205,6 +225,22 @@ class TripReportExportEventHandlerImpl(
                 )
             }
         }
+    }
+
+    private suspend fun emitProFeaturePreview(entryPoint: String) {
+        telemetryTracker.trackFeatureGateBlocked(
+            feature = GatedFeature.TRIP_REPORT_EXPORT,
+            entryPoint = entryPoint,
+            upgradePrompted = true
+        )
+        actionEmitter?.invoke(
+            TripReportExportAction.ShowProFeaturePreview(
+                ProFeaturePreviewPrompt(
+                    previewType = ProFeaturePreviewType.TRIP_REPORT_EXPORT,
+                    entrySource = MonetizationTelemetry.EntrySource.TRIP_REPORT_EXPORT
+                )
+            )
+        )
     }
 
     private fun resolvePeriod(

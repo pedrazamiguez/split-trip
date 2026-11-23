@@ -52,6 +52,14 @@ class ProFeaturePreviewTypeTest {
     }
 
     @Test
+    fun `fromGatedLimit maps REPORT_EXPORT_MONTHLY_COUNT to TRIP_REPORT_EXPORT`() {
+        val result = ProFeaturePreviewType.fromGatedLimit(GatedLimit.REPORT_EXPORT_MONTHLY_COUNT)
+
+        assertEquals(ProFeaturePreviewType.TRIP_REPORT_EXPORT, result)
+        assertEquals(TablerIcons.Outline.ReportAnalytics, result.icon)
+    }
+
+    @Test
     fun `fromGatedLimit maps MAX_SUBUNITS_PER_GROUP to SUBUNIT_CREATION`() {
         val result = ProFeaturePreviewType.fromGatedLimit(GatedLimit.MAX_SUBUNITS_PER_GROUP)
 

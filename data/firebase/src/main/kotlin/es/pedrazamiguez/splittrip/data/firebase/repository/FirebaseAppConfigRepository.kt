@@ -58,6 +58,9 @@ class FirebaseAppConfigRepository(
     private val _manualReceiptMonthlyLimitFree = MutableStateFlow(DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE)
     override val manualReceiptMonthlyLimitFree: StateFlow<Int> = _manualReceiptMonthlyLimitFree.asStateFlow()
 
+    private val _reportExportMonthlyLimitFree = MutableStateFlow(DEFAULT_REPORT_EXPORT_MONTHLY_LIMIT_FREE)
+    override val reportExportMonthlyLimitFree: StateFlow<Int> = _reportExportMonthlyLimitFree.asStateFlow()
+
     private val _maxSubunitsPerGroupFree = MutableStateFlow(DEFAULT_MAX_SUBUNITS_PER_GROUP_FREE)
     override val maxSubunitsPerGroupFree: StateFlow<Int> = _maxSubunitsPerGroupFree.asStateFlow()
 
@@ -239,6 +242,14 @@ class FirebaseAppConfigRepository(
         val maxMembersPro = remoteConfig.getLong("max_members_per_group_pro").toInt()
         _maxMembersPerGroupPro.value = if (maxMembersPro > 0) maxMembersPro else DEFAULT_MAX_MEMBERS_PER_GROUP_PRO
 
+        updateMonthlyQuotaFlows()
+        updateSubunitLimitFlows()
+
+        val proAllowlistStr = remoteConfig.getString("pro_allowlist_email_hashes")
+        _proAllowlistEmailHashes.value = parseAllowlistHashes(proAllowlistStr, DEFAULT_PRO_ALLOWLIST_EMAIL_HASHES)
+    }
+
+    private fun updateMonthlyQuotaFlows() {
         val aiLimitFree = remoteConfig.getLong("ai_receipt_monthly_limit_free").toInt()
         _aiReceiptMonthlyLimitFree.value = if (aiLimitFree >= 0) aiLimitFree else DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_FREE
 
@@ -249,10 +260,9 @@ class FirebaseAppConfigRepository(
         _manualReceiptMonthlyLimitFree.value =
             if (manualReceiptLimitFree >= 0) manualReceiptLimitFree else DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE
 
-        updateSubunitLimitFlows()
-
-        val proAllowlistStr = remoteConfig.getString("pro_allowlist_email_hashes")
-        _proAllowlistEmailHashes.value = parseAllowlistHashes(proAllowlistStr, DEFAULT_PRO_ALLOWLIST_EMAIL_HASHES)
+        val reportExportLimitFree = remoteConfig.getLong("report_export_monthly_limit_free").toInt()
+        _reportExportMonthlyLimitFree.value =
+            if (reportExportLimitFree >= 0) reportExportLimitFree else DEFAULT_REPORT_EXPORT_MONTHLY_LIMIT_FREE
     }
 
     private fun updateSubunitLimitFlows() {
@@ -296,14 +306,6 @@ class FirebaseAppConfigRepository(
         val allowlistStr = remoteConfig.getString("developer_allowlist_email_hashes")
         _developerAllowlistEmailHashes.value =
             parseAllowlistHashes(allowlistStr, DEFAULT_DEVELOPER_ALLOWLIST_EMAIL_HASHES)
-    }
-
-    private fun parseAllowlistHashes(raw: String, default: Set<String>): Set<String> {
-        if (raw.isBlank()) return default
-        return raw.split(",")
-            .map { it.trim().lowercase() }
-            .filter { it.isNotEmpty() }
-            .toSet()
     }
 
     private fun updateAppUpdateFlows() {
@@ -362,6 +364,7 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_FREE = 3
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO = 100
         private const val DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE = 5
+        private const val DEFAULT_REPORT_EXPORT_MONTHLY_LIMIT_FREE = 1
         private const val DEFAULT_MAX_SUBUNITS_PER_GROUP_FREE = 1
         private const val UNLIMITED_SUBUNITS_PER_GROUP = -1
         private const val DEFAULT_MAX_SUBUNITS_PER_GROUP_PRO = UNLIMITED_SUBUNITS_PER_GROUP
@@ -495,4 +498,12 @@ private data class DeveloperInfoDto(
         creditsMap = creditsMap ?: FirebaseAppConfigRepository.DEFAULT_DEVELOPER_INFO.creditsMap,
         copyrightMap = copyrightMap ?: FirebaseAppConfigRepository.DEFAULT_DEVELOPER_INFO.copyrightMap
     )
+}
+
+private fun parseAllowlistHashes(raw: String, default: Set<String>): Set<String> {
+    if (raw.isBlank()) return default
+    return raw.split(",")
+        .map { it.trim().lowercase() }
+        .filter { it.isNotEmpty() }
+        .toSet()
 }

@@ -354,11 +354,17 @@
     <string name="plan_allowances_quota_ai_scans_subtitle">Resets every calendar month</string>
     <string name="plan_allowances_quota_media_uploads_title">Media Uploads</string>
     <string name="plan_allowances_quota_media_uploads_subtitle">Receipts &amp; group covers · Resets monthly</string>
+    <string name="plan_allowances_quota_report_exports_title">Group Exports</string>
+    <string name="plan_allowances_quota_report_exports_subtitle_free">PDF summary only · Resets monthly</string>
+    <string name="plan_allowances_quota_report_exports_subtitle_pro">Full itemised PDF &amp; CSV</string>
     <string name="plan_allowances_quota_owned_groups_title">Owned Groups</string>
     <string name="plan_allowances_quota_owned_groups_subtitle">Groups created by you</string>
     <string name="plan_allowances_usage_fraction">%1$s / %2$s</string>
     <string name="plan_allowances_usage_unlimited">%1$s used · Unlimited</string>
-    <string name="plan_allowances_status_remaining">%1$s left</string>
+    <plurals name="plan_allowances_status_remaining">
+        <item quantity="one">%1$s left</item>
+        <item quantity="other">%1$s left</item>
+    </plurals>
     <string name="plan_allowances_status_exhausted">Limit reached</string>
     <string name="plan_allowances_perk_members_title">Members per group</string>
     <string name="plan_allowances_perk_members_detail">Up to %1$s</string>

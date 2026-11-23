@@ -296,7 +296,11 @@ class BalancesViewModel(
     private fun handleExportEvent(event: BalancesUiEvent) {
         when (event) {
             BalancesUiEvent.RequestExportReport -> {
-                val groupId = _selectedGroupId.value ?: return
+                val groupId = _selectedGroupId.value
+                if (groupId == null) {
+                    emitExportGroupNotReadyError()
+                    return
+                }
                 tripReportExportEventHandler.handleExportRequested(
                     groupId = groupId,
                     gateEntryPoint = MonetizationTelemetry.GateEntryPoint.BALANCES_EXPORT_ACTION
@@ -313,10 +317,24 @@ class BalancesViewModel(
             is BalancesUiEvent.SelectExportFormat ->
                 tripReportExportEventHandler.handleSelectFormat(event.format)
             BalancesUiEvent.ConfirmExportReport -> {
-                val groupId = _selectedGroupId.value ?: return
+                val groupId = _selectedGroupId.value
+                if (groupId == null) {
+                    emitExportGroupNotReadyError()
+                    return
+                }
                 tripReportExportEventHandler.handleConfirmExport(groupId)
             }
             else -> Unit
+        }
+    }
+
+    private fun emitExportGroupNotReadyError() {
+        viewModelScope.launch {
+            _actions.emit(
+                BalancesUiAction.ShowExportError(
+                    UiText.StringResource(R.string.balances_export_error_group_not_ready)
+                )
+            )
         }
     }
 

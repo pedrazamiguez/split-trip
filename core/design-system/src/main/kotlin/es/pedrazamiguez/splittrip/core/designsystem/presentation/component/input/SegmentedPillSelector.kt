@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -15,9 +16,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,8 +38,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Lock
 import kotlinx.collections.immutable.ImmutableList
+
+private val LOCK_ICON_SIZE = 14.dp
+private val LOCK_ICON_SPACING = 4.dp
 
 /**
  * Reusable pill-shaped segmented selector adhering to The Horizon Narrative design language.
@@ -45,6 +54,7 @@ import kotlinx.collections.immutable.ImmutableList
  * slot-width-aware compact typography, `selectableGroup()` accessibility semantics,
  * and [Modifier.debouncedClickable] interaction handling.
  */
+@Suppress("LongParameterList")
 @Composable
 fun <T> SegmentedPillSelector(
     options: ImmutableList<T>,
@@ -54,7 +64,8 @@ fun <T> SegmentedPillSelector(
     modifier: Modifier = Modifier,
     optionKey: (T) -> Any? = { it },
     colors: SegmentedPillSelectorColors = SegmentedPillSelectorDefaults.colors(),
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    isOptionLocked: (T) -> Boolean = { false }
 ) {
     if (options.isEmpty()) return
 
@@ -104,6 +115,7 @@ fun <T> SegmentedPillSelector(
                         label = optionLabel(option),
                         isSelected = index == selectedIndex,
                         enabled = enabled,
+                        isLocked = isOptionLocked(option),
                         isCompact = isCompact,
                         colors = colors,
                         onClick = { onOptionSelected(option) },
@@ -143,32 +155,24 @@ private fun SegmentedPillSlidingIndicator(
     )
 }
 
+@Suppress("LongParameterList")
 @Composable
 private fun SegmentedPillSegment(
     label: String,
     isSelected: Boolean,
     enabled: Boolean,
+    isLocked: Boolean,
     isCompact: Boolean,
     colors: SegmentedPillSelectorColors,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val targetContentColor = when {
-        !enabled && isSelected -> colors.disabledSelectedContentColor
-        !enabled -> colors.disabledUnselectedContentColor
-        isSelected -> colors.selectedContentColor
-        else -> colors.unselectedContentColor
-    }
     val contentColor by animateColorAsState(
-        targetValue = targetContentColor,
+        targetValue = resolveSegmentContentColor(enabled, isSelected, isLocked, colors),
         animationSpec = spring(stiffness = Spring.StiffnessMedium),
         label = "segmentedPillContentColor"
     )
-    val textStyle = if (isCompact) {
-        MaterialTheme.typography.labelSmall
-    } else {
-        MaterialTheme.typography.labelMedium
-    }
+    val textStyle = if (isCompact) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium
     val horizontalPadding = if (isCompact) {
         SegmentedPillSelectorDefaults.CompactSegmentHorizontalPadding
     } else {
@@ -189,15 +193,40 @@ private fun SegmentedPillSegment(
             .padding(horizontal = horizontalPadding),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = label,
-            style = textStyle,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-            color = contentColor,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(LOCK_ICON_SPACING),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isLocked) {
+                Icon(
+                    imageVector = TablerIcons.Outline.Lock,
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(LOCK_ICON_SIZE)
+                )
+            }
+            Text(
+                text = label,
+                style = textStyle,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                color = contentColor,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+        }
     }
+}
+
+private fun resolveSegmentContentColor(
+    enabled: Boolean,
+    isSelected: Boolean,
+    isLocked: Boolean,
+    colors: SegmentedPillSelectorColors
+): Color = when {
+    !enabled && isSelected -> colors.disabledSelectedContentColor
+    !enabled || isLocked -> colors.disabledUnselectedContentColor
+    isSelected -> colors.selectedContentColor
+    else -> colors.unselectedContentColor
 }

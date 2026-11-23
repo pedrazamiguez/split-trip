@@ -49,6 +49,7 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_free") } returns 5L
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns 150L
         every { firebaseRemoteConfig.getLong("manual_receipt_monthly_limit_free") } returns 5L
+        every { firebaseRemoteConfig.getLong("report_export_monthly_limit_free") } returns 1L
         every { firebaseRemoteConfig.getLong("max_subunits_per_group_free") } returns 1L
         every { firebaseRemoteConfig.getLong("max_subunits_per_group_pro") } returns -1L
         every { firebaseRemoteConfig.getLong("extracted_date_max_future_days") } returns 45L
