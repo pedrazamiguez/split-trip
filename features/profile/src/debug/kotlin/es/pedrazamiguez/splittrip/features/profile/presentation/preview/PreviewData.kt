@@ -9,6 +9,7 @@ val PREVIEW_USER = User(
     email = "antonio@example.com",
     displayName = "Antonio García",
     profileImagePath = null,
+    bio = "Coffee enthusiast, spreadsheet avoider, and always ready for the next shared dinner.",
     createdAt = LocalDateTime.of(2025, 6, 15, 10, 0)
 )
 

@@ -1,9 +1,11 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.screen
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -21,14 +23,14 @@ fun DefaultCurrencyScreen(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            horizontal = MaterialTheme.spacing.ExtraLarge,
-            vertical = MaterialTheme.spacing.ExtraLarge
-        )
+        contentPadding = PaddingValues(MaterialTheme.spacing.Default)
     ) {
         item {
             FlatCard(modifier = Modifier.fillMaxWidth()) {
-                Column {
+                Column(
+                    modifier = Modifier.padding(MaterialTheme.spacing.ExtraSmall),
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
+                ) {
                     availableCurrencies.forEach { currency ->
                         DefaultCurrencyItemRow(
                             currency = currency,

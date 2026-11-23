@@ -3,12 +3,12 @@ package es.pedrazamiguez.splittrip.features.profile.presentation.component
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LargeBodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.ScreenTitleText
 
 @Composable
 internal fun ProfileHeader(
@@ -21,18 +21,18 @@ internal fun ProfileHeader(
     Spacer(modifier = modifier.height(MaterialTheme.spacing.Section))
     ProfileAvatar(
         profileImageUrl = profileImageUrl,
-        isPro = isPro
+        isPro = isPro,
+        displayName = displayName
     )
     Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
-    Text(
+    ScreenTitleText(
         text = displayName,
-        style = MaterialTheme.typography.headlineSmall,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onBackground
+        textAlign = TextAlign.Center
     )
     Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
-    LargeBodyText(
+    BodyText(
         text = email,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
     )
 }

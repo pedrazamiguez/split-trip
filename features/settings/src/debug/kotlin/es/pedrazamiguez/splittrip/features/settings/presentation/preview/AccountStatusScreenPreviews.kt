@@ -28,3 +28,39 @@ private fun AccountStatusScreenPreview() {
         )
     }
 }
+
+@PreviewComplete
+@Composable
+private fun AccountStatusScreenPartialLinkedPreview() {
+    PreviewThemeWrapper {
+        AccountStatusScreen(
+            uiState = AccountStatusUiState(
+                isLoading = false,
+                email = "user@example.com",
+                isAnonymous = false,
+                joinDateText = "August 2026",
+                linkedProviders = persistentListOf(
+                    AuthProviderType.GOOGLE
+                )
+            ),
+            onLinkGoogleClick = {},
+            onEvent = {}
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun AccountStatusScreenGuestPreview() {
+    PreviewThemeWrapper {
+        AccountStatusScreen(
+            uiState = AccountStatusUiState(
+                isLoading = false,
+                isAnonymous = true,
+                linkedProviders = persistentListOf()
+            ),
+            onLinkGoogleClick = {},
+            onEvent = {}
+        )
+    }
+}
