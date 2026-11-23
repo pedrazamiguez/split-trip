@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReportAnalytics
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chart.AnimatedProgressBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
@@ -37,6 +38,7 @@ internal fun PlanAllowanceQuotaItem(
     val icon = when (quota.type) {
         AllowanceQuotaType.AI_RECEIPT_SCANS -> TablerIcons.Outline.PhotoAi
         AllowanceQuotaType.MEDIA_UPLOADS -> TablerIcons.Outline.Photo
+        AllowanceQuotaType.REPORT_EXPORTS -> TablerIcons.Outline.ReportAnalytics
         AllowanceQuotaType.OWNED_GROUPS -> TablerIcons.Outline.UsersGroup
     }
 
@@ -71,7 +73,7 @@ internal fun PlanAllowanceQuotaItem(
             )
             Column(modifier = Modifier.weight(1f)) {
                 CardTitleText(text = quota.title.asString())
-                SecondaryBodyText(text = quota.subtitle.asString())
+                SecondaryBodyText(text = quota.subtitle.asString(), maxLines = 2)
             }
             PassportTag(
                 text = quota.statusBadge.asString(),

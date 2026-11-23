@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.model.GroupSpendingInsights
@@ -11,7 +12,10 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.EntityBrea
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.SpendingPeriodPreset
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.action.SpendingInsightsUiAction
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.SpendingInsightsUiEvent
+import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.TripReportExportAction
+import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.TripReportExportEventHandler
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.SpendingInsightsUiState
+import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.TripReportExportSheetState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -46,6 +50,9 @@ class SpendingInsightsViewModelTest {
 
     private lateinit var getGroupSpendingInsightsFlowUseCase: GetGroupSpendingInsightsFlowUseCase
     private lateinit var spendingInsightsUiMapper: SpendingInsightsUiMapper
+    private lateinit var tripReportExportEventHandler: TripReportExportEventHandler
+    private lateinit var exportSheetStateFlow: MutableStateFlow<TripReportExportSheetState>
+    private var boundExportActionEmitter: (suspend (TripReportExportAction) -> Unit)? = null
     private lateinit var viewModel: SpendingInsightsViewModel
 
     @BeforeEach
@@ -53,6 +60,13 @@ class SpendingInsightsViewModelTest {
         Dispatchers.setMain(testDispatcher)
         getGroupSpendingInsightsFlowUseCase = mockk()
         spendingInsightsUiMapper = mockk()
+        exportSheetStateFlow = MutableStateFlow(TripReportExportSheetState())
+        tripReportExportEventHandler = mockk(relaxed = true) {
+            every { exportSheetState } returns exportSheetStateFlow
+            every { bind(any(), any()) } answers {
+                boundExportActionEmitter = secondArg()
+            }
+        }
 
         every { getGroupSpendingInsightsFlowUseCase(any(), any(), any(), any()) } answers {
             val groupId = firstArg<String>()
@@ -444,9 +458,58 @@ class SpendingInsightsViewModelTest {
             collectJob.cancel()
         }
 
+    @Test
+    fun `RequestExportReport pre-fills active insights period and bounds`() = runTest(testDispatcher) {
+        viewModel = createViewModel()
+        val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+        viewModel.setSelectedGroup("group-1")
+        viewModel.onEvent(SpendingInsightsUiEvent.SelectPeriodPreset(SpendingPeriodPreset.LAST_MONTH))
+        advanceUntilIdle()
+
+        viewModel.onEvent(SpendingInsightsUiEvent.RequestExportReport)
+        advanceUntilIdle()
+
+        verify {
+            tripReportExportEventHandler.handleExportRequested(
+                groupId = "group-1",
+                gateEntryPoint = MonetizationTelemetry.GateEntryPoint.SPENDING_INSIGHTS_EXPORT_ACTION,
+                initialPreset = SpendingPeriodPreset.LAST_MONTH,
+                initialCustomStartDate = null,
+                initialCustomEndDate = null,
+                oldestExpenseDate = LocalDate.of(2026, 11, 1),
+                newestExpenseDate = LocalDate.of(2026, 11, 18)
+            )
+        }
+        collectJob.cancel()
+    }
+
+    @Test
+    fun `bound export handler action forwards ShareExportedReport to viewModel actions`() =
+        runTest(testDispatcher) {
+            viewModel = createViewModel()
+            val emittedActions = mutableListOf<SpendingInsightsUiAction>()
+            val collectJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { emittedActions.add(it) }
+            }
+
+            boundExportActionEmitter?.invoke(
+                TripReportExportAction.ShareExportedReport(
+                    contentUri = "content://test/export.csv",
+                    mimeType = "text/csv",
+                    fileName = "export.csv"
+                )
+            )
+            advanceUntilIdle()
+
+            assertTrue(emittedActions.any { it is SpendingInsightsUiAction.ShareExportedReport })
+            collectJob.cancel()
+        }
+
     private fun createViewModel(): SpendingInsightsViewModel = SpendingInsightsViewModel(
         getGroupSpendingInsightsFlowUseCase = getGroupSpendingInsightsFlowUseCase,
         spendingInsightsUiMapper = spendingInsightsUiMapper,
+        tripReportExportEventHandler = tripReportExportEventHandler,
         computationDispatcher = testDispatcher,
         todayProvider = { fixedToday }
     )

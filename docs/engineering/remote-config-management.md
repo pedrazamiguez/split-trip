@@ -59,6 +59,7 @@ SplitTrip parameters are organized into 5 functional groups:
 | `ai_receipt_monthly_limit_free` | `NUMBER` | `3` | Monthly quota of AI receipt scans allocated to Free users. |
 | `ai_receipt_monthly_limit_pro` | `NUMBER` | `100` | Monthly quota of AI receipt scans allocated to Pro users. |
 | `manual_receipt_monthly_limit_free` | `NUMBER` | `5` | Shared monthly quota of Free media uploads (manual receipt attachments and group cover photo uploads). |
+| `report_export_monthly_limit_free` | `NUMBER` | `1` | Monthly quota of Free group summary PDF exports (excluding itemised breakdowns and CSV spreadsheets). |
 | `max_subunits_per_group_free` | `NUMBER` | `1` | Maximum number of subunits allowed per group on the Free tier. |
 | `max_subunits_per_group_pro` | `NUMBER` | `-1` | Maximum number of subunits allowed per group on the Pro tier (`-1` for unlimited). |
 

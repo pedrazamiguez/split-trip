@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReportAnalytics
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersPlus
@@ -51,6 +52,14 @@ class ProFeaturePreviewTypeTest {
     }
 
     @Test
+    fun `fromGatedLimit maps REPORT_EXPORT_MONTHLY_COUNT to TRIP_REPORT_EXPORT`() {
+        val result = ProFeaturePreviewType.fromGatedLimit(GatedLimit.REPORT_EXPORT_MONTHLY_COUNT)
+
+        assertEquals(ProFeaturePreviewType.TRIP_REPORT_EXPORT, result)
+        assertEquals(TablerIcons.Outline.ReportAnalytics, result.icon)
+    }
+
+    @Test
     fun `fromGatedLimit maps MAX_SUBUNITS_PER_GROUP to SUBUNIT_CREATION`() {
         val result = ProFeaturePreviewType.fromGatedLimit(GatedLimit.MAX_SUBUNITS_PER_GROUP)
 
@@ -87,5 +96,16 @@ class ProFeaturePreviewTypeTest {
         val result = ProFeaturePreviewType.fromGatedFeature(GatedFeature.AD_FREE)
 
         assertEquals(ProFeaturePreviewType.UNLIMITED_GROUPS, result)
+    }
+
+    @Test
+    fun `fromGatedFeature maps TRIP_REPORT_EXPORT to TRIP_REPORT_EXPORT`() {
+        val result = ProFeaturePreviewType.fromGatedFeature(GatedFeature.TRIP_REPORT_EXPORT)
+
+        assertEquals(ProFeaturePreviewType.TRIP_REPORT_EXPORT, result)
+        assertEquals(R.string.pro_preview_group_report_export_title, result.titleRes)
+        assertEquals(R.string.pro_preview_group_report_export_description, result.descriptionRes)
+        assertEquals(R.string.pro_preview_group_report_export_highlight, result.highlightRes)
+        assertEquals(TablerIcons.Outline.ReportAnalytics, result.icon)
     }
 }

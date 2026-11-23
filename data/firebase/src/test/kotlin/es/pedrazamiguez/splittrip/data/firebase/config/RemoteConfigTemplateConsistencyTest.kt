@@ -108,6 +108,12 @@ class RemoteConfigTemplateConsistencyTest {
     }
 
     @Test
+    fun `report_export_monthly_limit_free defaults to 1 in template and XML`() {
+        assertEquals("1", templateParameters["report_export_monthly_limit_free"]?.defaultValue)
+        assertEquals("1", xmlDefaults["report_export_monthly_limit_free"])
+    }
+
+    @Test
     fun `max_subunits_per_group_free defaults to 1 in template and XML`() {
         assertEquals("1", templateParameters["max_subunits_per_group_free"]?.defaultValue)
         assertEquals("1", xmlDefaults["max_subunits_per_group_free"])

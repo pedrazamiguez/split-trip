@@ -9,9 +9,11 @@ import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.balance.presentation.feature.BalancesFeature
 import es.pedrazamiguez.splittrip.features.balance.presentation.feature.SpendingInsightsFeature
 
+internal const val KEY_EXPORT_REPORT_REQUESTED = "export_report_requested"
+
 fun NavGraphBuilder.balancesGraph() {
-    sharedComposable(route = Routes.BALANCES) {
-        BalancesFeature()
+    sharedComposable(route = Routes.BALANCES) { backStackEntry ->
+        BalancesFeature(backStackEntry = backStackEntry)
     }
     spendingInsightsGraph()
 }
@@ -26,6 +28,9 @@ fun NavGraphBuilder.spendingInsightsGraph() {
                 ?.get<ExpenseFilterCriteria>(Routes.KEY_EXPENSE_FILTER_CRITERIA)
                 ?: ExpenseFilterCriteria()
         }
-        SpendingInsightsFeature(initialFilterCriteria = initialFilterCriteria)
+        SpendingInsightsFeature(
+            backStackEntry = backStackEntry,
+            initialFilterCriteria = initialFilterCriteria
+        )
     }
 }

@@ -354,11 +354,17 @@
     <string name="plan_allowances_quota_ai_scans_subtitle">Se reinicia cada mes natural</string>
     <string name="plan_allowances_quota_media_uploads_title">Subidas de archivos</string>
     <string name="plan_allowances_quota_media_uploads_subtitle">Recibos y portadas de grupo · Reinicio mensual</string>
+    <string name="plan_allowances_quota_report_exports_title">Exportaciones de grupo</string>
+    <string name="plan_allowances_quota_report_exports_subtitle_free">Solo resumen PDF · Reinicio mensual</string>
+    <string name="plan_allowances_quota_report_exports_subtitle_pro">PDF detallado y CSV completo</string>
     <string name="plan_allowances_quota_owned_groups_title">Grupos propios</string>
     <string name="plan_allowances_quota_owned_groups_subtitle">Grupos creados por ti</string>
     <string name="plan_allowances_usage_fraction">%1$s / %2$s</string>
     <string name="plan_allowances_usage_unlimited">%1$s usados · Ilimitado</string>
-    <string name="plan_allowances_status_remaining">Quedan %1$s</string>
+    <plurals name="plan_allowances_status_remaining">
+        <item quantity="one">Queda %1$s</item>
+        <item quantity="other">Quedan %1$s</item>
+    </plurals>
     <string name="plan_allowances_status_exhausted">Límite alcanzado</string>
     <string name="plan_allowances_perk_members_title">Miembros por grupo</string>
     <string name="plan_allowances_perk_members_detail">Hasta %1$s</string>

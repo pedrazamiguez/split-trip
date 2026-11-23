@@ -177,6 +177,9 @@
     <string name="pro_preview_unlimited_receipts_title">Âhhunta reçibô ilimitáô</string>
     <string name="pro_preview_unlimited_receipts_description">Guarda toâ lâ fotô y PDF de tû reçibô âhhuntô y çincroniçáô pa tó tu grupo, çin límite mençuâh de âhhuntô.</string>
     <string name="pro_preview_unlimited_receipts_highlight">Fotô y PDF de reçibô ilimitáô çincroniçáô en la nube pa cá grupo</string>
+    <string name="pro_preview_group_report_export_title">Êpportaçionê completâ en PDF y CSB</string>
+    <string name="pro_preview_group_report_export_description">Er plan Gratî incluye 1 reçumen PDF ar mê. Páçate a SplîTTrîh Pro pa ôttenêh êpportaçionê ilimitâh con gâttô detayáô, aportaçionê, retirâh de efêttibo y arxibô CSB lîttô pa ohâ de cárculo.</string>
+    <string name="pro_preview_group_report_export_highlight">Reçúmenê PDF detayáô ilimitáô y ohâ CSB pa cuarquiêh periodo</string>
     <string name="password_requirement_min_length">Ar menô 8 carâtterê</string>
     <string name="password_requirement_uppercase">Ar menô una letra mayúccula (A-Z)</string>
     <string name="password_requirement_lowercase">Ar menô una letra minúccula (a-z)</string>

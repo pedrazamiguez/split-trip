@@ -22,6 +22,7 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.exifinterface)
+    implementation(libs.zxing)
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)

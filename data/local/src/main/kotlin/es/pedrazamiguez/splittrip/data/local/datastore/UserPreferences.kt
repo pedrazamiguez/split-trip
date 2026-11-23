@@ -53,6 +53,7 @@ class UserPreferences(
         private const val IS_RECONCILED = "is_reconciled"
         private const val AI_RECEIPT_SCAN_COUNT_PREFIX = "ai_receipt_scan_count"
         private const val MANUAL_RECEIPT_ATTACHMENT_COUNT_PREFIX = "manual_receipt_attachment_count"
+        private const val REPORT_EXPORT_COUNT_PREFIX = "report_export_count"
     }
 
     // ── Device ID (Device-scoped) ────────────────────────────────────────
@@ -359,6 +360,21 @@ class UserPreferences(
 
     suspend fun incrementMonthlyManualReceiptAttachmentCount(yearMonth: YearMonth) {
         val key = intPreferencesKey(userKey("${MANUAL_RECEIPT_ATTACHMENT_COUNT_PREFIX}_$yearMonth"))
+        context.dataStore.edit { prefs ->
+            val current = prefs[key] ?: 0
+            prefs[key] = current + 1
+        }
+    }
+
+    // ── Monthly Report Export Quota (User-scoped, calendar-month keyed) ──
+
+    fun getMonthlyReportExportCount(yearMonth: YearMonth): Flow<Int> = userScopedFlow { userId ->
+        val key = intPreferencesKey("${userId}_${REPORT_EXPORT_COUNT_PREFIX}_$yearMonth")
+        context.dataStore.data.map { prefs -> prefs[key] ?: 0 }
+    }
+
+    suspend fun incrementMonthlyReportExportCount(yearMonth: YearMonth) {
+        val key = intPreferencesKey(userKey("${REPORT_EXPORT_COUNT_PREFIX}_$yearMonth"))
         context.dataStore.edit { prefs ->
             val current = prefs[key] ?: 0
             prefs[key] = current + 1

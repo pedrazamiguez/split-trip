@@ -44,10 +44,12 @@ class FeatureGateServicePlanAllowancesTest {
     private val aiReceiptMonthlyLimitFree = MutableStateFlow(3)
     private val aiReceiptMonthlyLimitPro = MutableStateFlow(100)
     private val manualReceiptMonthlyLimitFree = MutableStateFlow(5)
+    private val reportExportMonthlyLimitFree = MutableStateFlow(1)
     private val maxSubunitsPerGroupFree = MutableStateFlow(1)
     private val maxSubunitsPerGroupPro = MutableStateFlow(-1)
     private val monthlyScanCount = MutableStateFlow(0)
     private val monthlyManualReceiptCount = MutableStateFlow(0)
+    private val monthlyReportExportCount = MutableStateFlow(0)
     private val proAllowlistEmailHashes = MutableStateFlow<Set<String>>(emptySet())
 
     @BeforeEach
@@ -66,6 +68,7 @@ class FeatureGateServicePlanAllowancesTest {
         every { appConfigRepository.aiReceiptMonthlyLimitFree } returns aiReceiptMonthlyLimitFree
         every { appConfigRepository.aiReceiptMonthlyLimitPro } returns aiReceiptMonthlyLimitPro
         every { appConfigRepository.manualReceiptMonthlyLimitFree } returns manualReceiptMonthlyLimitFree
+        every { appConfigRepository.reportExportMonthlyLimitFree } returns reportExportMonthlyLimitFree
         every { appConfigRepository.maxSubunitsPerGroupFree } returns maxSubunitsPerGroupFree
         every { appConfigRepository.maxSubunitsPerGroupPro } returns maxSubunitsPerGroupPro
         every { appConfigRepository.proAllowlistEmailHashes } returns proAllowlistEmailHashes
@@ -73,6 +76,9 @@ class FeatureGateServicePlanAllowancesTest {
         every {
             userPreferenceRepository.getMonthlyManualReceiptAttachmentCount(fixedYearMonth)
         } returns monthlyManualReceiptCount
+        every {
+            userPreferenceRepository.getMonthlyReportExportCount(fixedYearMonth)
+        } returns monthlyReportExportCount
         every { userRepository.observeCurrentUserProfile() } returns flowOf(null)
         every { groupRepository.getAllGroupsFlow() } returns flowOf(emptyList())
         every { authenticationService.currentUserId() } returns "user-1"
@@ -86,10 +92,12 @@ class FeatureGateServicePlanAllowancesTest {
         aiReceiptMonthlyLimitFree.value = 3
         aiReceiptMonthlyLimitPro.value = 100
         manualReceiptMonthlyLimitFree.value = 5
+        reportExportMonthlyLimitFree.value = 1
         maxSubunitsPerGroupFree.value = 1
         maxSubunitsPerGroupPro.value = -1
         monthlyScanCount.value = 0
         monthlyManualReceiptCount.value = 0
+        monthlyReportExportCount.value = 0
         proAllowlistEmailHashes.value = emptySet()
 
         service = FeatureGateServiceImpl(
@@ -131,6 +139,8 @@ class FeatureGateServicePlanAllowancesTest {
             assertEquals(3, allowances.aiReceiptQuota.monthlyLimit)
             assertEquals(2, allowances.mediaUploadQuota.usedUploads)
             assertEquals(5, allowances.mediaUploadQuota.monthlyLimit)
+            assertEquals(0, allowances.reportExportQuota.usedExports)
+            assertEquals(1, allowances.reportExportQuota.monthlyLimit)
             assertFalse(allowances.isAdFreeEnabled)
             assertTrue(allowances.showUpgradeCta)
         }
@@ -163,6 +173,8 @@ class FeatureGateServicePlanAllowancesTest {
             assertEquals(100, allowances.aiReceiptQuota.monthlyLimit)
             assertTrue(allowances.mediaUploadQuota.isUnlimited)
             assertEquals(null, allowances.mediaUploadQuota.monthlyLimit)
+            assertTrue(allowances.reportExportQuota.isUnlimited)
+            assertEquals(null, allowances.reportExportQuota.monthlyLimit)
             assertTrue(allowances.isAdFreeEnabled)
             assertFalse(allowances.showUpgradeCta)
         }

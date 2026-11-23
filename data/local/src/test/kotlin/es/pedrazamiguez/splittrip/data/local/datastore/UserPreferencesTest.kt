@@ -650,4 +650,23 @@ class UserPreferencesTest {
 
         assertEquals(0, prefsAForClear.getMonthlyManualReceiptAttachmentCount(november).first())
     }
+
+    @Test
+    fun `monthlyReportExportCount increments per month resets across months and isolates per user`() = runTest {
+        val november = YearMonth.of(2026, 11)
+        val december = YearMonth.of(2026, 12)
+        val prefsA = createUserPreferences(USER_A_ID)
+
+        assertEquals(0, prefsA.getMonthlyReportExportCount(november).first())
+        prefsA.incrementMonthlyReportExportCount(november)
+        assertEquals(1, prefsA.getMonthlyReportExportCount(november).first())
+        assertEquals(0, prefsA.getMonthlyReportExportCount(december).first())
+
+        val prefsB = createUserPreferences(USER_B_ID)
+        assertEquals(0, prefsB.getMonthlyReportExportCount(november).first())
+
+        val prefsAForClear = createUserPreferences(USER_A_ID)
+        prefsAForClear.clearAll()
+        assertEquals(0, prefsAForClear.getMonthlyReportExportCount(november).first())
+    }
 }
