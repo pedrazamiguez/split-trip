@@ -63,7 +63,15 @@ jobs:
             exit 0
           fi
 
-          echo "📦 Updates detected in gradle/libs.versions.toml."
+          echo "📦 Updates detected in gradle/libs.versions.toml:"
+          git diff gradle/libs.versions.toml
+
+          echo "🔍 Validating AAR metadata and compileSdk compatibility..."
+          if ! ./gradlew checkDebugAarMetadata; then
+            echo "::error::Updated version catalog failed checkDebugAarMetadata (compileSdk or AGP metadata incompatibility). Aborting PR update."
+            exit 1
+          fi
+
           BRANCH_NAME="internal/version-catalog-update"
 
           git checkout -B "$BRANCH_NAME"

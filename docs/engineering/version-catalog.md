@@ -34,9 +34,37 @@ To check for updates and update the catalog file directly, run:
 The plugin configuration is located in the root [build.gradle.kts](../build.gradle.kts):
 
 ```kotlin
+private val STABLE_VERSION_KEYWORDS = listOf("RELEASE", "FINAL", "GA")
+private val STABLE_VERSION_REGEX = Regex("^[0-9,.v-]+(-r)?$")
+
+private fun isStableVersion(version: String): Boolean {
+    val upperVersion = version.uppercase()
+    return STABLE_VERSION_KEYWORDS.any { upperVersion.contains(it) } ||
+        STABLE_VERSION_REGEX.matches(version)
+}
+
+private fun versionStabilityRank(version: String): Int {
+    if (isStableVersion(version)) return 4
+    val lowerVersion = version.lowercase()
+    return when {
+        lowerVersion.contains("rc") -> 3
+        lowerVersion.contains("beta") -> 2
+        lowerVersion.contains("alpha") || lowerVersion.contains("exp") -> 1
+        else -> 0
+    }
+}
+
 versionCatalogUpdate {
     sortByKey.set(true)
+    versionSelector { candidate ->
+        val currentRank = versionStabilityRank(candidate.currentVersion)
+        val candidateRank = versionStabilityRank(candidate.candidate.version)
+        candidateRank > 0 && candidateRank >= currentRank
+    }
     pin {
+        // composeBom 2026.11.01+ pulls Compose 1.13.0+, which requires compileSdk 37.1+ (minCompileMinorSdk=1).
+        // Keep pinned at 2026.09.00 while the project compiles against android-37.0 (compileSdk = "37").
+        versions.add("composeBom")
         versions.add("kotlin")
         versions.add("ksp")
     }
@@ -49,8 +77,13 @@ versionCatalogUpdate {
 
 ### Key Configurations:
 1. **`sortByKey.set(true)`**: Tells the plugin to keep entries in `libs.versions.toml` sorted alphabetically under `[versions]`, `[libraries]`, and `[plugins]`.
-2. **`pin { versions.add(...) }`**: Pins specific dependencies so that automated update tasks will not bump them even when newer stable releases exist on Maven repositories.
-3. **`keep { keepUnusedVersions.set(true) }`**: **Critical.** By default, the plugin removes any version in the `[versions]` block that isn't directly referenced in the `[libraries]` or `[plugins]` blocks of the TOML file. Because some versions (e.g. `jacoco`, `ktlint`) are referenced programmatically in custom Gradle precompiled script plugins inside `:build-logic` rather than the TOML itself, this setting prevents them from being deleted as "unused".
+2. **`versionSelector { ... }`**: Enforces a monotonic stability-ranking policy (`STABLE (4) > RC (3) > BETA (2) > ALPHA/EXP (1) > DEV/SNAPSHOT (0)`) via `candidateRank > 0 && candidateRank >= currentRank`:
+   - `STABLE (4)` dependencies only accept `STABLE (4)` candidates.
+   - `RC (3)` dependencies (e.g., `material3 = "1.5.0-rc01"`) accept newer `RC (3)` or `STABLE (4)` candidates and strictly reject `BETA (2)`, `ALPHA (1)`, and `DEV/SNAPSHOT (0)` regressions.
+   - `BETA (2)` dependencies accept `BETA (2)`, `RC (3)`, or `STABLE (4)`.
+   - Explicitly opted-in `ALPHA/EXP (1)` dependencies accept `ALPHA/EXP (1)` and higher while rejecting `DEV/SNAPSHOT (0)`.
+3. **`pin { versions.add(...) }`**: Pins specific dependencies so that automated update tasks will not bump them even when newer stable releases exist on Maven repositories.
+4. **`keep { keepUnusedVersions.set(true) }`**: **Critical.** By default, the plugin removes any version in the `[versions]` block that isn't directly referenced in the `[libraries]` or `[plugins]` blocks of the TOML file. Because some versions (e.g. `jacoco`, `ktlint`) are referenced programmatically in custom Gradle precompiled script plugins inside `:build-logic` rather than the TOML itself, this setting prevents them from being deleted as "unused".
 
 ### 📌 Pinned Versions & Constraints
 
@@ -69,14 +102,19 @@ Kotlin Symbol Processing (`ksp`) has strict compiler plugin coupling and must ma
 - Allowing `ksp` to auto-bump to `2.3.12` (built against Kotlin `2.4.20`) while Kotlin is held back causes compiler plugin mismatches during annotation processing (Room DAOs, etc.).
 - Therefore, `ksp` is pinned alongside `kotlin` until both can be safely upgraded together.
 
-#### 3. Future Upgrade Protocol
-Before unpinning or bumping `kotlin` and `ksp`:
-1. **Check CodeQL Release Notes**: Verify that the latest GitHub CodeQL Action bundle includes support for the target Kotlin version (e.g., CodeQL CLI release notes or official Kotlin support matrix).
-2. **Local Verification**:
-   - Temporarily remove the `pin` entries in `build.gradle.kts` (or manually bump `kotlin` and `ksp` in `gradle/libs.versions.toml`).
-   - Run `make fast-check` and full compilation (`./gradlew assembleDebug test`).
-3. **CI Security Verification**:
-   - Push to a branch and ensure the `CodeQL` workflow passes green before removing the version pin on `develop`.
+#### 3. Compose BOM & `compileSdk` Minor API Level Coupling
+`androidx.compose:compose-bom:2026.11.01+` uses a stable version identifier, but maps `androidx.compose.ui`, `foundation`, and `animation` to `1.13.0+`, whose AAR metadata (`aar-metadata.properties`) requires `minCompileSdk=37` and `minCompileMinorSdk=1` (Android API `37.1+`).
+- Because SplitTrip currently compiles against `compileSdk = "37"` (`android-37.0`, parsed via `.toInt()` in `build-logic`), `composeBom` is pinned to `2026.09.00` (Compose `1.12.1`, `minCompileSdk=37`, `minCompileMinorSdk=0`) until a dedicated platform upgrade adopts Android SDK `37.1+` / `37.2+`.
+
+#### 4. Future Upgrade Protocol
+Before unpinning or bumping `kotlin`, `ksp`, or `composeBom`:
+1. **Check CodeQL Release Notes (for `kotlin` / `ksp`)**: Verify that the latest GitHub CodeQL Action bundle includes support for the target Kotlin version (e.g., CodeQL CLI release notes or official Kotlin support matrix).
+2. **Check `compileSdk` & Minor API Level (for `composeBom`)**: Ensure `build-logic` supports `minorApiLevel` (if targeting `37.1+` / `37.2+`) and that CI/local environments have the matching Android SDK platform installed before unpinning `composeBom`.
+3. **Local Verification**:
+   - Temporarily remove the `pin` entries in `build.gradle.kts` (or manually bump the target versions in `gradle/libs.versions.toml`).
+   - Run `./gradlew checkDebugAarMetadata`, `make fast-check`, and full compilation (`./gradlew assembleDebug test`).
+4. **CI Security Verification**:
+   - Push to a branch and ensure the `CodeQL` and `Build and Test` workflows pass green before removing the version pin on `develop`.
 
 ---
 
@@ -92,7 +130,8 @@ To ensure dependencies, security patches, and bug fixes do not lag behind, depen
 1. **Source of Truth**: Checks out the latest `develop` branch.
 2. **Execution**: Executes `./gradlew versionCatalogUpdate`.
 3. **Change Detection**: Uses `git diff --quiet gradle/libs.versions.toml` to inspect whether updates were made. If no updates are found, the job terminates cleanly without creating branches or PRs.
-4. **Branch & Pull Request**:
+4. **Pre-PR AAR Metadata Verification**: Prints `git diff gradle/libs.versions.toml` and runs `./gradlew checkDebugAarMetadata` to validate `compileSdk` and AGP metadata compatibility before committing or pushing. If this gate fails, the workflow aborts with `::error::` and does not update or open the PR.
+5. **Branch & Pull Request**:
    - Commits changes to the dedicated branch `internal/version-catalog-update`.
    - Force pushes to update the branch on `origin`.
    - If an open Pull Request for `internal/version-catalog-update` already exists, it is automatically refreshed with the latest changes.
