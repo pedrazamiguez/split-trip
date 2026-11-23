@@ -1,0 +1,128 @@
+package es.pedrazamiguez.splittrip.features.balance.presentation.component.export
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Share
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.SecondaryButton
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.SegmentedPillSelector
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.HorizonModalBottomSheet
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.rememberHorizonBottomSheetState
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SheetTitleText
+import es.pedrazamiguez.splittrip.domain.model.report.TripReportFormat
+import es.pedrazamiguez.splittrip.features.balance.R
+import es.pedrazamiguez.splittrip.features.balance.presentation.component.insights.SpendingInsightsPeriodCard
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.SpendingPeriodPreset
+import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.TripReportExportSheetState
+import java.time.LocalDate
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Suppress("LongMethod", "LongParameterList")
+@Composable
+fun TripReportExportBottomSheet(
+    sheetState: TripReportExportSheetState,
+    onSelectPreset: (SpendingPeriodPreset) -> Unit,
+    onSelectCustomStartDate: (LocalDate) -> Unit,
+    onSelectCustomEndDate: (LocalDate) -> Unit,
+    onSelectFormat: (TripReportFormat) -> Unit,
+    onConfirmExport: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val modalSheetState = rememberHorizonBottomSheetState()
+    val scope = rememberCoroutineScope()
+    val formats = remember { TripReportFormat.entries.toImmutableList() }
+    val pdfLabel = stringResource(R.string.balances_export_format_pdf)
+    val csvLabel = stringResource(R.string.balances_export_format_csv)
+
+    HorizonModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = modalSheetState
+    ) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(MaterialTheme.spacing.ExtraLarge),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default)
+        ) {
+            PassportTag(
+                text = stringResource(R.string.balances_export_sheet_badge),
+                style = PassportTagStyle.TERTIARY
+            )
+
+            SheetTitleText(text = stringResource(R.string.balances_export_sheet_title))
+
+            SecondaryBodyText(text = stringResource(R.string.balances_export_sheet_subtitle))
+
+            LabelText(text = stringResource(R.string.balances_export_period_label))
+
+            SpendingInsightsPeriodCard(
+                selectedPreset = sheetState.selectedPreset,
+                periodSummaryLabel = "",
+                customStartDate = sheetState.customStartDate,
+                customEndDate = sheetState.customEndDate,
+                formattedCustomStartDate = sheetState.formattedCustomStartDate,
+                formattedCustomEndDate = sheetState.formattedCustomEndDate,
+                oldestExpenseDate = sheetState.oldestExpenseDate,
+                newestExpenseDate = sheetState.newestExpenseDate,
+                onSelectPreset = onSelectPreset,
+                onSelectCustomStartDate = onSelectCustomStartDate,
+                onSelectCustomEndDate = onSelectCustomEndDate
+            )
+
+            LabelText(text = stringResource(R.string.balances_export_format_label))
+
+            SegmentedPillSelector(
+                options = formats,
+                selectedOption = sheetState.selectedFormat,
+                onOptionSelected = onSelectFormat,
+                optionLabel = { format ->
+                    when (format) {
+                        TripReportFormat.PDF -> pdfLabel
+                        TripReportFormat.CSV -> csvLabel
+                    }
+                },
+                enabled = !sheetState.isExporting
+            )
+
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
+
+            GradientButton(
+                text = stringResource(R.string.balances_export_confirm_button),
+                onClick = onConfirmExport,
+                leadingIcon = TablerIcons.Outline.Share,
+                isLoading = sheetState.isExporting,
+                enabled = !sheetState.isExporting,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            SecondaryButton(
+                text = stringResource(R.string.balances_export_cancel_button),
+                onClick = {
+                    scope.launch { modalSheetState.hide() }.invokeOnCompletion { onDismiss() }
+                },
+                enabled = !sheetState.isExporting,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}

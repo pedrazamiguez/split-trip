@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReportAnalytics
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersPlus
@@ -54,6 +55,12 @@ enum class ProFeaturePreviewType(
         descriptionRes = R.string.pro_preview_unlimited_receipts_description,
         highlightRes = R.string.pro_preview_unlimited_receipts_highlight,
         icon = TablerIcons.Outline.Receipt
+    ),
+    TRIP_REPORT_EXPORT(
+        titleRes = R.string.pro_preview_group_report_export_title,
+        descriptionRes = R.string.pro_preview_group_report_export_description,
+        highlightRes = R.string.pro_preview_group_report_export_highlight,
+        icon = TablerIcons.Outline.ReportAnalytics
     );
 
     companion object {
@@ -69,6 +76,7 @@ enum class ProFeaturePreviewType(
             GatedFeature.GROUP_COVER_UPLOAD -> GROUP_COVER_PHOTO
             GatedFeature.SUBUNIT_CREATION -> SUBUNIT_CREATION
             GatedFeature.AI_RECEIPT_SCANNING -> AI_RECEIPT_SCANNING
+            GatedFeature.TRIP_REPORT_EXPORT -> TRIP_REPORT_EXPORT
             GatedFeature.AD_FREE -> UNLIMITED_GROUPS
         }
     }

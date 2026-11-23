@@ -15,6 +15,7 @@ import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.CashDebtScalingService
 import es.pedrazamiguez.splittrip.domain.service.DebtSimplificationService
+import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseFilterService
 import es.pedrazamiguez.splittrip.domain.service.GroupMembershipService
 import es.pedrazamiguez.splittrip.domain.service.PocketDebtDistributionService
@@ -28,6 +29,7 @@ import es.pedrazamiguez.splittrip.domain.service.impl.SettlementReconciliationSe
 import es.pedrazamiguez.splittrip.domain.service.impl.SpendingInsightsServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AreGroupSettlementsResolvedUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.AreMemberSettlementsResolvedUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.balance.BuildGroupTripReportUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.ConfirmSettlementUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteCashWithdrawalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.DeleteContributionUseCase
@@ -44,6 +46,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.GetMemberBalancesFlowUs
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetSettlementSuggestionsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.AreGroupSettlementsResolvedUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.AreMemberSettlementsResolvedUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.BuildGroupTripReportUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.ConfirmSettlementUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.DeleteCashWithdrawalUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.balance.impl.DeleteContributionUseCaseImpl
@@ -262,6 +265,31 @@ val balancesDomainModule = module {
             getMemberProfilesUseCase = getMemberProfilesUseCase,
             spendingInsightsService = spendingInsightsService,
             expenseFilterService = expenseFilterService,
+            authenticationService = authenticationService,
+            appConfigService = appConfigService
+        )
+    }
+
+    factory<BuildGroupTripReportUseCase> {
+        val groupRepository = get<GroupRepository>()
+        val groupDashboardDataSource = get<GroupDashboardDataSource>()
+        val getGroupPocketBalanceFlowUseCase = get<GetGroupPocketBalanceFlowUseCase>()
+        val getMemberBalancesFlowUseCase = get<GetMemberBalancesFlowUseCase>()
+        val getSettlementSuggestionsUseCase = get<GetSettlementSuggestionsUseCase>()
+        val getMemberProfilesUseCase = get<GetMemberProfilesUseCase>()
+        val addOnCalculationService = get<AddOnCalculationService>()
+        val expenseCalculatorService = get<ExpenseCalculatorService>()
+        val authenticationService = get<AuthenticationService>()
+        val appConfigService = get<AppConfigService>()
+        BuildGroupTripReportUseCaseImpl(
+            groupRepository = groupRepository,
+            groupDashboardDataSource = groupDashboardDataSource,
+            getGroupPocketBalanceFlowUseCase = getGroupPocketBalanceFlowUseCase,
+            getMemberBalancesFlowUseCase = getMemberBalancesFlowUseCase,
+            getSettlementSuggestionsUseCase = getSettlementSuggestionsUseCase,
+            getMemberProfilesUseCase = getMemberProfilesUseCase,
+            addOnCalculationService = addOnCalculationService,
+            expenseCalculatorService = expenseCalculatorService,
             authenticationService = authenticationService,
             appConfigService = appConfigService
         )

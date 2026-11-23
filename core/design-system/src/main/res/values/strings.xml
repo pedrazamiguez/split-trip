@@ -219,6 +219,9 @@
     <string name="pro_preview_unlimited_receipts_title">Attach unlimited receipts</string>
     <string name="pro_preview_unlimited_receipts_description">Keep every receipt photo and PDF safely attached and synced for your whole group, with no monthly attachment limit.</string>
     <string name="pro_preview_unlimited_receipts_highlight">Unlimited receipt photos &amp; PDFs synced to the cloud for every group</string>
+    <string name="pro_preview_group_report_export_title">Export group statements</string>
+    <string name="pro_preview_group_report_export_description">Generate formatted PDF statements and spreadsheet-ready CSV ledgers with itemized expenses, currency conversions, balances, and settlements for any period.</string>
+    <string name="pro_preview_group_report_export_highlight">Formatted PDF statements and RFC 4180 CSV exports for full ledgers or custom date ranges</string>
 
     <!-- Password Requirements Indicator -->
     <string name="password_requirement_min_length">At least 8 characters</string>

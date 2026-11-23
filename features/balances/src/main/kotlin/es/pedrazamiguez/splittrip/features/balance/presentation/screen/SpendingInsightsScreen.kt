@@ -15,6 +15,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DashboardShimmer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.DeferredLoadingContainer
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerBox
+import es.pedrazamiguez.splittrip.features.balance.presentation.component.export.TripReportExportBottomSheet
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.insights.SpendingInsightsBodyContent
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.SpendingInsightsUiEvent
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.SpendingInsightsUiState
@@ -49,5 +50,17 @@ fun SpendingInsightsScreen(
                 onEvent = onEvent
             )
         }
+    }
+
+    if (uiState.exportSheetState.isVisible) {
+        TripReportExportBottomSheet(
+            sheetState = uiState.exportSheetState,
+            onSelectPreset = { onEvent(SpendingInsightsUiEvent.SelectExportPeriodPreset(it)) },
+            onSelectCustomStartDate = { onEvent(SpendingInsightsUiEvent.SelectExportCustomStartDate(it)) },
+            onSelectCustomEndDate = { onEvent(SpendingInsightsUiEvent.SelectExportCustomEndDate(it)) },
+            onSelectFormat = { onEvent(SpendingInsightsUiEvent.SelectExportFormat(it)) },
+            onConfirmExport = { onEvent(SpendingInsightsUiEvent.ConfirmExportReport) },
+            onDismiss = { onEvent(SpendingInsightsUiEvent.DismissExportReportSheet) }
+        )
     }
 }

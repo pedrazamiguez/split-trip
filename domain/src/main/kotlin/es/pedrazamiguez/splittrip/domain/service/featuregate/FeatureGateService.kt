@@ -11,8 +11,9 @@ interface FeatureGateService {
     /**
      * Checks if a specific premium or restricted feature is enabled.
      *
-     * For collaborative capabilities (e.g. [GatedFeature.SUBUNIT_CREATION]), access is enabled
-     * if either the acting authenticated user or the group creator is on the Pro tier.
+     * For collaborative capabilities (e.g. [GatedFeature.SUBUNIT_CREATION],
+     * [GatedFeature.TRIP_REPORT_EXPORT]), access is enabled if either the acting authenticated
+     * user or the group creator is on the Pro tier.
      * For [GatedFeature.GROUP_COVER_UPLOAD], access evaluates the acting user's shared monthly
      * media upload quota (`observeMediaUploadQuota().canUpload`).
      * For group-level creator-bound capabilities, if [groupId] is provided,

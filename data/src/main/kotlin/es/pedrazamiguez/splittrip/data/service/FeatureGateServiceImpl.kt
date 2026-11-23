@@ -76,7 +76,8 @@ internal class FeatureGateServiceImpl(
                     GatedFeature.AD_FREE -> actingTier
                     GatedFeature.GROUP_COVER_UPLOAD ->
                         resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
-                    GatedFeature.SUBUNIT_CREATION -> if (actingTier == SubscriptionTier.PRO) {
+                    GatedFeature.SUBUNIT_CREATION,
+                    GatedFeature.TRIP_REPORT_EXPORT -> if (actingTier == SubscriptionTier.PRO) {
                         SubscriptionTier.PRO
                     } else {
                         resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)

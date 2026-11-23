@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -19,6 +20,8 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.MemberBala
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.action.BalancesUiAction
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.BalancesUiEvent
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.BalancesActivityEventHandler
+import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.TripReportExportAction
+import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.TripReportExportEventHandler
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.BalancesActivitySelectionState
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.BalancesUiState
 import kotlinx.coroutines.CoroutineDispatcher
@@ -53,6 +56,7 @@ class BalancesViewModel(
     private val balancesUiMapper: BalancesUiMapper,
     private val settlementsUiMapper: SettlementsUiMapper,
     private val activityEventHandler: BalancesActivityEventHandler,
+    private val tripReportExportEventHandler: TripReportExportEventHandler,
     private val appConfigService: AppConfigService,
     private val computationDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
@@ -71,6 +75,21 @@ class BalancesViewModel(
 
     init {
         activityEventHandler.bind(_activitySelection, _actions, viewModelScope)
+        tripReportExportEventHandler.bind(viewModelScope) { exportAction ->
+            val uiAction = when (exportAction) {
+                is TripReportExportAction.ShowProFeaturePreview ->
+                    BalancesUiAction.ShowProFeaturePreview(exportAction.prompt)
+                is TripReportExportAction.ShareExportedReport ->
+                    BalancesUiAction.ShareExportedReport(
+                        contentUri = exportAction.contentUri,
+                        mimeType = exportAction.mimeType,
+                        fileName = exportAction.fileName
+                    )
+                is TripReportExportAction.ShowExportError ->
+                    BalancesUiAction.ShowExportError(exportAction.message)
+            }
+            _actions.emit(uiAction)
+        }
     }
 
     val uiState: StateFlow<BalancesUiState> = combine(
@@ -214,11 +233,13 @@ class BalancesViewModel(
                     // and should not block the UI dispatcher.
                     .flowOn(computationDispatcher)
             },
-        _activitySelection
-    ) { dataState, selection ->
+        _activitySelection,
+        tripReportExportEventHandler.exportSheetState
+    ) { dataState, selection, exportSheetState ->
         dataState.copy(
             contributionActionsTarget = selection.contributionActionsTarget,
-            withdrawalToDelete = selection.withdrawalToDelete
+            withdrawalToDelete = selection.withdrawalToDelete,
+            exportSheetState = exportSheetState
         )
     }
         .stateIn(
@@ -261,6 +282,41 @@ class BalancesViewModel(
                 val groupId = _selectedGroupId.value ?: return
                 activityEventHandler.handleDeleteWithdrawalConfirmed(groupId, event.withdrawalId)
             }
+
+            BalancesUiEvent.RequestExportReport,
+            BalancesUiEvent.DismissExportReportSheet,
+            is BalancesUiEvent.SelectExportPeriodPreset,
+            is BalancesUiEvent.SelectExportCustomStartDate,
+            is BalancesUiEvent.SelectExportCustomEndDate,
+            is BalancesUiEvent.SelectExportFormat,
+            BalancesUiEvent.ConfirmExportReport -> handleExportEvent(event)
+        }
+    }
+
+    private fun handleExportEvent(event: BalancesUiEvent) {
+        when (event) {
+            BalancesUiEvent.RequestExportReport -> {
+                val groupId = _selectedGroupId.value ?: return
+                tripReportExportEventHandler.handleExportRequested(
+                    groupId = groupId,
+                    gateEntryPoint = MonetizationTelemetry.GateEntryPoint.BALANCES_EXPORT_ACTION
+                )
+            }
+            BalancesUiEvent.DismissExportReportSheet ->
+                tripReportExportEventHandler.handleDismissExportSheet()
+            is BalancesUiEvent.SelectExportPeriodPreset ->
+                tripReportExportEventHandler.handleSelectPeriodPreset(event.preset)
+            is BalancesUiEvent.SelectExportCustomStartDate ->
+                tripReportExportEventHandler.handleSelectCustomStartDate(event.date)
+            is BalancesUiEvent.SelectExportCustomEndDate ->
+                tripReportExportEventHandler.handleSelectCustomEndDate(event.date)
+            is BalancesUiEvent.SelectExportFormat ->
+                tripReportExportEventHandler.handleSelectFormat(event.format)
+            BalancesUiEvent.ConfirmExportReport -> {
+                val groupId = _selectedGroupId.value ?: return
+                tripReportExportEventHandler.handleConfirmExport(groupId)
+            }
+            else -> Unit
         }
     }
 
