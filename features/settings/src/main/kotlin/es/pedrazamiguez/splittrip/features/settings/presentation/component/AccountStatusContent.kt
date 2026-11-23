@@ -17,8 +17,6 @@ import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Trash
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.DestructiveButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
@@ -34,18 +32,12 @@ internal fun AccountStatusContent(
     onEvent: (AccountStatusUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val topPadding = LocalTopPadding.current
-    val bottomPadding = LocalBottomPadding.current
     val scrollState = rememberScrollState()
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(horizontal = MaterialTheme.spacing.ExtraLarge)
-            .padding(
-                top = MaterialTheme.spacing.ExtraLarge + topPadding,
-                bottom = MaterialTheme.spacing.ExtraLarge + bottomPadding
-            ),
+            .padding(MaterialTheme.spacing.Default),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {

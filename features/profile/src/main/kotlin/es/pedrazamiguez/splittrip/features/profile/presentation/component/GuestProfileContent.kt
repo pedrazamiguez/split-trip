@@ -23,8 +23,6 @@ import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.UserFilled
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.ScreenTitleText
 import es.pedrazamiguez.splittrip.features.profile.R
@@ -34,18 +32,12 @@ internal fun GuestProfileContent(
     onLinkAccountClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val topPadding = LocalTopPadding.current
-    val bottomPadding = LocalBottomPadding.current
     val scrollState = rememberScrollState()
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(horizontal = MaterialTheme.spacing.ExtraLarge)
-            .padding(
-                top = MaterialTheme.spacing.ExtraLarge + topPadding,
-                bottom = MaterialTheme.spacing.ExtraLarge + bottomPadding
-            ),
+            .padding(MaterialTheme.spacing.ExtraLarge),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {

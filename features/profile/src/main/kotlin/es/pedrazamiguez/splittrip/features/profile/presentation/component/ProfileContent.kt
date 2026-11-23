@@ -13,8 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.features.profile.presentation.model.ProfileUiModel
 
 @Composable
@@ -22,19 +20,13 @@ internal fun ProfileContent(
     profile: ProfileUiModel,
     modifier: Modifier = Modifier
 ) {
-    val topPadding = LocalTopPadding.current
-    val bottomPadding = LocalBottomPadding.current
     val scrollState = rememberScrollState()
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(horizontal = MaterialTheme.spacing.ExtraLarge)
-            .padding(
-                top = MaterialTheme.spacing.ExtraLarge + topPadding,
-                bottom = MaterialTheme.spacing.ExtraLarge + bottomPadding
-            ),
+            .padding(MaterialTheme.spacing.ExtraLarge),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {

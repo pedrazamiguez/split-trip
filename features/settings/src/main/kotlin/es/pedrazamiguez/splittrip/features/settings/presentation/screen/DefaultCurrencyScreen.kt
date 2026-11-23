@@ -11,8 +11,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
-import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.domain.enums.Currency
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.DefaultCurrencyItemRow
@@ -23,22 +21,14 @@ fun DefaultCurrencyScreen(
     selectedCurrencyCode: String?,
     onCurrencySelected: (String) -> Unit
 ) {
-    val topPadding = LocalTopPadding.current
-    val bottomPadding = LocalBottomPadding.current
-
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = MaterialTheme.spacing.ExtraLarge,
-            end = MaterialTheme.spacing.ExtraLarge,
-            top = MaterialTheme.spacing.ExtraLarge + topPadding,
-            bottom = MaterialTheme.spacing.ExtraLarge + bottomPadding
-        )
+        contentPadding = PaddingValues(MaterialTheme.spacing.Default)
     ) {
         item {
             FlatCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
-                    modifier = Modifier.padding(MaterialTheme.spacing.Small),
+                    modifier = Modifier.padding(MaterialTheme.spacing.ExtraSmall),
                     verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraSmall)
                 ) {
                     availableCurrencies.forEach { currency ->
