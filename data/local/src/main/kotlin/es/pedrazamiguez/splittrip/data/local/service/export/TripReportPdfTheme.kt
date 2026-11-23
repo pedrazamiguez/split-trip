@@ -165,6 +165,11 @@ private data class WrappedLineChunk(
 
 internal object TripReportPdfTheme {
 
+    // Manrope maps OpenType ligatures (tt -> U+E009, ff -> U+E007, ffl -> U+E008) to Private Use
+    // Area codepoints that Skia writes verbatim into PDF text streams, breaking URL auto-detection
+    // ("splittrip.eu" -> "rip.eu") as well as PDF text search and copy-paste.
+    internal const val DISABLED_LIGATURES_FONT_FEATURES = "'liga' 0, 'clig' 0, 'dlig' 0, 'calt' 0"
+
     fun createPaints(context: Context?): TripReportPdfPaints {
         val fonts = TripReportPdfTypefaces.load(context)
         return TripReportPdfPaints(
@@ -310,5 +315,6 @@ internal object TripReportPdfTheme {
             color = colorInt
             textSize = sizePt
             typeface = tf
+            fontFeatureSettings = DISABLED_LIGATURES_FONT_FEATURES
         }
 }

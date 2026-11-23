@@ -118,6 +118,42 @@ class TripReportPdfRendererTest {
         assertTrue(widths.all { it >= 60f })
     }
 
+    @Test
+    fun `createPaints disables OpenType ligatures on all PDF text paints`() {
+        val paints = TripReportPdfTheme.createPaints(context = null)
+        val textPaints = listOf(
+            paints.brandSplit,
+            paints.brandTrip,
+            paints.brandTagline,
+            paints.periodPillText,
+            paints.kicker,
+            paints.heroTitle,
+            paints.heroSubtitle,
+            paints.heroMeta,
+            paints.kpiLabel,
+            paints.kpiValue,
+            paints.sectionTitle,
+            paints.tableHeader,
+            paints.tableCell,
+            paints.badgeText,
+            paints.upsellTitle,
+            paints.upsellBody,
+            paints.footerBrand,
+            paints.footerPage,
+            paints.footerCtaTitle,
+            paints.footerCtaSubtitle,
+            paints.footerCtaUrl,
+            paints.qrCaption
+        )
+
+        textPaints.forEach { paint ->
+            assertEquals(
+                TripReportPdfTheme.DISABLED_LIGATURES_FONT_FEATURES,
+                paint.fontFeatureSettings
+            )
+        }
+    }
+
     private fun createFullPayload(expenseRowsCount: Int): TripReportExportPayload {
         val longTitle = "Very long restaurant and entertainment description exceeding single column width"
         val expenseRows = (1..expenseRowsCount).map { index ->
