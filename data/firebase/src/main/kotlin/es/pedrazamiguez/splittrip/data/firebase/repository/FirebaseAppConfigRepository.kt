@@ -234,7 +234,11 @@ class FirebaseAppConfigRepository(
         _maxOwnedGroupsFree.value = if (maxOwnedFree > 0) maxOwnedFree else DEFAULT_MAX_OWNED_GROUPS_FREE
 
         val maxOwnedPro = remoteConfig.getLong("max_owned_groups_pro").toInt()
-        _maxOwnedGroupsPro.value = if (maxOwnedPro > 0) maxOwnedPro else DEFAULT_MAX_OWNED_GROUPS_PRO
+        _maxOwnedGroupsPro.value = when {
+            maxOwnedPro < 0 -> UNLIMITED_OWNED_GROUPS
+            maxOwnedPro > 0 -> maxOwnedPro
+            else -> DEFAULT_MAX_OWNED_GROUPS_PRO
+        }
 
         val maxMembersFree = remoteConfig.getLong("max_members_per_group_free").toInt()
         _maxMembersPerGroupFree.value = if (maxMembersFree > 0) maxMembersFree else DEFAULT_MAX_MEMBERS_PER_GROUP_FREE
@@ -358,7 +362,8 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_SUBSCRIPTION_GATING_ENABLED = true
         private const val DEFAULT_BILLING_SIMULATION_ENABLED = false
         private const val DEFAULT_MAX_OWNED_GROUPS_FREE = 1
-        private const val DEFAULT_MAX_OWNED_GROUPS_PRO = 100
+        private const val UNLIMITED_OWNED_GROUPS = -1
+        private const val DEFAULT_MAX_OWNED_GROUPS_PRO = UNLIMITED_OWNED_GROUPS
         private const val DEFAULT_MAX_MEMBERS_PER_GROUP_FREE = 4
         private const val DEFAULT_MAX_MEMBERS_PER_GROUP_PRO = 20
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_FREE = 3

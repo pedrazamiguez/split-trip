@@ -34,9 +34,9 @@
         },
         "max_owned_groups_pro": {
           "defaultValue": {
-            "value": "100"
+            "value": "-1"
           },
-          "description": "Maximum number of groups a Pro tier user can own concurrently.",
+          "description": "Maximum number of groups a Pro tier user can own concurrently (-1 for unlimited).",
           "valueType": "NUMBER"
         },
         "max_members_per_group_free": {

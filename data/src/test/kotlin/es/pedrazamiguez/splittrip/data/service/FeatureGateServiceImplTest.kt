@@ -41,7 +41,7 @@ class FeatureGateServiceImplTest {
     private val fixedYearMonth = YearMonth.of(2026, 11)
     private val subscriptionGatingEnabled = MutableStateFlow(true)
     private val maxOwnedGroupsFree = MutableStateFlow(1)
-    private val maxOwnedGroupsPro = MutableStateFlow(100)
+    private val maxOwnedGroupsPro = MutableStateFlow(-1)
     private val maxMembersPerGroupFree = MutableStateFlow(4)
     private val maxMembersPerGroupPro = MutableStateFlow(20)
     private val aiReceiptMonthlyLimitFree = MutableStateFlow(3)
@@ -81,7 +81,7 @@ class FeatureGateServiceImplTest {
 
         subscriptionGatingEnabled.value = true
         maxOwnedGroupsFree.value = 1
-        maxOwnedGroupsPro.value = 100
+        maxOwnedGroupsPro.value = -1
         maxMembersPerGroupFree.value = 4
         maxMembersPerGroupPro.value = 20
         aiReceiptMonthlyLimitFree.value = 3
@@ -282,12 +282,10 @@ class FeatureGateServiceImplTest {
         assertTrue(service.isFeatureEnabled(GatedFeature.GROUP_COVER_UPLOAD).first())
         assertTrue(service.isFeatureEnabled(GatedFeature.SUBUNIT_CREATION).first())
 
-        // MAX_OWNED_GROUPS_COUNT: Pro user can own up to 100 groups
+        // MAX_OWNED_GROUPS_COUNT: Pro user has unlimited owned groups when maxOwnedGroupsPro is -1
         assertEquals(LimitResult.Allowed, service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 50).first())
-        assertEquals(
-            LimitResult.Blocked(GatedLimit.MAX_OWNED_GROUPS_COUNT, upgradeRequired = false),
-            service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 100).first()
-        )
+        assertEquals(LimitResult.Allowed, service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 100).first())
+        assertEquals(LimitResult.Allowed, service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 1000).first())
 
         // MAX_MEMBERS_PER_GROUP on creation: allowed up to 20
         assertEquals(LimitResult.Allowed, service.checkLimit(GatedLimit.MAX_MEMBERS_PER_GROUP, 19).first())
@@ -483,10 +481,34 @@ class FeatureGateServiceImplTest {
             service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 50).first()
         )
         assertEquals(
-            LimitResult.Blocked(GatedLimit.MAX_OWNED_GROUPS_COUNT, upgradeRequired = false),
+            LimitResult.Allowed,
             service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 100).first()
         )
+        assertEquals(
+            LimitResult.Allowed,
+            service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 1000).first()
+        )
     }
+
+    @Test
+    fun `checkLimit for MAX_OWNED_GROUPS_COUNT enforces positive maxOwnedGroupsPro override for PRO users`() =
+        runTest {
+            coEvery { authenticationService.isAnonymous() } returns false
+            every { userRepository.observeCurrentUserProfile() } returns flowOf(
+                User(
+                    userId = "acting_pro",
+                    email = "pro@test.com",
+                    tier = SubscriptionTier.PRO
+                )
+            )
+            maxOwnedGroupsPro.value = 100
+
+            assertEquals(LimitResult.Allowed, service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 99).first())
+            assertEquals(
+                LimitResult.Blocked(GatedLimit.MAX_OWNED_GROUPS_COUNT, upgradeRequired = false),
+                service.checkLimit(GatedLimit.MAX_OWNED_GROUPS_COUNT, 100).first()
+            )
+        }
 
     @Test
     fun `anonymous user never receives complimentary PRO even when email hash is in proAllowlistEmailHashes`() =

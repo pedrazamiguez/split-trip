@@ -38,7 +38,7 @@ class FeatureGateServicePlanAllowancesTest {
     private val fixedYearMonth = YearMonth.of(2026, 11)
     private val subscriptionGatingEnabled = MutableStateFlow(true)
     private val maxOwnedGroupsFree = MutableStateFlow(1)
-    private val maxOwnedGroupsPro = MutableStateFlow(100)
+    private val maxOwnedGroupsPro = MutableStateFlow(-1)
     private val maxMembersPerGroupFree = MutableStateFlow(4)
     private val maxMembersPerGroupPro = MutableStateFlow(20)
     private val aiReceiptMonthlyLimitFree = MutableStateFlow(3)
@@ -86,7 +86,7 @@ class FeatureGateServicePlanAllowancesTest {
 
         subscriptionGatingEnabled.value = true
         maxOwnedGroupsFree.value = 1
-        maxOwnedGroupsPro.value = 100
+        maxOwnedGroupsPro.value = -1
         maxMembersPerGroupFree.value = 4
         maxMembersPerGroupPro.value = 20
         aiReceiptMonthlyLimitFree.value = 3
@@ -167,7 +167,8 @@ class FeatureGateServicePlanAllowancesTest {
             assertEquals(SubscriptionTier.PRO, allowances.tier)
             assertTrue(allowances.isProTier)
             assertEquals(2, allowances.ownedGroupsUsed)
-            assertEquals(100, allowances.maxOwnedGroups)
+            assertEquals(null, allowances.maxOwnedGroups)
+            assertEquals(null, allowances.ownedGroupsRemaining)
             assertEquals(20, allowances.maxMembersPerGroup)
             assertEquals(null, allowances.maxSubunitsPerGroup)
             assertEquals(100, allowances.aiReceiptQuota.monthlyLimit)
@@ -191,7 +192,8 @@ class FeatureGateServicePlanAllowancesTest {
         val allowances = service.observePlanAllowances().first()
 
         assertEquals(SubscriptionTier.PRO, allowances.tier)
-        assertEquals(100, allowances.maxOwnedGroups)
+        assertEquals(null, allowances.maxOwnedGroups)
+        assertEquals(null, allowances.ownedGroupsRemaining)
         assertEquals(20, allowances.maxMembersPerGroup)
         assertEquals(null, allowances.maxSubunitsPerGroup)
         assertTrue(allowances.mediaUploadQuota.isUnlimited)
@@ -207,10 +209,33 @@ class FeatureGateServicePlanAllowancesTest {
         val allowances = service.observePlanAllowances().first()
 
         assertFalse(allowances.isGatingEnabled)
+        assertEquals(null, allowances.maxOwnedGroups)
+        assertEquals(null, allowances.ownedGroupsRemaining)
         assertEquals(null, allowances.maxSubunitsPerGroup)
         assertTrue(allowances.mediaUploadQuota.isUnlimited)
         assertTrue(allowances.isAdFreeEnabled)
         assertFalse(allowances.showUpgradeCta)
+    }
+
+    @Test
+    fun `observePlanAllowances exposes positive maxOwnedGroupsPro override when configured`() = runTest {
+        coEvery { authenticationService.isAnonymous() } returns false
+        every { authenticationService.currentUserId() } returns "pro-user"
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(userId = "pro-user", email = "pro@test.com", tier = SubscriptionTier.PRO)
+        )
+        every { groupRepository.getAllGroupsFlow() } returns flowOf(
+            listOf(
+                Group(id = "g-1", createdBy = "pro-user"),
+                Group(id = "g-2", createdBy = "pro-user")
+            )
+        )
+        maxOwnedGroupsPro.value = 50
+
+        val allowances = service.observePlanAllowances().first()
+
+        assertEquals(50, allowances.maxOwnedGroups)
+        assertEquals(48, allowances.ownedGroupsRemaining)
     }
 
     @Test

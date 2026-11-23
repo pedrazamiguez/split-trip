@@ -226,7 +226,7 @@ class PlanAllowancesUiMapperImplTest {
             usedUploads = 18,
             mediaMonthlyFreeLimit = 5,
             ownedGroupsUsed = 4,
-            maxOwnedGroups = 100,
+            maxOwnedGroups = null,
             maxMembersPerGroup = 20,
             maxSubunitsPerGroup = null,
             isAdFreeEnabled = true
@@ -259,9 +259,11 @@ class PlanAllowancesUiMapperImplTest {
         assertEquals(UiText.StringResource(R.string.plan_allowances_badge_unlimited), reportExportQuota.statusBadge)
 
         val groupsQuota = result.quotas[3]
-        assertEquals(AllowanceUsageStatus.HEALTHY, groupsQuota.status)
-        assertTrue(groupsQuota.showProgressBar)
-        assertEquals(0.0400f, groupsQuota.progressFraction, 0.0001f)
+        assertEquals(AllowanceUsageStatus.UNLIMITED, groupsQuota.status)
+        assertFalse(groupsQuota.showProgressBar)
+        assertEquals(0f, groupsQuota.progressFraction, 0.0001f)
+        assertEquals(UiText.StringResource(R.string.plan_allowances_usage_unlimited, "4"), groupsQuota.usageText)
+        assertEquals(UiText.StringResource(R.string.plan_allowances_badge_unlimited), groupsQuota.statusBadge)
 
         val membersPerk = result.perks[0]
         assertTrue(membersPerk.isIncluded)
@@ -369,7 +371,7 @@ class PlanAllowancesUiMapperImplTest {
         usedExports: Int = 0,
         reportExportMonthlyFreeLimit: Int = 1,
         ownedGroupsUsed: Int = 0,
-        maxOwnedGroups: Int = 1,
+        maxOwnedGroups: Int? = 1,
         maxMembersPerGroup: Int = 4,
         maxSubunitsPerGroup: Int? = 1,
         isAdFreeEnabled: Boolean = tier == SubscriptionTier.PRO || !isGatingEnabled

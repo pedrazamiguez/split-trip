@@ -159,7 +159,6 @@ class EverydayGroupCopyTest {
             "expense_subcategory_hotel",
             "faq_answer_1",
             "onboarding_step_trips_description",
-            "pro_preview_unlimited_groups_description",
             "subscriptions_tier_free_description"
         )
     }

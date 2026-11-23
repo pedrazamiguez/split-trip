@@ -195,6 +195,10 @@ private fun createFreePlan(isCurrentPlan: Boolean): SubscriptionPlanUiModel {
             isIncluded = false
         ),
         SubscriptionFeatureUiModel(
+            label = UiText.StringResource(R.string.subscriptions_feature_pro_report_exports),
+            isIncluded = false
+        ),
+        SubscriptionFeatureUiModel(
             label = UiText.StringResource(R.string.subscriptions_feature_pro_ad_free),
             isIncluded = false
         )
@@ -241,12 +245,13 @@ private fun createProPlanFeatures(): ImmutableList<SubscriptionFeatureUiModel> =
         isHighlighted = true
     ),
     SubscriptionFeatureUiModel(
-        label = UiText.StringResource(R.string.subscriptions_feature_pro_ad_free),
+        label = UiText.StringResource(R.string.subscriptions_feature_pro_report_exports),
         isIncluded = true,
         isHighlighted = true
     ),
     SubscriptionFeatureUiModel(
-        label = UiText.StringResource(R.string.subscriptions_feature_pro_priority_support),
-        isIncluded = true
+        label = UiText.StringResource(R.string.subscriptions_feature_pro_ad_free),
+        isIncluded = true,
+        isHighlighted = true
     )
 ).toImmutableList()
