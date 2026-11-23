@@ -5,8 +5,10 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.PROFILE_AVATAR_PRO_BADGE_TEST_TAG
+import es.pedrazamiguez.splittrip.features.profile.R as ProfileR
 import es.pedrazamiguez.splittrip.features.profile.presentation.model.ProfileUiModel
 import es.pedrazamiguez.splittrip.features.profile.presentation.screen.ProfileScreen
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.state.ProfileUiState
@@ -30,6 +32,8 @@ class ProfileScreenTest {
 
     @get:Rule(order = 2)
     val screenshotRule = ScreenshotRule()
+
+    private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
     // ═════════════════════════════════════════════════════════════════════
     //  Profile loaded — displays user info
@@ -127,5 +131,79 @@ class ProfileScreenTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText("Retry", substring = true).assertIsDisplayed()
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    //  Horizon Narrative — initials avatar, empty bio, QR share section
+    // ═════════════════════════════════════════════════════════════════════
+
+    @Test
+    fun rendersAvatarInitials_whenProfileImageUrlIsNull() {
+        composeRule.setContent {
+            SplitTripTheme {
+                ProfileScreen(
+                    uiState = ProfileUiState(
+                        isLoading = false,
+                        profile = ProfileUiModel(
+                            displayName = "Jane Doe",
+                            email = "jane@example.com",
+                            profileImageUrl = null
+                        )
+                    )
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("JD").assertIsDisplayed()
+    }
+
+    @Test
+    fun rendersEmptyBioPlaceholder_whenBioIsBlank() {
+        val emptyBioText = context.getString(ProfileR.string.profile_bio_empty)
+
+        composeRule.setContent {
+            SplitTripTheme {
+                ProfileScreen(
+                    uiState = ProfileUiState(
+                        isLoading = false,
+                        profile = ProfileUiModel(
+                            displayName = "Jane Doe",
+                            email = "jane@example.com",
+                            bio = ""
+                        )
+                    )
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(emptyBioText).assertIsDisplayed()
+    }
+
+    @Test
+    fun rendersQrShareSection_whenProfileIsLoaded() {
+        val qrTitleText = context.getString(ProfileR.string.profile_qr_title)
+
+        composeRule.setContent {
+            SplitTripTheme {
+                ProfileScreen(
+                    uiState = ProfileUiState(
+                        isLoading = false,
+                        profile = ProfileUiModel(
+                            userId = "u1",
+                            displayName = "Jane Doe",
+                            email = "jane@example.com"
+                        )
+                    )
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(qrTitleText).assertIsDisplayed()
     }
 }

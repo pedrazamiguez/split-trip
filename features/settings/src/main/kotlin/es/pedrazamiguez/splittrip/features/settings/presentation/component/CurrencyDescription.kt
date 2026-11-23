@@ -4,12 +4,12 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.getNameRes
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.domain.enums.Currency
 
 @Composable
@@ -26,7 +26,10 @@ internal fun CurrencyDescription(currentCurrency: Currency?) {
             )
         } else {
             val currencyName = stringResource(id = currency.getNameRes())
-            Text(text = "$currencyName (${currency.symbol})")
+            SecondaryBodyText(
+                text = "$currencyName (${currency.symbol})",
+                maxLines = Int.MAX_VALUE
+            )
         }
     }
 }

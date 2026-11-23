@@ -14,17 +14,19 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.UserFilled
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.ScreenTitleText
 import es.pedrazamiguez.splittrip.features.profile.R
 
 @Composable
@@ -32,6 +34,7 @@ internal fun GuestProfileContent(
     onLinkAccountClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val topPadding = LocalTopPadding.current
     val bottomPadding = LocalBottomPadding.current
     val scrollState = rememberScrollState()
     Column(
@@ -40,7 +43,7 @@ internal fun GuestProfileContent(
             .verticalScroll(scrollState)
             .padding(horizontal = MaterialTheme.spacing.ExtraLarge)
             .padding(
-                top = MaterialTheme.spacing.ExtraLarge,
+                top = MaterialTheme.spacing.ExtraLarge + topPadding,
                 bottom = MaterialTheme.spacing.ExtraLarge + bottomPadding
             ),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -60,17 +63,15 @@ internal fun GuestProfileContent(
             )
         }
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))
-        Text(
+        ScreenTitleText(
             text = stringResource(R.string.profile_guest_title),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
+            textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
-        Text(
+        BodyText(
             text = stringResource(R.string.profile_guest_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.Section))

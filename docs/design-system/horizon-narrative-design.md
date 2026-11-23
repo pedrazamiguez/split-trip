@@ -633,10 +633,9 @@ In strict accordance with §5.3, text inputs and dropdown triggers (`StyledOutli
 ### 12.4 Selection Screen Standards (Theme, Language, Default Currency)
 
 Selection sub-screens follow a strict, standardized pattern:
-- Group available options within a single `FlatCard`.
-- Each option is a `ListItem` with transparent container color.
-- Selected item is indicated by `TablerIcons.Outline.Check` with `tint = MaterialTheme.colorScheme.primary`.
-- Item clicks must use `Modifier.debouncedClickable`.
+- Group available options within a single `FlatCard` (`Column` with `MaterialTheme.spacing.Small` padding and `MaterialTheme.spacing.ExtraSmall` vertical spacing).
+- Each option uses `SettingsSelectionRow` featuring a `40.dp` `MaterialTheme.shapes.medium` leading icon or badge container (`primaryContainer` when selected, `surfaceContainerHigh` otherwise), `CardTitleText` + `SecondaryBodyText`, a tonal `primaryContainer` (`28%` alpha) selected row highlight, and a `28.dp` circular `primary` checkmark badge (`TablerIcons.Outline.Check`) when selected.
+- Item clicks must use `Modifier.debouncedClickable` with `Role.RadioButton` semantics.
 - Upon selection, show immediate confirmation via `LocalTopPillController.current.showPill(...)` and delay pop navigation by `UiConstants.NAV_FEEDBACK_DELAY` (300ms) to provide clear visual feedback of the selected state before navigating back.
 
 ### 12.5 Action & CTA Placement

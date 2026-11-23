@@ -142,6 +142,8 @@
     <string name="account_status_link_button">Binculâh</string>
     <string name="account_status_unlink_button">Dêbbinculâh</string>
     <string name="account_status_delete_account_button">Çoliçitâh eliminaçión de cuenta</string>
+    <string name="account_status_delete_account_section_title">Eliminaçión de cuenta</string>
+    <string name="account_status_delete_account_section_description">Elimina permanentemente tu cuenta y tû datô perçonalê de SplîTTrîh.</string>
     <string name="account_status_delete_account_dialog_title">Çoliçitâh eliminaçión de cuenta</string>
     <string name="account_status_delete_account_dialog_text">¿Êttâh çeguro de que quierê çoliçitâh la eliminaçión de tu cuenta? La çoliçitûh çe embiará pa çu proçeçamiento (çegimiento en #1132).</string>
     <string name="account_status_delete_account_dialog_confirm">Çoliçitâh</string>
