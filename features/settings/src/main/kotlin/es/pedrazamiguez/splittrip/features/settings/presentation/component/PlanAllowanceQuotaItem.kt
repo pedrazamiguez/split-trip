@@ -13,18 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Photo
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ReportAnalytics
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersGroup
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chart.AnimatedProgressBar
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardTitleText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
-import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowanceQuotaType
+import es.pedrazamiguez.splittrip.features.settings.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowanceQuotaUiModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowanceUsageStatus
 
@@ -35,12 +30,7 @@ internal fun PlanAllowanceQuotaItem(
     quota: AllowanceQuotaUiModel,
     modifier: Modifier = Modifier
 ) {
-    val icon = when (quota.type) {
-        AllowanceQuotaType.AI_RECEIPT_SCANS -> TablerIcons.Outline.PhotoAi
-        AllowanceQuotaType.MEDIA_UPLOADS -> TablerIcons.Outline.Photo
-        AllowanceQuotaType.REPORT_EXPORTS -> TablerIcons.Outline.ReportAnalytics
-        AllowanceQuotaType.OWNED_GROUPS -> TablerIcons.Outline.UsersGroup
-    }
+    val icon = quota.type.toIconVector()
 
     val tagStyle = when (quota.status) {
         AllowanceUsageStatus.HEALTHY -> PassportTagStyle.SUCCESS
