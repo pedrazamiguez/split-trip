@@ -60,7 +60,7 @@ class SubscriptionsUiMapperImplTest {
         assertTrue(freePlan.isCurrentPlan)
         assertFalse(freePlan.isCtaButtonEnabled)
         assertFalse(freePlan.isHighlightedCard)
-        assertEquals(7, freePlan.features.size)
+        assertEquals(8, freePlan.features.size)
         assertFeature(freePlan.features[0], R.string.subscriptions_feature_free_groups, expectedIncluded = true)
         assertFeature(freePlan.features[1], R.string.subscriptions_feature_free_members, expectedIncluded = true)
         assertFeature(
@@ -75,7 +75,8 @@ class SubscriptionsUiMapperImplTest {
         )
         assertFeature(freePlan.features[4], R.string.subscriptions_feature_subunits, expectedIncluded = false)
         assertFeature(freePlan.features[5], R.string.subscriptions_feature_pro_ai_ocr, expectedIncluded = false)
-        assertFeature(freePlan.features[6], R.string.subscriptions_feature_pro_ad_free, expectedIncluded = false)
+        assertFeature(freePlan.features[6], R.string.subscriptions_feature_pro_report_exports, expectedIncluded = false)
+        assertFeature(freePlan.features[7], R.string.subscriptions_feature_pro_ad_free, expectedIncluded = false)
     }
 
     private fun assertProPlan(
@@ -130,15 +131,15 @@ class SubscriptionsUiMapperImplTest {
         )
         assertFeature(
             features[4],
-            R.string.subscriptions_feature_pro_ad_free,
+            R.string.subscriptions_feature_pro_report_exports,
             expectedIncluded = true,
             expectedHighlighted = true
         )
         assertFeature(
             features[5],
-            R.string.subscriptions_feature_pro_priority_support,
+            R.string.subscriptions_feature_pro_ad_free,
             expectedIncluded = true,
-            expectedHighlighted = false
+            expectedHighlighted = true
         )
     }
 

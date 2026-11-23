@@ -38,16 +38,18 @@ class FeatureGateServicePlanAllowancesTest {
     private val fixedYearMonth = YearMonth.of(2026, 11)
     private val subscriptionGatingEnabled = MutableStateFlow(true)
     private val maxOwnedGroupsFree = MutableStateFlow(1)
-    private val maxOwnedGroupsPro = MutableStateFlow(100)
+    private val maxOwnedGroupsPro = MutableStateFlow(-1)
     private val maxMembersPerGroupFree = MutableStateFlow(4)
     private val maxMembersPerGroupPro = MutableStateFlow(20)
     private val aiReceiptMonthlyLimitFree = MutableStateFlow(3)
     private val aiReceiptMonthlyLimitPro = MutableStateFlow(100)
     private val manualReceiptMonthlyLimitFree = MutableStateFlow(5)
+    private val reportExportMonthlyLimitFree = MutableStateFlow(1)
     private val maxSubunitsPerGroupFree = MutableStateFlow(1)
     private val maxSubunitsPerGroupPro = MutableStateFlow(-1)
     private val monthlyScanCount = MutableStateFlow(0)
     private val monthlyManualReceiptCount = MutableStateFlow(0)
+    private val monthlyReportExportCount = MutableStateFlow(0)
     private val proAllowlistEmailHashes = MutableStateFlow<Set<String>>(emptySet())
 
     @BeforeEach
@@ -66,6 +68,7 @@ class FeatureGateServicePlanAllowancesTest {
         every { appConfigRepository.aiReceiptMonthlyLimitFree } returns aiReceiptMonthlyLimitFree
         every { appConfigRepository.aiReceiptMonthlyLimitPro } returns aiReceiptMonthlyLimitPro
         every { appConfigRepository.manualReceiptMonthlyLimitFree } returns manualReceiptMonthlyLimitFree
+        every { appConfigRepository.reportExportMonthlyLimitFree } returns reportExportMonthlyLimitFree
         every { appConfigRepository.maxSubunitsPerGroupFree } returns maxSubunitsPerGroupFree
         every { appConfigRepository.maxSubunitsPerGroupPro } returns maxSubunitsPerGroupPro
         every { appConfigRepository.proAllowlistEmailHashes } returns proAllowlistEmailHashes
@@ -73,6 +76,9 @@ class FeatureGateServicePlanAllowancesTest {
         every {
             userPreferenceRepository.getMonthlyManualReceiptAttachmentCount(fixedYearMonth)
         } returns monthlyManualReceiptCount
+        every {
+            userPreferenceRepository.getMonthlyReportExportCount(fixedYearMonth)
+        } returns monthlyReportExportCount
         every { userRepository.observeCurrentUserProfile() } returns flowOf(null)
         every { groupRepository.getAllGroupsFlow() } returns flowOf(emptyList())
         every { authenticationService.currentUserId() } returns "user-1"
@@ -80,16 +86,18 @@ class FeatureGateServicePlanAllowancesTest {
 
         subscriptionGatingEnabled.value = true
         maxOwnedGroupsFree.value = 1
-        maxOwnedGroupsPro.value = 100
+        maxOwnedGroupsPro.value = -1
         maxMembersPerGroupFree.value = 4
         maxMembersPerGroupPro.value = 20
         aiReceiptMonthlyLimitFree.value = 3
         aiReceiptMonthlyLimitPro.value = 100
         manualReceiptMonthlyLimitFree.value = 5
+        reportExportMonthlyLimitFree.value = 1
         maxSubunitsPerGroupFree.value = 1
         maxSubunitsPerGroupPro.value = -1
         monthlyScanCount.value = 0
         monthlyManualReceiptCount.value = 0
+        monthlyReportExportCount.value = 0
         proAllowlistEmailHashes.value = emptySet()
 
         service = FeatureGateServiceImpl(
@@ -131,6 +139,8 @@ class FeatureGateServicePlanAllowancesTest {
             assertEquals(3, allowances.aiReceiptQuota.monthlyLimit)
             assertEquals(2, allowances.mediaUploadQuota.usedUploads)
             assertEquals(5, allowances.mediaUploadQuota.monthlyLimit)
+            assertEquals(0, allowances.reportExportQuota.usedExports)
+            assertEquals(1, allowances.reportExportQuota.monthlyLimit)
             assertFalse(allowances.isAdFreeEnabled)
             assertTrue(allowances.showUpgradeCta)
         }
@@ -157,12 +167,15 @@ class FeatureGateServicePlanAllowancesTest {
             assertEquals(SubscriptionTier.PRO, allowances.tier)
             assertTrue(allowances.isProTier)
             assertEquals(2, allowances.ownedGroupsUsed)
-            assertEquals(100, allowances.maxOwnedGroups)
+            assertEquals(null, allowances.maxOwnedGroups)
+            assertEquals(null, allowances.ownedGroupsRemaining)
             assertEquals(20, allowances.maxMembersPerGroup)
             assertEquals(null, allowances.maxSubunitsPerGroup)
             assertEquals(100, allowances.aiReceiptQuota.monthlyLimit)
             assertTrue(allowances.mediaUploadQuota.isUnlimited)
             assertEquals(null, allowances.mediaUploadQuota.monthlyLimit)
+            assertTrue(allowances.reportExportQuota.isUnlimited)
+            assertEquals(null, allowances.reportExportQuota.monthlyLimit)
             assertTrue(allowances.isAdFreeEnabled)
             assertFalse(allowances.showUpgradeCta)
         }
@@ -179,7 +192,8 @@ class FeatureGateServicePlanAllowancesTest {
         val allowances = service.observePlanAllowances().first()
 
         assertEquals(SubscriptionTier.PRO, allowances.tier)
-        assertEquals(100, allowances.maxOwnedGroups)
+        assertEquals(null, allowances.maxOwnedGroups)
+        assertEquals(null, allowances.ownedGroupsRemaining)
         assertEquals(20, allowances.maxMembersPerGroup)
         assertEquals(null, allowances.maxSubunitsPerGroup)
         assertTrue(allowances.mediaUploadQuota.isUnlimited)
@@ -195,10 +209,33 @@ class FeatureGateServicePlanAllowancesTest {
         val allowances = service.observePlanAllowances().first()
 
         assertFalse(allowances.isGatingEnabled)
+        assertEquals(null, allowances.maxOwnedGroups)
+        assertEquals(null, allowances.ownedGroupsRemaining)
         assertEquals(null, allowances.maxSubunitsPerGroup)
         assertTrue(allowances.mediaUploadQuota.isUnlimited)
         assertTrue(allowances.isAdFreeEnabled)
         assertFalse(allowances.showUpgradeCta)
+    }
+
+    @Test
+    fun `observePlanAllowances exposes positive maxOwnedGroupsPro override when configured`() = runTest {
+        coEvery { authenticationService.isAnonymous() } returns false
+        every { authenticationService.currentUserId() } returns "pro-user"
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(userId = "pro-user", email = "pro@test.com", tier = SubscriptionTier.PRO)
+        )
+        every { groupRepository.getAllGroupsFlow() } returns flowOf(
+            listOf(
+                Group(id = "g-1", createdBy = "pro-user"),
+                Group(id = "g-2", createdBy = "pro-user")
+            )
+        )
+        maxOwnedGroupsPro.value = 50
+
+        val allowances = service.observePlanAllowances().first()
+
+        assertEquals(50, allowances.maxOwnedGroups)
+        assertEquals(48, allowances.ownedGroupsRemaining)
     }
 
     @Test

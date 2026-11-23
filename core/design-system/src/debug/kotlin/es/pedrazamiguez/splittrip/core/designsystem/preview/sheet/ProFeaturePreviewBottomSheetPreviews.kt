@@ -78,3 +78,15 @@ private fun ProFeaturePreviewUnlimitedReceiptsPreview() {
         )
     }
 }
+
+@PreviewComplete
+@Composable
+private fun ProFeaturePreviewTripReportExportPreview() {
+    PreviewThemeWrapper {
+        ProFeaturePreviewBottomSheet(
+            previewType = ProFeaturePreviewType.TRIP_REPORT_EXPORT,
+            onUpgrade = {},
+            onDismiss = {}
+        )
+    }
+}

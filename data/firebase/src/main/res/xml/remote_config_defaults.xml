@@ -26,7 +26,7 @@
     </entry>
     <entry>
         <key>max_owned_groups_pro</key>
-        <value>100</value>
+        <value>-1</value>
     </entry>
     <entry>
         <key>max_members_per_group_free</key>
@@ -47,6 +47,10 @@
     <entry>
         <key>manual_receipt_monthly_limit_free</key>
         <value>5</value>
+    </entry>
+    <entry>
+        <key>report_export_monthly_limit_free</key>
+        <value>1</value>
     </entry>
     <entry>
         <key>max_subunits_per_group_free</key>

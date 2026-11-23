@@ -57,6 +57,7 @@ object MonetizationTelemetry {
         const val AI_RECEIPT_SCANNING = "ai_receipt_scanning"
         const val MANUAL_RECEIPT_ATTACHMENT = "manual_receipt_attachment"
         const val PLAN_ALLOWANCES = "plan_allowances"
+        const val TRIP_REPORT_EXPORT = "trip_report_export"
         const val DIRECT = "direct"
     }
 
@@ -87,6 +88,8 @@ object MonetizationTelemetry {
         const val SUBUNIT_CREATE_EVENT = "subunit_create_event"
         const val SUBUNIT_CREATE_INIT = "subunit_create_init"
         const val SUBUNIT_SUBMIT = "subunit_submit"
+        const val BALANCES_EXPORT_ACTION = "balances_export_action"
+        const val SPENDING_INSIGHTS_EXPORT_ACTION = "spending_insights_export_action"
     }
 
     object AdType {

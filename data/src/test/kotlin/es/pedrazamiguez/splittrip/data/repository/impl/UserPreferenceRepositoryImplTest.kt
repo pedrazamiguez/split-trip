@@ -243,4 +243,24 @@ class UserPreferenceRepositoryImplTest {
 
         coVerify(exactly = 1) { userPreferences.incrementMonthlyManualReceiptAttachmentCount(yearMonth) }
     }
+
+    @Test
+    fun `getMonthlyReportExportCount delegates to userPreferences`() = runTest {
+        val yearMonth = YearMonth.of(2026, 11)
+        every { userPreferences.getMonthlyReportExportCount(yearMonth) } returns flowOf(1)
+
+        val result = repository.getMonthlyReportExportCount(yearMonth).first()
+
+        assertEquals(1, result)
+    }
+
+    @Test
+    fun `incrementMonthlyReportExportCount delegates to userPreferences`() = runTest {
+        val yearMonth = YearMonth.of(2026, 11)
+        coEvery { userPreferences.incrementMonthlyReportExportCount(yearMonth) } just runs
+
+        repository.incrementMonthlyReportExportCount(yearMonth)
+
+        coVerify(exactly = 1) { userPreferences.incrementMonthlyReportExportCount(yearMonth) }
+    }
 }

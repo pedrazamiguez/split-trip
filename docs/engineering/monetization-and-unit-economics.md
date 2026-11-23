@@ -15,7 +15,7 @@ SplitTrip operates a dual-engine monetization model: a **Pro Subscription** engi
   - `split_trip_pro_annual` (`BillingInterval.ANNUAL`): **€26.99/year** gross list price (~€2.25/month gross equivalent, ~25% savings vs `12 × €2.99 = €35.88`, formatted in `SubscriptionsUiMapperImpl`).
 - **Gated Capabilities (`GatedFeature`) & Tier Quotas (`GatedLimit` / Remote Config):**
   - `GatedFeature.GROUP_COVER_UPLOAD`, `GatedFeature.SUBUNIT_CREATION`, `GatedFeature.AI_RECEIPT_SCANNING`, `GatedFeature.AD_FREE`.
-  - `GatedLimit.MAX_OWNED_GROUPS_COUNT`: `max_owned_groups_free = 1` vs `max_owned_groups_pro = 100`.
+  - `GatedLimit.MAX_OWNED_GROUPS_COUNT`: `max_owned_groups_free = 1` vs `max_owned_groups_pro = -1 (unlimited)`.
   - `GatedLimit.MAX_MEMBERS_PER_GROUP`: `max_members_per_group_free = 4` vs `max_members_per_group_pro = 20`.
   - AI Receipt OCR monthly quota: `ai_receipt_monthly_limit_free = 0` (pre-Phase 2 baseline; `3` in `#2019`) vs `ai_receipt_monthly_limit_pro = 100`.
 - **Complimentary Allowlist Exclusion:** Users matching `pro_allowlist_email_hashes` receive `SubscriptionTier.PRO` entitlements without a Google Play transaction (`isAllowlistedPro = true` in `SubscriptionsViewModel`) and **must be excluded** from paid ARPPU and conversion numerators.

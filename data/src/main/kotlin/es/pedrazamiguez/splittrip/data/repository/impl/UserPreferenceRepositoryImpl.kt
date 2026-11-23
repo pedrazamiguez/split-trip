@@ -81,6 +81,13 @@ class UserPreferenceRepositoryImpl(
         userPreferences.incrementMonthlyManualReceiptAttachmentCount(yearMonth)
     }
 
+    override fun getMonthlyReportExportCount(yearMonth: YearMonth): Flow<Int> =
+        userPreferences.getMonthlyReportExportCount(yearMonth)
+
+    override suspend fun incrementMonthlyReportExportCount(yearMonth: YearMonth) {
+        userPreferences.incrementMonthlyReportExportCount(yearMonth)
+    }
+
     override suspend fun clearAll() {
         userPreferences.clearAll()
     }

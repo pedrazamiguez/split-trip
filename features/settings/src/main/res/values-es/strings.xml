@@ -170,6 +170,8 @@
     <string name="account_status_link_button">Vincular</string>
     <string name="account_status_unlink_button">Desvincular</string>
     <string name="account_status_delete_account_button">Solicitar eliminación de cuenta</string>
+    <string name="account_status_delete_account_section_title">Eliminación de cuenta</string>
+    <string name="account_status_delete_account_section_description">Elimina permanentemente tu cuenta y tus datos personales de SplitTrip.</string>
     <string name="account_status_delete_account_dialog_title">Solicitar eliminación de cuenta</string>
     <string name="account_status_delete_account_dialog_text">¿Estás seguro de que quieres solicitar la eliminación de tu cuenta? La solicitud se enviará para su procesamiento (seguimiento en #1132).</string>
     <string name="account_status_delete_account_dialog_confirm">Solicitar</string>
@@ -312,8 +314,8 @@
     <string name="subscriptions_feature_pro_unlimited_groups">Grupos ilimitados</string>
     <string name="subscriptions_feature_pro_members">Hasta 20 miembros por grupo</string>
     <string name="subscriptions_feature_pro_ai_ocr">Escaneo de recibos con IA y OCR</string>
+    <string name="subscriptions_feature_pro_report_exports">Exportaciones completas ilimitadas en PDF y CSV</string>
     <string name="subscriptions_feature_pro_ad_free" formatted="false">Experiencia 100% sin publicidad</string>
-    <string name="subscriptions_feature_pro_priority_support">Soporte prioritario</string>
     <string name="subscriptions_cta_current_plan">Plan actual</string>
     <string name="subscriptions_cta_upgrade_pro">Mejorar a Pro</string>
     <string name="subscriptions_cta_manage_subscription">Gestionar suscripción</string>
@@ -354,11 +356,17 @@
     <string name="plan_allowances_quota_ai_scans_subtitle">Se reinicia cada mes natural</string>
     <string name="plan_allowances_quota_media_uploads_title">Subidas de archivos</string>
     <string name="plan_allowances_quota_media_uploads_subtitle">Recibos y portadas de grupo · Reinicio mensual</string>
+    <string name="plan_allowances_quota_report_exports_title">Exportaciones de grupo</string>
+    <string name="plan_allowances_quota_report_exports_subtitle_free">Solo resumen PDF · Reinicio mensual</string>
+    <string name="plan_allowances_quota_report_exports_subtitle_pro">PDF detallado y CSV completo</string>
     <string name="plan_allowances_quota_owned_groups_title">Grupos propios</string>
     <string name="plan_allowances_quota_owned_groups_subtitle">Grupos creados por ti</string>
     <string name="plan_allowances_usage_fraction">%1$s / %2$s</string>
     <string name="plan_allowances_usage_unlimited">%1$s usados · Ilimitado</string>
-    <string name="plan_allowances_status_remaining">Quedan %1$s</string>
+    <plurals name="plan_allowances_status_remaining">
+        <item quantity="one">Queda %1$s</item>
+        <item quantity="other">Quedan %1$s</item>
+    </plurals>
     <string name="plan_allowances_status_exhausted">Límite alcanzado</string>
     <string name="plan_allowances_perk_members_title">Miembros por grupo</string>
     <string name="plan_allowances_perk_members_detail">Hasta %1$s</string>

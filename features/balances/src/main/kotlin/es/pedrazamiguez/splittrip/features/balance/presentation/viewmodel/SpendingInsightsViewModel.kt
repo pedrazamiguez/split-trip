@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.model.SpendingInsightsPeriod
 import es.pedrazamiguez.splittrip.domain.usecase.balance.GetGroupSpendingInsightsFlowUseCase
@@ -13,6 +14,8 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.EntityBrea
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.SpendingPeriodPreset
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.action.SpendingInsightsUiAction
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.SpendingInsightsUiEvent
+import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.TripReportExportAction
+import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.TripReportExportEventHandler
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.SpendingInsightsUiState
 import java.time.LocalDate
 import kotlinx.coroutines.CoroutineDispatcher
@@ -41,6 +44,7 @@ import timber.log.Timber
 class SpendingInsightsViewModel(
     private val getGroupSpendingInsightsFlowUseCase: GetGroupSpendingInsightsFlowUseCase,
     private val spendingInsightsUiMapper: SpendingInsightsUiMapper,
+    private val tripReportExportEventHandler: TripReportExportEventHandler,
     private val computationDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val todayProvider: () -> LocalDate = { LocalDate.now() }
 ) : ViewModel() {
@@ -59,6 +63,24 @@ class SpendingInsightsViewModel(
     private val _actions = MutableSharedFlow<SpendingInsightsUiAction>()
     val actions: SharedFlow<SpendingInsightsUiAction> = _actions.asSharedFlow()
 
+    init {
+        tripReportExportEventHandler.bind(viewModelScope) { exportAction ->
+            val uiAction = when (exportAction) {
+                is TripReportExportAction.ShowProFeaturePreview ->
+                    SpendingInsightsUiAction.ShowProFeaturePreview(exportAction.prompt)
+                is TripReportExportAction.ShareExportedReport ->
+                    SpendingInsightsUiAction.ShareExportedReport(
+                        contentUri = exportAction.contentUri,
+                        mimeType = exportAction.mimeType,
+                        fileName = exportAction.fileName
+                    )
+                is TripReportExportAction.ShowExportError ->
+                    SpendingInsightsUiAction.ShowExportError(exportAction.message)
+            }
+            _actions.emit(uiAction)
+        }
+    }
+
     private var latestOldestExpenseDate: LocalDate? = null
     private var latestNewestExpenseDate: LocalDate? = null
     private var lastAppliedInitialCriteria: ExpenseFilterCriteria? = null
@@ -69,56 +91,61 @@ class SpendingInsightsViewModel(
         .map(::resolvePeriod)
         .distinctUntilChanged()
 
-    val uiState: StateFlow<SpendingInsightsUiState> = _selectedGroupId
-        .filterNotNull()
-        .flatMapLatest { groupId ->
-            combine(
-                getGroupSpendingInsightsFlowUseCase(
-                    groupId = groupId,
-                    periodFlow = periodFlow,
-                    filterCriteriaFlow = _filterCriteria,
-                    todayProvider = todayProvider
-                ),
-                _selectionState,
-                _filterCriteria
-            ) { insights, selection, filterCriteria ->
-                latestOldestExpenseDate = insights.oldestExpenseDate
-                latestNewestExpenseDate = insights.newestExpenseDate
-                resolvePendingOpenDateBounds(
-                    oldestExpenseDate = insights.oldestExpenseDate,
-                    newestExpenseDate = insights.newestExpenseDate
-                )
-
-                val effectiveFilterCount = filterCriteria.activeFilterCount +
-                    if (filterCriteria.isSearchFiltered) 1 else 0
-
-                spendingInsightsUiMapper.mapToUiState(
-                    insights = insights,
-                    selectedPreset = selection.preset,
-                    customStartDate = selection.customStartDate,
-                    customEndDate = selection.customEndDate,
-                    entityBreakdownMode = selection.entityBreakdownMode,
-                    selectedDayBarId = selection.selectedDayBarId,
-                    referenceYear = todayProvider().year,
-                    activeFilterCount = effectiveFilterCount
-                )
-            }
-                .catch { throwable ->
-                    Timber.e(throwable, "Error loading spending insights for group $groupId")
-                    _actions.emit(
-                        SpendingInsightsUiAction.ShowLoadError(
-                            UiText.StringResource(R.string.balances_insights_error_loading)
-                        )
+    val uiState: StateFlow<SpendingInsightsUiState> = combine(
+        _selectedGroupId
+            .filterNotNull()
+            .flatMapLatest { groupId ->
+                combine(
+                    getGroupSpendingInsightsFlowUseCase(
+                        groupId = groupId,
+                        periodFlow = periodFlow,
+                        filterCriteriaFlow = _filterCriteria,
+                        todayProvider = todayProvider
+                    ),
+                    _selectionState,
+                    _filterCriteria
+                ) { insights, selection, filterCriteria ->
+                    latestOldestExpenseDate = insights.oldestExpenseDate
+                    latestNewestExpenseDate = insights.newestExpenseDate
+                    resolvePendingOpenDateBounds(
+                        oldestExpenseDate = insights.oldestExpenseDate,
+                        newestExpenseDate = insights.newestExpenseDate
                     )
-                    emit(
-                        SpendingInsightsUiState(
-                            isLoading = false,
-                            groupId = groupId
-                        )
+
+                    val effectiveFilterCount = filterCriteria.activeFilterCount +
+                        if (filterCriteria.isSearchFiltered) 1 else 0
+
+                    spendingInsightsUiMapper.mapToUiState(
+                        insights = insights,
+                        selectedPreset = selection.preset,
+                        customStartDate = selection.customStartDate,
+                        customEndDate = selection.customEndDate,
+                        entityBreakdownMode = selection.entityBreakdownMode,
+                        selectedDayBarId = selection.selectedDayBarId,
+                        referenceYear = todayProvider().year,
+                        activeFilterCount = effectiveFilterCount
                     )
                 }
-                .flowOn(computationDispatcher)
-        }
+                    .catch { throwable ->
+                        Timber.e(throwable, "Error loading spending insights for group $groupId")
+                        _actions.emit(
+                            SpendingInsightsUiAction.ShowLoadError(
+                                UiText.StringResource(R.string.balances_insights_error_loading)
+                            )
+                        )
+                        emit(
+                            SpendingInsightsUiState(
+                                isLoading = false,
+                                groupId = groupId
+                            )
+                        )
+                    }
+                    .flowOn(computationDispatcher)
+            },
+        tripReportExportEventHandler.exportSheetState
+    ) { baseState, exportSheetState ->
+        baseState.copy(exportSheetState = exportSheetState)
+    }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(
@@ -184,6 +211,64 @@ class SpendingInsightsViewModel(
                     _actions.emit(SpendingInsightsUiAction.NavigateBack)
                 }
             }
+            SpendingInsightsUiEvent.RequestExportReport,
+            SpendingInsightsUiEvent.DismissExportReportSheet,
+            is SpendingInsightsUiEvent.SelectExportPeriodPreset,
+            is SpendingInsightsUiEvent.SelectExportCustomStartDate,
+            is SpendingInsightsUiEvent.SelectExportCustomEndDate,
+            is SpendingInsightsUiEvent.SelectExportFormat,
+            SpendingInsightsUiEvent.ConfirmExportReport -> handleExportEvent(event)
+        }
+    }
+
+    private fun handleExportEvent(event: SpendingInsightsUiEvent) {
+        when (event) {
+            SpendingInsightsUiEvent.RequestExportReport -> {
+                val groupId = _selectedGroupId.value
+                if (groupId == null) {
+                    emitExportGroupNotReadyError()
+                    return
+                }
+                val selection = _selectionState.value
+                tripReportExportEventHandler.handleExportRequested(
+                    groupId = groupId,
+                    gateEntryPoint = MonetizationTelemetry.GateEntryPoint.SPENDING_INSIGHTS_EXPORT_ACTION,
+                    initialPreset = selection.preset,
+                    initialCustomStartDate = selection.customStartDate,
+                    initialCustomEndDate = selection.customEndDate,
+                    oldestExpenseDate = latestOldestExpenseDate,
+                    newestExpenseDate = latestNewestExpenseDate
+                )
+            }
+            SpendingInsightsUiEvent.DismissExportReportSheet ->
+                tripReportExportEventHandler.handleDismissExportSheet()
+            is SpendingInsightsUiEvent.SelectExportPeriodPreset ->
+                tripReportExportEventHandler.handleSelectPeriodPreset(event.preset)
+            is SpendingInsightsUiEvent.SelectExportCustomStartDate ->
+                tripReportExportEventHandler.handleSelectCustomStartDate(event.date)
+            is SpendingInsightsUiEvent.SelectExportCustomEndDate ->
+                tripReportExportEventHandler.handleSelectCustomEndDate(event.date)
+            is SpendingInsightsUiEvent.SelectExportFormat ->
+                tripReportExportEventHandler.handleSelectFormat(event.format)
+            SpendingInsightsUiEvent.ConfirmExportReport -> {
+                val groupId = _selectedGroupId.value
+                if (groupId == null) {
+                    emitExportGroupNotReadyError()
+                    return
+                }
+                tripReportExportEventHandler.handleConfirmExport(groupId)
+            }
+            else -> Unit
+        }
+    }
+
+    private fun emitExportGroupNotReadyError() {
+        viewModelScope.launch {
+            _actions.emit(
+                SpendingInsightsUiAction.ShowExportError(
+                    UiText.StringResource(R.string.balances_export_error_group_not_ready)
+                )
+            )
         }
     }
 

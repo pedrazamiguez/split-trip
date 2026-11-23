@@ -102,7 +102,7 @@ private fun PlanAllowancesProPreview() {
                 isGatingEnabled = true
             ),
             ownedGroupsUsed = 4,
-            maxOwnedGroups = 100,
+            maxOwnedGroups = null,
             maxMembersPerGroup = 20,
             maxSubunitsPerGroup = null,
             isAdFreeEnabled = true

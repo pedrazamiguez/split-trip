@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.core.designsystem.extension
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 
@@ -18,4 +19,5 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 fun UiText.asString(): String = when (this) {
     is UiText.DynamicString -> value
     is UiText.StringResource -> stringResource(resId, *args)
+    is UiText.PluralResource -> pluralStringResource(resId, quantity, *args)
 }

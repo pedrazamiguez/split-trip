@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Wallet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ActionBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
 import es.pedrazamiguez.splittrip.features.balance.R
+import es.pedrazamiguez.splittrip.features.balance.presentation.component.export.TripReportExportBottomSheet
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.CashWithdrawalUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.ContributionUiModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.BalancesUiEvent
@@ -66,6 +67,18 @@ internal fun BalancesScreenOverlays(
                 )
             ),
             onDismiss = { onEvent(BalancesUiEvent.DeleteWithdrawalDismissed) }
+        )
+    }
+
+    if (uiState.exportSheetState.isVisible) {
+        TripReportExportBottomSheet(
+            sheetState = uiState.exportSheetState,
+            onSelectPreset = { onEvent(BalancesUiEvent.SelectExportPeriodPreset(it)) },
+            onSelectCustomStartDate = { onEvent(BalancesUiEvent.SelectExportCustomStartDate(it)) },
+            onSelectCustomEndDate = { onEvent(BalancesUiEvent.SelectExportCustomEndDate(it)) },
+            onSelectFormat = { onEvent(BalancesUiEvent.SelectExportFormat(it)) },
+            onConfirmExport = { onEvent(BalancesUiEvent.ConfirmExportReport) },
+            onDismiss = { onEvent(BalancesUiEvent.DismissExportReportSheet) }
         )
     }
 }

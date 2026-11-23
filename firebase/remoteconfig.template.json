@@ -34,9 +34,9 @@
         },
         "max_owned_groups_pro": {
           "defaultValue": {
-            "value": "100"
+            "value": "-1"
           },
-          "description": "Maximum number of groups a Pro tier user can own concurrently.",
+          "description": "Maximum number of groups a Pro tier user can own concurrently (-1 for unlimited).",
           "valueType": "NUMBER"
         },
         "max_members_per_group_free": {
@@ -72,6 +72,13 @@
             "value": "5"
           },
           "description": "Shared monthly quota of Free media uploads (manual receipt attachments and group cover photo uploads).",
+          "valueType": "NUMBER"
+        },
+        "report_export_monthly_limit_free": {
+          "defaultValue": {
+            "value": "1"
+          },
+          "description": "Monthly quota of Free group summary PDF exports (excluding itemised breakdowns and CSV spreadsheets).",
           "valueType": "NUMBER"
         },
         "max_subunits_per_group_free": {

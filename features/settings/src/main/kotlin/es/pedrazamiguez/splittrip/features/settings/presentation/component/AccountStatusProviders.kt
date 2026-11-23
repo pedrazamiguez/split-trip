@@ -6,18 +6,25 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.vectorResource
+import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Mail
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.event.AccountStatusUiEvent
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.state.AccountStatusUiState
+
+private const val DIVIDER_ALPHA = 0.5f
 
 @Composable
 internal fun AccountStatusProviders(
@@ -27,11 +34,8 @@ internal fun AccountStatusProviders(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.account_status_linked_providers),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
+        SectionHeadingText(
+            text = stringResource(R.string.account_status_linked_providers)
         )
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.Small))
 
@@ -45,6 +49,7 @@ internal fun AccountStatusProviders(
                 val isEmailLinked = uiState.linkedProviders.contains(AuthProviderType.EMAIL_PASSWORD)
                 AccountProviderRow(
                     name = stringResource(R.string.account_status_provider_email_password),
+                    icon = TablerIcons.Outline.Mail,
                     isLinked = isEmailLinked,
                     onLinkClick = { onEvent(AccountStatusUiEvent.ShowLinkEmailSheet) },
                     onUnlinkClick = {
@@ -54,9 +59,14 @@ internal fun AccountStatusProviders(
                     isActionLoading = uiState.isLinking
                 )
 
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = DIVIDER_ALPHA)
+                )
+
                 val isGoogleLinked = uiState.linkedProviders.contains(AuthProviderType.GOOGLE)
                 AccountProviderRow(
                     name = stringResource(R.string.account_status_provider_google),
+                    icon = ImageVector.vectorResource(id = DesignSystemR.drawable.ic_google_logo),
                     isLinked = isGoogleLinked,
                     onLinkClick = onLinkGoogleClick,
                     onUnlinkClick = { onEvent(AccountStatusUiEvent.UnlinkProvider(AuthProviderType.GOOGLE)) },

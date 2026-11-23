@@ -29,5 +29,6 @@ data class BalancesUiState(
     /** Item pending deletion — drives `ActionBottomSheet` and `DestructiveConfirmationDialog` visibility. */
     val withdrawalToDelete: CashWithdrawalUiModel? = null,
     val isGroupArchived: Boolean = false,
-    val settlements: ImmutableList<SettlementUiModel> = persistentListOf()
+    val settlements: ImmutableList<SettlementUiModel> = persistentListOf(),
+    val exportSheetState: TripReportExportSheetState = TripReportExportSheetState()
 )

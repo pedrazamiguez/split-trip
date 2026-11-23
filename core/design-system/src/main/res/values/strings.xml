@@ -202,7 +202,7 @@
     <string name="pro_preview_badge_label">SplitTrip Pro</string>
     <string name="pro_preview_cta_unlock">Unlock with SplitTrip Pro</string>
     <string name="pro_preview_unlimited_groups_title">Create unlimited groups</string>
-    <string name="pro_preview_unlimited_groups_description">You\'ve reached the Free plan limit for active groups you own. Upgrade to SplitTrip Pro to organise as many shared budgets, households, and trips as you need.</string>
+    <string name="pro_preview_unlimited_groups_description">You\'ve reached the Free plan limit for active groups you own. Upgrade to SplitTrip Pro to organise as many shared budgets, households, and everyday plans as you need.</string>
     <string name="pro_preview_unlimited_groups_highlight">Unlimited active groups, plus an ad-free experience</string>
     <string name="pro_preview_expanded_members_title">Include the whole group</string>
     <string name="pro_preview_expanded_members_description">Free groups support a limited number of members. Unlock SplitTrip Pro to invite larger friend groups, households, and families into a single shared ledger.</string>
@@ -219,6 +219,9 @@
     <string name="pro_preview_unlimited_receipts_title">Attach unlimited receipts</string>
     <string name="pro_preview_unlimited_receipts_description">Keep every receipt photo and PDF safely attached and synced for your whole group, with no monthly attachment limit.</string>
     <string name="pro_preview_unlimited_receipts_highlight">Unlimited receipt photos &amp; PDFs synced to the cloud for every group</string>
+    <string name="pro_preview_group_report_export_title">Full PDF &amp; CSV exports</string>
+    <string name="pro_preview_group_report_export_description">Free includes 1 summary PDF per month. Upgrade to SplitTrip Pro for unlimited exports with itemised expenses, contributions, cash withdrawals, and spreadsheet-ready CSV files.</string>
+    <string name="pro_preview_group_report_export_highlight">Unlimited itemised PDF summaries and spreadsheet-ready CSV exports for any period</string>
 
     <!-- Password Requirements Indicator -->
     <string name="password_requirement_min_length">At least 8 characters</string>

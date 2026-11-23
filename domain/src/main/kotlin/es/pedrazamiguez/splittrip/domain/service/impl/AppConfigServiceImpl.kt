@@ -20,6 +20,8 @@ class AppConfigServiceImpl(
     override val aiReceiptMonthlyLimitPro: StateFlow<Int> = appConfigRepository.aiReceiptMonthlyLimitPro
     override val manualReceiptMonthlyLimitFree: StateFlow<Int> =
         appConfigRepository.manualReceiptMonthlyLimitFree
+    override val reportExportMonthlyLimitFree: StateFlow<Int> =
+        appConfigRepository.reportExportMonthlyLimitFree
     override val maxSubunitsPerGroupFree: StateFlow<Int> =
         appConfigRepository.maxSubunitsPerGroupFree
     override val maxSubunitsPerGroupPro: StateFlow<Int> =

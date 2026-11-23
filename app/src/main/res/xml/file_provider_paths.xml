@@ -9,4 +9,5 @@
     <files-path name="receipts" path="receipts/" />
     <files-path name="avatars_temp" path="avatars_temp/" />
     <files-path name="groups_temp" path="groups_temp/" />
+    <cache-path name="exports" path="exports/" />
 </paths>

@@ -32,5 +32,6 @@ data class SpendingInsightsUiState(
     val hasSubunits: Boolean = false,
     val entityBreakdownMode: EntityBreakdownMode = EntityBreakdownMode.BY_SUBUNIT,
     val entityItems: ImmutableList<EntitySpendingInsightUiModel> = persistentListOf(),
-    val memberItems: ImmutableList<EntitySpendingInsightUiModel> = persistentListOf()
+    val memberItems: ImmutableList<EntitySpendingInsightUiModel> = persistentListOf(),
+    val exportSheetState: TripReportExportSheetState = TripReportExportSheetState()
 )

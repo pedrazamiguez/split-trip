@@ -171,6 +171,8 @@
     <string name="account_status_link_button">Link</string>
     <string name="account_status_unlink_button">Unlink</string>
     <string name="account_status_delete_account_button">Request Account Deletion</string>
+    <string name="account_status_delete_account_section_title">Account Deletion</string>
+    <string name="account_status_delete_account_section_description">Permanently delete your account and remove your personal data from SplitTrip.</string>
     <string name="account_status_delete_account_dialog_title">Request Account Deletion</string>
     <string name="account_status_delete_account_dialog_text">Are you sure you want to request account deletion? The request will be submitted for processing (tracked in #1132).</string>
     <string name="account_status_delete_account_dialog_confirm">Request</string>
@@ -312,8 +314,8 @@
     <string name="subscriptions_feature_pro_unlimited_groups">Unlimited groups</string>
     <string name="subscriptions_feature_pro_members">Up to 20 members per group</string>
     <string name="subscriptions_feature_pro_ai_ocr">AI Receipt scanning &amp; OCR</string>
+    <string name="subscriptions_feature_pro_report_exports">Unlimited full PDF &amp; CSV exports</string>
     <string name="subscriptions_feature_pro_ad_free" formatted="false">100% Ad-free experience</string>
-    <string name="subscriptions_feature_pro_priority_support">Priority customer support</string>
     <string name="subscriptions_cta_current_plan">Current Plan</string>
     <string name="subscriptions_cta_upgrade_pro">Upgrade to Pro</string>
     <string name="subscriptions_cta_manage_subscription">Manage Subscription</string>
@@ -354,11 +356,17 @@
     <string name="plan_allowances_quota_ai_scans_subtitle">Resets every calendar month</string>
     <string name="plan_allowances_quota_media_uploads_title">Media Uploads</string>
     <string name="plan_allowances_quota_media_uploads_subtitle">Receipts &amp; group covers · Resets monthly</string>
+    <string name="plan_allowances_quota_report_exports_title">Group Exports</string>
+    <string name="plan_allowances_quota_report_exports_subtitle_free">PDF summary only · Resets monthly</string>
+    <string name="plan_allowances_quota_report_exports_subtitle_pro">Full itemised PDF &amp; CSV</string>
     <string name="plan_allowances_quota_owned_groups_title">Owned Groups</string>
     <string name="plan_allowances_quota_owned_groups_subtitle">Groups created by you</string>
     <string name="plan_allowances_usage_fraction">%1$s / %2$s</string>
     <string name="plan_allowances_usage_unlimited">%1$s used · Unlimited</string>
-    <string name="plan_allowances_status_remaining">%1$s left</string>
+    <plurals name="plan_allowances_status_remaining">
+        <item quantity="one">%1$s left</item>
+        <item quantity="other">%1$s left</item>
+    </plurals>
     <string name="plan_allowances_status_exhausted">Limit reached</string>
     <string name="plan_allowances_perk_members_title">Members per group</string>
     <string name="plan_allowances_perk_members_detail">Up to %1$s</string>

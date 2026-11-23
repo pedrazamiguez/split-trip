@@ -1,8 +1,8 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.component
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
 import es.pedrazamiguez.splittrip.domain.enums.AppLanguage
 import es.pedrazamiguez.splittrip.features.settings.R
 
@@ -13,5 +13,5 @@ internal fun LanguageDescription(currentLanguageCode: String) {
         AppLanguage.EN -> stringResource(R.string.settings_preferences_language_en)
         AppLanguage.ANDALUZ -> stringResource(R.string.settings_preferences_language_andaluz)
     }
-    Text(text = languageName)
+    SecondaryBodyText(text = languageName, maxLines = Int.MAX_VALUE)
 }

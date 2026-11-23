@@ -15,13 +15,10 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Lock
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Shield
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UsersPlus
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
-import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowancePerkType
+import es.pedrazamiguez.splittrip.features.settings.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowancePerkUiModel
 
 private val PERK_ICON_SIZE = 20.dp
@@ -31,11 +28,7 @@ internal fun PlanAllowancePerkRow(
     perk: AllowancePerkUiModel,
     modifier: Modifier = Modifier
 ) {
-    val leadingIcon = when (perk.type) {
-        AllowancePerkType.MEMBERS_PER_GROUP -> TablerIcons.Outline.UsersPlus
-        AllowancePerkType.SUBUNITS_PER_GROUP -> TablerIcons.Outline.Sitemap
-        AllowancePerkType.AD_FREE -> TablerIcons.Outline.Shield
-    }
+    val leadingIcon = perk.type.toIconVector()
 
     val iconTint = if (perk.isIncluded) {
         MaterialTheme.colorScheme.primary

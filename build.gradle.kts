@@ -1,4 +1,5 @@
 import de.aaschmid.gradle.plugins.cpd.Cpd
+import nl.littlerobots.vcu.plugin.versionSelector
 
 // Top-level build file where you can add configuration options common to all subprojects/modules.
 plugins {
@@ -18,9 +19,37 @@ plugins {
     id("splittrip.quality.root")
 }
 
+private val STABLE_VERSION_KEYWORDS = listOf("RELEASE", "FINAL", "GA")
+private val STABLE_VERSION_REGEX = Regex("^[0-9,.v-]+(-r)?$")
+
+private fun isStableVersion(version: String): Boolean {
+    val upperVersion = version.uppercase()
+    return STABLE_VERSION_KEYWORDS.any { upperVersion.contains(it) } ||
+        STABLE_VERSION_REGEX.matches(version)
+}
+
+private fun versionStabilityRank(version: String): Int {
+    if (isStableVersion(version)) return 4
+    val lowerVersion = version.lowercase()
+    return when {
+        lowerVersion.contains("rc") -> 3
+        lowerVersion.contains("beta") -> 2
+        lowerVersion.contains("alpha") || lowerVersion.contains("exp") -> 1
+        else -> 0
+    }
+}
+
 versionCatalogUpdate {
     sortByKey.set(true)
+    versionSelector { candidate ->
+        val currentRank = versionStabilityRank(candidate.currentVersion)
+        val candidateRank = versionStabilityRank(candidate.candidate.version)
+        candidateRank > 0 && candidateRank >= currentRank
+    }
     pin {
+        // composeBom 2026.11.01+ pulls Compose 1.13.0+, which requires compileSdk 37.1+ (minCompileMinorSdk=1).
+        // Keep pinned at 2026.09.00 while the project compiles against android-37.0 (compileSdk = "37").
+        versions.add("composeBom")
         versions.add("kotlin")
         versions.add("ksp")
     }

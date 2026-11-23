@@ -7,5 +7,6 @@ enum class GatedFeature {
     GROUP_COVER_UPLOAD,
     SUBUNIT_CREATION,
     AI_RECEIPT_SCANNING,
+    TRIP_REPORT_EXPORT,
     AD_FREE
 }

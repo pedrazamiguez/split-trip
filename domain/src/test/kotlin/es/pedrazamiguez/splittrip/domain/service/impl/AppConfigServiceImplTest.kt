@@ -48,12 +48,13 @@ class AppConfigServiceImplTest {
         val subscriptionGatingEnabledFlow = MutableStateFlow(true)
         val billingSimulationEnabledFlow = MutableStateFlow(false)
         val maxOwnedGroupsFreeFlow = MutableStateFlow(1)
-        val maxOwnedGroupsProFlow = MutableStateFlow(100)
+        val maxOwnedGroupsProFlow = MutableStateFlow(-1)
         val maxMembersPerGroupFreeFlow = MutableStateFlow(4)
         val maxMembersPerGroupProFlow = MutableStateFlow(20)
         val aiReceiptMonthlyLimitFreeFlow = MutableStateFlow(0)
         val aiReceiptMonthlyLimitProFlow = MutableStateFlow(100)
         val manualReceiptMonthlyLimitFreeFlow = MutableStateFlow(5)
+        val reportExportMonthlyLimitFreeFlow = MutableStateFlow(1)
         val maxSubunitsPerGroupFreeFlow = MutableStateFlow(1)
         val maxSubunitsPerGroupProFlow = MutableStateFlow(-1)
 
@@ -66,6 +67,7 @@ class AppConfigServiceImplTest {
         every { repository.aiReceiptMonthlyLimitFree } returns aiReceiptMonthlyLimitFreeFlow
         every { repository.aiReceiptMonthlyLimitPro } returns aiReceiptMonthlyLimitProFlow
         every { repository.manualReceiptMonthlyLimitFree } returns manualReceiptMonthlyLimitFreeFlow
+        every { repository.reportExportMonthlyLimitFree } returns reportExportMonthlyLimitFreeFlow
         every { repository.maxSubunitsPerGroupFree } returns maxSubunitsPerGroupFreeFlow
         every { repository.maxSubunitsPerGroupPro } returns maxSubunitsPerGroupProFlow
 
@@ -80,15 +82,17 @@ class AppConfigServiceImplTest {
         assertEquals(aiReceiptMonthlyLimitFreeFlow, service.aiReceiptMonthlyLimitFree)
         assertEquals(aiReceiptMonthlyLimitProFlow, service.aiReceiptMonthlyLimitPro)
         assertEquals(manualReceiptMonthlyLimitFreeFlow, service.manualReceiptMonthlyLimitFree)
+        assertEquals(reportExportMonthlyLimitFreeFlow, service.reportExportMonthlyLimitFree)
         assertEquals(maxSubunitsPerGroupFreeFlow, service.maxSubunitsPerGroupFree)
         assertEquals(maxSubunitsPerGroupProFlow, service.maxSubunitsPerGroupPro)
         assertEquals(5, service.manualReceiptMonthlyLimitFree.value)
+        assertEquals(1, service.reportExportMonthlyLimitFree.value)
         assertEquals(1, service.maxSubunitsPerGroupFree.value)
         assertEquals(-1, service.maxSubunitsPerGroupPro.value)
         assertEquals(true, service.subscriptionGatingEnabled.value)
         assertEquals(false, service.billingSimulationEnabled.value)
         assertEquals(1, service.maxOwnedGroupsFree.value)
-        assertEquals(100, service.maxOwnedGroupsPro.value)
+        assertEquals(-1, service.maxOwnedGroupsPro.value)
         assertEquals(4, service.maxMembersPerGroupFree.value)
         assertEquals(20, service.maxMembersPerGroupPro.value)
         assertEquals(0, service.aiReceiptMonthlyLimitFree.value)

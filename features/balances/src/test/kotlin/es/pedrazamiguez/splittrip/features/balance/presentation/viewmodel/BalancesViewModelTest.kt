@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.BalancesDashboardDomainModel
@@ -27,12 +28,16 @@ import es.pedrazamiguez.splittrip.features.balance.presentation.model.MetricScop
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.action.BalancesUiAction
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.BalancesUiEvent
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.BalancesActivityEventHandlerImpl
+import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.TripReportExportAction
+import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.handler.TripReportExportEventHandler
+import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.TripReportExportSheetState
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.verify
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -75,6 +80,9 @@ class BalancesViewModelTest {
     private lateinit var deleteCashWithdrawalUseCase: DeleteCashWithdrawalUseCase
     private lateinit var appConfigService: AppConfigService
     private lateinit var observeGroupUseCase: ObserveGroupUseCase
+    private lateinit var tripReportExportEventHandler: TripReportExportEventHandler
+    private lateinit var exportSheetStateFlow: MutableStateFlow<TripReportExportSheetState>
+    private var boundExportActionEmitter: (suspend (TripReportExportAction) -> Unit)? = null
 
     private lateinit var viewModel: BalancesViewModel
 
@@ -137,6 +145,13 @@ class BalancesViewModelTest {
             every { balanceComputationDebounceMs } returns MutableStateFlow(300L)
         }
         observeGroupUseCase = mockk()
+        exportSheetStateFlow = MutableStateFlow(TripReportExportSheetState())
+        tripReportExportEventHandler = mockk(relaxed = true) {
+            every { exportSheetState } returns exportSheetStateFlow
+            every { bind(any(), any()) } answers {
+                boundExportActionEmitter = secondArg()
+            }
+        }
         val defaultDashboard = BalancesDashboardDomainModel(
             balance = testBalance,
             contributions = emptyList(),
@@ -1007,6 +1022,50 @@ class BalancesViewModelTest {
             // Then — use case is never called
             coVerify(exactly = 0) { deleteCashWithdrawalUseCase(any(), any()) }
         }
+
+        @Test
+        fun `RequestExportReport delegates to tripReportExportEventHandler with BALANCES_EXPORT_ACTION`() =
+            runTest(testDispatcher) {
+                viewModel = createViewModel()
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                viewModel.onEvent(BalancesUiEvent.RequestExportReport)
+                advanceUntilIdle()
+
+                verify {
+                    tripReportExportEventHandler.handleExportRequested(
+                        groupId = testGroupId,
+                        gateEntryPoint = MonetizationTelemetry.GateEntryPoint.BALANCES_EXPORT_ACTION
+                    )
+                }
+            }
+
+        @Test
+        fun `ConfirmExportReport delegates to tripReportExportEventHandler and forwards ShareExportedReport`() =
+            runTest(testDispatcher) {
+                viewModel = createViewModel()
+                val emittedActions = mutableListOf<BalancesUiAction>()
+                val collectJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.actions.collect { emittedActions.add(it) }
+                }
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                viewModel.onEvent(BalancesUiEvent.ConfirmExportReport)
+                boundExportActionEmitter?.invoke(
+                    TripReportExportAction.ShareExportedReport(
+                        contentUri = "content://es.pedrazamiguez.splittrip.fileprovider/exports/statement.pdf",
+                        mimeType = "application/pdf",
+                        fileName = "statement.pdf"
+                    )
+                )
+                advanceUntilIdle()
+
+                verify { tripReportExportEventHandler.handleConfirmExport(testGroupId) }
+                assertTrue(emittedActions.any { it is BalancesUiAction.ShareExportedReport })
+                collectJob.cancel()
+            }
     }
 
     private fun createViewModel() = BalancesViewModel(
@@ -1022,6 +1081,7 @@ class BalancesViewModelTest {
             deleteContributionUseCase = deleteContributionUseCase,
             deleteCashWithdrawalUseCase = deleteCashWithdrawalUseCase
         ),
+        tripReportExportEventHandler = tripReportExportEventHandler,
         appConfigService = appConfigService,
         computationDispatcher = testDispatcher
     )

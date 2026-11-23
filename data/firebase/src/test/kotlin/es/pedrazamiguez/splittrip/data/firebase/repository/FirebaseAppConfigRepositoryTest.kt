@@ -49,6 +49,7 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_free") } returns 5L
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns 150L
         every { firebaseRemoteConfig.getLong("manual_receipt_monthly_limit_free") } returns 5L
+        every { firebaseRemoteConfig.getLong("report_export_monthly_limit_free") } returns 1L
         every { firebaseRemoteConfig.getLong("max_subunits_per_group_free") } returns 1L
         every { firebaseRemoteConfig.getLong("max_subunits_per_group_pro") } returns -1L
         every { firebaseRemoteConfig.getLong("extracted_date_max_future_days") } returns 45L
@@ -227,7 +228,7 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getString("subscription_gating_enabled") } returns ""
         every { firebaseRemoteConfig.getString("billing_simulation_enabled") } returns ""
         every { firebaseRemoteConfig.getLong("max_owned_groups_free") } returns 0L
-        every { firebaseRemoteConfig.getLong("max_owned_groups_pro") } returns -5L
+        every { firebaseRemoteConfig.getLong("max_owned_groups_pro") } returns 0L
         every { firebaseRemoteConfig.getLong("max_members_per_group_free") } returns 0L
         every { firebaseRemoteConfig.getLong("max_members_per_group_pro") } returns -1L
         every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_free") } returns -1L
@@ -249,7 +250,7 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(true, fallbackRepo.subscriptionGatingEnabled.value)
         assertEquals(false, fallbackRepo.billingSimulationEnabled.value)
         assertEquals(1, fallbackRepo.maxOwnedGroupsFree.value)
-        assertEquals(100, fallbackRepo.maxOwnedGroupsPro.value)
+        assertEquals(-1, fallbackRepo.maxOwnedGroupsPro.value)
         assertEquals(4, fallbackRepo.maxMembersPerGroupFree.value)
         assertEquals(20, fallbackRepo.maxMembersPerGroupPro.value)
         assertEquals(3, fallbackRepo.aiReceiptMonthlyLimitFree.value)
@@ -300,6 +301,19 @@ class FirebaseAppConfigRepositoryTest {
         val positiveRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
         assertEquals(2, positiveRepo.maxSubunitsPerGroupFree.value)
         assertEquals(5, positiveRepo.maxSubunitsPerGroupPro.value)
+    }
+
+    @Test
+    fun `updateFlowsFromConfig normalizes negative max_owned_groups_pro to -1 and honors positive values`() {
+        every { firebaseRemoteConfig.getLong("max_owned_groups_pro") } returns -5L
+
+        val negativeRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+        assertEquals(-1, negativeRepo.maxOwnedGroupsPro.value)
+
+        every { firebaseRemoteConfig.getLong("max_owned_groups_pro") } returns 200L
+
+        val positiveRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+        assertEquals(200, positiveRepo.maxOwnedGroupsPro.value)
     }
 
     @Test

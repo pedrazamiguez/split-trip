@@ -142,6 +142,8 @@
     <string name="account_status_link_button">Binculâh</string>
     <string name="account_status_unlink_button">Dêbbinculâh</string>
     <string name="account_status_delete_account_button">Çoliçitâh eliminaçión de cuenta</string>
+    <string name="account_status_delete_account_section_title">Eliminaçión de cuenta</string>
+    <string name="account_status_delete_account_section_description">Elimina permanentemente tu cuenta y tû datô perçonalê de SplîTTrîh.</string>
     <string name="account_status_delete_account_dialog_title">Çoliçitâh eliminaçión de cuenta</string>
     <string name="account_status_delete_account_dialog_text">¿Êttâh çeguro de que quierê çoliçitâh la eliminaçión de tu cuenta? La çoliçitûh çe embiará pa çu proçeçamiento (çegimiento en #1132).</string>
     <string name="account_status_delete_account_dialog_confirm">Çoliçitâh</string>
@@ -270,8 +272,8 @@
     <string name="subscriptions_feature_pro_unlimited_groups">Grupô ilimitáô</string>
     <string name="subscriptions_feature_pro_members">Âtta 20 miembrô por grupo</string>
     <string name="subscriptions_feature_pro_ai_ocr">Êccaneo de reçibô con IA y OCR</string>
+    <string name="subscriptions_feature_pro_report_exports">Êpportaçionê completâ ilimitâh en PDF y CSB</string>
     <string name="subscriptions_feature_pro_ad_free" formatted="false">Êpperiençia 100% çin publiçidá</string>
-    <string name="subscriptions_feature_pro_priority_support">Çoporte prioritario</string>
     <string name="subscriptions_cta_current_plan">Plan âttuâh</string>
     <string name="subscriptions_cta_upgrade_pro">Mehorâh a Pro</string>
     <string name="subscriptions_cta_manage_subscription">Hêttionâh çûccrîççión</string>
@@ -308,11 +310,17 @@
     <string name="plan_allowances_quota_ai_scans_subtitle">Çe reiniçia cá mê naturâh</string>
     <string name="plan_allowances_quota_media_uploads_title">Çubidâ de arxibô</string>
     <string name="plan_allowances_quota_media_uploads_subtitle">Reçibô y portâh de grupo · Reiniçio mençuâh</string>
+    <string name="plan_allowances_quota_report_exports_title">Êpportaçionê de grupo</string>
+    <string name="plan_allowances_quota_report_exports_subtitle_free">Çolo reçumen PDF · Reiniçio mençuâh</string>
+    <string name="plan_allowances_quota_report_exports_subtitle_pro">PDF detayao y CSB completo</string>
     <string name="plan_allowances_quota_owned_groups_title">Grupô propiô</string>
     <string name="plan_allowances_quota_owned_groups_subtitle">Grupô creáô por ti</string>
     <string name="plan_allowances_usage_fraction">%1$s / %2$s</string>
     <string name="plan_allowances_usage_unlimited">%1$s uçáô · Ilimitao</string>
-    <string name="plan_allowances_status_remaining">Quedan %1$s</string>
+    <plurals name="plan_allowances_status_remaining">
+        <item quantity="one">Queda %1$s</item>
+        <item quantity="other">Quedan %1$s</item>
+    </plurals>
     <string name="plan_allowances_status_exhausted">Límite arcançao</string>
     <string name="plan_allowances_perk_members_title">Miembrô por grupo</string>
     <string name="plan_allowances_perk_members_detail">Âtta %1$s</string>
