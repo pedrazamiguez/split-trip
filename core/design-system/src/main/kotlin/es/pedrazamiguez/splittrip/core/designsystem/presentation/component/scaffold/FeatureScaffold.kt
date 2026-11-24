@@ -4,18 +4,28 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
@@ -62,7 +72,10 @@ private fun TabHostedFeatureContent(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    val navBarsBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val navBarsBottomPadding = WindowInsets.navigationBars
+        .union(WindowInsets.displayCutout)
+        .asPaddingValues()
+        .calculateBottomPadding()
     val effectiveBottomPadding = if (hostBottomPadding > 0.dp) hostBottomPadding else navBarsBottomPadding
     val contentTopPadding = if (scrollContentUnderTopBar) 0.dp else hostTopPadding
     val providedTopPadding = if (scrollContentUnderTopBar) hostTopPadding else 0.dp
@@ -76,8 +89,11 @@ private fun TabHostedFeatureContent(
         Box(
             modifier = modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
                 .padding(top = contentTopPadding, bottom = effectiveBottomPadding)
-                .consumeWindowInsets(PaddingValues(bottom = effectiveBottomPadding))
+                .consumeWindowInsets(
+                    PaddingValues(top = contentTopPadding, bottom = effectiveBottomPadding)
+                )
         ) {
             content()
         }
@@ -108,15 +124,28 @@ private fun StandaloneFeatureScaffold(
                 if (topBar != null) {
                     topBar()
                 } else {
-                    Spacer(modifier = Modifier.statusBarsPadding())
+                    Spacer(
+                        modifier = Modifier.windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
+                        )
+                    )
                 }
             },
-            contentWindowInsets = WindowInsets.navigationBars
+            contentWindowInsets = WindowInsets.safeDrawing.exclude(WindowInsets.ime)
         ) { innerPadding ->
+            val layoutDirection = LocalLayoutDirection.current
+            val startPadding = innerPadding.calculateStartPadding(layoutDirection)
+            val endPadding = innerPadding.calculateEndPadding(layoutDirection)
             val topPadding = innerPadding.calculateTopPadding()
             val bottomPadding = innerPadding.calculateBottomPadding()
             val contentTopPadding = if (scrollContentUnderTopBar) 0.dp else topPadding
             val providedTopPadding = if (scrollContentUnderTopBar) topPadding else 0.dp
+            val appliedPadding = PaddingValues(
+                start = startPadding,
+                top = contentTopPadding,
+                end = endPadding,
+                bottom = bottomPadding
+            )
 
             // Bottom inset is applied directly to the root content Box so every standalone
             // screen (including 3-button nav devices) clears the system bar; pass 0.dp via
@@ -129,7 +158,8 @@ private fun StandaloneFeatureScaffold(
                     modifier = Modifier
                         .fillMaxSize()
                         .hazeSource(state = hazeState)
-                        .padding(top = contentTopPadding, bottom = bottomPadding)
+                        .padding(appliedPadding)
+                        .consumeWindowInsets(appliedPadding)
                 ) {
                     content()
                 }

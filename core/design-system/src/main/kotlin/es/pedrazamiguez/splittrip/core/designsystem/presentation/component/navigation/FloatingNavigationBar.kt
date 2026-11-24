@@ -10,20 +10,24 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.horizonGlassEffect
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.isAppInDarkTheme
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.FloatingNavTab
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.badge.ProBadge
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
@@ -84,17 +89,25 @@ fun FloatingNavigationBar(
 
     // Shadow is hoisted to the outer wrapper to prevent it from being clipped
     // inside the sharedBounds GPU overlay during transitions.
-    val isDarkModeForAction = isSystemInDarkTheme()
-    val actionElevation = if (isDarkModeForAction) 0.dp else NavBarDefaults.ShadowElevation
+    val isDarkMode = isAppInDarkTheme()
+    val actionElevation = if (isDarkMode) 0.dp else NavBarDefaults.ShadowElevation
     val actionButtonShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
 
     val pillShape = RoundedCornerShape(NavBarDefaults.BarHeight / 2)
 
-    // Lift the pill above the system navigation bar unless the parent already applies insets.
+    // Lift the pill above the system navigation bar and display cutouts unless the parent already applies insets.
+    val systemNavAndCutoutInsets = WindowInsets.navigationBars.union(WindowInsets.displayCutout)
     val navBarInset = if (applyWindowInsets) {
-        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        systemNavAndCutoutInsets.asPaddingValues().calculateBottomPadding()
     } else {
         0.dp
+    }
+    val horizontalInsetModifier = if (applyWindowInsets) {
+        Modifier.windowInsetsPadding(
+            systemNavAndCutoutInsets.only(WindowInsetsSides.Horizontal)
+        )
+    } else {
+        Modifier
     }
 
     Box(
@@ -119,12 +132,12 @@ fun FloatingNavigationBar(
             )
         }
 
-        val isDarkMode = isSystemInDarkTheme()
         val barElevation = if (isDarkMode) 0.dp else NavBarDefaults.ShadowElevation
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .then(horizontalInsetModifier)
                 .padding(horizontal = NavBarDefaults.HorizontalPadding)
                 .padding(bottom = NavBarDefaults.BottomPadding + navBarInset),
             horizontalArrangement = Arrangement.spacedBy(12.dp),

@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.core.designsystem.foundation
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -174,7 +173,7 @@ internal object GlassmorphismDefaults {
  *
  * @param hazeState The [HazeState] shared with the `hazeSource` content that sits behind
  *   this floating element. Must be created at the common ancestor composable.
- * @param darkTheme Whether to apply the dark-mode recipe. Defaults to [isSystemInDarkTheme].
+ * @param darkTheme Whether to apply the dark-mode recipe. Defaults to [isAppInDarkTheme].
  * @param style Optional [HazeBlurStyle] override. Defaults to [GlassmorphismDefaults.DarkStyle] or [GlassmorphismDefaults.LightStyle].
  * @param block Optional lambda on [HazeBlurStyleScope] for additional per-site customisation
  *   (e.g. [HazeBlurStyleScope.mask]).
@@ -185,7 +184,7 @@ internal object GlassmorphismDefaults {
 @Composable
 fun Modifier.horizonGlassEffect(
     hazeState: HazeState,
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = isAppInDarkTheme(),
     style: HazeBlurStyle = if (darkTheme) GlassmorphismDefaults.DarkStyle else GlassmorphismDefaults.LightStyle,
     block: (HazeBlurStyleScope.() -> Unit)? = null
 ): Modifier {

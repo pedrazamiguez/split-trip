@@ -148,7 +148,10 @@ fun SplitTripTheme(
         motionScheme = MotionScheme.expressive(),
         content = {
             SharedTransitionLayout {
-                CompositionLocalProvider(LocalSharedTransitionScope provides this) {
+                CompositionLocalProvider(
+                    LocalSharedTransitionScope provides this,
+                    LocalDarkTheme provides darkTheme
+                ) {
                     content()
                 }
             }

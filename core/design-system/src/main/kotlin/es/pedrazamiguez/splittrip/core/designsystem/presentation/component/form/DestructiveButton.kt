@@ -2,7 +2,6 @@ package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,6 +20,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.isAppInDarkTheme
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 
 private val DESTRUCTIVE_BUTTON_HEIGHT = 56.dp
@@ -62,7 +62,7 @@ fun DestructiveButton(
 ) {
     val visualEnabled = enabled
     val interactable = enabled && !isLoading
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = isAppInDarkTheme()
 
     val containerColor = when {
         !visualEnabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_CONTAINER_ALPHA)
