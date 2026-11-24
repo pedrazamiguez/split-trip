@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.data.local.service
 
 import android.content.Context
+import android.net.Uri
 import androidx.core.content.FileProvider
 import es.pedrazamiguez.splittrip.data.local.service.export.TripReportCsvFormatter
 import es.pedrazamiguez.splittrip.data.local.service.export.TripReportPdfRenderer
@@ -9,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.model.report.TripReportExportPayload
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportFormat
 import es.pedrazamiguez.splittrip.domain.service.TripReportExportService
 import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,7 +22,8 @@ class TripReportExportServiceImpl(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val uriResolver: (Context, File) -> String = { ctx, file ->
         FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file).toString()
-    }
+    },
+    private val uriParser: (String) -> Uri = Uri::parse
 ) : TripReportExportService {
 
     override suspend fun export(
@@ -49,6 +52,26 @@ class TripReportExportServiceImpl(
             fileName = outputFile.name,
             mimeType = format.mimeType
         )
+    }
+
+    override suspend fun saveToUri(
+        sourceContentUri: String,
+        destinationUri: String
+    ): Unit = withContext(ioDispatcher) {
+        val sourceUri = uriParser(sourceContentUri)
+        val targetUri = uriParser(destinationUri)
+
+        val inputStream = context.contentResolver.openInputStream(sourceUri)
+            ?: throw IOException("Unable to open source report stream: $sourceContentUri")
+
+        inputStream.use { input ->
+            val outputStream = context.contentResolver.openOutputStream(targetUri)
+                ?: throw IOException("Unable to open destination output stream: $destinationUri")
+            outputStream.use { output ->
+                input.copyTo(output)
+                output.flush()
+            }
+        }
     }
 
     private fun purgeStaleExports(exportsDir: File) {

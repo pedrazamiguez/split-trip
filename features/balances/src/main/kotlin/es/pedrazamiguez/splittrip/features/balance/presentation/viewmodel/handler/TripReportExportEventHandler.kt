@@ -16,6 +16,11 @@ sealed interface TripReportExportAction {
         val mimeType: String,
         val fileName: String
     ) : TripReportExportAction
+    data class LaunchSaveDocumentPicker(
+        val fileName: String,
+        val mimeType: String
+    ) : TripReportExportAction
+    data class ShowExportSaveSuccess(val message: UiText) : TripReportExportAction
     data class ShowExportError(val message: UiText) : TripReportExportAction
 }
 
@@ -44,4 +49,7 @@ interface TripReportExportEventHandler {
     fun handleSelectCustomEndDate(date: LocalDate)
     fun handleSelectFormat(format: TripReportFormat)
     fun handleConfirmExport(groupId: String)
+    fun handleSaveExport(groupId: String)
+    fun handleCompleteSaveExport(destinationUri: String)
+    fun handleCancelSaveExport()
 }

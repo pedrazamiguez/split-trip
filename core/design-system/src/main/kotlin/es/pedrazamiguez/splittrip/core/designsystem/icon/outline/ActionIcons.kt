@@ -541,3 +541,32 @@ val TablerIcons.Outline.Filter: ImageVector
     ).build().also { _Filter = it }
 
 private var _Filter: ImageVector? = null
+
+val TablerIcons.Outline.Download: ImageVector
+    get() = _Download ?: ImageVector.Builder(
+        name = "Outline.Download",
+        defaultWidth = 24.dp,
+        defaultHeight = 24.dp,
+        viewportWidth = 24f,
+        viewportHeight = 24f
+    ).addPath(
+        pathData = addPathNodes("M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M7 11l5 5l5 -5"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).addPath(
+        pathData = addPathNodes("M12 4l0 12"),
+        stroke = SolidColor(Color.Black),
+        strokeLineWidth = 2f,
+        strokeLineCap = StrokeCap.Round,
+        strokeLineJoin = StrokeJoin.Round
+    ).build().also { _Download = it }
+
+private var _Download: ImageVector? = null

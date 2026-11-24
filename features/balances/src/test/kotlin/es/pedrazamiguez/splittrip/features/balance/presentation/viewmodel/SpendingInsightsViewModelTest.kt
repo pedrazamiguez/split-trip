@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
@@ -504,6 +505,61 @@ class SpendingInsightsViewModelTest {
 
             assertTrue(emittedActions.any { it is SpendingInsightsUiAction.ShareExportedReport })
             collectJob.cancel()
+        }
+
+    @Test
+    fun `SaveExportReport delegates to handler and forwards picker and save success actions`() =
+        runTest(testDispatcher) {
+            viewModel = createViewModel()
+            val emittedActions = mutableListOf<SpendingInsightsUiAction>()
+            val collectJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.actions.collect { emittedActions.add(it) }
+            }
+            viewModel.setSelectedGroup("group-1")
+            advanceUntilIdle()
+
+            viewModel.onEvent(SpendingInsightsUiEvent.SaveExportReport)
+            boundExportActionEmitter?.invoke(
+                TripReportExportAction.LaunchSaveDocumentPicker(
+                    fileName = "export.csv",
+                    mimeType = "text/csv"
+                )
+            )
+            boundExportActionEmitter?.invoke(
+                TripReportExportAction.ShowExportSaveSuccess(UiText.DynamicString("Saved export.csv"))
+            )
+            advanceUntilIdle()
+
+            verify { tripReportExportEventHandler.handleSaveExport("group-1") }
+            assertTrue(
+                emittedActions.any {
+                    it == SpendingInsightsUiAction.LaunchSaveDocumentPicker(
+                        fileName = "export.csv",
+                        mimeType = "text/csv"
+                    )
+                }
+            )
+            assertTrue(
+                emittedActions.any {
+                    it == SpendingInsightsUiAction.ShowExportSaveSuccess(UiText.DynamicString("Saved export.csv"))
+                }
+            )
+            collectJob.cancel()
+        }
+
+    @Test
+    fun `CompleteSaveExportedReport and CancelSaveExportedReport delegate to tripReportExportEventHandler`() =
+        runTest(testDispatcher) {
+            viewModel = createViewModel()
+            viewModel.setSelectedGroup("group-1")
+            advanceUntilIdle()
+
+            viewModel.onEvent(SpendingInsightsUiEvent.CompleteSaveExportedReport("content://documents/export.csv"))
+            viewModel.onEvent(SpendingInsightsUiEvent.CancelSaveExportedReport)
+            advanceUntilIdle()
+
+            verify { tripReportExportEventHandler.handleCompleteSaveExport("content://documents/export.csv") }
+            verify { tripReportExportEventHandler.handleCancelSaveExport() }
         }
 
     private fun createViewModel(): SpendingInsightsViewModel = SpendingInsightsViewModel(
