@@ -17,6 +17,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TEMPLATE_FILE="${ROOT_DIR}/firebase/remoteconfig.template.json"
 VALIDATOR_SCRIPT="${ROOT_DIR}/scripts/validate_remote_config.py"
+MERGE_SCRIPT="${ROOT_DIR}/scripts/merge_remote_config.py"
+FIREBASERC_FILE="${ROOT_DIR}/.firebaserc"
 
 RED="\033[0;31m"
 GREEN="\033[0;32m"
@@ -31,7 +33,7 @@ usage() {
   echo -e "${YELLOW}Commands:${NC}"
   echo -e "  ${CYAN}validate${NC}         Validate consistency between XML defaults and JSON template"
   echo -e "  ${CYAN}diff${NC}             Diff local template against live cloud configuration"
-  echo -e "  ${CYAN}deploy${NC}           Validate and deploy Remote Config template to Firebase"
+  echo -e "  ${CYAN}deploy [--overwrite]${NC} Validate and deploy Remote Config (additive merge by default)"
   echo -e "  ${CYAN}rollback <v>${NC}     Roll back Remote Config template to a specific version"
   echo -e "  ${CYAN}versions${NC}         List published Remote Config versions"
   echo -e "  ${CYAN}get [file]${NC}       Fetch live Remote Config template (to stdout or file)"
@@ -91,12 +93,63 @@ with open('${TMP_LOCAL}', 'w') as f:
 }
 
 cmd_deploy() {
+  local OVERWRITE=false
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --overwrite)
+        OVERWRITE=true
+        shift
+        ;;
+      *)
+        echo -e "${RED}❌ Unknown deploy option: $1${NC}"
+        usage
+        ;;
+    esac
+  done
+
   echo -e "${BOLD}🚀 Deploying Firebase Remote Config...${NC}"
   cmd_validate
 
-  echo ""
-  echo -e "${CYAN}📤 Publishing template to Firebase...${NC}"
-  npx firebase-tools deploy --only remoteconfig --force
+  if [ "${OVERWRITE}" = "true" ]; then
+    echo ""
+    echo -e "${YELLOW}⚠️  --overwrite enabled: replacing live Remote Config values with firebase/remoteconfig.template.json.${NC}"
+    echo -e "${CYAN}📤 Publishing full template to Firebase...${NC}"
+    npx firebase-tools deploy --only remoteconfig --force
+  else
+    local TMP_DIR
+    TMP_DIR="$(mktemp -d /tmp/rc_deploy_XXXXXX)"
+    trap 'rm -rf "${TMP_DIR}"' EXIT
+
+    echo ""
+    echo -e "${CYAN}📥 Fetching live Remote Config template from Firebase...${NC}"
+    if ! npx firebase-tools remoteconfig:get -o "${TMP_DIR}/live.json"; then
+      echo -e "${RED}❌ Failed to fetch live Remote Config template. Aborting to prevent destructive overwrite.${NC}"
+      exit 1
+    fi
+
+    echo ""
+    echo -e "${CYAN}🔀 Merging git template into live Remote Config template...${NC}"
+    python3 "${MERGE_SCRIPT}" \
+      --live "${TMP_DIR}/live.json" \
+      --repo "${TEMPLATE_FILE}" \
+      --output "${TMP_DIR}/remoteconfig.merged.json"
+
+    cat > "${TMP_DIR}/firebase.json" <<EOF
+{
+  "remoteconfig": {
+    "template": "${TMP_DIR}/remoteconfig.merged.json"
+  }
+}
+EOF
+
+    if [ -f "${FIREBASERC_FILE}" ]; then
+      cp "${FIREBASERC_FILE}" "${TMP_DIR}/.firebaserc"
+    fi
+
+    echo ""
+    echo -e "${CYAN}📤 Publishing merged template to Firebase...${NC}"
+    npx firebase-tools deploy --only remoteconfig --config "${TMP_DIR}/firebase.json" --force
+  fi
 
   echo ""
   echo -e "${GREEN}✅ Remote Config template deployed successfully!${NC}"
@@ -150,7 +203,7 @@ case "${COMMAND}" in
     cmd_diff
     ;;
   deploy)
-    cmd_deploy
+    cmd_deploy "$@"
     ;;
   rollback)
     cmd_rollback "$@"

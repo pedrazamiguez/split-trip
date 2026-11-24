@@ -226,6 +226,7 @@ doctor: ## Check that required files and tools are present
 fast-check: andaluz-lenient remoteconfig-validate ## Fast incremental check using Gradle daemon & build cache (for rapid iteration)
 	@printf "$(YELLOW)⏳  Running GitHub MCP guard & AI config tests...$(NC)\n"
 	@python3 -m unittest scripts/test_github_mcp_guard.py -v
+	@python3 -m unittest scripts/test_merge_remote_config.py -v
 	@printf "$(YELLOW)⏳  Running fast incremental quality checks...$(NC)\n"
 	@$(FAST_GRADLEW) ktlintCheck detekt lintDebug :konsist-tests:test --continue
 	@$(FAST_GRADLEW) jacocoMergedReport --continue
@@ -235,6 +236,7 @@ fast-check: andaluz-lenient remoteconfig-validate ## Fast incremental check usin
 check: clean andaluz-lenient remoteconfig-validate ## Run all local quality gates from a 100% cold state before pushing (single-pass Gradle execution, mirrors CI)
 	@printf "$(YELLOW)⏳  Running GitHub MCP guard & AI config tests...$(NC)\n"
 	@python3 -m unittest scripts/test_github_mcp_guard.py -v
+	@python3 -m unittest scripts/test_merge_remote_config.py -v
 	@printf "$(YELLOW)⏳  Running full cold quality gates (single-pass Gradle execution)...$(NC)\n"
 	@$(GRADLEW) ktlintFormat ktlintCheck detekt lintDebug :konsist-tests:test --continue
 	@$(GRADLEW) jacocoMergedReport --continue
@@ -287,13 +289,14 @@ build: ## Compile all modules (debug)
 	@$(GRADLEW) compileDebugKotlin --continue
 
 # ─── Utility ──────────────────────────────────────────────────────────────────
-firebase: ## Deploy all configured resources to Firebase (functions, firestore, remoteconfig)
+firebase: ## Deploy all configured resources to Firebase (functions, firestore, storage, remoteconfig)
 	@if [ ! -x "functions/node_modules/.bin/tsc" ]; then \
 		printf "$(YELLOW)⏳  Installing Cloud Functions dependencies...$(NC)\n"; \
 		npm --prefix functions ci; \
 	fi
-	@printf "$(YELLOW)⏳  Deploying to Firebase...$(NC)\n"
-	@npx firebase-tools deploy
+	@printf "$(YELLOW)⏳  Deploying functions, firestore, and storage to Firebase...$(NC)\n"
+	@npx firebase-tools deploy --except remoteconfig
+	@./scripts/deploy-remote-config.sh deploy
 
 remoteconfig-validate: ## Validate consistency between in-app defaults and Remote Config template
 	@printf "$(YELLOW)⏳  Validating Remote Config template consistency...$(NC)\n"
@@ -302,8 +305,12 @@ remoteconfig-validate: ## Validate consistency between in-app defaults and Remot
 remoteconfig-diff: ## Diff local Remote Config template against live cloud configuration
 	@./scripts/deploy-remote-config.sh diff
 
-remoteconfig-deploy: ## Deploy Remote Config template to Firebase
-	@./scripts/deploy-remote-config.sh deploy
+remoteconfig-deploy: ## Deploy Remote Config template to Firebase (additive merge; set OVERWRITE=true to force full overwrite)
+	@if [ "$(OVERWRITE)" = "true" ]; then \
+		./scripts/deploy-remote-config.sh deploy --overwrite; \
+	else \
+		./scripts/deploy-remote-config.sh deploy; \
+	fi
 
 remoteconfig-rollback: ## Roll back Remote Config template to a previous version (usage: make remoteconfig-rollback VERSION=<version>)
 	@./scripts/deploy-remote-config.sh rollback $(VERSION)
