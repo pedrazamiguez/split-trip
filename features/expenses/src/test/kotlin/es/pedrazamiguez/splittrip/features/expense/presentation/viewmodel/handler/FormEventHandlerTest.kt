@@ -445,6 +445,13 @@ class FormEventHandlerTest {
                 icon = TablerIcons.Outline.ChefHat
             )
             every {
+                addExpenseOptionsUiMapper.mapCategoriesForContext(
+                    context = GroupContext.TRAVEL,
+                    showAll = false,
+                    alwaysInclude = ExpenseCategory.FOOD
+                )
+            } returns persistentListOf(foodCategory, otherCategory)
+            every {
                 addExpenseOptionsUiMapper.mapSubcategories(
                     category = ExpenseCategory.FOOD,
                     context = GroupContext.TRAVEL,
@@ -462,6 +469,42 @@ class FormEventHandlerTest {
             assertEquals(1, uiState.value.availableSubcategories.size)
             assertEquals(subcategoryUiModel, uiState.value.availableSubcategories.first())
         }
+
+        @Test
+        fun `handleCategorySelected prunes out-of-context categories when selecting an in-context category`() =
+            runTest {
+                val healthCategory = CategoryUiModel(
+                    id = ExpenseCategory.HEALTH_PERSONAL_CARE.name,
+                    displayText = "Health & Care"
+                )
+                uiState.value = uiState.value.copy(
+                    groupContext = GroupContext.TRAVEL,
+                    showAllCategories = false,
+                    availableCategories = persistentListOf(foodCategory, otherCategory, healthCategory),
+                    selectedCategory = healthCategory
+                )
+                every {
+                    addExpenseOptionsUiMapper.mapCategoriesForContext(
+                        context = GroupContext.TRAVEL,
+                        showAll = false,
+                        alwaysInclude = ExpenseCategory.FOOD
+                    )
+                } returns persistentListOf(foodCategory, otherCategory)
+                every {
+                    addExpenseOptionsUiMapper.mapSubcategories(
+                        category = ExpenseCategory.FOOD,
+                        context = GroupContext.TRAVEL,
+                        showAll = false,
+                        alwaysInclude = null
+                    )
+                } returns persistentListOf()
+
+                handler.handleCategorySelected(ExpenseCategory.FOOD.name)
+
+                assertEquals(listOf(foodCategory, otherCategory), uiState.value.availableCategories)
+                assertEquals(foodCategory, uiState.value.selectedCategory)
+                assertFalse(uiState.value.showAllCategories)
+            }
 
         @Test
         fun `ignores unknown category ID`() = runTest {
@@ -548,6 +591,97 @@ class FormEventHandlerTest {
                     listOf(restaurantSubcategory, streetFoodSubcategory),
                     uiState.value.availableSubcategories
                 )
+            }
+
+        @Test
+        fun `handleToggleShowAllCategories off resets out-of-context selection to OTHER`() =
+            runTest {
+                val healthCategory = CategoryUiModel(
+                    id = ExpenseCategory.HEALTH_PERSONAL_CARE.name,
+                    displayText = "Health & Care"
+                )
+                val doctorSubcategory = SubcategoryUiModel(
+                    subcategory = ExpenseSubcategory.DOCTOR_DENTIST,
+                    name = UiText.DynamicString("Doctor"),
+                    icon = TablerIcons.Outline.ChefHat
+                )
+                uiState.value = uiState.value.copy(
+                    groupContext = GroupContext.TRAVEL,
+                    showAllCategories = true,
+                    availableCategories = persistentListOf(foodCategory, otherCategory, healthCategory),
+                    selectedCategory = healthCategory,
+                    selectedSubcategory = doctorSubcategory
+                )
+                every {
+                    addExpenseOptionsUiMapper.mapCategoriesForContext(
+                        context = GroupContext.TRAVEL,
+                        showAll = false,
+                        alwaysInclude = null
+                    )
+                } returns persistentListOf(foodCategory, otherCategory)
+                every {
+                    addExpenseOptionsUiMapper.mapSubcategories(
+                        category = ExpenseCategory.OTHER,
+                        context = GroupContext.TRAVEL,
+                        showAll = false,
+                        alwaysInclude = null
+                    )
+                } returns persistentListOf()
+
+                handler.handleToggleShowAllCategories()
+
+                assertFalse(uiState.value.showAllCategories)
+                assertEquals(listOf(foodCategory, otherCategory), uiState.value.availableCategories)
+                assertEquals(otherCategory, uiState.value.selectedCategory)
+                assertNull(uiState.value.selectedSubcategory)
+            }
+
+        @Test
+        fun `handleToggleShowAllCategories off clears out-of-context subcategory while keeping in-context category`() =
+            runTest {
+                val shoppingCategory = CategoryUiModel(
+                    id = ExpenseCategory.SHOPPING.name,
+                    displayText = "Shopping"
+                )
+                val giftsSubcategory = SubcategoryUiModel(
+                    subcategory = ExpenseSubcategory.GIFTS,
+                    name = UiText.DynamicString("Gifts"),
+                    icon = TablerIcons.Outline.ChefHat
+                )
+                val pharmacySubcategory = SubcategoryUiModel(
+                    subcategory = ExpenseSubcategory.PHARMACY_HEALTH,
+                    name = UiText.DynamicString("Pharmacy & Health"),
+                    icon = TablerIcons.Outline.ChefHat
+                )
+                uiState.value = uiState.value.copy(
+                    groupContext = GroupContext.TRAVEL,
+                    showAllCategories = true,
+                    availableCategories = persistentListOf(foodCategory, shoppingCategory, otherCategory),
+                    selectedCategory = shoppingCategory,
+                    selectedSubcategory = giftsSubcategory
+                )
+                every {
+                    addExpenseOptionsUiMapper.mapCategoriesForContext(
+                        context = GroupContext.TRAVEL,
+                        showAll = false,
+                        alwaysInclude = null
+                    )
+                } returns persistentListOf(foodCategory, shoppingCategory, otherCategory)
+                every {
+                    addExpenseOptionsUiMapper.mapSubcategories(
+                        category = ExpenseCategory.SHOPPING,
+                        context = GroupContext.TRAVEL,
+                        showAll = false,
+                        alwaysInclude = null
+                    )
+                } returns persistentListOf(pharmacySubcategory)
+
+                handler.handleToggleShowAllCategories()
+
+                assertFalse(uiState.value.showAllCategories)
+                assertEquals(shoppingCategory, uiState.value.selectedCategory)
+                assertNull(uiState.value.selectedSubcategory)
+                assertEquals(listOf(pharmacySubcategory), uiState.value.availableSubcategories)
             }
     }
 

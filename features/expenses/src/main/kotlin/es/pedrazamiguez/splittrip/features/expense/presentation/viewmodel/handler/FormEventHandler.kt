@@ -19,12 +19,9 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ManualReceiptQuotaUiMapper
-import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
-import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -239,35 +236,18 @@ class FormEventHandler(
         val categoryEnum = runCatching { ExpenseCategory.fromString(categoryId) }.getOrNull() ?: return
         val currentState = _uiState.value
         val existingMatch = currentState.availableCategories.find { it.id == categoryId }
-        val nextShowAll: Boolean
-        val updatedCategories: ImmutableList<CategoryUiModel>
-        val selectedCategory: CategoryUiModel
-        val availableSubcategories: ImmutableList<SubcategoryUiModel>
-
-        if (existingMatch == null) {
-            nextShowAll = true
-            val allMapped = addExpenseOptionsUiMapper.mapCategoriesForContext(
-                context = currentState.groupContext,
-                showAll = true
-            )
-            val resolved = allMapped.find { it.id == categoryEnum.name } ?: return
-            updatedCategories = allMapped
-            selectedCategory = resolved
-            availableSubcategories = addExpenseOptionsUiMapper.mapSubcategories(
-                category = categoryEnum,
-                context = currentState.groupContext,
-                showAll = true
-            )
-        } else {
-            nextShowAll = currentState.showAllCategories
-            updatedCategories = currentState.availableCategories
-            selectedCategory = existingMatch
-            availableSubcategories = addExpenseOptionsUiMapper.mapSubcategories(
-                category = categoryEnum,
-                context = currentState.groupContext,
-                showAll = nextShowAll
-            )
-        }
+        val nextShowAll = existingMatch == null || currentState.showAllCategories
+        val updatedCategories = addExpenseOptionsUiMapper.mapCategoriesForContext(
+            context = currentState.groupContext,
+            showAll = nextShowAll,
+            alwaysInclude = if (existingMatch == null) null else categoryEnum
+        )
+        val selectedCategory = updatedCategories.find { it.id == categoryEnum.name } ?: return
+        val availableSubcategories = addExpenseOptionsUiMapper.mapSubcategories(
+            category = categoryEnum,
+            context = currentState.groupContext,
+            showAll = nextShowAll
+        )
 
         _uiState.update {
             it.copy(
@@ -283,20 +263,40 @@ class FormEventHandler(
     fun handleToggleShowAllCategories() {
         val currentState = _uiState.value
         val nextShowAll = !currentState.showAllCategories
-        val selectedCategoryEnum = currentState.selectedCategory?.id?.let { catId ->
+        val currentCategoryEnum = currentState.selectedCategory?.id?.let { catId ->
             runCatching { ExpenseCategory.fromString(catId) }.getOrNull()
         }
+        val categoryAppliesToContext = currentCategoryEnum?.appliesTo(currentState.groupContext) ?: true
+        val effectiveCategoryEnum = if (!nextShowAll && !categoryAppliesToContext) {
+            ExpenseCategory.OTHER
+        } else {
+            currentCategoryEnum
+        }
+
         val updatedCategories = addExpenseOptionsUiMapper.mapCategoriesForContext(
             context = currentState.groupContext,
             showAll = nextShowAll,
-            alwaysInclude = selectedCategoryEnum
+            alwaysInclude = effectiveCategoryEnum.takeIf { nextShowAll }
         )
-        val updatedSubcategories = if (selectedCategoryEnum != null) {
+        val effectiveSelectedCategory = if (!nextShowAll && !categoryAppliesToContext) {
+            updatedCategories.find { it.id == ExpenseCategory.OTHER.name } ?: updatedCategories.lastOrNull()
+        } else {
+            currentState.selectedCategory
+        }
+
+        val currentSubcategory = currentState.selectedSubcategory
+        val subcategoryAppliesToContext =
+            currentSubcategory?.subcategory?.appliesTo(currentState.groupContext) == true
+        val keepSelectedSubcategory =
+            currentSubcategory != null && (nextShowAll || (categoryAppliesToContext && subcategoryAppliesToContext))
+        val effectiveSelectedSubcategory = currentSubcategory.takeIf { keepSelectedSubcategory }
+
+        val updatedSubcategories = if (effectiveCategoryEnum != null) {
             addExpenseOptionsUiMapper.mapSubcategories(
-                category = selectedCategoryEnum,
+                category = effectiveCategoryEnum,
                 context = currentState.groupContext,
                 showAll = nextShowAll,
-                alwaysInclude = currentState.selectedSubcategory?.subcategory
+                alwaysInclude = effectiveSelectedSubcategory?.subcategory
             )
         } else {
             currentState.availableSubcategories
@@ -306,6 +306,8 @@ class FormEventHandler(
             it.copy(
                 showAllCategories = nextShowAll,
                 availableCategories = updatedCategories,
+                selectedCategory = effectiveSelectedCategory,
+                selectedSubcategory = effectiveSelectedSubcategory,
                 availableSubcategories = updatedSubcategories
             )
         }

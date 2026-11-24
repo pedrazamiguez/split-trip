@@ -38,7 +38,6 @@ private val subcategoryToStringResMap: Map<ExpenseSubcategory, Int> = mapOf(
     ExpenseSubcategory.HAIRDRESSER_BARBER to R.string.expense_subcategory_hairdresser_barber,
     ExpenseSubcategory.GYM_FITNESS to R.string.expense_subcategory_gym_fitness,
     ExpenseSubcategory.PERSONAL_CARE to R.string.expense_subcategory_personal_care,
-    ExpenseSubcategory.PHARMACY_MEDICINE to R.string.expense_subcategory_pharmacy_medicine,
     ExpenseSubcategory.MUSEUM_CULTURE to R.string.expense_subcategory_museum_culture,
     ExpenseSubcategory.TOUR_EXCURSION to R.string.expense_subcategory_tour_excursion,
     ExpenseSubcategory.NATURE_PARK to R.string.expense_subcategory_nature_park,

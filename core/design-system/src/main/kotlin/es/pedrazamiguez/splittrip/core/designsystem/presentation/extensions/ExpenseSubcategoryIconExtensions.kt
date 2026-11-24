@@ -42,7 +42,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ParkingCircle
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Paw
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Physiotherapist
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PicnicTable
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Pill
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Plane
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PlaneTilt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Pool
@@ -105,7 +104,6 @@ private val subcategoryToIconMap: Map<ExpenseSubcategory, ImageVector> = mapOf(
     ExpenseSubcategory.HAIRDRESSER_BARBER to TablerIcons.Outline.Scissors,
     ExpenseSubcategory.GYM_FITNESS to TablerIcons.Outline.Barbell,
     ExpenseSubcategory.PERSONAL_CARE to TablerIcons.Outline.Sparkles,
-    ExpenseSubcategory.PHARMACY_MEDICINE to TablerIcons.Outline.Pill,
     ExpenseSubcategory.MUSEUM_CULTURE to TablerIcons.Outline.Brush,
     ExpenseSubcategory.TOUR_EXCURSION to TablerIcons.Outline.Backpack,
     ExpenseSubcategory.NATURE_PARK to TablerIcons.Outline.Mountain,

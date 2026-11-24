@@ -121,29 +121,6 @@ val TablerIcons.Outline.Sparkles: ImageVector
 
 private var _Sparkles: ImageVector? = null
 
-val TablerIcons.Outline.Pill: ImageVector
-    get() = _Pill ?: ImageVector.Builder(
-        name = "Outline.Pill",
-        defaultWidth = 24.dp,
-        defaultHeight = 24.dp,
-        viewportWidth = 24f,
-        viewportHeight = 24f
-    ).addPath(
-        pathData = addPathNodes("M4.5 12.5l8 -8a4.94 4.94 0 0 1 7 7l-8 8a4.94 4.94 0 0 1 -7 -7"),
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round
-    ).addPath(
-        pathData = addPathNodes("M8.5 8.5l7 7"),
-        stroke = SolidColor(Color.Black),
-        strokeLineWidth = 2f,
-        strokeLineCap = StrokeCap.Round,
-        strokeLineJoin = StrokeJoin.Round
-    ).build().also { _Pill = it }
-
-private var _Pill: ImageVector? = null
-
 val TablerIcons.Outline.DeviceTv: ImageVector
     get() = _DeviceTv ?: ImageVector.Builder(
         name = "Outline.DeviceTv",

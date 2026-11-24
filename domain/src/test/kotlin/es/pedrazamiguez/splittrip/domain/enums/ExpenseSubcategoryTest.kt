@@ -53,7 +53,7 @@ class ExpenseSubcategoryTest {
             assertEquals(6, ExpenseSubcategory.forCategory(ExpenseCategory.FOOD).size)
             assertEquals(6, ExpenseSubcategory.forCategory(ExpenseCategory.LODGING).size)
             assertEquals(5, ExpenseSubcategory.forCategory(ExpenseCategory.HOME).size)
-            assertEquals(5, ExpenseSubcategory.forCategory(ExpenseCategory.HEALTH_PERSONAL_CARE).size)
+            assertEquals(4, ExpenseSubcategory.forCategory(ExpenseCategory.HEALTH_PERSONAL_CARE).size)
             assertEquals(7, ExpenseSubcategory.forCategory(ExpenseCategory.ACTIVITIES).size)
             assertEquals(6, ExpenseSubcategory.forCategory(ExpenseCategory.ENTERTAINMENT).size)
             assertEquals(8, ExpenseSubcategory.forCategory(ExpenseCategory.SHOPPING).size)
@@ -90,15 +90,29 @@ class ExpenseSubcategoryTest {
             assertTrue(insurance.contains(ExpenseSubcategory.HOME_INSURANCE))
             assertTrue(shopping.contains(ExpenseSubcategory.TOBACCO_VAPING))
             assertTrue(shopping.contains(ExpenseSubcategory.HOBBIES))
+            assertTrue(shopping.contains(ExpenseSubcategory.PHARMACY_HEALTH))
             assertFalse(shopping.contains(ExpenseSubcategory.SOUVENIRS_GIFTS))
         }
 
         @Test
-        fun `forCategory with EVERYDAY returns 5 subcategories for HOME and 5 for HEALTH_PERSONAL_CARE`() {
+        fun `forCategory with EVERYDAY returns 5 subcategories for HOME and 4 for HEALTH_PERSONAL_CARE`() {
             assertEquals(5, ExpenseSubcategory.forCategory(ExpenseCategory.HOME, GroupContext.EVERYDAY).size)
             assertEquals(
-                5,
+                4,
                 ExpenseSubcategory.forCategory(ExpenseCategory.HEALTH_PERSONAL_CARE, GroupContext.EVERYDAY).size
+            )
+        }
+
+        @Test
+        fun `PHARMACY_HEALTH is available in both TRAVEL and EVERYDAY under SHOPPING without duplicates`() {
+            val travelShopping = ExpenseSubcategory.forCategory(ExpenseCategory.SHOPPING, GroupContext.TRAVEL)
+            val everydayShopping = ExpenseSubcategory.forCategory(ExpenseCategory.SHOPPING, GroupContext.EVERYDAY)
+
+            assertTrue(travelShopping.contains(ExpenseSubcategory.PHARMACY_HEALTH))
+            assertTrue(everydayShopping.contains(ExpenseSubcategory.PHARMACY_HEALTH))
+            assertEquals(
+                1,
+                ExpenseSubcategory.entries.count { it.name.contains("PHARMACY") }
             )
         }
 
