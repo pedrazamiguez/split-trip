@@ -119,11 +119,16 @@ val expensesDomainModule = module {
     }
     factory { AddOnResolverFactory() }
     factory<ExpenseCalculatorService> { ExpenseCalculatorServiceImpl() }
-    factory<ExpenseCategoryClassifierService> { ExpenseCategoryClassifierServiceImpl() }
+    single<ExpenseCategoryClassifierService> {
+        ExpenseCategoryClassifierServiceImpl(
+            appConfigService = get<AppConfigService>()
+        )
+    }
     factory<SuggestExpenseCategoryUseCase> {
         SuggestExpenseCategoryUseCaseImpl(
             expenseCategoryClassifierService = get<ExpenseCategoryClassifierService>(),
-            expenseCategoryAiClassifierService = get<ExpenseCategoryAiClassifierService>()
+            expenseCategoryAiClassifierService = get<ExpenseCategoryAiClassifierService>(),
+            userPreferenceRepository = get<UserPreferenceRepository>()
         )
     }
     factory<ExpenseSearchService> { ExpenseSearchServiceImpl() }

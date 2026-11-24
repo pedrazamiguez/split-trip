@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
+import es.pedrazamiguez.splittrip.domain.model.CategoryClassifierRuleConfig
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import kotlinx.coroutines.flow.StateFlow
@@ -45,4 +46,6 @@ class AppConfigServiceImpl(
         appConfigRepository.optionalUpdateCooldownHours
     override val isInitialFetchSettled: StateFlow<Boolean> =
         appConfigRepository.isInitialFetchSettled
+    override val categoryClassifierRules: StateFlow<CategoryClassifierRuleConfig> =
+        appConfigRepository.categoryClassifierRules
 }

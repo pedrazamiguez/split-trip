@@ -2,13 +2,8 @@ package es.pedrazamiguez.splittrip.domain.service.category
 
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
-
-internal data class CategoryKeywordRule(
-    val category: ExpenseCategory,
-    val subcategory: ExpenseSubcategory? = null,
-    val phrases: List<String> = emptyList(),
-    val keywords: List<String> = emptyList()
-)
+import es.pedrazamiguez.splittrip.domain.model.CategoryClassifierRuleConfig
+import es.pedrazamiguez.splittrip.domain.model.CategoryKeywordRule
 
 internal data class CategoryCandidate(
     val category: ExpenseCategory,
@@ -20,4 +15,11 @@ internal data class ScoredCategoryCandidate(
     val baseScore: Int,
     val totalScore: Int,
     val fitsContext: Boolean
+)
+
+internal data class CompiledRuleSnapshot(
+    val sourceConfig: CategoryClassifierRuleConfig,
+    val commonRules: List<CategoryKeywordRule>,
+    val primaryPackByLanguage: Map<String, List<CategoryKeywordRule>>,
+    val englishFallbackRules: List<CategoryKeywordRule>
 )

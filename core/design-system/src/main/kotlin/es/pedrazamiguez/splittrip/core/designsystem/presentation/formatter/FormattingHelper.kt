@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter
 
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.domain.model.CategoryClassifierRuleConfig
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import java.math.BigDecimal
@@ -36,6 +37,8 @@ private object DefaultAppConfigService : AppConfigService {
     override val optionalUpdateVersionCodes: StateFlow<Set<Long>> = MutableStateFlow(emptySet())
     override val optionalUpdateCooldownHours: StateFlow<Long> = MutableStateFlow(24L)
     override val isInitialFetchSettled: StateFlow<Boolean> = MutableStateFlow(true)
+    override val categoryClassifierRules: StateFlow<CategoryClassifierRuleConfig> =
+        MutableStateFlow(CategoryClassifierRuleConfig.EMPTY)
 }
 
 /**

@@ -111,6 +111,55 @@ SplitTrip parameters are organized into 5 functional groups:
 | `ad_interstitial_action_frequency` | `NUMBER` | `2` | Number of completed transactional actions before displaying an interstitial ad. |
 | `ad_interstitial_min_interval_seconds` | `NUMBER` | `90` | Minimum cooldown duration in seconds between interstitial ad impressions. |
 
+### Group 7: Expenses
+*Expense classification rules and automated categorization overrides.*
+
+| Parameter Key | Value Type | Default Value | Description |
+|---|---|---|---|
+| `category_classifier_rules_json` | `JSON` | `{"version":1,"merge_mode":"merge","common":[],"languages":{"en":[...],"es":[...]},"disabled_terms":{...}}` | JSON rules for overriding, adding, or disabling expense auto-categorization keywords by language. |
+
+#### `category_classifier_rules_json` Schema & Semantics
+
+```json
+{
+  "version": 1,
+  "merge_mode": "merge",
+  "common": [
+    {
+      "category": "FOOD",
+      "subcategory": "DELIVERY",
+      "phrases": ["Uber Eats"],
+      "keywords": ["rappi", "pedidosya"]
+    }
+  ],
+  "languages": {
+    "es": [
+      {
+        "category": "FOOD",
+        "subcategory": "GROCERIES_SUPERMARKET",
+        "phrases": ["BonPreu Super"]
+      }
+    ],
+    "fr": [
+      {
+        "category": "FOOD",
+        "subcategory": "CAFE_BREAKFAST",
+        "keywords": ["boulangerie"]
+      }
+    ]
+  },
+  "disabled_terms": {
+    "common": [],
+    "es": ["bote"],
+    "*": []
+  }
+}
+```
+
+- **`merge_mode`**: `"merge"` (default) appends Remote Config rules onto bundled `:domain` packs; `"replace"` replaces any pack (`common` or a specific language code) whose Remote Config array is non-empty while falling back to bundled defaults for omitted or empty packs.
+- **`common` & `languages`**: Keys in `languages` are normalized via `AppLanguage.resolveBaseLanguageCode` (e.g., `es-AN` / `es-ES` → `es`, `fr-FR` → `fr`). Unknown categories/subcategories or mismatched `(category, subcategory)` pairs are safely ignored.
+- **`disabled_terms`**: Suppresses bundled false-positive phrases or keywords per pack (`common`, `<lang>`) or across all bundled packs (`*`).
+
 ---
 
 ## 🛠️ 3. Operational CLI & Makefile Tooling

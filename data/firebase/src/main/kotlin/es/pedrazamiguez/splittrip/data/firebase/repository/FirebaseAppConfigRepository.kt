@@ -7,6 +7,8 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigException
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import es.pedrazamiguez.splittrip.data.firebase.R
+import es.pedrazamiguez.splittrip.data.firebase.config.CategoryClassifierRulesParser
+import es.pedrazamiguez.splittrip.domain.model.CategoryClassifierRuleConfig
 import es.pedrazamiguez.splittrip.domain.model.DeveloperInfo
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import kotlin.coroutines.cancellation.CancellationException
@@ -129,6 +131,10 @@ class FirebaseAppConfigRepository(
     private val _isInitialFetchSettled = MutableStateFlow(false)
     override val isInitialFetchSettled: StateFlow<Boolean> = _isInitialFetchSettled.asStateFlow()
 
+    private val _categoryClassifierRules = MutableStateFlow(CategoryClassifierRuleConfig.EMPTY)
+    override val categoryClassifierRules: StateFlow<CategoryClassifierRuleConfig> =
+        _categoryClassifierRules.asStateFlow()
+
     init {
         remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
         updateFlowsFromConfig()
@@ -176,6 +182,9 @@ class FirebaseAppConfigRepository(
         updateTierLimitFlows()
         updateOcrAndDeveloperFlows()
         updateAppUpdateFlows()
+        _categoryClassifierRules.value = CategoryClassifierRulesParser.parse(
+            remoteConfig.getString(KEY_CATEGORY_CLASSIFIER_RULES_JSON)
+        )
     }
 
     private fun updateGeneralConfigFlows() {
@@ -401,6 +410,7 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_AUTO_FORCE_PATCH_UPDATES = true
         private val DEFAULT_OPTIONAL_UPDATE_VERSION_CODES: Set<Long> = emptySet()
         private const val DEFAULT_OPTIONAL_UPDATE_COOLDOWN_HOURS = 24L
+        private const val KEY_CATEGORY_CLASSIFIER_RULES_JSON = "category_classifier_rules_json"
 
         private const val LANG_EN = "en"
         private const val LANG_ES = "es"

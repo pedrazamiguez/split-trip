@@ -3,6 +3,10 @@ package es.pedrazamiguez.splittrip.data.firebase.config
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import es.pedrazamiguez.splittrip.data.firebase.repository.FirebaseAppConfigRepository
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.model.CategoryKeywordRule
+import es.pedrazamiguez.splittrip.domain.model.CategoryRuleMergeMode
 import java.io.File
 import java.nio.charset.StandardCharsets
 import javax.xml.parsers.DocumentBuilderFactory
@@ -305,6 +309,50 @@ class RemoteConfigTemplateConsistencyTest {
         assertEquals("", optionalCodes?.defaultValue)
         assertEquals("NUMBER", cooldownHours?.valueType)
         assertEquals("24", cooldownHours?.defaultValue)
+    }
+
+    @Test
+    fun `category_classifier_rules_json exists with JSON valueType and valid merge default`() {
+        val param = templateParameters["category_classifier_rules_json"]
+        assertTrue(param != null, "Parameter 'category_classifier_rules_json' should exist in template")
+        assertEquals("JSON", param?.valueType)
+
+        val rawValue = param?.defaultValue.orEmpty()
+        val defaultJson = JsonParser.parseString(rawValue).asJsonObject
+        assertEquals(1, defaultJson.get("version")?.asInt)
+        assertEquals("merge", defaultJson.get("merge_mode")?.asString)
+        assertTrue(defaultJson.get("common")?.isJsonArray == true)
+        assertTrue(defaultJson.get("languages")?.isJsonObject == true)
+        val languages = defaultJson.getAsJsonObject("languages")
+        assertTrue(languages.has("en") && languages.get("en").isJsonArray)
+        assertTrue(languages.has("es") && languages.get("es").isJsonArray)
+        assertTrue(defaultJson.get("disabled_terms")?.isJsonObject == true)
+        val disabledTerms = defaultJson.getAsJsonObject("disabled_terms")
+        assertTrue(disabledTerms.has("common") && disabledTerms.has("en"))
+        assertTrue(disabledTerms.has("es") && disabledTerms.has("*"))
+
+        val parsed = CategoryClassifierRulesParser.parse(rawValue)
+        assertEquals(CategoryRuleMergeMode.MERGE, parsed.mergeMode)
+        assertEquals(
+            listOf(
+                CategoryKeywordRule(
+                    category = ExpenseCategory.HEALTH_PERSONAL_CARE,
+                    subcategory = ExpenseSubcategory.DOCTOR_DENTIST,
+                    keywords = listOf("filling")
+                )
+            ),
+            parsed.languageRules["en"]
+        )
+        assertEquals(
+            listOf(
+                CategoryKeywordRule(
+                    category = ExpenseCategory.HEALTH_PERSONAL_CARE,
+                    subcategory = ExpenseSubcategory.DOCTOR_DENTIST,
+                    keywords = listOf("empaste")
+                )
+            ),
+            parsed.languageRules["es"]
+        )
     }
 
     private fun resolveProjectRoot(): File {
