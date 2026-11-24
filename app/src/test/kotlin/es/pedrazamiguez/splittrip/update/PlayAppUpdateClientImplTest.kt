@@ -56,13 +56,17 @@ class PlayAppUpdateClientImplTest {
         versionCode: Int = 1_001_000,
         immediateAllowed: Boolean = true,
         flexibleAllowed: Boolean = false,
-        installStatus: Int = InstallStatus.UNKNOWN
+        installStatus: Int = InstallStatus.UNKNOWN,
+        bytesDownloaded: Long = 0L,
+        totalBytesToDownload: Long = 0L
     ): AppUpdateInfo = mockk {
         every { updateAvailability() } returns availability
         every { availableVersionCode() } returns versionCode
         every { isUpdateTypeAllowed(AppUpdateType.IMMEDIATE) } returns immediateAllowed
         every { isUpdateTypeAllowed(AppUpdateType.FLEXIBLE) } returns flexibleAllowed
         every { installStatus() } returns installStatus
+        every { bytesDownloaded() } returns bytesDownloaded
+        every { totalBytesToDownload() } returns totalBytesToDownload
     }
 
     @Test
@@ -82,7 +86,9 @@ class PlayAppUpdateClientImplTest {
                     versionCode = 1_002_003,
                     immediateAllowed = true,
                     flexibleAllowed = true,
-                    installStatus = InstallStatus.DOWNLOADED
+                    installStatus = InstallStatus.DOWNLOADED,
+                    bytesDownloaded = 2_500_000L,
+                    totalBytesToDownload = 10_000_000L
                 )
                 every { appUpdateManager.appUpdateInfo } returns completedTask(info)
 
@@ -95,7 +101,9 @@ class PlayAppUpdateClientImplTest {
                         availableVersionCode = 1_002_003L,
                         isImmediateAllowed = true,
                         isFlexibleAllowed = true,
-                        installStatus = PlayInstallStatus.DOWNLOADED
+                        installStatus = PlayInstallStatus.DOWNLOADED,
+                        bytesDownloaded = 2_500_000L,
+                        totalBytesToDownload = 10_000_000L
                     ),
                     result.getOrThrow()
                 )
@@ -201,41 +209,43 @@ class PlayAppUpdateClientImplTest {
         }
 
     @Test
-    fun `registerInstallStatusListener maps every Play InstallStatus and unregisters on cleanup`() {
+    fun `registerInstallStatusListener maps InstallStatus with progress and unregisters`() {
         val listenerSlot = slot<InstallStateUpdatedListener>()
         every { appUpdateManager.registerListener(capture(listenerSlot)) } just runs
         every { appUpdateManager.unregisterListener(any()) } just runs
 
-        val observed = mutableListOf<PlayInstallStatus>()
+        val observed = mutableListOf<PlayInstallState>()
         val unregister = client.registerInstallStatusListener { observed.add(it) }
 
-        val statuses = listOf(
-            InstallStatus.PENDING,
-            InstallStatus.DOWNLOADING,
-            InstallStatus.DOWNLOADED,
-            InstallStatus.INSTALLING,
-            InstallStatus.INSTALLED,
-            InstallStatus.FAILED,
-            InstallStatus.CANCELED,
-            InstallStatus.UNKNOWN
+        val inputs = listOf(
+            Triple(InstallStatus.PENDING, 0L, 0L),
+            Triple(InstallStatus.DOWNLOADING, 4_000_000L, 10_000_000L),
+            Triple(InstallStatus.DOWNLOADED, 10_000_000L, 10_000_000L),
+            Triple(InstallStatus.INSTALLING, 10_000_000L, 10_000_000L),
+            Triple(InstallStatus.INSTALLED, 10_000_000L, 10_000_000L),
+            Triple(InstallStatus.FAILED, 4_000_000L, 10_000_000L),
+            Triple(InstallStatus.CANCELED, 4_000_000L, 10_000_000L),
+            Triple(InstallStatus.UNKNOWN, 0L, 0L)
         )
-        statuses.forEach { playStatus ->
+        inputs.forEach { (playStatus, downloaded, total) ->
             val state = mockk<InstallState> {
                 every { installStatus() } returns playStatus
+                every { bytesDownloaded() } returns downloaded
+                every { totalBytesToDownload() } returns total
             }
             listenerSlot.captured.onStateUpdate(state)
         }
 
         assertEquals(
             listOf(
-                PlayInstallStatus.PENDING,
-                PlayInstallStatus.DOWNLOADING,
-                PlayInstallStatus.DOWNLOADED,
-                PlayInstallStatus.INSTALLING,
-                PlayInstallStatus.INSTALLED,
-                PlayInstallStatus.FAILED,
-                PlayInstallStatus.CANCELED,
-                PlayInstallStatus.UNKNOWN
+                PlayInstallState(PlayInstallStatus.PENDING, 0L, 0L),
+                PlayInstallState(PlayInstallStatus.DOWNLOADING, 4_000_000L, 10_000_000L),
+                PlayInstallState(PlayInstallStatus.DOWNLOADED, 10_000_000L, 10_000_000L),
+                PlayInstallState(PlayInstallStatus.INSTALLING, 10_000_000L, 10_000_000L),
+                PlayInstallState(PlayInstallStatus.INSTALLED, 10_000_000L, 10_000_000L),
+                PlayInstallState(PlayInstallStatus.FAILED, 4_000_000L, 10_000_000L),
+                PlayInstallState(PlayInstallStatus.CANCELED, 4_000_000L, 10_000_000L),
+                PlayInstallState(PlayInstallStatus.UNKNOWN, 0L, 0L)
             ),
             observed
         )

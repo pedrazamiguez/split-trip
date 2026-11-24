@@ -72,13 +72,17 @@ class AppUpdateCoordinatorImplTest {
         availableVersionCode: Long = AVAILABLE_VERSION_CODE,
         isImmediateAllowed: Boolean = true,
         isFlexibleAllowed: Boolean = true,
-        installStatus: PlayInstallStatus = PlayInstallStatus.UNKNOWN
+        installStatus: PlayInstallStatus = PlayInstallStatus.UNKNOWN,
+        bytesDownloaded: Long = 0L,
+        totalBytesToDownload: Long = 0L
     ) = PlayUpdateSnapshot(
         availability = availability,
         availableVersionCode = availableVersionCode,
         isImmediateAllowed = isImmediateAllowed,
         isFlexibleAllowed = isFlexibleAllowed,
-        installStatus = installStatus
+        installStatus = installStatus,
+        bytesDownloaded = bytesDownloaded,
+        totalBytesToDownload = totalBytesToDownload
     )
 
     @Test
@@ -309,27 +313,24 @@ class AppUpdateCoordinatorImplTest {
 
     @Test
     fun `transitions to FlexibleUpdateReadyToInstall on DOWNLOADED and resets on INSTALLED FAILED CANCELED`() {
-        val listenerSlot = slot<(PlayInstallStatus) -> Unit>()
+        val listenerSlot = slot<(PlayInstallState) -> Unit>()
         val unregisterMock: () -> Unit = mockk(relaxed = true)
         every { playAppUpdateClient.registerInstallStatusListener(capture(listenerSlot)) } returns unregisterMock
         val coordinator = createCoordinator()
 
         val unregister = coordinator.registerInstallListener()
-        listenerSlot.captured(PlayInstallStatus.DOWNLOADING)
-        assertEquals(AppUpdateUiState.Idle, coordinator.uiState.value)
-
-        listenerSlot.captured(PlayInstallStatus.DOWNLOADED)
+        listenerSlot.captured(PlayInstallState(PlayInstallStatus.DOWNLOADED))
         assertEquals(AppUpdateUiState.FlexibleUpdateReadyToInstall, coordinator.uiState.value)
 
-        listenerSlot.captured(PlayInstallStatus.INSTALLED)
+        listenerSlot.captured(PlayInstallState(PlayInstallStatus.INSTALLED))
         assertEquals(AppUpdateUiState.Idle, coordinator.uiState.value)
 
-        listenerSlot.captured(PlayInstallStatus.DOWNLOADED)
-        listenerSlot.captured(PlayInstallStatus.FAILED)
+        listenerSlot.captured(PlayInstallState(PlayInstallStatus.DOWNLOADED))
+        listenerSlot.captured(PlayInstallState(PlayInstallStatus.FAILED))
         assertEquals(AppUpdateUiState.Idle, coordinator.uiState.value)
 
-        listenerSlot.captured(PlayInstallStatus.DOWNLOADED)
-        listenerSlot.captured(PlayInstallStatus.CANCELED)
+        listenerSlot.captured(PlayInstallState(PlayInstallStatus.DOWNLOADED))
+        listenerSlot.captured(PlayInstallState(PlayInstallStatus.CANCELED))
         assertEquals(AppUpdateUiState.Idle, coordinator.uiState.value)
 
         unregister()
@@ -504,14 +505,14 @@ class AppUpdateCoordinatorImplTest {
 
     @Test
     fun `completeFlexibleUpdate delegates to client and resets to Idle on failure`() = runTest {
-        val listenerSlot = slot<(PlayInstallStatus) -> Unit>()
+        val listenerSlot = slot<(PlayInstallState) -> Unit>()
         every { playAppUpdateClient.registerInstallStatusListener(capture(listenerSlot)) } returns {}
         coEvery { playAppUpdateClient.completeFlexibleUpdate() } returns
             Result.failure(IllegalStateException("Install error"))
         val coordinator = createCoordinator()
 
         coordinator.registerInstallListener()
-        listenerSlot.captured(PlayInstallStatus.DOWNLOADED)
+        listenerSlot.captured(PlayInstallState(PlayInstallStatus.DOWNLOADED))
         assertEquals(AppUpdateUiState.FlexibleUpdateReadyToInstall, coordinator.uiState.value)
 
         coordinator.completeFlexibleUpdate()

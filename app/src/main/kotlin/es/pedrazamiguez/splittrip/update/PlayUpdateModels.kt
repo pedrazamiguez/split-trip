@@ -5,7 +5,15 @@ data class PlayUpdateSnapshot(
     val availableVersionCode: Long,
     val isImmediateAllowed: Boolean,
     val isFlexibleAllowed: Boolean,
-    val installStatus: PlayInstallStatus
+    val installStatus: PlayInstallStatus,
+    val bytesDownloaded: Long = 0L,
+    val totalBytesToDownload: Long = 0L
+)
+
+data class PlayInstallState(
+    val status: PlayInstallStatus,
+    val bytesDownloaded: Long = 0L,
+    val totalBytesToDownload: Long = 0L
 )
 
 enum class PlayUpdateAvailability {

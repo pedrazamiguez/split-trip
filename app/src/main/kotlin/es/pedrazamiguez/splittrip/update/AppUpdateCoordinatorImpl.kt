@@ -41,6 +41,7 @@ class AppUpdateCoordinatorImpl(
     private val _actions = MutableSharedFlow<AppUpdateCoordinatorAction>(extraBufferCapacity = 1)
     override val actions: SharedFlow<AppUpdateCoordinatorAction> = _actions.asSharedFlow()
 
+    @Volatile
     private var activeFlowType: PlayUpdateFlowType? = null
     private var activeAvailableVersionCode: Long? = null
     private var isForcedRetryInFlight: Boolean = false
@@ -48,8 +49,11 @@ class AppUpdateCoordinatorImpl(
     private var hasLoggedEnvironmentSkip: Boolean = false
 
     override fun registerInstallListener(): () -> Unit =
-        playAppUpdateClient.registerInstallStatusListener { status ->
-            _uiState.value = reduceUiStateForInstallStatus(_uiState.value, status)
+        playAppUpdateClient.registerInstallStatusListener { state ->
+            if (activeFlowType == PlayUpdateFlowType.IMMEDIATE) {
+                return@registerInstallStatusListener
+            }
+            _uiState.value = reduceUiStateForInstallState(_uiState.value, state)
         }
 
     override suspend fun checkForUpdates(
@@ -94,10 +98,10 @@ class AppUpdateCoordinatorImpl(
                         launcher = launcher,
                         fallbackToPlayStoreOnError = false
                     )
-                snapshot.installStatus == PlayInstallStatus.DOWNLOADED ->
-                    _uiState.value = AppUpdateUiState.FlexibleUpdateReadyToInstall
                 _uiState.value is AppUpdateUiState.ForcedUpdateBlocked ->
                     handleForcedGateOnResume(snapshot)
+                else ->
+                    _uiState.value = reduceUiStateForInstallState(_uiState.value, snapshot.toInstallState())
             }
         }
     }
@@ -166,11 +170,6 @@ class AppUpdateCoordinatorImpl(
         allowOptionalPrompt: Boolean,
         launcher: ActivityResultLauncher<IntentSenderRequest>
     ) {
-        if (snapshot.installStatus == PlayInstallStatus.DOWNLOADED) {
-            _uiState.value = AppUpdateUiState.FlexibleUpdateReadyToInstall
-            if (allowOptionalPrompt) hasCompletedOptionalCheckThisSession = true
-            return
-        }
         if (snapshot.availability == PlayUpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
             launchImmediateFlow(
                 versionCode = snapshot.availableVersionCode,
@@ -179,6 +178,12 @@ class AppUpdateCoordinatorImpl(
             )
             return
         }
+        if (snapshot.installStatus.isActiveFlexibleStatus()) {
+            _uiState.value = reduceUiStateForInstallState(_uiState.value, snapshot.toInstallState())
+            if (allowOptionalPrompt) hasCompletedOptionalCheckThisSession = true
+            return
+        }
+        _uiState.value = reduceUiStateForInstallState(_uiState.value, snapshot.toInstallState())
         if (snapshot.availability != PlayUpdateAvailability.UPDATE_AVAILABLE) {
             if (allowOptionalPrompt) hasCompletedOptionalCheckThisSession = true
             return
@@ -372,21 +377,43 @@ private suspend fun handleFlexibleActivityResult(
     }
 }
 
-private fun reduceUiStateForInstallStatus(
+private fun PlayUpdateSnapshot.toInstallState(): PlayInstallState = PlayInstallState(
+    status = installStatus,
+    bytesDownloaded = bytesDownloaded,
+    totalBytesToDownload = totalBytesToDownload
+)
+
+private fun PlayInstallStatus.isActiveFlexibleStatus(): Boolean =
+    this == PlayInstallStatus.PENDING ||
+        this == PlayInstallStatus.DOWNLOADING ||
+        this == PlayInstallStatus.DOWNLOADED
+
+private fun reduceUiStateForInstallState(
     currentState: AppUpdateUiState,
-    status: PlayInstallStatus
-): AppUpdateUiState = when (status) {
-    PlayInstallStatus.DOWNLOADED -> if (currentState !is AppUpdateUiState.ForcedUpdateBlocked) {
-        AppUpdateUiState.FlexibleUpdateReadyToInstall
-    } else {
-        currentState
+    state: PlayInstallState
+): AppUpdateUiState {
+    if (currentState is AppUpdateUiState.ForcedUpdateBlocked) {
+        return currentState
     }
-    PlayInstallStatus.INSTALLED,
-    PlayInstallStatus.FAILED,
-    PlayInstallStatus.CANCELED -> if (currentState is AppUpdateUiState.FlexibleUpdateReadyToInstall) {
-        AppUpdateUiState.Idle
-    } else {
-        currentState
+    return when (state.status) {
+        PlayInstallStatus.PENDING -> AppUpdateUiState.FlexibleUpdateDownloading()
+        PlayInstallStatus.DOWNLOADING -> AppUpdateUiState.FlexibleUpdateDownloading(
+            bytesDownloaded = state.bytesDownloaded.coerceAtLeast(0L),
+            totalBytesToDownload = state.totalBytesToDownload.coerceAtLeast(0L)
+        )
+        PlayInstallStatus.DOWNLOADED -> AppUpdateUiState.FlexibleUpdateReadyToInstall
+        PlayInstallStatus.INSTALLED,
+        PlayInstallStatus.FAILED,
+        PlayInstallStatus.CANCELED -> if (currentState.isFlexibleOverlayState()) {
+            AppUpdateUiState.Idle
+        } else {
+            currentState
+        }
+        PlayInstallStatus.INSTALLING,
+        PlayInstallStatus.UNKNOWN -> currentState
     }
-    else -> currentState
 }
+
+private fun AppUpdateUiState.isFlexibleOverlayState(): Boolean =
+    this is AppUpdateUiState.FlexibleUpdateDownloading ||
+        this is AppUpdateUiState.FlexibleUpdateReadyToInstall

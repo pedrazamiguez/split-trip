@@ -10,5 +10,5 @@ interface PlayAppUpdateClient {
         launcher: ActivityResultLauncher<IntentSenderRequest>
     ): Result<Boolean>
     suspend fun completeFlexibleUpdate(): Result<Unit>
-    fun registerInstallStatusListener(listener: (PlayInstallStatus) -> Unit): () -> Unit
+    fun registerInstallStatusListener(listener: (PlayInstallState) -> Unit): () -> Unit
 }
