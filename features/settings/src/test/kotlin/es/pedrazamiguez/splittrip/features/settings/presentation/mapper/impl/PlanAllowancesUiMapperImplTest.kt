@@ -222,9 +222,10 @@ class PlanAllowancesUiMapperImplTest {
             tier = SubscriptionTier.PRO,
             isGatingEnabled = true,
             usedScans = 12,
-            aiMonthlyLimit = 100,
+            aiMonthlyLimit = null,
             usedUploads = 18,
             mediaMonthlyFreeLimit = 5,
+            usedExports = 0,
             ownedGroupsUsed = 4,
             maxOwnedGroups = null,
             maxMembersPerGroup = 20,
@@ -241,27 +242,30 @@ class PlanAllowancesUiMapperImplTest {
         assertEquals(UiText.StringResource(R.string.plan_allowances_badge_pro), result.tierBadge)
 
         val aiQuota = result.quotas[0]
-        assertEquals(AllowanceUsageStatus.HEALTHY, aiQuota.status)
+        assertEquals(AllowanceUsageStatus.UNLIMITED, aiQuota.status)
         assertTrue(aiQuota.showProgressBar)
-        assertEquals(0.1200f, aiQuota.progressFraction, 0.0001f)
+        assertEquals(0.4235f, aiQuota.progressFraction, 0.0001f)
+        assertEquals(UiText.StringResource(R.string.plan_allowances_usage_unlimited, "12"), aiQuota.usageText)
 
         val mediaQuota = result.quotas[1]
         assertEquals(AllowanceUsageStatus.UNLIMITED, mediaQuota.status)
-        assertFalse(mediaQuota.showProgressBar)
-        assertEquals(0f, mediaQuota.progressFraction, 0.0001f)
+        assertTrue(mediaQuota.showProgressBar)
+        assertEquals(0.4696f, mediaQuota.progressFraction, 0.0001f)
         assertEquals(UiText.StringResource(R.string.plan_allowances_usage_unlimited, "18"), mediaQuota.usageText)
         assertEquals(UiText.StringResource(R.string.plan_allowances_badge_unlimited), mediaQuota.statusBadge)
 
         val reportExportQuota = result.quotas[2]
         assertEquals(AllowanceQuotaType.REPORT_EXPORTS, reportExportQuota.type)
         assertEquals(AllowanceUsageStatus.UNLIMITED, reportExportQuota.status)
-        assertFalse(reportExportQuota.showProgressBar)
+        assertTrue(reportExportQuota.showProgressBar)
+        assertEquals(0f, reportExportQuota.progressFraction, 0.0001f)
+        assertEquals(UiText.StringResource(R.string.plan_allowances_usage_unlimited, "0"), reportExportQuota.usageText)
         assertEquals(UiText.StringResource(R.string.plan_allowances_badge_unlimited), reportExportQuota.statusBadge)
 
         val groupsQuota = result.quotas[3]
         assertEquals(AllowanceUsageStatus.UNLIMITED, groupsQuota.status)
-        assertFalse(groupsQuota.showProgressBar)
-        assertEquals(0f, groupsQuota.progressFraction, 0.0001f)
+        assertTrue(groupsQuota.showProgressBar)
+        assertEquals(0.2667f, groupsQuota.progressFraction, 0.0001f)
         assertEquals(UiText.StringResource(R.string.plan_allowances_usage_unlimited, "4"), groupsQuota.usageText)
         assertEquals(UiText.StringResource(R.string.plan_allowances_badge_unlimited), groupsQuota.statusBadge)
 
@@ -279,7 +283,41 @@ class PlanAllowancesUiMapperImplTest {
     }
 
     @Test
-    fun `map ungated state hides progress bars, uses UNLIMITED status, unlocks ad-free, and hides CTA`() {
+    fun `map unlimited quota with zero usage shows progress bar at zero fraction`() {
+        val allowances = createAllowances(
+            tier = SubscriptionTier.PRO,
+            isGatingEnabled = true,
+            usedUploads = 0
+        )
+
+        val result = mapper.map(allowances)
+
+        val mediaQuota = result.quotas[1]
+        assertEquals(AllowanceUsageStatus.UNLIMITED, mediaQuota.status)
+        assertTrue(mediaQuota.showProgressBar)
+        assertEquals(0f, mediaQuota.progressFraction, 0.0001f)
+    }
+
+    @Test
+    fun `map unlimited quota with positive usage bounds progress fraction strictly below 1f`() {
+        val allowances = createAllowances(
+            tier = SubscriptionTier.PRO,
+            isGatingEnabled = true,
+            usedScans = 1000,
+            aiMonthlyLimit = null
+        )
+
+        val result = mapper.map(allowances)
+
+        val aiQuota = result.quotas[0]
+        assertEquals(AllowanceUsageStatus.UNLIMITED, aiQuota.status)
+        assertTrue(aiQuota.showProgressBar)
+        assertTrue(aiQuota.progressFraction > 0f && aiQuota.progressFraction < 1f)
+        assertTrue(aiQuota.progressFraction in 0.59f..0.60f)
+    }
+
+    @Test
+    fun `map ungated state shows progress bars, uses UNLIMITED status, unlocks ad-free, and hides CTA`() {
         val allowances = createAllowances(
             tier = SubscriptionTier.FREE,
             isGatingEnabled = false,
@@ -304,8 +342,8 @@ class PlanAllowancesUiMapperImplTest {
 
         result.quotas.forEach { quota ->
             assertEquals(AllowanceUsageStatus.UNLIMITED, quota.status)
-            assertFalse(quota.showProgressBar)
-            assertEquals(0f, quota.progressFraction, 0.0001f)
+            assertTrue(quota.showProgressBar)
+            assertTrue(quota.progressFraction >= 0f && quota.progressFraction < 1f)
             assertEquals(UiText.StringResource(R.string.plan_allowances_badge_unlimited), quota.statusBadge)
         }
 
@@ -365,7 +403,7 @@ class PlanAllowancesUiMapperImplTest {
         tier: SubscriptionTier = SubscriptionTier.FREE,
         isGatingEnabled: Boolean = true,
         usedScans: Int = 1,
-        aiMonthlyLimit: Int = 3,
+        aiMonthlyLimit: Int? = 3,
         usedUploads: Int = 2,
         mediaMonthlyFreeLimit: Int = 5,
         usedExports: Int = 0,

@@ -38,7 +38,7 @@ internal fun PlanAllowancesTierCard(
     val elevation = if (isProTier) PRO_CARD_ELEVATION else MaterialTheme.spacing.None
     val badgeStyle = when {
         !isGatingEnabled -> PassportTagStyle.SUCCESS
-        isProTier -> PassportTagStyle.PRIMARY
+        isProTier -> PassportTagStyle.TERTIARY
         else -> PassportTagStyle.NEUTRAL
     }
 

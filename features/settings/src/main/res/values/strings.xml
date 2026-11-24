@@ -362,7 +362,7 @@
     <string name="plan_allowances_quota_owned_groups_title">Owned Groups</string>
     <string name="plan_allowances_quota_owned_groups_subtitle">Groups created by you</string>
     <string name="plan_allowances_usage_fraction">%1$s / %2$s</string>
-    <string name="plan_allowances_usage_unlimited">%1$s used · Unlimited</string>
+    <string name="plan_allowances_usage_unlimited">%1$s / unlimited</string>
     <plurals name="plan_allowances_status_remaining">
         <item quantity="one">%1$s left</item>
         <item quantity="other">%1$s left</item>

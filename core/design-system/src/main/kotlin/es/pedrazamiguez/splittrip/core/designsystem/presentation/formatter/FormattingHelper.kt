@@ -20,7 +20,7 @@ private object DefaultAppConfigService : AppConfigService {
     override val maxMembersPerGroupFree: StateFlow<Int> = MutableStateFlow(4)
     override val maxMembersPerGroupPro: StateFlow<Int> = MutableStateFlow(20)
     override val aiReceiptMonthlyLimitFree: StateFlow<Int> = MutableStateFlow(0)
-    override val aiReceiptMonthlyLimitPro: StateFlow<Int> = MutableStateFlow(100)
+    override val aiReceiptMonthlyLimitPro: StateFlow<Int> = MutableStateFlow(-1)
     override val manualReceiptMonthlyLimitFree: StateFlow<Int> = MutableStateFlow(5)
     override val reportExportMonthlyLimitFree: StateFlow<Int> = MutableStateFlow(1)
     override val maxSubunitsPerGroupFree: StateFlow<Int> = MutableStateFlow(1)

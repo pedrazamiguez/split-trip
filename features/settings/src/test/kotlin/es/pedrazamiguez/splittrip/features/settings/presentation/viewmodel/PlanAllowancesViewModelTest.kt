@@ -101,7 +101,7 @@ class PlanAllowancesViewModelTest {
             createPlanAllowances(
                 tier = SubscriptionTier.PRO,
                 usedScans = 12,
-                aiMonthlyLimit = 100,
+                aiMonthlyLimit = null,
                 usedUploads = 18,
                 maxOwnedGroups = null,
                 maxMembersPerGroup = 20,
@@ -114,8 +114,11 @@ class PlanAllowancesViewModelTest {
         val state = viewModel.uiState.value
         assertTrue(state.isProTier)
         assertFalse(state.showUpgradeCta)
+        assertEquals(AllowanceUsageStatus.UNLIMITED, state.quotas[0].status)
+        assertTrue(state.quotas[0].showProgressBar)
         assertEquals(AllowanceUsageStatus.UNLIMITED, state.quotas[1].status)
         assertEquals(AllowanceUsageStatus.UNLIMITED, state.quotas[3].status)
+        assertTrue(state.quotas.all { it.showProgressBar })
 
         collectJob.cancel()
     }
@@ -166,7 +169,7 @@ class PlanAllowancesViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isGatingEnabled)
         assertFalse(state.showUpgradeCta)
-        assertTrue(state.quotas.all { it.status == AllowanceUsageStatus.UNLIMITED && !it.showProgressBar })
+        assertTrue(state.quotas.all { it.status == AllowanceUsageStatus.UNLIMITED && it.showProgressBar })
 
         collectJob.cancel()
     }
@@ -186,7 +189,7 @@ class PlanAllowancesViewModelTest {
         tier: SubscriptionTier = SubscriptionTier.FREE,
         isGatingEnabled: Boolean = true,
         usedScans: Int = 1,
-        aiMonthlyLimit: Int = 3,
+        aiMonthlyLimit: Int? = 3,
         usedUploads: Int = 2,
         mediaMonthlyFreeLimit: Int = 5,
         usedExports: Int = 0,

@@ -161,6 +161,7 @@ class FeatureGateServicePlanAllowancesTest {
             )
             monthlyScanCount.value = 12
             monthlyManualReceiptCount.value = 18
+            aiReceiptMonthlyLimitPro.value = -1
 
             val allowances = service.observePlanAllowances().first()
 
@@ -171,7 +172,8 @@ class FeatureGateServicePlanAllowancesTest {
             assertEquals(null, allowances.ownedGroupsRemaining)
             assertEquals(20, allowances.maxMembersPerGroup)
             assertEquals(null, allowances.maxSubunitsPerGroup)
-            assertEquals(100, allowances.aiReceiptQuota.monthlyLimit)
+            assertTrue(allowances.aiReceiptQuota.isUnlimited)
+            assertEquals(null, allowances.aiReceiptQuota.monthlyLimit)
             assertTrue(allowances.mediaUploadQuota.isUnlimited)
             assertEquals(null, allowances.mediaUploadQuota.monthlyLimit)
             assertTrue(allowances.reportExportQuota.isUnlimited)
@@ -236,6 +238,22 @@ class FeatureGateServicePlanAllowancesTest {
 
         assertEquals(50, allowances.maxOwnedGroups)
         assertEquals(48, allowances.ownedGroupsRemaining)
+    }
+
+    @Test
+    fun `observePlanAllowances exposes positive aiReceiptMonthlyLimitPro override when configured`() = runTest {
+        coEvery { authenticationService.isAnonymous() } returns false
+        every { authenticationService.currentUserId() } returns "pro-user"
+        every { userRepository.observeCurrentUserProfile() } returns flowOf(
+            User(userId = "pro-user", email = "pro@test.com", tier = SubscriptionTier.PRO)
+        )
+        aiReceiptMonthlyLimitPro.value = 100
+        monthlyScanCount.value = 12
+
+        val allowances = service.observePlanAllowances().first()
+
+        assertFalse(allowances.aiReceiptQuota.isUnlimited)
+        assertEquals(100, allowances.aiReceiptQuota.monthlyLimit)
     }
 
     @Test
