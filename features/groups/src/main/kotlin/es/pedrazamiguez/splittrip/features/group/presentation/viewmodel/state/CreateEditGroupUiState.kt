@@ -71,6 +71,7 @@ data class CreateEditGroupUiState(
             if (selectedMembers.any { it.isPending }) {
                 listOf(
                     CreateEditGroupStep.INFO,
+                    CreateEditGroupStep.CONTEXT,
                     CreateEditGroupStep.CURRENCY,
                     CreateEditGroupStep.MEMBERS,
                     CreateEditGroupStep.UNREGISTERED_NAMES,
@@ -80,6 +81,7 @@ data class CreateEditGroupUiState(
             } else {
                 listOf(
                     CreateEditGroupStep.INFO,
+                    CreateEditGroupStep.CONTEXT,
                     CreateEditGroupStep.CURRENCY,
                     CreateEditGroupStep.MEMBERS,
                     CreateEditGroupStep.IMAGE,
@@ -106,6 +108,7 @@ data class CreateEditGroupUiState(
             if (isCreationBlocked) return false
             return when (currentStep) {
                 CreateEditGroupStep.INFO -> groupName.isNotBlank() && isNameValid
+                CreateEditGroupStep.CONTEXT -> true
                 CreateEditGroupStep.CURRENCY -> selectedCurrency != null
                 CreateEditGroupStep.MEMBERS -> true
                 CreateEditGroupStep.UNREGISTERED_NAMES -> true

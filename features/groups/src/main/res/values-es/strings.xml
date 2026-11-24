@@ -11,6 +11,7 @@
 
     <!-- Wizard navigation -->
     <string name="group_wizard_step_info">Info</string>
+    <string name="group_wizard_step_context">Tipo</string>
     <string name="group_wizard_step_currency">Moneda</string>
     <string name="group_wizard_step_members">Miembros</string>
     <string name="group_wizard_step_review">Resumen</string>
@@ -40,7 +41,8 @@
     <string name="group_extra_currency_clear">Limpiar</string>
     <string name="group_extra_currencies_overflow">+%d</string>
     <string name="group_field_description">Descripción</string>
-    <string name="group_field_context">Tipo de grupo</string>
+    <string name="group_context_step_title">Tipo de grupo</string>
+    <string name="group_context_step_subtitle">Elige para qué es este grupo para que SplitTrip destaque las categorías más relevantes.</string>
     <string name="group_field_created_at">Creado el</string>
     <string name="group_error_name_empty">¡Ey! Tu grupo necesita un nombre</string>
     <string name="group_error_creation_failed">¡Ups! Algo falló al crear el grupo. Inténtalo de nuevo</string>
@@ -210,6 +212,12 @@
     <!-- Step Info Bottom Sheet -->
     <string name="group_step_info_info_title">Datos del grupo</string>
     <string name="group_step_info_info_description">Introduce un nombre claro para el grupo (como \"Piso compartido\" o \"Vacaciones de verano\") y una breve descripción opcional.\n\nEl nombre del grupo es obligatorio; la descripción es opcional y empieza vacía. Puedes cambiar ambos más adelante desde Editar grupo.</string>
+    <string name="group_step_info_context_title">Tipo de grupo</string>
+    <string name="group_step_info_context_description">Elige la opción que mejor se adapte a tu grupo. Esto ajusta las categorías de gasto sugeridas y las etiquetas del grupo, aunque todas las categorías siguen disponibles en cualquier momento.\n\nPuedes cambiar el tipo de grupo más adelante desde Editar grupo.</string>
+    <string name="group_step_info_context_item_travel_title">Viaje</string>
+    <string name="group_step_info_context_item_travel_description">Ideal para vacaciones, escapadas y desplazamientos compartidos. Destaca categorías de viaje como vuelos, alojamiento, transporte y excursiones.</string>
+    <string name="group_step_info_context_item_everyday_title">Día a día</string>
+    <string name="group_step_info_context_item_everyday_description">Ideal para pisos compartidos, parejas, familias y gastos recurrentes del hogar. Destaca categorías diarias como hogar, recibos, compra y salud.</string>
     <string name="group_step_info_currency_title">Monedas</string>
     <string name="group_step_info_currency_description">Elige la moneda principal que se usará para los totales y balances del grupo (preseleccionada con tu moneda por defecto).\n\nTambién puedes añadir otras monedas opcionales si el grupo va a registrar gastos o retiradas en más de una divisa. Al editar un grupo, las monedas que ya se usan en transacciones existentes permanecen bloqueadas para mantener la precisión del historial.</string>
     <string name="group_step_info_members_title">Miembros del grupo</string>
@@ -219,5 +227,5 @@
     <string name="group_step_info_image_title">Foto de portada</string>
     <string name="group_step_info_image_description">Personaliza tu grupo con una foto de portada desde tu cámara o galería para que destaque en tu lista de grupos.\n\nEste paso es opcional y empieza vacío. Las subidas de portada usan el cupo mensual de tu cuenta o son ilimitadas con SplitTrip Pro. Puedes añadir, cambiar o quitar la portada cuando quieras más adelante.</string>
     <string name="group_step_info_review_title">Resumen y confirmación</string>
-    <string name="group_step_info_review_description">Comprueba el nombre del grupo, la descripción, las monedas, los miembros y la foto de portada antes de guardar.\n\n¿Quieres cambiar algo ahora? Toca cualquier paso completado en la barra superior o pulsa \"Atrás\". También puedes editar los datos, monedas y miembros del grupo más adelante desde su pantalla de detalle.</string>
+    <string name="group_step_info_review_description">Comprueba el nombre del grupo, la descripción, el tipo de grupo, las monedas, los miembros y la foto de portada antes de guardar.\n\n¿Quieres cambiar algo ahora? Toca cualquier paso completado en la barra superior o pulsa \"Atrás\". También puedes editar los datos, el tipo de grupo, las monedas y los miembros más adelante desde su pantalla de detalle.</string>
 </resources>

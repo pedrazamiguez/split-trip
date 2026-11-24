@@ -29,6 +29,22 @@ enum class CreateEditGroupStep(
         infoDescriptionRes = R.string.group_step_info_info_description
     ),
 
+    /** Group type / context selection (Trip vs Everyday). */
+    CONTEXT(
+        infoTitleRes = R.string.group_step_info_context_title,
+        infoDescriptionRes = R.string.group_step_info_context_description,
+        infoItems = persistentListOf(
+            WizardStepInfoItem(
+                titleRes = R.string.group_step_info_context_item_travel_title,
+                descriptionRes = R.string.group_step_info_context_item_travel_description
+            ),
+            WizardStepInfoItem(
+                titleRes = R.string.group_step_info_context_item_everyday_title,
+                descriptionRes = R.string.group_step_info_context_item_everyday_description
+            )
+        )
+    ),
+
     /** Primary currency selection + optional extra currencies. */
     CURRENCY(
         infoTitleRes = R.string.group_step_info_currency_title,

@@ -160,6 +160,8 @@ class EverydayGroupCopyTest {
             "faq_answer_1",
             "group_context_travel",
             "group_context_travel_description",
+            "group_step_info_context_item_travel_description",
+            "group_step_info_context_item_travel_title",
             "onboarding_step_trips_description",
             "subscriptions_tier_free_description"
         )

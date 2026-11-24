@@ -51,14 +51,14 @@ class CreateEditGroupNavigationEventHandlerImplTest {
     inner class NextStep {
 
         @Test
-        fun `NextStep advances to next step from INFO`() = runTest(testDispatcher) {
+        fun `NextStep advances to CONTEXT step from INFO`() = runTest(testDispatcher) {
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = CreateEditGroupUiState(currentStep = CreateEditGroupStep.INFO)
 
             handler.handleNavigation(CreateEditGroupUiEvent.NextStep)
             advanceUntilIdle()
 
-            assertEquals(CreateEditGroupStep.CURRENCY, stateFlow.value.currentStep)
+            assertEquals(CreateEditGroupStep.CONTEXT, stateFlow.value.currentStep)
         }
 
         @Test
@@ -89,9 +89,20 @@ class CreateEditGroupNavigationEventHandlerImplTest {
     inner class PreviousStep {
 
         @Test
-        fun `PreviousStep from CURRENCY goes back to INFO`() = runTest(testDispatcher) {
+        fun `PreviousStep from CURRENCY goes back to CONTEXT`() = runTest(testDispatcher) {
             handler.bind(stateFlow, actionsFlow, this)
             stateFlow.value = CreateEditGroupUiState(currentStep = CreateEditGroupStep.CURRENCY)
+
+            handler.handleNavigation(CreateEditGroupUiEvent.PreviousStep)
+            advanceUntilIdle()
+
+            assertEquals(CreateEditGroupStep.CONTEXT, stateFlow.value.currentStep)
+        }
+
+        @Test
+        fun `PreviousStep from CONTEXT goes back to INFO`() = runTest(testDispatcher) {
+            handler.bind(stateFlow, actionsFlow, this)
+            stateFlow.value = CreateEditGroupUiState(currentStep = CreateEditGroupStep.CONTEXT)
 
             handler.handleNavigation(CreateEditGroupUiEvent.PreviousStep)
             advanceUntilIdle()
@@ -225,8 +236,8 @@ class CreateEditGroupNavigationEventHandlerImplTest {
                 groupId = "group-123"
             )
 
-            // Jump from INFO (index 0) to REVIEW (index 4)
-            handler.handleNavigation(CreateEditGroupUiEvent.JumpToStep(4))
+            // Jump from INFO (index 0) to REVIEW (last index)
+            handler.handleNavigation(CreateEditGroupUiEvent.JumpToStep(stateFlow.value.steps.lastIndex))
 
             assertEquals(CreateEditGroupStep.REVIEW, stateFlow.value.currentStep)
         }
