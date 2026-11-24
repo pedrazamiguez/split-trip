@@ -1,11 +1,11 @@
 # AGENTS.md — SplitTrip
 
 > [!IMPORTANT]
-> **Source of Truth:** This file is the single source of truth for architectural constraints and agent behaviors.
+> **Source of Truth:** Single source of truth for architectural constraints and agent behaviors. See `.github/copilot-instructions.md` for the full technical manifesto.
 
 ## Project Overview
 
-Kotlin Android app (Jetpack Compose, Material 3) for shared travel expenses. Multi-module Clean Architecture, offline-first with Room + Firestore, Koin DI. See `.github/copilot-instructions.md` for the full technical manifesto.
+Kotlin Android app (Jetpack Compose, Material 3) for shared travel expenses. Multi-module Clean Architecture, offline-first with Room + Firestore, Koin DI.
 
 ## Module Structure & Visibility Rules
 
@@ -36,452 +36,177 @@ Kotlin Android app (Jetpack Compose, Material 3) for shared travel expenses. Mul
 
 ## Architecture Constraints
 
-## ViewModel Rules
-
+### ViewModel Rules
 ViewModels ONLY inject UseCases, Mappers, and Domain Services. NEVER inject `Context`, `LocaleProvider`, Repositories, or other ViewModels.
+- **Semantic Navigation Intent:** ViewModels and feature event handlers MUST ONLY emit high-level semantic UI actions (`UiAction.NavigateToSubscriptions`, `UiAction.RequestUpgrade`, `UiAction.NavigateBack`). ViewModels must NEVER evaluate session/auth state or cross-cutting preconditions to resolve global route strings (e.g., `Routes.SETTINGS_ACCOUNT_STATUS` vs `Routes.SETTINGS_SUBSCRIPTIONS`). Routing decisions belong to `:core:design-system:navigation` orchestrators (e.g., `UpgradeNavigator`), `*Feature` composables, or `ScreenUiProvider`s.
+- **Domain Service Injection Scope:** ViewModels must NOT inject domain services merely for presentation or routing decisions. Delegate routing branches to a navigator or observe a domain UseCase.
+- **Anti-Duplication of Cross-Cutting Logic:** Forbid repetitive state branching (e.g., `isAnonymous()` or subscription checks) across feature modules; centralize in `:core:design-system` navigators or `:domain` services/use cases.
+- **Baseline Principle:** *Linter and Konsist compliance is a necessary baseline, NOT proof of clean architecture.*
 
-- **Semantic Navigation Intent:** ViewModels and feature event handlers MUST ONLY emit high-level semantic UI actions (e.g., `UiAction.NavigateToSubscriptions`, `UiAction.RequestUpgrade`, `UiAction.NavigateBack`). ViewModels must NEVER evaluate session/auth state or cross-cutting preconditions to resolve global route strings (e.g. deciding between `Routes.SETTINGS_ACCOUNT_STATUS` and `Routes.SETTINGS_SUBSCRIPTIONS`). Routing decisions belong to navigation orchestrators in `:core:design-system:navigation` (such as `UpgradeNavigator`) or feature-level orchestrators (`*Feature` composables and `ScreenUiProvider`s).
-- **Domain Service Injection Scope:** ViewModels must NOT inject domain services merely to make presentation or routing decisions. If session state or conditional branching is needed for routing, delegate to a dedicated navigator or observe a domain UseCase.
-- **Anti-Duplication of Cross-Cutting Logic:** Forbid repetitive state branching (e.g., checking `isAnonymous()` or subscription status) across multiple feature modules. Cross-cutting conditional logic must be centralized in `:core:design-system` navigators or `:domain` services/use cases.
-- **Baseline Principle:** *Linter and Konsist compliance is a necessary baseline, NOT proof of clean architecture.* Passing static checks does not justify pragmatic workarounds, duplicated conditional logic, or routing leakage into ViewModels.
-
-## MVI Triad
-
+### MVI Triad
 Every screen gets `UiState` (ImmutableList), `UiEvent` (sealed interface), and `UiAction` (side-effects via Channel/SharedFlow). Never put one-shot events in `UiState`.
 
-## Formatting in Mappers
+### Formatting in Mappers
+Formatting belongs in Mappers (which receive `LocaleProvider`), never ViewModels or Domain Services. Domain Services must NEVER contain `formatShareForInput()`, `formatAmountForDisplay()`, or any human-readable formatting method.
 
-Formatting belongs in Mappers, not ViewModels and not Domain Services. Mappers receive `LocaleProvider`. Domain Services must NEVER contain `formatShareForInput()`, `formatAmountForDisplay()`, or any human-readable formatting method.
+### Big Decimal Math
+All decimal math MUST use `BigDecimal` with explicit scale + `RoundingMode`. `Double` or `Float` are strictly prohibited. Firestore boundary serialization must use `String` (`toPlainString()` / `toBigDecimalOrNull()`).
 
-## Big Decimal Math
+### File Size Limit
+Production source files MUST NOT exceed 600 lines (enforced by Konsist). Extract handlers/delegates/components before adding code; always check with `wc -l`.
 
-All decimal math MUST use `BigDecimal` with explicit scale + RoundingMode. `Double` or `Float` are strictly prohibited to prevent IEEE 754 precision loss. Boundary serialization at the Firestore document layer must use `String` (via `toPlainString()` / `toBigDecimalOrNull()`).
+### Enum Centralization
+Domain enums (`AppLanguage`, `Currency`) are the single source of truth for parsing codes, fallback defaults, and validation. Never duplicate string-matching or locale fallback checks in presentation layers.
 
-## File Size Limit
+### Single Composable Per File
+Every production Kotlin file under feature `presentation` packages containing a `@Composable` function must define exactly one top-level `@Composable` function whose name matches the file name.
 
-Production source files MUST NOT exceed 600 lines. This is enforced by a Konsist architecture test. Extract handlers/delegates/components before adding code if approaching the limit. Always check file sizes with `wc -l`.
+### Feature vs Screen Pattern
+`*Feature` (orchestrator composable) holds ViewModel, collects flows, and consumes `LocalTopPillController`/`LocalTabNavController`. `*Screen` is stateless — takes `UiState` + event lambdas only.
 
-## Enum Centralization
+### No Fully Qualified Names (No FQN)
+NEVER use Fully Qualified Names inside production or test code (e.g., `java.util.UUID.randomUUID()`, `com.google.firebase.Timestamp.now()`, `kotlinx.coroutines.Dispatchers.IO`). Always import all types at the top of the file. Enforced by Konsist rule `Production code must not use Fully Qualified Names (FQN) for classes or objects`.
 
-Domain enums (e.g., `AppLanguage`, `Currency`) must be the single source of truth for parsing codes, fallback defaults, and validation. Never duplicate string-matching logic or locale fallback checks in ViewModels or presentation layers.
-
-## Single Composable Per File
-
-Every production Kotlin file under feature `presentation` packages that contains a `@Composable` function must define exactly one top-level `@Composable` function. The name of the Composable function must match the file name.
-
-## Feature vs Screen Pattern
-
-`*Feature` (orchestrator composable) holds ViewModel, collects flows, consumes `LocalTopPillController`/`LocalTabNavController`. `*Screen` is stateless — takes `UiState` + event lambdas only.
-
-## No Fully Qualified Names (No FQN)
-
-NEVER use Fully Qualified Names (FQN) inside production or test source code (e.g., `java.util.UUID.randomUUID()`, `com.google.firebase.Timestamp.now()`, `kotlinx.coroutines.Dispatchers.IO`).
-ALWAYS import all classes, interfaces, objects, and types at the top of the file using standard `import` statements. This is strictly enforced by Konsist rule `Production code must not use Fully Qualified Names (FQN) for classes or objects`.
-
-# UI Clicks & Navigation — Debouncing
+## UI Clicks & Navigation — Debouncing
 
 > [!IMPORTANT]
 > **Always use debounced modifiers for UI navigation or expensive side-effects.**
 
-To prevent multiple rapid navigations or API calls from "double tapping" UI components:
-- NEVER use standard `Modifier.clickable` or `Modifier.combinedClickable` directly on list items, action buttons, or FABs.
-- ALWAYS use `Modifier.debouncedClickable` and `Modifier.debouncedCombinedClickable` from `es.pedrazamiguez.splittrip.core.designsystem.extension.ModifierExtensions`.
+NEVER use standard `Modifier.clickable` or `Modifier.combinedClickable` directly on list items, action buttons, or FABs—rapid double taps can push duplicate routes onto the back stack. ALWAYS use `Modifier.debouncedClickable` and `Modifier.debouncedCombinedClickable` from `es.pedrazamiguez.splittrip.core.designsystem.extension.ModifierExtensions`.
 
-**Why:** Compose can process multiple touch events before a navigation transition completes, pushing the destination route multiple times onto the back stack.
-
-### Examples
-
-```kotlin
-// ❌ BAD
-Modifier.clickable { navigate() }
-
-// ✅ GOOD
-Modifier.debouncedClickable { navigate() }
-```
-
-```kotlin
-// ❌ BAD
-Modifier.combinedClickable(
-    onClick = { navigateToDetail() },
-    onLongClick = { showOptions() }
-)
-
-// ✅ GOOD
-Modifier.debouncedCombinedClickable(
-    onClick = { navigateToDetail() },
-    onLongClick = { showOptions() }
-)
-```
-
-# Read-Only Chips, Pills & PassportTags — Semantic Colors Only
+## Read-Only Chips, Pills & PassportTags — Semantic Colors Only
 
 > [!IMPORTANT]
 > **NEVER use `secondaryContainer` (`#97F0FF`), `secondaryFixed`, `secondaryFixedDim` (`#4FD8EB`), or bright cyan on read-only chips, pills, badges, or `PassportTag`s.**
 
-In Horizon Narrative, bright cyan (`secondaryFixedDim` / `secondaryContainer`) is **strictly reserved** for interactive selected controls (such as a selected `PassportChip` filter/selection stamp). Using it on non-interactive badges or `PassportTag`s makes read-only UI look clickable/selected and visually jarring.
-
-- **For all read-only metadata, status, quota, or allowance pills:** ALWAYS use `PassportTag` (or `PassportTagDefaults.colors(...)`) with semantic `PassportTagStyle`s:
-  - `PassportTagStyle.INFO` — informational values, feature allowances, unlimited states (soft sky blue)
-  - `PassportTagStyle.SUCCESS` — healthy quotas, confirmed/settled/completed states (soft sage green)
-  - `PassportTagStyle.WARNING` — approaching limits, awaiting confirmation (soft warm amber)
-  - `PassportTagStyle.ERROR` — exhausted limits, disputed/failed states (soft rose red)
-  - `PassportTagStyle.NEUTRAL` — dates, locked perks, secondary metadata (`surfaceContainerHigh`)
-  - `PassportTagStyle.PRIMARY` — strong brand emphasis (e.g., category/Pro tier header badge)
-- **Never** map `HEALTHY`, `INCLUDED`, or `INFO` badges to `MaterialTheme.colorScheme.secondaryContainer` or `PassportTagStyle.SECONDARY`.
+Bright cyan is strictly reserved for interactive selected controls (e.g., selected `PassportChip`). For all read-only metadata, status, quota, or allowance pills, ALWAYS use `PassportTag` (or `PassportTagDefaults.colors(...)`) with semantic styles:
+- `PassportTagStyle.INFO` (soft sky blue) — informational values, allowances, unlimited states
+- `PassportTagStyle.SUCCESS` (soft sage green) — healthy quotas, confirmed/settled/completed states
+- `PassportTagStyle.WARNING` (soft warm amber) — approaching limits, awaiting confirmation
+- `PassportTagStyle.ERROR` (soft rose red) — exhausted limits, disputed/failed states
+- `PassportTagStyle.NEUTRAL` (`surfaceContainerHigh`) — dates, locked perks, secondary metadata
+- `PassportTagStyle.PRIMARY` — strong brand emphasis (e.g., category/Pro tier header badge)
+Never map `HEALTHY`, `INCLUDED`, or `INFO` badges to `MaterialTheme.colorScheme.secondaryContainer` or `PassportTagStyle.SECONDARY`.
 
 ## Navigation
 
 - Routes are `const val` in `core/design-system/.../Routes.kt`.
-- **Paywall & Upgrade Routing:** Paywall navigation outside `:features:settings` must strictly route through `UpgradeNavigator` (`upgradeNavigator.navigateToUpgrade(navController)` or `upgradeNavigator.getUpgradeDestination()`), and never reference `Routes.SETTINGS_SUBSCRIPTIONS` directly.
-- Two nav controllers: `LocalRootNavController` (full-screen flows) and `LocalTabNavController` (within bottom tabs). Consumed via CompositionLocals in Feature layer only.
-- Notifications: `LocalTopPillController` — top pill notifications replace snackbars. Never use `Scaffold(snackbarHost=...)` in features.
-- **Tab features** register as bottom tabs via `NavigationProvider` interface + Koin `bind`. See `GroupsNavigationProviderImpl`.
-- **Non-tab features** (write-flows and sub-flows extracted into standalone modules) implement `TabGraphContributor` instead. The host tab's `NavigationProvider` injects all `TabGraphContributor` instances via Koin and calls `contributeGraph(builder)` inside `buildGraph()`. This allows runtime route merging without compile-time cross-feature dependencies. See `ContributionsTabGraphContributorImpl`, `WithdrawalsTabGraphContributorImpl`, `SubunitsTabGraphContributorImpl`, `SettlementsTabGraphContributorImpl`.
-- Tab screens define TopBar/MainAction via `ScreenUiProvider` implementations (not their own Scaffold).
+- **Paywall & Upgrade Routing:** Outside `:features:settings`, route exclusively via `UpgradeNavigator` (`navigateToUpgrade(navController)` / `getUpgradeDestination()`), never `Routes.SETTINGS_SUBSCRIPTIONS` directly.
+- Two nav controllers: `LocalRootNavController` (full-screen) and `LocalTabNavController` (within tabs), consumed in Feature layer only.
+- Notifications: `LocalTopPillController` replaces snackbars; never use `Scaffold(snackbarHost=...)` in features.
+- **Tab features** register via `NavigationProvider` + Koin `bind` (see `GroupsNavigationProviderImpl`).
+- **Non-tab features** implement `TabGraphContributor`; the host tab's `NavigationProvider` injects all `TabGraphContributor` instances via Koin and calls `contributeGraph(builder)` inside `buildGraph()` (e.g., `ContributionsTabGraphContributorImpl`, `WithdrawalsTabGraphContributorImpl`, `SubunitsTabGraphContributorImpl`, `SettlementsTabGraphContributorImpl`).
+- Tab screens define TopBar/`MainAction` via `ScreenUiProvider` implementations (not their own `Scaffold`).
 
 ## Offline-First Data Flow
 
-### 🛑 The "True Offline" Write Protocol
-
-We use a strictly **"Offline-First"** approach. The UI only observes the Local DB. The Cloud is a replication target, not the source of truth for the UI.
-1. **Local ID Generation:** NEVER let Firestore generate the ID. ALWAYS generate a `UUID` locally.
-2. **Local Metadata Generation:** Generate `createdAt = System.currentTimeMillis()` locally.
-3. **Repository Write Order:** Save to Room (Local) FIRST -> Launch Background Job -> Sync to Cloud (Upsert).
-
-**Critical: Subcollection Cleanup on Deletion**
-Firestore does **NOT** auto-delete subcollections when a parent document is deleted. If a real-time listener watches a subcollection, you **MUST** delete subcollection documents **BEFORE** the parent document.
-
-
-1. **Read:** UI observes Room Flow only. Repository subscribes to Firestore snapshots via `onStart` and reconciles Room using `@Transaction` upsert + selective delete.
-2. **Write:** Save to Room first (instant UI update), then `syncScope.launch { cloudDataSource.upsert(...) }`.
-3. **IDs:** Always generate `UUID` locally — never use Firestore `.add()`.
-4. **Cloud subscriptions:** Track as `Job` and cancel before re-launching to prevent duplicate listeners. See `GroupRepositoryImpl`, `ExpenseRepositoryImpl`.
-5. **Inject `CoroutineDispatcher`** (default `Dispatchers.IO`) for testability.
+### The "True Offline" Write Protocol
+UI observes Room Flow only; Cloud is a replication target, never the UI source of truth.
+1. **Local ID & Metadata:** Generate `UUID` and `createdAt = System.currentTimeMillis()` locally; never use Firestore `.add()`.
+2. **Read & Reconcile:** Observe Room Flow; subscribe to Firestore snapshots via `onStart`, track subscription `Job`s (cancel before re-launching, see `GroupRepositoryImpl`, `ExpenseRepositoryImpl`), and reconcile Room via `@Transaction` upsert + selective delete.
+3. **Write Order:** Save to Room first (instant UI update), then launch background sync (`syncScope.launch`) using an injected `CoroutineDispatcher` (default `Dispatchers.IO`).
+4. **Subcollection Cleanup on Deletion:** Firestore does NOT auto-delete subcollections when a parent document is deleted. Delete subcollection documents **BEFORE** the parent document.
 
 ### Reusable Sync Delegates (MANDATORY for new repositories)
-
-All offline-first coordination patterns are encapsulated in reusable utility functions in `es.pedrazamiguez.splittrip.data.sync` (`:data` module, `internal` visibility). **New repositories MUST use these delegates** instead of duplicating boilerplate.
+Encapsulated in `es.pedrazamiguez.splittrip.data.sync` (`:data`, `internal`):
 
 | Delegate | Purpose |
 |---|---|
-| `KeyedSubscriptionTracker` | Manages keyed cloud subscription `Job`s. One active listener per key. Use for group-keyed repos. |
-| `subscribeAndReconcile<T>()` | Cloud Flow → reconcile local → confirm PENDING_SYNC items. Replaces manual `subscribeToCloudChanges()` + `confirmPendingSyncXxx()`. |
-| `syncCreateToCloud()` | Background sync: cloud write → `SYNCED` / `SYNC_FAILED`. Use for create + update methods. |
-| `syncDeletionToCloud()` | Background sync: cloud delete. Always queues (Firestore SDK guarantees write ordering). |
+| `KeyedSubscriptionTracker` | Manages keyed cloud subscription `Job`s (one active listener per key). |
+| `subscribeAndReconcile<T>()` | Cloud Flow → reconcile local → confirm `PENDING_SYNC` items. |
+| `syncCreateToCloud()` | Background sync: cloud write → `SYNCED` / `SYNC_FAILED` (create + update). |
+| `syncDeletionToCloud()` | Background sync: cloud delete (Firestore SDK guarantees write ordering). |
 
-**Reference:** `SubunitRepositoryImpl` (cleanest, all delegates), `CashWithdrawalRepositoryImpl` (mixed with batch ops), `GroupRepositoryImpl` (`subscribeAndReconcile` only).
-**Docs:** See `docs/architecture/patterns/offline-first.md` § "Reusable Sync Delegates" and `docs/architecture/patterns/core-services-catalog.md` § G.
+**Reference:** `SubunitRepositoryImpl` (all delegates), `CashWithdrawalRepositoryImpl` (mixed), `GroupRepositoryImpl` (`subscribeAndReconcile`). See `docs/architecture/patterns/offline-first.md` and `docs/architecture/patterns/core-services-catalog.md` §G.
 
 ## DI Pattern (Koin)
 
-Each feature has a set of modules wired in `app/.../FeatureModuleAggregations.kt`:
-```
-groupsDomainModule + groupsDataModule + groupsUiModule → groupsFeatureModules
-subunitsDomainModule + subunitsDataModule + subunitsUiModule → subunitsFeatureModules
-contributionsDomainModule + contributionsUiModule → contributionsFeatureModules  (no dedicated contributions data module — relies on `ContributionRepository` impl from `balancesDataModule` in :data)
-withdrawalsDomainModule + withdrawalsUiModule → withdrawalsFeatureModules  (no dedicated withdrawals data module — relies on `CashWithdrawalRepository` impl from `balancesDataModule` in :data)
-settlementsUiModule → settlementsFeatureModules  (contributes `SettlementsTabGraphContributorImpl` for the "Tu posición" / "Your position" sub-flow inside Balances tab)
-```
-- **Tab features** UI modules declare: ViewModel, Mapper, `NavigationProvider` (factory + bind), `ScreenUiProvider` (single + bind).
-- **Non-tab features** UI modules declare: ViewModel, Mapper, `TabGraphContributor` (factory + bind). They typically do **not** implement `NavigationProvider` but still register a `ScreenUiProvider` when they need a top bar (e.g. write-flow screens).
-- See `features/groups/.../GroupsUiModule.kt` (tab), `features/contributions/.../ContributionsUiModule.kt` (non-tab), and `features/profile/.../ProfileUiModule.kt` as templates.
+Feature modules are wired in `app/.../FeatureModuleAggregations.kt` (e.g., `groupsDomainModule + groupsDataModule + groupsUiModule → groupsFeatureModules`; `contributions` and `withdrawals` reuse `balancesDataModule`; `settlementsUiModule` contributes `SettlementsTabGraphContributorImpl`).
+- **Tab UI modules:** ViewModel, Mapper, `NavigationProvider` (factory + bind), `ScreenUiProvider` (single + bind) — see `GroupsUiModule.kt`, `ProfileUiModule.kt`.
+- **Non-tab UI modules:** ViewModel, Mapper, `TabGraphContributor` (factory + bind), plus `ScreenUiProvider` if a top bar is needed — see `ContributionsUiModule.kt`.
 
 ## Testing
 
-### Coroutine Testing (CRITICAL - Prevents Flaky Tests)
+### Coroutine Testing (CRITICAL)
+Inject `CoroutineDispatcher` (default `= Dispatchers.IO`) into any class launching background coroutines. In tests, pass the same `StandardTestDispatcher()` to both the class and `runTest(testDispatcher)`, and call `advanceUntilIdle()` before assertions.
 
-When testing classes that launch background coroutines (e.g., Repositories with `syncScope.launch {}`), you **MUST** inject the `CoroutineDispatcher` to ensure deterministic test behavior.
-- Always inject `CoroutineDispatcher` into classes that launch background coroutines.
-- Provide a default (`= Dispatchers.IO`) so production code doesn't need to specify it.
-- Use `StandardTestDispatcher()` in tests and pass it to both the class and `runTest()`.
-- Call `runTest(testDispatcher)` - the dispatcher must match what's used in the class.
-- Call `advanceUntilIdle()` before assertions to ensure background work completes.
-
-
-- **Framework:** Unit tests are primarily JUnit 5 + MockK. Some legacy/Robolectric unit tests still use JUnit 4 and run via the JUnit Vintage engine. Android instrumentation tests use `AndroidJUnit4`.
-- **Assertions:** NEVER use Kotlin's `assert()` — it's a no-op on Android. ALWAYS use JUnit `Assert.assertTrue(...)`, `Assert.assertEquals(...)`, etc.
-- **Repository tests:** Inject `StandardTestDispatcher()` into both the repo and `runTest(testDispatcher)`. Call `advanceUntilIdle()` before assertions. See `data/src/test/.../ContributionRepositoryImplTest.kt`.
-- **ViewModel tests:** Test via `onEvent()` inputs and StateFlow/SharedFlow outputs.
-- **Mapper tests:** Use `LocaleProvider` fakes with fixed `Locale`. See `features/groups/src/test/.../GroupUiMapperImplTest.kt`.
-- **Instrumentation tests:** Compose UI + navigation tests live in `app/src/androidTest/`. Custom `TestRunner` + `TestApp` bypass the production Koin graph. Tests use `KoinApplication` wrapper to inject mocks per-test. See `AppNavHostTest.kt` and `MainScreenTest.kt`.
-- **Instrumentation test pattern:** `AppNavHost` uses `getKoin()` (composable-scoped) instead of `GlobalContext.get()`, so tests can wrap it in `KoinApplication { modules(testModule) }`.
-- **Smoke tests:** Stateless Screen composables (LoginScreen, OnboardingScreen, ProfileScreen) are tested directly with different UiState configurations — no ViewModel or Koin needed. See `app/src/androidTest/.../screens/`.
-- **Shared test helpers:** `FakeNavigationProvider` in `app/src/androidTest/.../helpers/` provides a minimal `NavigationProvider` that renders plain `Text("Content: $label")`, avoiding all feature dependencies.
-- **Reusable test modules:** `TestModules.kt` in `app/src/androidTest/.../di/` provides `createAppNavHostTestModule()` with configurable auth/onboarding flows.
-- Run unit tests: `./gradlew test`
-- Run instrumentation tests: `./gradlew connectedAndroidTest`
-- **CI:** Instrumentation tests run via `.github/workflows/instrumentation-tests.yml` — triggers on `main` push and `workflow_dispatch` (manual). Uses `reactivecircus/android-emulator-runner@v2` with API 34 (configurable, API 31+).
+- **Frameworks:** JUnit 5 + MockK for unit tests (some legacy/Robolectric tests use JUnit 4 via Vintage engine); `AndroidJUnit4` for instrumentation tests.
+- **Assertions:** NEVER use Kotlin `assert()` (no-op on Android). ALWAYS use JUnit `Assert.assertTrue(...)`, `Assert.assertEquals(...)`, etc.
+- **Layer patterns:** Repos (`ContributionRepositoryImplTest.kt`), ViewModels (`onEvent()` + StateFlow/SharedFlow), Mappers (fixed-`Locale` `LocaleProvider` fakes, `GroupUiMapperImplTest.kt`).
+- **Instrumentation (`app/src/androidTest/`):** Custom `TestRunner` + `TestApp` bypass production Koin; `AppNavHost` uses composable-scoped `getKoin()` so tests wrap with `KoinApplication { modules(testModule) }` (see `AppNavHostTest.kt`, `MainScreenTest.kt`, `FakeNavigationProvider`, `TestModules.createAppNavHostTestModule()`). Stateless `*Screen` composables have direct smoke tests in `app/src/androidTest/.../screens/`.
+- **Commands & CI:** `./gradlew test` (unit), `./gradlew connectedAndroidTest` (UI; CI via `.github/workflows/instrumentation-tests.yml` on `main` push / `workflow_dispatch`, API 34).
 
 ## Compose Previews
 
-- Wrap in `PreviewThemeWrapper`. Use `@PreviewLocales` (EN/ES), `@PreviewThemes` (Light/Dark), or `@PreviewComplete` (all 4).
-- Use `MappedPreview` + `*PreviewHelper` in `src/debug` for domain→mapper→UiModel previews.
-- Preview utilities live in `core/design-system/src/debug/.../preview/`.
+Wrap in `PreviewThemeWrapper` with `@PreviewLocales`, `@PreviewThemes`, or `@PreviewComplete`. Use `MappedPreview` + `*PreviewHelper` in `src/debug` (`core/design-system/src/debug/.../preview/`).
 
-## Build & Run
+## Build, Run & Static Analysis
 
-- JDK 21, Android SDK 36, min SDK 26.
-- Place `google-services.json` in `app/`.
-- API keys are Gradle properties read via `providers.gradleProperty()` — they must go in `~/.gradle/gradle.properties` (never `local.properties`, which is only for `sdk.dir`):
-  - Debug builds: `OER_APP_ID_DEBUG=your_key`
-  - Release builds: `OER_APP_ID_RELEASE=your_key` (or set as an environment variable `OER_APP_ID_RELEASE` — env var takes precedence on CI)
-- Version managed in `version.properties` (major.minor.patch + snapshot flag).
-- `./gradlew test` — unit tests. `./gradlew connectedAndroidTest` — UI tests.
-- `make fast-check` — fast incremental quality check (uses Gradle daemon & build cache, ~15–30s).
-- `make check` — full cold quality check (single-pass Gradle execution, mirrors CI, ~1.5–2min).
-
-## Static Analysis & Code Quality
-
-- **Detekt** (code quality/complexity), **Ktlint** (formatting), and **CodeQL** (security) are configured in `build.gradle.kts` for all subprojects.
-- **CPD** (copy-paste detection) uses the `de.aaschmid.cpd` Gradle plugin at root level. Minimum token count: 100. Reports in `build/reports/cpd/`.
-- **JaCoCo** (code coverage) is configured for all subprojects. Per-module reports via `jacocoTestReport`, merged report via `jacocoMergedReport`.
-- **Konsist** (architecture rule enforcement) tests live in `:konsist-tests` module. Enforces naming conventions, dependency rules, and structural patterns from this manifesto.
-- Detekt config lives at `config/detekt/detekt.yml`. Ktlint rules are in `.editorconfig`.
-- Local verification uses `make fast-check` (rapid iterative check) and `make check` (single-pass cold quality gate).
-- CI runs static analysis via `.github/workflows/static-analysis.yml` (ktlint + detekt + CPD) — parallel to and independent of `build-and-test.yml`.
-- JaCoCo and Konsist run in a separate `.github/workflows/coverage-and-architecture.yml` workflow — also independent from `build-and-test.yml`.
-- Detekt uses `ignoreFailures = true` locally; gating is done by GitHub Code Scanning's "Code scanning results" check (only new alerts block PRs).
-- CPD uses `ignoreFailures = true` — duplications are informational, not blocking.
-- Pre-commit hook runs **ktlint only** (fast). Detekt, CPD, JaCoCo, and Konsist run in CI only.
-- New code must not introduce new detekt findings. Formatting must comply with ktlint / `.editorconfig`.
-- See `docs/engineering/quality-and-static-analysis.md` for full details.
+- **Toolchain:** JDK 21, Android SDK 36, min SDK 26; `google-services.json` in `app/`; version in `version.properties`.
+- **API Keys (Gradle properties in `~/.gradle/gradle.properties`, never `local.properties`):** `OER_APP_ID_DEBUG` (debug), `OER_APP_ID_RELEASE` (release, or env var on CI).
+- **Tools:** Detekt (`config/detekt/detekt.yml`, `ignoreFailures = true` locally; Code Scanning blocks new alerts on PRs), Ktlint (`.editorconfig`; runs in pre-commit hook), CodeQL, CPD (`de.aaschmid.cpd`, min 100 tokens, `ignoreFailures = true`), JaCoCo (`jacocoTestReport` / `jacocoMergedReport`), Konsist (`:konsist-tests`).
+- **Local & CI Gates:** `make fast-check` (incremental, ~15–30s), `make check` (cold CI parity, ~1.5–2min). CI runs `.github/workflows/static-analysis.yml` (ktlint + detekt + CPD) and `.github/workflows/coverage-and-architecture.yml` (JaCoCo + Konsist). New code must introduce zero detekt findings and comply with ktlint. See `docs/engineering/quality-and-static-analysis.md`.
 
 ## Naming Conventions
 
-### Services
-- **Domain service interfaces:** `*Service` (e.g., `ExpenseValidationService`, `LocalDatabaseCleanerService`)
-- **Data service implementations:** `*ServiceImpl` (e.g., `LocalDatabaseCleanerServiceImpl`)
-- **Calculators/Factories in domain:** use their own suffix (`*Calculator`, `*Factory`) — they are NOT services even when co-located in `domain/service/split/`. Do not rename them to `*Service`.
-- **Domain converter `object`s:** use `*Converter` (e.g., `CurrencyConverter`). These are pure stateless utilities, not services.
-
-### Mappers — Feature Layer (Presentation)
-- All mapper types in `..presentation.mapper..` packages **MUST** follow the `UiMapper` naming pattern to distinguish them from data-layer mappers:
-  - Interfaces and concrete-only classes end with `UiMapper`.
-  - Concrete implementations in the Interface+Impl pattern end with `UiMapperImpl`.
-  - ✅ `AddExpenseUiMapper`, `AddExpenseSplitUiMapper`, `AddExpenseOptionsUiMapper`, `BalancesUiMapper`
-  - ✅ `GroupUiMapperImpl`, `ProfileUiMapperImpl` (implementations of `GroupUiMapper` / `ProfileUiMapper`)
-  - ❌ `AddExpenseSplitMapper`, `AddExpenseOptionsMapper`
-- Two valid structural patterns — pick one per mapper, do not mix:
-  1. **Concrete-only** — a plain `class` with no interface. Preferred when tests instantiate the mapper directly (e.g., `AddExpenseSplitUiMapper`, `AddExpenseOptionsUiMapper`, `ExpenseUiMapper`).
-  2. **Interface + Impl** — when the mapper must be faked/mocked in tests (`GroupUiMapper` → `GroupUiMapperImpl`, `ProfileUiMapper` → `ProfileUiMapperImpl`). The `Impl` lives alongside or in an `impl/` subfolder.
-- Enforced by Konsist: `ArchitectureTest.NamingConventions.presentation layer mappers must end with UiMapper or UiMapperImpl (interfaces vs implementations)`.
-
-### Mappers — Data Layer
-- Data-layer mappers use **top-level extension functions** (not classes):
-  - `:data:firebase` — `*DocumentMapper.kt` (e.g., `fun Expense.toDocument()`)
-  - `:data:local` — `*EntityMapper.kt` (e.g., `fun Expense.toEntity()`)
-  - `:data:remote` — `*DtoMapper.kt` (e.g., `fun CurrencyDto.toDomain()`)
-- This is intentionally different from the class-based feature-layer pattern.
-
-### DI Module Variable Names
-- Variables inside `viewModel { }` and `factory { }` blocks **MUST** use the full class name in camelCase.
-  - ✅ `val addExpenseUiMapper = get<AddExpenseUiMapper>()`
-  - ✅ `val addExpenseOptionsUiMapper = get<AddExpenseOptionsUiMapper>()`
-  - ❌ `val mapper = get()`, `val optionsMapper = get()`
-- Constructor arguments passed to handlers/mappers **MUST** use the full descriptive parameter name that matches the class.
-  - ✅ `addCashWithdrawalUiMapper = cashWithdrawalUiMapper`
-  - ❌ `mapper = cashWithdrawalUiMapper`
+- **Services:** Domain interfaces `*Service` (e.g., `ExpenseValidationService`); data impls `*ServiceImpl` (`LocalDatabaseCleanerServiceImpl`). Calculators/factories keep `*Calculator`/`*Factory`; stateless domain converter `object`s use `*Converter` (`CurrencyConverter`).
+- **Feature Mappers (`..presentation.mapper..`):** Concrete-only classes and interfaces end with `UiMapper` (`AddExpenseUiMapper`); implementations in Interface+Impl end with `UiMapperImpl` (`GroupUiMapperImpl`). Enforced by Konsist (`ArchitectureTest.NamingConventions.presentation layer mappers must end with UiMapper or UiMapperImpl (interfaces vs implementations)`).
+- **Data Mappers:** Top-level extension functions in `*DocumentMapper.kt` (`:data:firebase`), `*EntityMapper.kt` (`:data:local`), `*DtoMapper.kt` (`:data:remote`).
+- **DI Module Names:** Variables inside `viewModel { }` / `factory { }` and constructor args passed to handlers/mappers MUST use full camelCase class names (e.g., `val addExpenseUiMapper = get<AddExpenseUiMapper>()`, `addCashWithdrawalUiMapper = cashWithdrawalUiMapper`, never `val mapper = get()`).
 
 ## Service & Component Catalog (Quick Reference)
 
-> **Full details:** See [`docs/architecture/patterns/core-services-catalog.md`](docs/architecture/patterns/core-services-catalog.md) for complete method signatures, parameters, and "when to use" guidance.
-
-Before creating any new service, utility, formatter, or UI component, **check the catalog first** to avoid duplication.
-
-### Design-System UI Components (`:core:design-system`)
-
-| Category | Components |
-|---|---|
-| **Scaffold & Nav** | `FeatureScaffold`, `ExpressiveFab`, `LargeExpressiveFab`, `MainAction`, `rememberScrollAwareFabVisibility`, `ScrollAwareFabContainer`, `NavigationBarIcon`, `TabGraphContributor` |
-| **Layout** | `ShimmerLoadingList`, `ShimmerItemCard`, `EmptyStateView`, `FlatCard`, `SectionCard`, `AnimatedAmount`, `DeferredLoadingContainer` |
-| **Input** | `StyledOutlinedTextField`, `SearchableChipSelector<T>`, `AsyncSearchableChipSelector<T>` |
-| **Currency** | `CurrencySelectorField`, `CurrencyPickerBottomSheet`, `AmountCurrencyCard`, `CurrencyConversionCard` |
-| **Wizard** | `WizardStepLayout`, `WizardStepIndicator`, `WizardNavigationBar` |
-| **Form** | `GradientButton`, `SecondaryButton`, `DestructiveButton`, `FormErrorBanner`, `FormSubmitButton` |
-| **Chip** | `PassportChip` (interactive), `PassportTag` (read-only semantic) |
-| **Dialog/Sheet** | `DestructiveConfirmationDialog`, `ActionBottomSheet`, `CopyableTextSheet` |
-| **Transitions** | `SharedTransitionSurface`, `LocalSharedTransitionScope`, `LocalAnimatedVisibilityScope` |
-| **Foundation** | `GlassmorphismDefaults`, `Modifier.horizonGlassEffect()` |
-
-### Formatters (`:core:design-system`)
-
-| Formatter | Key Functions |
-|---|---|
-| `NumberFormatter` | `String.formatNumberForDisplay()`, `String.formatRateForDisplay()`, `BigDecimal.formatForDisplay()` |
-| `AmountFormatter` | `formatCurrencyAmount()`, `parseAmountToSmallestUnit()`, `formatAmountWithCurrency()`, `Expense.formatAmount()` |
-| `DateFormatter` | `LocalDateTime.formatShortDate()`, `LocalDateTime.formatMediumDate()` |
-| `FormattingHelper` | Injectable class wrapping all above with `LocaleProvider`. Inject into mappers. |
-
-### Domain Services (`:domain`)
-
-| Service | Responsibility |
-|---|---|
-| `ExpenseCalculatorService` | Cents conversion, proportional amounts, fair distribution, FIFO cash |
-| `AddOnCalculationService` | Add-on resolution, totals, effective amounts, base cost decomposition |
-| `ExchangeRateCalculationService` | Forward/inverse rate conversion, blended rates, string convenience methods |
-| `RemainderDistributionService` | Proportional weight distribution, rescaling (guarantees sum == total) |
-| `ExpenseSplitCalculatorFactory` | Strategy factory → `EqualSplitCalculator`, `ExactSplitCalculator`, `PercentSplitCalculator` |
-| `SubunitAwareSplitService` | Two-level entity + intra-subunit splitting |
-| `SplitPreviewService` | Live preview math for percentage splits (ephemeral, not authoritative) |
-| `SubunitShareDistributionService` | Even/manual subunit share percentage math |
-| `AddOnResolverFactory` | Strategy factory → `ExactAddOnResolver`, `PercentageAddOnResolver` |
-| `ExpenseValidationService` | Title, amount, split, add-on validation |
-| `SubunitValidationService` | Subunit name, members, shares, overlap validation |
-| `ContributionValidationService` | Contribution amount and scope validation |
-| `CashWithdrawalValidationService` | Cash withdrawal field validation |
-| `EmailValidationService` | Pure Kotlin regex email validation |
-| `PasswordValidationService` | Evaluates 5 password complexity rules (8 chars, upper, lower, digit, symbol) |
-| `GroupMembershipService` | Enforces user is a group member before writes |
-| `CurrencyConverter` (object) | Currency conversion, amount parsing, string normalization |
-
-### Data Layer Sync Delegates (`:data` — `internal`)
-
-| Delegate | Purpose |
-|---|---|
-| `KeyedSubscriptionTracker` | Manages keyed cloud subscription `Job`s. One active listener per key. Use for group-keyed repos. |
-| `subscribeAndReconcile<T>()` | Cloud Flow → reconcile local → confirm PENDING_SYNC items. Replaces manual `subscribeToCloudChanges()` + `confirmPendingSyncXxx()`. |
-| `confirmPendingSync()` | PENDING_SYNC → SYNCED verification loop. Called automatically by `subscribeAndReconcile`, also available standalone. |
-| `syncCreateToCloud()` | Background sync: cloud write → `SYNCED` / `SYNC_FAILED`. Use for create + update methods. |
-| `syncDeletionToCloud()` | Background sync: cloud delete. Always queues (Firestore SDK guarantees write ordering). |
+Before creating any new service, formatter, sync delegate, or UI component, **check the full catalog first** to avoid duplication:
+- [`docs/architecture/patterns/core-services-catalog.md`](docs/architecture/patterns/core-services-catalog.md) (complete signatures, parameters, and usage guidance across `:core:design-system`, `:domain`, and `:data`)
+- `splittrip-rag` MCP (`search_project_knowledge`) for fast semantic lookup.
 
 ## AI Agent Behavior Rules (CRITICAL)
 
 ### 🛑 Language Preference (STRICT)
-ALWAYS communicate and write chat responses in **English** when interacting with the user on SplitTrip, regardless of the language used in user prompts, issue descriptions, UI screenshots, or localized app resources.
+ALWAYS communicate and write chat responses in **English** when interacting with the user on SplitTrip, regardless of the language in user prompts, issue descriptions, screenshots, or app resources.
 
 ### 🛑 No Git Operations (STRICT)
-NEVER stage, commit, push, or create PRs autonomously. NEVER execute, propose, suggest, or ask for permission to run `git add`, `git commit`, or `git push`. Git operations are strictly under the user's manual control. `git fetch`, `git checkout`, and `git pull` are allowed for setup/automation (e.g., when running `start-issue`).
+NEVER stage, commit, push, or create PRs autonomously (`git add`, `git commit`, `git push` are strictly under the user's manual control). `git fetch`, `git checkout`, and `git pull` are allowed for setup/automation (e.g., `start-issue`).
 
 ### 🛑 No Manual Conflict Resolution (STRICT)
-NEVER attempt to manually resolve git merge conflicts using file editing tools token-by-token. Resolving conflicts via AI file edits is highly inefficient, error-prone, and wastes token limits. If you encounter git conflicts (e.g., after pulling `develop`), STOP immediately. Do NOT attempt to fix them. Instruct the user to resolve the conflicts locally in their IDE and return to you once they are resolved.
+NEVER manually resolve git merge conflicts with file-editing tools. If conflicts occur (e.g., after pulling `develop`), STOP immediately and instruct the user to resolve them in their IDE.
 
 ## No Pragmatic Patches
 
-No quick hacks, temporary patches, or code that compromises Clean Architecture boundaries. Always write clean, production-ready code.
+No quick hacks, temporary patches, or Clean Architecture compromises. Always write clean, production-ready code.
 
 ## Make Check Gate
 
-Run `make check` locally before declaring any task done, completed, addressed, or accomplished. 0 failures are required. Never leave verification for CI/CD or the user to discover. Do NOT run `make check` or `make fast-check` before modifying code to verify the codebase state. It is redundant because `develop` is always compiling. Run `make check` locally ONLY *after* changes have been made.
-
-### Fast Iteration (`make fast-check`)
-During active development and rapid iteration, run `make fast-check` for fast incremental feedback using the Gradle daemon and build cache (~15–30s):
-```bash
-make fast-check > build.log 2>&1 && echo "Fast check passed" || (echo "Fast check failed. Last 100 lines:" && tail -n 100 build.log)
-```
-
-### Final Validation (`make check`)
-Before completing any task or PR, run `make check` to verify full cold-start CI parity (~1.5–2 min):
-```bash
-make check > build.log 2>&1 && echo "Check passed successfully" || (echo "Check failed. Last 100 lines:" && tail -n 100 build.log)
-```
-
-**CRITICAL (Context Window Optimization):**
-Do not run `make check` or `make fast-check` directly without output redirection, as the massive stdout/stderr will saturate your context window. Always buffer and filter the output as shown above.
+Run `make check` locally before declaring any task done (0 failures required). Do NOT run `make check` or `make fast-check` before modifying code.
+- **Fast iteration:** `make fast-check > build.log 2>&1 && echo "Fast check passed" || (echo "Fast check failed. Last 100 lines:" && tail -n 100 build.log)`
+- **Final validation:** `make check > build.log 2>&1 && echo "Check passed successfully" || (echo "Check failed. Last 100 lines:" && tail -n 100 build.log)`
+Always redirect output as shown so massive logs do not saturate the context window.
 
 ## Commenting Policy
 
-Comment the *why*, never the *what*. Delete redundant comments that merely restate what the code does.
+Comment the *why*, never the *what*. Delete redundant comments.
 
 ## Agent Plan Strict Stop
 
-Whenever a plan-only/planning-focused skill or command explicitly dictates that the task is completed after writing/posting the plan and that no codebase modifications should be performed, this instruction takes absolute precedence. The agent MUST NOT write code, create production files, or execute any modifications under those circumstances.
+When a plan-only skill/command states the task ends after writing/posting the plan with no codebase changes, that instruction takes absolute precedence—do NOT edit or create production files.
 
 ## Multi-Agent Architecture & Phased SDD Pipeline
 
-Feature development follows a 5-phase Specification-Driven Development (SDD) lifecycle with specialized agent personas:
-1. **Specification Agent:** Analyzes briefs, retrieves domain invariants from `docs/domain/`, outputs formal change spec.
-2. **Architect Agent:** Validates module boundaries, UseCase contracts, and MVI state models (`docs/architecture/adrs/0003-clean-architecture.md`).
-3. **Domain Implementer:** Implements pure business logic and unit tests in `:domain` with zero platform dependencies (`docs/architecture/adrs/0002-bigdecimal-math.md`).
-4. **Infra & UI Implementer:** Connects Room persistence, Firestore sync delegates, ViewModels, and stateless Compose screens (`docs/architecture/patterns/offline-first.md`, `docs/architecture/patterns/mvi-and-stateless-screens.md`).
-5. **Auditor / QA Agent:** Verifies Konsist rules, 0 FQN violations, 600-line file limits, and executes `make fast-check` / `make check`.
-
-See `docs/ai/agent-roles-and-taxonomy.md` and `docs/ai/ai-ecosystem.md` for full details.
+Feature development follows a 5-phase SDD lifecycle: (1) **Specification Agent** (`docs/domain/`), (2) **Architect Agent** (`docs/architecture/adrs/0003-clean-architecture.md`), (3) **Domain Implementer** (`:domain`, `docs/architecture/adrs/0002-bigdecimal-math.md`), (4) **Infra & UI Implementer** (`docs/architecture/patterns/offline-first.md`, `mvi-and-stateless-screens.md`), (5) **Auditor / QA Agent** (Konsist, 0 FQN, ≤600 lines, `make check`). See `docs/ai/agent-roles-and-taxonomy.md` and `docs/ai/ai-ecosystem.md`.
 
 ## String Translations & Localization
 
-- **Spanish (`values-es/`):** When adding new string resources (e.g. in `strings.xml`), you MUST always add the corresponding Spanish translations in `values-es/strings.xml`.
-- **Andaluz (`values-es-rAN/`):** `values-es-rAN` is for the **Andalusian (Andaluz / EPA)** dialect, **NEVER** Aragonese.
-- **Auto-generated Strings:** Strings in `values-es-rAN/strings.xml` are **automatically generated on compile** from `values-es/strings.xml` via `generateAndaluzStrings` (`make andaluz`). NEVER create, edit, or modify `values-es-rAN/strings.xml` manually.
+- **Spanish (`values-es/`):** Always add Spanish translations in `values-es/strings.xml` when adding `strings.xml` entries.
+- **Andaluz (`values-es-rAN/`):** Andalusian (Andaluz / EPA) dialect, NEVER Aragonese. Auto-generated on compile via `generateAndaluzStrings` (`make andaluz`) — NEVER edit `values-es-rAN/strings.xml` manually.
 
 ## Workspace Resolution Protocol
 
-Do not prompt the user for full GitHub URLs if they provide an ID (like an issue or PR number).
-You are bound to a local Git workspace. To resolve the target URL:
-1. Infer the repository by checking `.git/config` or running `git remote -v`.
-2. Construct the required `$PR_URL` or `$ISSUE_URL` argument automatically before executing any skill.
+Do not prompt the user for full GitHub URLs when an ID (issue/PR number) is given. Infer the repo from `.git/config` / `git remote -v` and follow `.agents/rules/github-operations.md` (which enforces `gh` CLI for writes and URL verification).
 
 ## Code-Intelligence MCP Tools
 
-When performing structural code queries (finding implementations, call graphs, entity definitions, or dependency analysis), prefer using graph-based MCP tools over raw `grep` or file globbing:
+Prefer graph-based tools over raw `grep`/globbing for structural queries: **codebase-memory-mcp** (call graphs, implementations, impact analysis) and **Graphify** (`.agents/rules/graphify.md` — always-on rule).
 
-- **codebase-memory-mcp** (14 tools) — for structural queries: `get-entity`, `get-call-graph`, `find-implementations`, `impact-analysis`, etc.
-- **Graphify** — for semantic / cross-modal queries and HTML visualization reports.
+## Headroom Context Compression & RTK
 
-This dramatically reduces token consumption (80–99% for structural queries vs. grep/read cycles).
-
-## graphify
-
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
-
-When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
-
-Rules:
-- When graphify-out/graph.json exists, run `graphify query "<question>"` before your first grep, search or source-file read for a codebase question, and put this rule in every subagent prompt that explores code. Read raw files only for lines the graph or an earlier read already located. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. When the answer is under a Markdown heading, `graphify section "<heading>"` prints that section's text, so the .md need not be opened. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
-- A committed graphify-out/graph.json is rewritten whole on every build, so a large diff to it in a pull request is expected. Do not flag it as churn or suggest skipping the graph rebuild or its hooks.
-
-## Headroom Context Compression
-
-This project uses Headroom (`headroom proxy --port 8787`) to compress LLM prompt payloads, tool outputs, and context logs.
-
-Rules:
-- `opencode` sessions run wrapped via Headroom (`headroom wrap opencode`).
-- Output shaping (`HEADROOM_OUTPUT_SHAPER=1`) can be enabled for verbose sessions.
-- Run `headroom learn` after failed or complex sessions to extract failure patterns into `AGENTS.md`.
-
-
-<!-- headroom:rtk-instructions -->
-# RTK (Rust Token Killer) - Token-Optimized Commands
-
-When running shell commands, **always prefix with `rtk`**. This reduces context
-usage by 60-90% with zero behavior change. If rtk has no filter for a command,
-it passes through unchanged — so it is always safe to use.
-
-## Key Commands
-```bash
-# Git (59-80% savings)
-rtk git status          rtk git diff            rtk git log
-
-# Files & Search (60-75% savings)
-rtk ls <path>           rtk read <file>         rtk grep <pattern>
-rtk find <pattern>      rtk diff <file>
-
-# Test (90-99% savings) — shows failures only
-rtk pytest tests/       rtk cargo test          rtk test <cmd>
-
-# Build & Lint (80-90% savings) — shows errors only
-rtk tsc                 rtk lint                rtk cargo build
-rtk prettier --check    rtk mypy                rtk ruff check
-
-# Analysis (70-90% savings)
-rtk err <cmd>           rtk log <file>          rtk json <file>
-rtk summary <cmd>       rtk deps                rtk env
-
-# GitHub (26-87% savings)
-rtk gh pr view <n>      rtk gh run list         rtk gh issue list
-
-# Infrastructure (85% savings)
-rtk docker ps           rtk kubectl get         rtk docker logs <c>
-
-# Package managers (70-90% savings)
-rtk pip list            rtk pnpm install        rtk npm run <script>
-```
-
-## Rules
-- In command chains, prefix each segment: `rtk git add . && rtk git commit -m "msg"`
-- For debugging, use raw command without rtk prefix
-- `rtk proxy <cmd>` runs command without filtering but tracks usage
-<!-- /headroom:rtk-instructions -->
+Sessions use Headroom (`headroom proxy --port 8787`, `headroom wrap opencode`, `HEADROOM_OUTPUT_SHAPER=1`, `headroom learn`) and **RTK** (`.agents/plugins/rtk/rules/AGENTS.md` + `.agents/plugins/rtk/hooks.json` — automatically rewrites shell commands to `rtk` for token savings).

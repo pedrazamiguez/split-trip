@@ -87,4 +87,10 @@ Before presenting the draft, verify:
 
 1. Present the full draft (including the chosen label) to the user for review.
 2. Do NOT create the GitHub issue until the user explicitly approves it.
-3. Once approved, create the GitHub issue on GitHub with ONLY the approved label from the closed list applied, and provide the link to the user.
+3. Once approved, create the GitHub issue on GitHub using `gh issue create` via `run_command` (never invoke `github` MCP `issue_write`) with ONLY the approved label from the closed list applied:
+   ```bash
+   gh issue create --repo pedrazamiguez/split-trip --title "<title>" --label <label> --body-file - <<'EOF'
+   <body...>
+   EOF
+   ```
+   Verify that the command exits with code `0` and stdout contains an actual `https://github.com/pedrazamiguez/split-trip/issues/<number>` URL before sharing the link with the user.

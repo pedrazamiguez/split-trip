@@ -10,7 +10,9 @@ The AI tooling in SplitTrip is organized into distinct, modular layers:
 
 ```
 .agents/
-├── rules/                  → Passive, always-on architectural constraints
+├── hooks.json              → PreToolUse hooks (e.g. github-mcp-guard blocking broken/git-mutating MCP writes)
+├── rules/                  → Passive, always-on constraints (`trigger: always_on`: graphify.md, github-operations.md)
+├── scripts/                → Hook handler scripts (e.g. github-mcp-guard.py)
 └── skills/                 → Active, phase-gated multi-step workflows (e.g. sp-start-issue, sp-scaffold-usecase)
 .opencode/
 ├── commands/               → Slash-command bindings exposed to developer chat interfaces
@@ -45,7 +47,7 @@ SplitTrip leverages several Model Context Protocol (MCP) servers to provide live
 | **`codebase-memory-mcp`** | Knowledge graph discovery, AST symbol navigation (`search_graph`, `trace_path`, `get_code_snippet`) | Architect Agent, Domain Implementer |
 | **`graphify`** | Community detection, dependency graphs, god node identification, architectural blast-radius queries | Architect Agent, Specification Agent |
 | **`splittrip-rag`** | Local semantic & BM25 documentation retrieval (`search_project_knowledge`, `get_doc_section`) | All Agent Personas (Domain, Architect, Spec) |
-| **`github-mcp-server`** | Issue fetching, comment retrieval, pull request reviews, automated status updates | Specification Agent, Auditor / QA Agent |
+| **`github-mcp-server`** | Read-only issue/PR lookups and PR reviews (issue writes route through `gh` CLI; `issue_write` and autonomous git-mutating tools are blocked by `.agents/hooks.json` + `.agents/scripts/github-mcp-guard.py`) | Specification Agent, Auditor / QA Agent |
 | **`firebase-mcp-server`** | Firestore schema introspection, security rule evaluation, cloud resource verification | Infra & UI Implementer |
 | **`StitchMCP`** | UI screen scaffolding, design token synchronization, visual component generation | Infra & UI Implementer |
 | **`sonarqube`** | Quality gate status, code smell detection, security hotspot inspection | Auditor / QA Agent |
