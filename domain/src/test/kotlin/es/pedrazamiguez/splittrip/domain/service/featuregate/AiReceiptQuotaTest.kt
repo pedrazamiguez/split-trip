@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.service.featuregate
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -64,6 +65,30 @@ class AiReceiptQuotaTest {
             isGatingEnabled = false
         )
 
+        assertTrue(quota.isUnlimited)
+        assertNull(quota.remainingScans)
+        assertTrue(quota.canScan)
+        assertFalse(quota.isFreeTrialEligible)
+        assertFalse(quota.requiresUpgrade)
+    }
+
+    @Test
+    fun `pro user with null monthly limit is unlimited, can scan, and does not require upgrade`() {
+        val quota = AiReceiptQuota(usedScans = 150, monthlyLimit = null, isProTier = true)
+
+        assertTrue(quota.isUnlimited)
+        assertNull(quota.remainingScans)
+        assertTrue(quota.canScan)
+        assertFalse(quota.isFreeTrialEligible)
+        assertFalse(quota.requiresUpgrade)
+    }
+
+    @Test
+    fun `pro user with negative monthly limit is unlimited, can scan, and does not require upgrade`() {
+        val quota = AiReceiptQuota(usedScans = 25, monthlyLimit = -1, isProTier = true)
+
+        assertTrue(quota.isUnlimited)
+        assertNull(quota.remainingScans)
         assertTrue(quota.canScan)
         assertFalse(quota.isFreeTrialEligible)
         assertFalse(quota.requiresUpgrade)

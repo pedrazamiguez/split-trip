@@ -103,10 +103,11 @@ internal class FeatureGateServiceImpl(
             userPreferenceRepository.getMonthlyAiReceiptScanCount(yearMonthProvider())
         ) { gatingEnabled, actingTier, freeLimit, proLimit, usedScans ->
             val isPro = actingTier == SubscriptionTier.PRO
-            val monthlyLimit = if (isPro) proLimit else freeLimit
+            val rawLimit = if (isPro) proLimit else freeLimit
+            val effectiveLimit = if (!gatingEnabled || rawLimit < 0) null else rawLimit
             AiReceiptQuota(
                 usedScans = usedScans.coerceAtLeast(0),
-                monthlyLimit = monthlyLimit.coerceAtLeast(0),
+                monthlyLimit = effectiveLimit,
                 isProTier = isPro,
                 isGatingEnabled = gatingEnabled
             )
@@ -390,6 +391,7 @@ private fun isUnlimitedProLimit(
     if (effectiveTier != SubscriptionTier.PRO) return false
     return limit == GatedLimit.MANUAL_RECEIPT_MONTHLY_ATTACHMENTS ||
         limit == GatedLimit.REPORT_EXPORT_MONTHLY_COUNT ||
+        (limit == GatedLimit.AI_RECEIPT_MONTHLY_SCANS && maxAllowed < 0) ||
         (limit == GatedLimit.MAX_OWNED_GROUPS_COUNT && maxAllowed < 0) ||
         (limit == GatedLimit.MAX_SUBUNITS_PER_GROUP && maxAllowed < 0)
 }

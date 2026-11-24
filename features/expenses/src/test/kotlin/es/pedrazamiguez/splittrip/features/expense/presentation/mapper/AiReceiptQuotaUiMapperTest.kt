@@ -147,4 +147,26 @@ class AiReceiptQuotaUiMapperTest {
             message
         )
     }
+
+    @Test
+    fun `mapQuotaToUiModel returns null label and ungated flags for unlimited pro user with null monthlyLimit`() {
+        val result = mapper.mapQuotaToUiModel(
+            AiReceiptQuota(usedScans = 150, monthlyLimit = null, isProTier = true)
+        )
+
+        assertFalse(result.isAiGated)
+        assertFalse(result.isAiProFeature)
+        assertNull(result.remainingScansLabel)
+    }
+
+    @Test
+    fun `mapQuotaToUiModel returns null label and ungated flags for unlimited pro user with negative monthlyLimit`() {
+        val result = mapper.mapQuotaToUiModel(
+            AiReceiptQuota(usedScans = 50, monthlyLimit = -1, isProTier = true)
+        )
+
+        assertFalse(result.isAiGated)
+        assertFalse(result.isAiProFeature)
+        assertNull(result.remainingScansLabel)
+    }
 }

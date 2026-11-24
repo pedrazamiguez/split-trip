@@ -62,9 +62,9 @@
         },
         "ai_receipt_monthly_limit_pro": {
           "defaultValue": {
-            "value": "100"
+            "value": "-1"
           },
-          "description": "Monthly quota of AI receipt scans allocated to Pro users.",
+          "description": "Monthly quota of AI receipt scans allocated to Pro users (-1 for unlimited).",
           "valueType": "NUMBER"
         },
         "manual_receipt_monthly_limit_free": {

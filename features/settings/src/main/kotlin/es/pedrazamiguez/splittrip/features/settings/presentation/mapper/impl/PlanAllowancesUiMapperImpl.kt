@@ -19,6 +19,8 @@ import kotlinx.collections.immutable.persistentListOf
 
 private const val FRACTION_SCALE = 4
 private val APPROACHING_LIMIT_THRESHOLD = BigDecimal("0.65")
+private val UNLIMITED_MAX_PROGRESS = BigDecimal("0.60")
+private val UNLIMITED_PROGRESS_PIVOT = BigDecimal("5")
 
 class PlanAllowancesUiMapperImpl(
     private val localeProvider: LocaleProvider
@@ -113,7 +115,7 @@ class PlanAllowancesUiMapperImpl(
         isGatingEnabled: Boolean
     ): AllowanceQuotaUiModel {
         val safeUsed = used.coerceAtLeast(0)
-        if (!isGatingEnabled || limit == null) {
+        if (!isGatingEnabled || limit == null || limit < 0) {
             return AllowanceQuotaUiModel(
                 type = type,
                 title = UiText.StringResource(titleRes),
@@ -121,8 +123,8 @@ class PlanAllowancesUiMapperImpl(
                 usageText = UiText.StringResource(R.string.plan_allowances_usage_unlimited, formatInt(safeUsed)),
                 statusBadge = UiText.StringResource(R.string.plan_allowances_badge_unlimited),
                 status = AllowanceUsageStatus.UNLIMITED,
-                progressFraction = 0f,
-                showProgressBar = false
+                progressFraction = computeUnlimitedProgressFraction(safeUsed),
+                showProgressBar = true
             )
         }
 
@@ -224,6 +226,17 @@ class PlanAllowancesUiMapperImpl(
     private fun includedOrProBadge(isIncluded: Boolean): UiText = UiText.StringResource(
         if (isIncluded) R.string.plan_allowances_perk_status_included else R.string.plan_allowances_perk_status_pro_only
     )
+
+    private fun computeUnlimitedProgressFraction(used: Int): Float {
+        if (used <= 0) return 0f
+        val usedDecimal = BigDecimal(used)
+        val denominator = usedDecimal.add(UNLIMITED_PROGRESS_PIVOT)
+        return UNLIMITED_MAX_PROGRESS
+            .multiply(usedDecimal)
+            .divide(denominator, FRACTION_SCALE, RoundingMode.HALF_UP)
+            .coerceIn(BigDecimal.ZERO, UNLIMITED_MAX_PROGRESS)
+            .toFloat()
+    }
 
     private fun formatInt(value: Int): String =
         NumberFormat.getIntegerInstance(localeProvider.getCurrentLocale()).format(value)

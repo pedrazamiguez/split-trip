@@ -102,6 +102,12 @@ class RemoteConfigTemplateConsistencyTest {
     }
 
     @Test
+    fun `ai_receipt_monthly_limit_pro defaults to -1 in template and XML`() {
+        assertEquals("-1", templateParameters["ai_receipt_monthly_limit_pro"]?.defaultValue)
+        assertEquals("-1", xmlDefaults["ai_receipt_monthly_limit_pro"])
+    }
+
+    @Test
     fun `manual_receipt_monthly_limit_free defaults to 5 in template and XML`() {
         assertEquals("5", templateParameters["manual_receipt_monthly_limit_free"]?.defaultValue)
         assertEquals("5", xmlDefaults["manual_receipt_monthly_limit_free"])

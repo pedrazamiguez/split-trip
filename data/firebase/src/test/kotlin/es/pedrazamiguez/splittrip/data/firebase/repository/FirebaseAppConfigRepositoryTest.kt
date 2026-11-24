@@ -254,7 +254,7 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(4, fallbackRepo.maxMembersPerGroupFree.value)
         assertEquals(20, fallbackRepo.maxMembersPerGroupPro.value)
         assertEquals(3, fallbackRepo.aiReceiptMonthlyLimitFree.value)
-        assertEquals(100, fallbackRepo.aiReceiptMonthlyLimitPro.value)
+        assertEquals(-1, fallbackRepo.aiReceiptMonthlyLimitPro.value)
         assertEquals(5, fallbackRepo.manualReceiptMonthlyLimitFree.value)
         assertEquals(1, fallbackRepo.maxSubunitsPerGroupFree.value)
         assertEquals(-1, fallbackRepo.maxSubunitsPerGroupPro.value)
@@ -314,6 +314,19 @@ class FirebaseAppConfigRepositoryTest {
 
         val positiveRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
         assertEquals(200, positiveRepo.maxOwnedGroupsPro.value)
+    }
+
+    @Test
+    fun `updateFlowsFromConfig normalizes negative ai_receipt_monthly_limit_pro to -1 and honors positive values`() {
+        every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns -5L
+
+        val negativeRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+        assertEquals(-1, negativeRepo.aiReceiptMonthlyLimitPro.value)
+
+        every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns 150L
+
+        val positiveRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+        assertEquals(150, positiveRepo.aiReceiptMonthlyLimitPro.value)
     }
 
     @Test

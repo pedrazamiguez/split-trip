@@ -316,7 +316,7 @@
     <string name="plan_allowances_quota_owned_groups_title">Grupô propiô</string>
     <string name="plan_allowances_quota_owned_groups_subtitle">Grupô creáô por ti</string>
     <string name="plan_allowances_usage_fraction">%1$s / %2$s</string>
-    <string name="plan_allowances_usage_unlimited">%1$s uçáô · Ilimitao</string>
+    <string name="plan_allowances_usage_unlimited">%1$s / ilimitao</string>
     <plurals name="plan_allowances_status_remaining">
         <item quantity="one">Queda %1$s</item>
         <item quantity="other">Quedan %1$s</item>

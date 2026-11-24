@@ -91,7 +91,7 @@ private fun PlanAllowancesProPreview() {
             isGatingEnabled = true,
             aiReceiptQuota = AiReceiptQuota(
                 usedScans = 12,
-                monthlyLimit = 100,
+                monthlyLimit = null,
                 isProTier = true,
                 isGatingEnabled = true
             ),

@@ -258,7 +258,11 @@ class FirebaseAppConfigRepository(
         _aiReceiptMonthlyLimitFree.value = if (aiLimitFree >= 0) aiLimitFree else DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_FREE
 
         val aiLimitPro = remoteConfig.getLong("ai_receipt_monthly_limit_pro").toInt()
-        _aiReceiptMonthlyLimitPro.value = if (aiLimitPro > 0) aiLimitPro else DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO
+        _aiReceiptMonthlyLimitPro.value = when {
+            aiLimitPro < 0 -> UNLIMITED_AI_RECEIPT_SCANS
+            aiLimitPro > 0 -> aiLimitPro
+            else -> DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO
+        }
 
         val manualReceiptLimitFree = remoteConfig.getLong("manual_receipt_monthly_limit_free").toInt()
         _manualReceiptMonthlyLimitFree.value =
@@ -367,7 +371,8 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_MAX_MEMBERS_PER_GROUP_FREE = 4
         private const val DEFAULT_MAX_MEMBERS_PER_GROUP_PRO = 20
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_FREE = 3
-        private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO = 100
+        private const val UNLIMITED_AI_RECEIPT_SCANS = -1
+        private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO = UNLIMITED_AI_RECEIPT_SCANS
         private const val DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE = 5
         private const val DEFAULT_REPORT_EXPORT_MONTHLY_LIMIT_FREE = 1
         private const val DEFAULT_MAX_SUBUNITS_PER_GROUP_FREE = 1

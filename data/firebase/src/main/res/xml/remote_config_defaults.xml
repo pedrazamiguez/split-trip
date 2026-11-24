@@ -42,7 +42,7 @@
     </entry>
     <entry>
         <key>ai_receipt_monthly_limit_pro</key>
-        <value>100</value>
+        <value>-1</value>
     </entry>
     <entry>
         <key>manual_receipt_monthly_limit_free</key>
