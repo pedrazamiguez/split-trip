@@ -16,6 +16,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.AppUpdateDownloadingBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.AppUpdateGate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.AppUpdateReadyBanner
 import es.pedrazamiguez.splittrip.core.logging.LogTag
@@ -96,6 +97,13 @@ private fun AppUpdateOverlayContent(
     onRestartClick: () -> Unit,
     onRetryForcedUpdate: () -> Unit
 ) {
+    val downloadingState = uiState as? AppUpdateUiState.FlexibleUpdateDownloading
+    AppUpdateDownloadingBanner(
+        visible = isNavHostReady && downloadingState != null,
+        progressFraction = downloadingState?.progressFraction,
+        progressPercent = downloadingState?.progressPercent
+    )
+
     AppUpdateReadyBanner(
         visible = isNavHostReady && uiState is AppUpdateUiState.FlexibleUpdateReadyToInstall,
         onRestartClick = onRestartClick

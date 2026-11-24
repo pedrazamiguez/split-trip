@@ -245,6 +245,9 @@
     <string name="app_update_ready_title">Update ready</string>
     <string name="app_update_ready_description">A new version of SplitTrip has been downloaded.</string>
     <string name="app_update_ready_button">Restart to update</string>
+    <string name="app_update_downloading_title">Downloading update</string>
+    <string name="app_update_downloading_description">You can keep using SplitTrip while it downloads.</string>
+    <string name="app_update_downloading_percent">%1$d%%</string>
 
     <!-- Wizard Step Info -->
     <string name="wizard_step_info_action">About this step</string>

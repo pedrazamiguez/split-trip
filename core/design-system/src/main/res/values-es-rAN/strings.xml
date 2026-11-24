@@ -195,6 +195,9 @@
     <string name="app_update_ready_title">Âttualiçaçión lîtta</string>
     <string name="app_update_ready_description">Çe a dêccargao una nueba berçión de SplîTTrîh.</string>
     <string name="app_update_ready_button">Reiniçiâh pa âttualiçâh</string>
+    <string name="app_update_downloading_title">Dêccargando âttualiçaçión</string>
+    <string name="app_update_downloading_description">Puedê çegîh uçando SplîTTrîh mientrâ çe dêccarga.</string>
+    <string name="app_update_downloading_percent">%1$d%%</string>
     <string name="wizard_step_info_action">Çobre êtte paço</string>
     <string name="wizard_step_info_dismiss">Entendío</string>
     <string name="preview_wizard_step_info_title">Ayuda der paço</string>
