@@ -39,7 +39,7 @@ Before writing any code or performing checks, verify your local Git state:
 
 ## Step 2 — Find the Posted Implementation Plan
 
-Retrieve all comments on the GitHub issue using the `github-mcp-server`.
+Retrieve all comments on the GitHub issue using `issue_read` (`github-mcp-server`) or `gh issue view $ISSUE_NUMBER --repo pedrazamiguez/split-trip --comments`.
 1. Locate the implementation plan posted as a comment on the issue.
 2. **If no implementation plan is found on the GitHub issue, halt immediately.** Do not investigate, deeply analyze, or suggest any technical solution. Stop and inform the user that they must first run the `sp-plan-issue` skill to generate and approve a plan.
 3. If an implementation plan is found, read it thoroughly. This plan is your single source of truth for the implementation.
@@ -136,7 +136,13 @@ make knowledge-update
 
 ## Step 8 — Post walkthrough as an issue comment
 
-After verifying that all checks pass locally and your work is complete, you MUST automatically post the walkthrough you generate as a comment on the GitHub issue using the github-mcp-server tool `add_issue_comment` before finishing the task. Do not wait for the user to ask or perform this step manually; the agent must perform this step programmatically as part of this skill.
+After verifying that all checks pass locally and your work is complete, you MUST automatically post the walkthrough you generate as a comment on the GitHub issue using `gh issue comment` via `run_command` (or fall back immediately to `gh` on any MCP error or missing URL) before finishing the task:
+```bash
+gh issue comment $ISSUE_NUMBER --repo pedrazamiguez/split-trip --body-file - <<'EOF'
+<walkthrough...>
+EOF
+```
+Verify that the command exits with code `0` and stdout contains an actual `https://github.com/pedrazamiguez/split-trip/issues/...` comment URL before finishing. Do not wait for the user to ask or perform this step manually; the agent must perform this step programmatically as part of this skill.
 
 The comment must include:
 - A summary of the changes made and what was accomplished (referencing the original implementation plan)

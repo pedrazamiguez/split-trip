@@ -69,5 +69,11 @@ Assess potential issues:
    - **Estimated Effort / Risk**: Areas of highest complexity or technical uncertainty.
 2. Present the feasibility report directly to the user in the chat and ask for their feedback.
 3. Prompt the user to ask if they would like the report to be posted as a comment on the associated GitHub issue.
-4. If the user agrees and the issue number/URL is known (or provided by the user in their response), post the report as a comment on the GitHub issue using `add_issue_comment`.
+4. If the user agrees and the issue number/URL is known (or provided by the user in their response), post the report as a comment on the associated GitHub issue using `gh issue comment` via `run_command` (or fall back immediately to `gh` on any MCP error or missing URL):
+   ```bash
+   gh issue comment $ISSUE_NUMBER --repo pedrazamiguez/split-trip --body-file - <<'EOF'
+   <feasibility report...>
+   EOF
+   ```
+   Verify that the command exits with code `0` and stdout contains an actual `https://github.com/pedrazamiguez/split-trip/issues/...` comment URL before notifying the user.
 5. Notify the user once the comment has been successfully posted.

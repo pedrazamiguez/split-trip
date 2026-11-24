@@ -69,13 +69,19 @@ Before generating any code or technical implementation plans, you MUST provide t
 
 ## Step 4 — Post Implementation Plan as an Issue Comment
 
-After the user has explicitly approved your proposed fix from Step 3, you MUST automatically post your proposed implementation plan/changes as a comment on the GitHub issue using the github-mcp-server tool `add_issue_comment` before writing code. Do not wait for the user to ask or perform this step manually; the agent must perform this step programmatically as part of this skill.
+After the user has explicitly approved your proposed fix from Step 3, you MUST automatically post your proposed implementation plan/changes as a comment on the GitHub issue using `gh issue comment` via `run_command` (or fall back immediately to `gh` on any MCP error or missing URL) before writing code:
+```bash
+gh issue comment $ISSUE_NUMBER --repo pedrazamiguez/split-trip --body-file - <<'EOF'
+<implementation plan...>
+EOF
+```
+Verify that the command exits with code `0` and stdout contains an actual `https://github.com/pedrazamiguez/split-trip/issues/...` comment URL. Do not wait for the user to ask or perform this step manually; the agent must perform this step programmatically as part of this skill.
 
 The comment must include:
 - Summary of proposed changes per file
 - Architecture compliance checklist confirmed for each new/modified component
 
-Stick to the plan. If the plan needs to change, seek user approval for the changes first, then update the comment on the issue (also automatically using the github-mcp-server).
+Stick to the plan. If the plan needs to change, seek user approval for the changes first, then post an updated comment on the issue using `gh issue comment` (and verify exit code `0` plus the returned URL).
 ---
 
 ## Step 5 — File-Size Guard (600-line hard limit, enforced by Konsist)
@@ -150,7 +156,13 @@ make knowledge-update
 
 ## Step 10 — Post walkthrough as an issue comment
 
-After verifying that all checks pass locally and your work is complete, you MUST automatically post the walkthrough you generate as a comment on the GitHub issue using the github-mcp-server tool `add_issue_comment` before finishing the task. Do not wait for the user to ask or perform this step manually; the agent must perform this step programmatically as part of this skill.
+After verifying that all checks pass locally and your work is complete, you MUST automatically post the walkthrough you generate as a comment on the GitHub issue using `gh issue comment` via `run_command` (or fall back immediately to `gh` on any MCP error or missing URL) before finishing the task:
+```bash
+gh issue comment $ISSUE_NUMBER --repo pedrazamiguez/split-trip --body-file - <<'EOF'
+<walkthrough...>
+EOF
+```
+Verify that the command exits with code `0` and stdout contains an actual `https://github.com/pedrazamiguez/split-trip/issues/...` comment URL before finishing. Do not wait for the user to ask or perform this step manually; the agent must perform this step programmatically as part of this skill.
 
 The comment must include:
 - A summary of the changes made and what was accomplished

@@ -26,7 +26,7 @@ Investigate a production or closed-testing incident using Firebase Crashlytics t
 > **CRITICAL GUARDRAILS:**
 > - **Read-Only Triage:** Strictly prohibit editing, creating, or deleting any repository source files, test files, build files, or machine-local configs (`~/.gemini/config/mcp_config.json`) during investigation.
 > - **No Speculative Root Causes:** Only claim root causes backed by verified Crashlytics payloads, git history, or codebase inspection. Explicitly document remaining unknowns and hypotheses when evidence is inconclusive.
-> - **Mandatory Approval Gate:** Do NOT create the GitHub issue via `issue_write` until the user explicitly reviews and approves the verified evidence summary and drafted issue.
+> - **Mandatory Approval Gate:** Do NOT create the GitHub issue via `gh issue create` (and never call `github` MCP `issue_write`) until the user explicitly reviews and approves the verified evidence summary and drafted issue.
 
 ---
 
@@ -131,4 +131,10 @@ Investigate a production or closed-testing incident using Firebase Crashlytics t
    - Ask the user to review the evidence summary and issue draft.
    - Do NOT edit repository code or create the GitHub issue until the user explicitly approves.
 4. **Create Issue Upon Approval:**
-   - Once explicitly approved, call `issue_write` on `pedrazamiguez/split-trip` with ONLY the `hotfix` label applied, and share the resulting issue URL with the user.
+   - Once explicitly approved, create the issue via `run_command` using `gh issue create` (never invoke `github` MCP `issue_write`) with ONLY the `hotfix` label applied:
+     ```bash
+     gh issue create --repo pedrazamiguez/split-trip --title "<title>" --label hotfix --body-file - <<'EOF'
+     <body...>
+     EOF
+     ```
+   - Verify that the command exits with code `0` and stdout contains an actual `https://github.com/pedrazamiguez/split-trip/issues/<number>` URL before sharing the resulting issue URL with the user.
