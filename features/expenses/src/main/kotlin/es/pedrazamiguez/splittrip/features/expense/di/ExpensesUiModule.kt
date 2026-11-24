@@ -37,6 +37,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.SuggestExpenseCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdLocalUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.group.GetGroupByIdUseCase
@@ -77,6 +78,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnExchangeRateDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.CashRateDelegate
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.CategorySuggestionEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.ConfigEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.CurrencyEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.EntitySplitFlattenDelegate
@@ -330,6 +332,11 @@ val expensesUiModule = module {
             telemetryTracker = get<TelemetryTracker>()
         )
 
+        val categorySuggestionEventHandler = CategorySuggestionEventHandler(
+            suggestExpenseCategoryUseCase = get<SuggestExpenseCategoryUseCase>(),
+            addExpenseOptionsUiMapper = addExpenseOptionsUiMapper
+        )
+
         val expenseFlowStrategyFactory = ExpenseFlowStrategyFactory(
             configEventHandler = configEventHandler,
             addExpenseUseCase = get<AddExpenseUseCase>(),
@@ -352,6 +359,7 @@ val expensesUiModule = module {
             submitEventHandler = submitEventHandler,
             formEventHandler = formEventHandler,
             receiptAutoFillEventHandler = receiptAutoFillEventHandler,
+            categorySuggestionEventHandler = categorySuggestionEventHandler,
             strategyFactory = expenseFlowStrategyFactory
         )
     }

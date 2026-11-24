@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.step.
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.rememberLocale
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardReviewRow
@@ -98,10 +99,16 @@ fun ReviewStep(
                         value = scopeVal
                     )
                 }
-                uiState.selectedCategory?.let {
+                uiState.selectedCategory?.let { category ->
+                    val subcategoryLabel = uiState.selectedSubcategory?.name?.asString()
+                    val categoryDisplay = if (!subcategoryLabel.isNullOrBlank()) {
+                        "${category.displayText} · $subcategoryLabel"
+                    } else {
+                        category.displayText
+                    }
                     WizardReviewRow(
                         label = stringResource(R.string.expense_review_category),
-                        value = it.displayText
+                        value = categoryDisplay
                     )
                 }
                 if (uiState.vendor.isNotBlank()) {
