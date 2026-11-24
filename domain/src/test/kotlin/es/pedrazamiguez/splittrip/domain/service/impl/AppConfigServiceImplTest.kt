@@ -1,5 +1,8 @@
 package es.pedrazamiguez.splittrip.domain.service.impl
 
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.model.CategoryClassifierRuleConfig
+import es.pedrazamiguez.splittrip.domain.model.CategoryKeywordRule
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -156,5 +159,25 @@ class AppConfigServiceImplTest {
         assertEquals(setOf(1_001_000L, 1_002_001L), service.optionalUpdateVersionCodes.value)
         assertEquals(48L, service.optionalUpdateCooldownHours.value)
         assertEquals(true, service.isInitialFetchSettled.value)
+    }
+
+    @Test
+    fun `exposes categoryClassifierRules flow from repository correctly`() {
+        val repository = mockk<AppConfigRepository>(relaxed = true)
+        val config = CategoryClassifierRuleConfig(
+            commonRules = listOf(
+                CategoryKeywordRule(
+                    category = ExpenseCategory.FOOD,
+                    keywords = listOf("rappi")
+                )
+            )
+        )
+        val rulesFlow = MutableStateFlow(config)
+        every { repository.categoryClassifierRules } returns rulesFlow
+
+        val service = AppConfigServiceImpl(repository)
+
+        assertEquals(rulesFlow, service.categoryClassifierRules)
+        assertEquals(config, service.categoryClassifierRules.value)
     }
 }

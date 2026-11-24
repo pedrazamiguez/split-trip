@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
 interface ExpenseCategoryClassifierService {
     fun classify(
         title: String,
-        groupContext: GroupContext
+        groupContext: GroupContext,
+        languageCode: String? = null
     ): CategorySuggestion?
 }

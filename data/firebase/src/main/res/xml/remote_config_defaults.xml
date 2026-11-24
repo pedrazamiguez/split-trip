@@ -133,4 +133,8 @@
         <key>optional_update_cooldown_hours</key>
         <value>24</value>
     </entry>
+    <entry>
+        <key>category_classifier_rules_json</key>
+        <value>{"version":1,"merge_mode":"merge","common":[],"languages":{"en":[{"category":"HEALTH_PERSONAL_CARE","subcategory":"DOCTOR_DENTIST","phrases":[],"keywords":["filling"]}],"es":[{"category":"HEALTH_PERSONAL_CARE","subcategory":"DOCTOR_DENTIST","phrases":[],"keywords":["empaste"]}]},"disabled_terms":{"common":[],"en":[],"es":[],"*":[]}}</value>
+    </entry>
 </defaultsMap>

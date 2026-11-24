@@ -50,7 +50,7 @@ cmd_diff() {
   echo -e "${CYAN}🔍 Fetching live Remote Config template from Firebase...${NC}"
   TMP_LIVE="$(mktemp /tmp/rc_live_XXXXXX.json)"
   TMP_LOCAL="$(mktemp /tmp/rc_local_XXXXXX.json)"
-  trap 'rm -f "${TMP_LIVE}" "${TMP_LOCAL}"' EXIT
+  trap 'rm -f "${TMP_LIVE:-}" "${TMP_LOCAL:-}"' EXIT
 
   if ! npx firebase-tools remoteconfig:get -o "${TMP_LIVE}" > /dev/null 2>&1; then
     echo -e "${RED}❌ Failed to fetch live Remote Config template. Check Firebase authentication and project configuration.${NC}"
@@ -116,9 +116,8 @@ cmd_deploy() {
     echo -e "${CYAN}📤 Publishing full template to Firebase...${NC}"
     npx firebase-tools deploy --only remoteconfig --force
   else
-    local TMP_DIR
     TMP_DIR="$(mktemp -d /tmp/rc_deploy_XXXXXX)"
-    trap 'rm -rf "${TMP_DIR}"' EXIT
+    trap 'rm -rf "${TMP_DIR:-}"' EXIT
 
     echo ""
     echo -e "${CYAN}📥 Fetching live Remote Config template from Firebase...${NC}"

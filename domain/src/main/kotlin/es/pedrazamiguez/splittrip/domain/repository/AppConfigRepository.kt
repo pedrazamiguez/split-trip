@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.repository
 
+import es.pedrazamiguez.splittrip.domain.model.CategoryClassifierRuleConfig
 import es.pedrazamiguez.splittrip.domain.model.DeveloperInfo
 import kotlinx.coroutines.flow.StateFlow
 
@@ -38,6 +39,7 @@ interface AppConfigRepository {
     val optionalUpdateVersionCodes: StateFlow<Set<Long>>
     val optionalUpdateCooldownHours: StateFlow<Long>
     val isInitialFetchSettled: StateFlow<Boolean>
+    val categoryClassifierRules: StateFlow<CategoryClassifierRuleConfig>
 
     suspend fun fetchConfiguration(): Boolean
 }

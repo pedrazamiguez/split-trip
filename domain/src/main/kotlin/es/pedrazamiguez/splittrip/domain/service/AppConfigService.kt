@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.service
 
+import es.pedrazamiguez.splittrip.domain.model.CategoryClassifierRuleConfig
 import kotlinx.coroutines.flow.StateFlow
 
 interface AppConfigService {
@@ -29,4 +30,5 @@ interface AppConfigService {
     val optionalUpdateVersionCodes: StateFlow<Set<Long>>
     val optionalUpdateCooldownHours: StateFlow<Long>
     val isInitialFetchSettled: StateFlow<Boolean>
+    val categoryClassifierRules: StateFlow<CategoryClassifierRuleConfig>
 }

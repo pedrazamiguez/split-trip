@@ -283,6 +283,18 @@
           "valueType": "NUMBER"
         }
       }
+    },
+    "Expenses": {
+      "description": "Expense classification rules and automated categorization overrides.",
+      "parameters": {
+        "category_classifier_rules_json": {
+          "defaultValue": {
+            "value": "{\"version\":1,\"merge_mode\":\"merge\",\"common\":[],\"languages\":{\"en\":[{\"category\":\"HEALTH_PERSONAL_CARE\",\"subcategory\":\"DOCTOR_DENTIST\",\"phrases\":[],\"keywords\":[\"filling\"]}],\"es\":[{\"category\":\"HEALTH_PERSONAL_CARE\",\"subcategory\":\"DOCTOR_DENTIST\",\"phrases\":[],\"keywords\":[\"empaste\"]}]},\"disabled_terms\":{\"common\":[],\"en\":[],\"es\":[],\"*\":[]}}"
+          },
+          "description": "JSON rules for overriding, adding, or disabling expense auto-categorization keywords by language.",
+          "valueType": "JSON"
+        }
+      }
     }
   }
 }
