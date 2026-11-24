@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.badge.ProBadge
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.badge.ProBadgeSize
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
@@ -36,10 +38,11 @@ internal fun PlanAllowancesTierCard(
         MaterialTheme.colorScheme.surfaceContainerLow
     }
     val elevation = if (isProTier) PRO_CARD_ELEVATION else MaterialTheme.spacing.None
-    val badgeStyle = when {
-        !isGatingEnabled -> PassportTagStyle.SUCCESS
-        isProTier -> PassportTagStyle.TERTIARY
-        else -> PassportTagStyle.NEUTRAL
+    val showGoldenProBadge = isProTier && isGatingEnabled
+    val nonProBadgeStyle = if (isGatingEnabled) {
+        PassportTagStyle.NEUTRAL
+    } else {
+        PassportTagStyle.SUCCESS
     }
 
     FlatCard(
@@ -60,10 +63,14 @@ internal fun PlanAllowancesTierCard(
                     text = title.asString(),
                     modifier = Modifier.weight(1f)
                 )
-                PassportTag(
-                    text = badge.asString(),
-                    style = badgeStyle
-                )
+                if (showGoldenProBadge) {
+                    ProBadge(size = ProBadgeSize.STANDARD)
+                } else {
+                    PassportTag(
+                        text = badge.asString(),
+                        style = nonProBadgeStyle
+                    )
+                }
             }
 
             BodyText(
