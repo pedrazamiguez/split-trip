@@ -10,6 +10,7 @@
     <string name="groups_info">Info</string>
     <string name="groups_back">Borbêh</string>
     <string name="group_wizard_step_info">Info</string>
+    <string name="group_wizard_step_context">Tipo</string>
     <string name="group_wizard_step_currency">Moneda</string>
     <string name="group_wizard_step_members">Miembrô</string>
     <string name="group_wizard_step_review">Reçumen</string>
@@ -18,6 +19,7 @@
     <string name="group_review_title">Rebiça tu grupo</string>
     <string name="group_review_name">Nombre</string>
     <string name="group_review_description">Dêccrîççión</string>
+    <string name="group_review_context">Tipo de grupo</string>
     <string name="group_review_currency">Moneda prinçipâh</string>
     <string name="group_review_extra_currencies">Otrâ monedâ</string>
     <string name="group_review_members">Miembrô</string>
@@ -36,6 +38,8 @@
     <string name="group_extra_currency_clear">Limpiâh</string>
     <string name="group_extra_currencies_overflow">+%d</string>
     <string name="group_field_description">Dêccrîççión</string>
+    <string name="group_context_step_title">Tipo de grupo</string>
+    <string name="group_context_step_subtitle">Elihe pa qué êh êtte grupo pa que SplîTTrîh dêttaque lâ categoríâ mâh relebantê.</string>
     <string name="group_field_created_at">Creao el</string>
     <string name="group_error_name_empty">¡Ey! Tu grupo neçeçita un nombre</string>
     <string name="group_error_creation_failed">¡Ups! Argo fayó ar creâh er grupo. Inténtalo de nuebo</string>
@@ -77,6 +81,7 @@
     <string name="group_detail_extra_currencies_label">Otrâ monedâ</string>
     <string name="group_detail_exchange_rate_format">1 %1$s ≈ %2$s %3$s</string>
     <string name="group_detail_description_label">Dêccrîççión</string>
+    <string name="group_detail_context_label">Tipo de grupo</string>
     <string name="group_field_members">Miembrô</string>
     <string name="group_member_search">Bûccâh por emaîh</string>
     <string name="group_member_search_hint">Êccribe el emaîh de un miembro</string>
@@ -174,6 +179,12 @@
     <string name="group_members_capacity_pro_upsell">Límite Gratî (mâh. %1$d). Toca pa ampliâh âtta 20 miembrô con Pro.</string>
     <string name="group_step_info_info_title">Datô der grupo</string>
     <string name="group_step_info_info_description">Introduçe un nombre claro pa er grupo (como \"Piço compartío\" o \"Bacaçionê de berano\") y una brebe dêccrîççión ôççionâh.\n\nÊh nombre der grupo êh obligatorio; la dêccrîççión êh ôççionâh y empieça baçía. Puedê cambiâh ambô mâh adelante dêdde Editâh grupo.</string>
+    <string name="group_step_info_context_title">Tipo de grupo</string>
+    <string name="group_step_info_context_description">Elihe la ôççión que mehôh çe adâtte a tu grupo. Êtto ahûtta lâ categoríâ de gâtto çuheridâ y lâ etiquetâ der grupo, aunque toâ lâ categoríâ çigen dîpponiblê en cuarquiêh momento.\n\nPuedê cambiâh er tipo de grupo mâh adelante dêdde Editâh grupo.</string>
+    <string name="group_step_info_context_item_travel_title">Biahe</string>
+    <string name="group_step_info_context_item_travel_description">Ideâh pa bacaçionê, êccapâh y dêpplaçamientô compartíô. Dêttaca categoríâ de biahe como buelô, alohamiento, trâpporte y êccurçionê.</string>
+    <string name="group_step_info_context_item_everyday_title">Día a día</string>
+    <string name="group_step_info_context_item_everyday_description">Ideâh pa piçô compartíô, parehâ, familiâ y gâttô recurrentê del ogâh. Dêttaca categoríâ diariâ como ogâh, reçibô, compra y çalûh.</string>
     <string name="group_step_info_currency_title">Monedâ</string>
     <string name="group_step_info_currency_description">Elihe la moneda prinçipâh que çe uçará pa lô totalê y balançê der grupo (preçelêççioná con tu moneda por defêtto).\n\nTambién puedê añadîh otrâ monedâ ôççionalê çi er grupo ba a rehîttrâh gâttô o retirâh en mâh de una dibiça. Al editâh un grupo, lâ monedâ que ya çe uçan en trançâççionê êççîttentê permaneçen bloqueâh pa mantenêh la preçiçión del îttoriâh.</string>
     <string name="group_step_info_members_title">Miembrô der grupo</string>
@@ -183,5 +194,5 @@
     <string name="group_step_info_image_title">Foto de portá</string>
     <string name="group_step_info_image_description">Perçonaliça tu grupo con una foto de portá dêdde tu cámara o galería pa que dêttaque en tu lîtta de grupô.\n\nÊtte paço êh ôççionâh y empieça baçío. Lâ çubidâ de portá uçan er cupo mençuâh de tu cuenta o çon ilimitâh con SplîTTrîh Pro. Puedê añadîh, cambiâh o quitâh la portá cuando quierâ mâh adelante.</string>
     <string name="group_step_info_review_title">Reçumen y confirmaçión</string>
-    <string name="group_step_info_review_description">Comprueba er nombre der grupo, la dêccrîççión, lâ monedâ, lô miembrô y la foto de portá antê de guardâh.\n\n¿Quierê cambiâh argo aora? Toca cuarquiêh paço completao en la barra çuperiôh o purça \"Atrâh\". También puedê editâh lô datô, monedâ y miembrô der grupo mâh adelante dêdde çu pantaya de detaye.</string>
+    <string name="group_step_info_review_description">Comprueba er nombre der grupo, la dêccrîççión, er tipo de grupo, lâ monedâ, lô miembrô y la foto de portá antê de guardâh.\n\n¿Quierê cambiâh argo aora? Toca cuarquiêh paço completao en la barra çuperiôh o purça \"Atrâh\". También puedê editâh lô datô, er tipo de grupo, lâ monedâ y lô miembrô mâh adelante dêdde çu pantaya de detaye.</string>
 </resources>

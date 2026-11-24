@@ -47,6 +47,7 @@ fun ExpensesFilterScreen(
     onUpdateDraft: (ExpenseFilterCriteria) -> Unit = {},
     onPresetSelected: (DateRangePreset) -> Unit = {},
     onResetFilters: () -> Unit = {},
+    onToggleShowAllCategories: () -> Unit = {},
     onApplyFilters: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -81,6 +82,9 @@ fun ExpensesFilterScreen(
                     CategoryFilterSection(
                         criteria = uiState.draftCriteria,
                         onCriteriaChange = onUpdateDraft,
+                        groupContext = uiState.groupContext,
+                        showAllCategories = uiState.showAllCategories,
+                        onToggleShowAllCategories = onToggleShowAllCategories,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

@@ -131,7 +131,9 @@ private fun CategorySectionGridPreview() {
             selectedSubcategory = subcategories.first {
                 it.subcategory == ExpenseSubcategory.INTERNATIONAL_FLIGHT
             },
-            onSubcategorySelected = {}
+            onSubcategorySelected = {},
+            showAllCategories = false,
+            onToggleShowAllCategories = {}
         )
     }
 }

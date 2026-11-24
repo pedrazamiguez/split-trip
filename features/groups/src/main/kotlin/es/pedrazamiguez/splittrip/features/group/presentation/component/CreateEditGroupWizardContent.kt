@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardScrollableStepContainer
+import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupContextStep
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupCurrencyStep
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupImageStep
 import es.pedrazamiguez.splittrip.features.group.presentation.component.step.GroupInfoStep
@@ -51,6 +52,7 @@ internal fun CreateEditGroupWizardContent(
                     onEvent = onEvent,
                     onImeNext = nextStep
                 )
+                CreateEditGroupStep.CONTEXT -> GroupContextStep(uiState = uiState, onEvent = onEvent)
                 CreateEditGroupStep.CURRENCY -> GroupCurrencyStep(uiState = uiState, onEvent = onEvent)
                 CreateEditGroupStep.MEMBERS -> GroupMembersStep(
                     uiState = uiState,

@@ -4,6 +4,8 @@ import es.pedrazamiguez.splittrip.core.common.R as CommonR
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Bed
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Category
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Heartbeat
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Home
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.MasksTheater
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Route
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Run
@@ -37,6 +39,19 @@ class ExpenseCategoryExtensionsTest {
         @Test
         fun `LODGING maps to lodging string resource`() {
             assertEquals(CommonR.string.expense_category_lodging, ExpenseCategory.LODGING.toStringRes())
+        }
+
+        @Test
+        fun `HOME maps to home string resource`() {
+            assertEquals(CommonR.string.expense_category_home, ExpenseCategory.HOME.toStringRes())
+        }
+
+        @Test
+        fun `HEALTH_PERSONAL_CARE maps to health personal care string resource`() {
+            assertEquals(
+                CommonR.string.expense_category_health_personal_care,
+                ExpenseCategory.HEALTH_PERSONAL_CARE.toStringRes()
+            )
         }
 
         @Test
@@ -87,6 +102,16 @@ class ExpenseCategoryExtensionsTest {
         @Test
         fun `LODGING maps to Bed icon`() {
             assertSame(TablerIcons.Outline.Bed, ExpenseCategory.LODGING.toIconVector())
+        }
+
+        @Test
+        fun `HOME maps to Home icon`() {
+            assertSame(TablerIcons.Outline.Home, ExpenseCategory.HOME.toIconVector())
+        }
+
+        @Test
+        fun `HEALTH_PERSONAL_CARE maps to Heartbeat icon`() {
+            assertSame(TablerIcons.Outline.Heartbeat, ExpenseCategory.HEALTH_PERSONAL_CARE.toIconVector())
         }
 
         @Test

@@ -28,6 +28,10 @@ fun CategoryStep(
             selectedSubcategory = uiState.selectedSubcategory,
             onSubcategorySelected = { subcategoryId ->
                 onEvent(AddExpenseUiEvent.SubcategorySelected(subcategoryId))
+            },
+            showAllCategories = uiState.showAllCategories,
+            onToggleShowAllCategories = {
+                onEvent(AddExpenseUiEvent.ToggleShowAllCategories)
             }
         )
     }

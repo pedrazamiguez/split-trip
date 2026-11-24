@@ -8,7 +8,7 @@ Campos a extraer:
 - Hora de la transacción en formato HH:MM de 24 horas (time).
 - Nombre del comercio o proveedor (vendor).
 - Descripción breve de lo comprado, máximo 3-4 palabras (title).
-- Categoría (debe ser una de: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, ENTERTAINMENT, SHOPPING, OTHER) (category).
+- Categoría (debe ser una de: TRANSPORT, FOOD, LODGING, HOME, HEALTH_PERSONAL_CARE, ACTIVITIES, INSURANCE, ENTERTAINMENT, SHOPPING, OTHER) (category).
 - Método de pago (debe ser uno de: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER) (paymentMethod).
 - Notas o identificadores relevantes como fechas de viaje/evento, código de reserva, localizador, ID de ticket, asientos, números de vuelo o tren, número de referencia, etc. (notes).
 

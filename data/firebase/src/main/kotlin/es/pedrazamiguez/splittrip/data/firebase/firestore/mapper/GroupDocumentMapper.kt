@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.data.firebase.firestore.mapper
 import com.google.firebase.Timestamp
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupMemberDocument
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.model.Group
 
@@ -18,7 +19,8 @@ fun Group.toDocument(groupId: String, userId: String) = GroupDocument(
     createdAt = createdAt?.toTimestampUtc(),
     lastUpdatedAt = lastUpdatedAt?.toTimestampUtc(),
     status = status.name,
-    lastArchiveEventId = lastArchiveEventId
+    lastArchiveEventId = lastArchiveEventId,
+    context = context.name
 )
 
 fun GroupDocument.toDomain(): Group? {
@@ -36,7 +38,8 @@ fun GroupDocument.toDomain(): Group? {
         lastUpdatedAt = lastUpdatedAt?.toLocalDateTimeUtc(),
         status = GroupStatus.fromStringOrDefault(status),
         createdBy = createdBy,
-        lastArchiveEventId = lastArchiveEventId
+        lastArchiveEventId = lastArchiveEventId,
+        context = GroupContext.fromStringOrDefault(context)
     )
 }
 

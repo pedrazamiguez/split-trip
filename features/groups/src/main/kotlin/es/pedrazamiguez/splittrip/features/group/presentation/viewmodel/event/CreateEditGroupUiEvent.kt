@@ -1,10 +1,12 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.User
 
 sealed interface CreateEditGroupUiEvent {
     data class NameChanged(val name: String) : CreateEditGroupUiEvent
     data class DescriptionChanged(val description: String) : CreateEditGroupUiEvent
+    data class ContextSelected(val context: GroupContext) : CreateEditGroupUiEvent
     data class CurrencySelected(val code: String) : CreateEditGroupUiEvent
     data class ExtraCurrencyToggled(val code: String) : CreateEditGroupUiEvent
     data class MemberSearchQueryChanged(val query: String) : CreateEditGroupUiEvent
