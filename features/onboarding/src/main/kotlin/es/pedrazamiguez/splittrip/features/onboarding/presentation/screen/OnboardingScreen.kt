@@ -2,8 +2,11 @@ package es.pedrazamiguez.splittrip.features.onboarding.presentation.screen
 
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -28,7 +31,8 @@ fun OnboardingScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets.safeDrawing
     ) { innerPadding ->
         OnboardingContent(
             uiState = uiState,
@@ -37,7 +41,9 @@ fun OnboardingScreen(
             onSkipClick = onSkipClick,
             onCompleteClick = onCompleteClick,
             onRequestNotificationPermissionClick = onRequestNotificationPermissionClick,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
         )
     }
 

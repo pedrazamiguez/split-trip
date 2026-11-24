@@ -1,7 +1,6 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
@@ -34,6 +33,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedCombinedC
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.GlassmorphismDefaults
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.LocalHazeState
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.horizonGlassEffect
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.isAppInDarkTheme
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ArrowLeft
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.shape.ExpressiveShapes
@@ -61,7 +61,7 @@ fun DynamicTopAppBar(
     hazeState: HazeState? = LocalHazeState.current,
     actions: @Composable RowScope.() -> Unit = {}
 ) {
-    val isDark = isSystemInDarkTheme()
+    val isDark = isAppInDarkTheme()
     val colors = resolveContentColors(isDark)
 
     val glassModifier = if (hazeState != null) {

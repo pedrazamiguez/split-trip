@@ -54,4 +54,54 @@ class AdaptiveBannerAdTest {
 
         assertEquals(3, receivedCode)
     }
+
+    @Test
+    fun `calculateAdaptiveBannerWidthDp returns full dp width when horizontal insets are zero`() {
+        val widthDp = calculateAdaptiveBannerWidthDp(
+            containerWidthPx = 1080,
+            horizontalInsetPx = 0,
+            density = 3.0f
+        )
+
+        assertEquals(360, widthDp)
+    }
+
+    @Test
+    fun `calculateAdaptiveBannerWidthDp subtracts horizontal cutout and nav bar insets in landscape`() {
+        val widthDp = calculateAdaptiveBannerWidthDp(
+            containerWidthPx = 2400,
+            horizontalInsetPx = 240,
+            density = 3.0f
+        )
+
+        assertEquals(720, widthDp)
+    }
+
+    @Test
+    fun `calculateAdaptiveBannerWidthDp clamps to 1 when insets exceed container width`() {
+        val widthDp = calculateAdaptiveBannerWidthDp(
+            containerWidthPx = 100,
+            horizontalInsetPx = 200,
+            density = 2.0f
+        )
+
+        assertEquals(1, widthDp)
+    }
+
+    @Test
+    fun `calculateAdaptiveBannerWidthDp clamps to 1 when density is zero or negative`() {
+        val zeroDensityWidth = calculateAdaptiveBannerWidthDp(
+            containerWidthPx = 1080,
+            horizontalInsetPx = 0,
+            density = 0f
+        )
+        val negativeDensityWidth = calculateAdaptiveBannerWidthDp(
+            containerWidthPx = 1080,
+            horizontalInsetPx = 0,
+            density = -2.0f
+        )
+
+        assertEquals(1, zeroDensityWidth)
+        assertEquals(1, negativeDensityWidth)
+    }
 }

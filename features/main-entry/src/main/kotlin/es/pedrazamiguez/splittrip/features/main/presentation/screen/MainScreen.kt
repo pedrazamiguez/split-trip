@@ -14,10 +14,18 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -34,6 +42,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -201,7 +210,7 @@ fun MainScreen(
                 Column {
                     AdaptiveBannerAd(
                         adUnitId = bannerAdUnitId,
-                        isAdEnabled = shouldShowAds && shouldShowBottomBar,
+                        isAdEnabled = shouldShowAds && isInitialLoadComplete && shouldShowBottomBar,
                         onAdLoaded = {
                             telemetryTracker.trackEvent(
                                 MonetizationTelemetry.Event.AD_LOADED,
@@ -250,9 +259,13 @@ fun MainScreen(
                     }
                 }
             },
-            // Remove default content window insets since we're handling padding manually
-            contentWindowInsets = WindowInsets(0, 0, 0, 0)
+            contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)
         ) { innerPadding ->
+            val layoutDirection = LocalLayoutDirection.current
+            val horizontalPadding = PaddingValues(
+                start = innerPadding.calculateStartPadding(layoutDirection),
+                end = innerPadding.calculateEndPadding(layoutDirection)
+            )
             val topPadding = innerPadding.calculateTopPadding()
             val bottomPadding = if (shouldShowBottomBar) {
                 innerPadding.calculateBottomPadding()
@@ -273,7 +286,10 @@ fun MainScreen(
                         navigationProviders = navigationProviders,
                         navControllers = navControllers,
                         mainViewModel = mainViewModel,
-                        selectedRoute = selectedRoute
+                        selectedRoute = selectedRoute,
+                        modifier = Modifier
+                            .padding(horizontalPadding)
+                            .consumeWindowInsets(horizontalPadding)
                     )
                 }
             }
@@ -309,7 +325,11 @@ private fun AnimatedTopBar(
             if (provider?.topBar != null) {
                 provider.topBar!!.invoke()
             } else {
-                Spacer(modifier = Modifier.statusBarsPadding())
+                Spacer(
+                    modifier = Modifier.windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top)
+                    )
+                )
             }
         }
     }
@@ -320,9 +340,10 @@ private fun MainTabsContent(
     navigationProviders: List<NavigationProvider>,
     navControllers: Map<NavigationProvider, NavHostController>,
     mainViewModel: MainViewModel,
-    selectedRoute: String
+    selectedRoute: String,
+    modifier: Modifier = Modifier
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize()) {
         for (provider in navigationProviders) {
             val navController = navControllers.getValue(provider)
             val isSelected = selectedRoute == provider.route

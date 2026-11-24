@@ -3,10 +3,13 @@ package es.pedrazamiguez.splittrip.features.authentication.presentation.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,6 +46,7 @@ fun ForgotPasswordScreen(
     )
 
     Scaffold(
+        contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             DynamicTopAppBar(
                 title = stringResource(id = R.string.forgot_password_title),
@@ -54,7 +58,8 @@ fun ForgotPasswordScreen(
             modifier = modifier
                 .fillMaxSize()
                 .background(backgroundGradient)
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding),
             contentAlignment = Alignment.Center
         ) {
             Column(

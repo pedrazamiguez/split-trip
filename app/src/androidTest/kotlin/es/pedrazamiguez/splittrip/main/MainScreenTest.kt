@@ -1,13 +1,29 @@
 package es.pedrazamiguez.splittrip.main
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.WindowInsets as WindowInsetsOverride
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.core.graphics.Insets as AndroidXInsets
+import androidx.core.view.WindowInsetsCompat
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.compose.composable
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvider
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
@@ -32,6 +48,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import org.junit.After
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -390,5 +407,126 @@ class MainScreenTest {
         composeRule.onNodeWithText("Content: Expenses - ${Routes.ADD_EXPENSE}").assertIsDisplayed()
         composeRule.onNodeWithText("Groups").assertDoesNotExist()
         composeRule.onNodeWithText("Profile").assertDoesNotExist()
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    //  Edge-to-Edge & Landscape Cutout / NavBar Insets
+    // ═════════════════════════════════════════════════════════════════════
+
+    @Test
+    fun mainScreen_landscapeCutoutAndNavBarInsets_offsetsTabContentWithoutDoublePadding() {
+        val directTag = "direct_tab_content"
+        val scaffoldTag = "scaffold_tab_content"
+        val directProvider = object : NavigationProvider {
+            override val route: String = "groups"
+            override val order: Int = 10
+            override val requiresSelectedGroup: Boolean = false
+
+            @Composable
+            override fun Icon(isSelected: Boolean, tint: Color) = Unit
+
+            @Composable
+            override fun getLabel(): String = "Groups"
+
+            override fun buildGraph(builder: NavGraphBuilder) {
+                builder.composable(route) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .testTag(directTag)
+                    )
+                }
+            }
+        }
+        val scaffoldProvider = object : NavigationProvider {
+            override val route: String = "profile"
+            override val order: Int = 90
+            override val requiresSelectedGroup: Boolean = false
+
+            @Composable
+            override fun Icon(isSelected: Boolean, tint: Color) = Unit
+
+            @Composable
+            override fun getLabel(): String = "Profile"
+
+            override fun buildGraph(builder: NavGraphBuilder) {
+                builder.composable(route) {
+                    FeatureScaffold(currentRoute = route) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .testTag(scaffoldTag)
+                        )
+                    }
+                }
+            }
+        }
+
+        val leftCutoutPx = 60
+        val rightNavBarPx = 90
+        val simulatedInsets = WindowInsetsCompat.Builder()
+            .setInsets(
+                WindowInsetsCompat.Type.displayCutout(),
+                AndroidXInsets.of(leftCutoutPx, 0, 0, 0)
+            )
+            .setInsets(
+                WindowInsetsCompat.Type.navigationBars(),
+                AndroidXInsets.of(0, 0, rightNavBarPx, 0)
+            )
+            .build()
+
+        var densityPx = 1f
+        val rootTag = "main_screen_root"
+
+        composeRule.setContent {
+            densityPx = LocalDensity.current.density
+            KoinApplication(application = { modules(testModule) }) {
+                SplitTripTheme {
+                    DeviceConfigurationOverride(
+                        DeviceConfigurationOverride.WindowInsetsOverride(simulatedInsets)
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize().testTag(rootTag)) {
+                            MainScreen(
+                                navigationProviders = listOf(directProvider, scaffoldProvider),
+                                screenUiProviders = emptyList(),
+                                mainViewModel = createMainViewModel(),
+                                sharedViewModel = createSharedViewModel()
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        val rootBounds = composeRule.onNodeWithTag(rootTag).getUnclippedBoundsInRoot()
+        val directBounds = composeRule.onNodeWithTag(directTag).getUnclippedBoundsInRoot()
+        val expectedLeftDp = leftCutoutPx / densityPx
+        val expectedRightDp = rightNavBarPx / densityPx
+
+        assertTrue(
+            "Direct tab left (${directBounds.left.value}) should be >= $expectedLeftDp",
+            directBounds.left.value >= expectedLeftDp - 0.5f
+        )
+        assertTrue(
+            "Direct tab right (${directBounds.right.value}) should be <= ${rootBounds.right.value - expectedRightDp}",
+            directBounds.right.value <= rootBounds.right.value - expectedRightDp + 0.5f
+        )
+
+        composeRule.onNodeWithText("Profile").performClick()
+        composeRule.waitForIdle()
+
+        val scaffoldBounds = composeRule.onNodeWithTag(scaffoldTag).getUnclippedBoundsInRoot()
+        assertTrue(
+            "FeatureScaffold left (${scaffoldBounds.left.value}) should not double-pad ($expectedLeftDp)",
+            scaffoldBounds.left.value >= expectedLeftDp - 0.5f &&
+                scaffoldBounds.left.value < expectedLeftDp * 2f - 1f
+        )
+        assertTrue(
+            "FeatureScaffold right (${scaffoldBounds.right.value}) should not double-pad ($expectedRightDp)",
+            scaffoldBounds.right.value <= rootBounds.right.value - expectedRightDp + 0.5f &&
+                scaffoldBounds.right.value > rootBounds.right.value - expectedRightDp * 2f + 1f
+        )
     }
 }
