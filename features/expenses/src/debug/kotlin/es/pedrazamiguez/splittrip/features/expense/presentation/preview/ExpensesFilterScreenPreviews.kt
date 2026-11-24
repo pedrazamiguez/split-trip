@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.preview
 
 import androidx.compose.runtime.Composable
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
+import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewNarrowThemes
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseAttribute
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
@@ -155,6 +156,24 @@ private fun ExpensesFilterScreenCurrencyFilterPreview() {
             minAmount = 2500L
         ),
         groupCurrencies = persistentListOf("EUR", "USD", "GBP"),
+        matchingExpensesCount = 2
+    ) { uiState ->
+        ExpensesFilterScreen(uiState = uiState)
+    }
+}
+
+@PreviewNarrowThemes
+@Composable
+private fun ExpensesFilterScreenMultipleCategoriesNarrowPreview() {
+    ExpensesFilterPreviewHelper(
+        draftCriteria = ExpenseFilterCriteria(
+            selectedCategories = setOf(ExpenseCategory.FOOD, ExpenseCategory.TRANSPORT),
+            selectedSubcategories = setOf(
+                ExpenseSubcategory.RESTAURANT,
+                ExpenseSubcategory.TAXI_RIDESHARE,
+                ExpenseSubcategory.TRAIN
+            )
+        ),
         matchingExpensesCount = 2
     ) { uiState ->
         ExpensesFilterScreen(uiState = uiState)

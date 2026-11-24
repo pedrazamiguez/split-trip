@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
  * - **No border** in any state (Horizon Narrative No-Line rule — colour shift defines selection).
  * - **Shape:** `CircleShape` (full-pill — "collectible stamp" feel).
  *
- * ### Usage — selectable tag (CategoryChips, PaymentMethodChips, etc.)
+ * ### Usage — selectable tag (SubcategoryStampTray, PaymentMethodChips, etc.)
  * ```kotlin
  * PassportChip(
  *     label = category.displayText,

@@ -1,0 +1,89 @@
+package es.pedrazamiguez.splittrip.features.expense.presentation.component.category
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debounced
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
+import kotlinx.collections.immutable.ImmutableList
+
+private val STAMP_ICON_SIZE = 16.dp
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun SubcategoryStampTrayContent(
+    title: String,
+    items: ImmutableList<SubcategoryStampItem>,
+    onSubcategoryClicked: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    badgeText: String? = null,
+    badgeStyle: PassportTagStyle = PassportTagStyle.INFO,
+    badgeContentDescription: String? = null
+) {
+    val isNarrow = LocalConfiguration.current.screenWidthDp.dp <= UiConstants.NARROW_SCREEN_BREAKPOINT
+    val contentPadding = if (isNarrow) MaterialTheme.spacing.Medium else MaterialTheme.spacing.Default
+    val badgeModifier = badgeContentDescription?.let { desc ->
+        Modifier.semantics { contentDescription = desc }
+    } ?: Modifier
+
+    FlatCard(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(contentPadding),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CardSectionLabelText(text = title, modifier = Modifier.weight(1f), maxLines = 1)
+                if (!badgeText.isNullOrBlank()) {
+                    PassportTag(text = badgeText, style = badgeStyle, modifier = badgeModifier)
+                }
+            }
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+            ) {
+                items.forEach { item ->
+                    key(item.id) {
+                        val debouncedClick = debounced { onSubcategoryClicked(item.id) }
+                        val iconVector = if (item.isSelected) TablerIcons.Outline.Check else item.icon
+                        PassportChip(
+                            label = item.label,
+                            selected = item.isSelected,
+                            onClick = debouncedClick,
+                            leadingIcon = iconVector?.let { vector ->
+                                { Icon(vector, contentDescription = null, modifier = Modifier.size(STAMP_ICON_SIZE)) }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
