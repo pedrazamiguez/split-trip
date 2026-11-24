@@ -107,9 +107,8 @@ class ExpenseCategoryClassifierServiceImpl(
             sourceConfig = config,
             commonRules = consolidatedCommon,
             primaryPackByLanguage = primaryPackByLanguage,
-            englishFallbackRules = consolidateByCandidate(
-                effectiveLanguages[BundledCategoryRuleCatalog.PACK_EN].orEmpty()
-            )
+            englishFallbackRules = primaryPackByLanguage[BundledCategoryRuleCatalog.PACK_EN]
+                ?: consolidatedCommon
         )
     }
 
@@ -245,7 +244,7 @@ class ExpenseCategoryClassifierServiceImpl(
             ) ?: continue
             mergeCandidate(candidates, scored)
         }
-        return candidates.values
+        return filterContextEligibleCandidates(candidates)
     }
 
     private fun scoreRule(
@@ -254,13 +253,14 @@ class ExpenseCategoryClassifierServiceImpl(
         paddedText: String,
         groupContext: GroupContext
     ): ScoredCategoryCandidate? {
-        val phraseScore = rule.phrases.count { phrase ->
+        val matchedPhrases = rule.phrases.filterTo(LinkedHashSet()) { phrase ->
             paddedText.contains(" $phrase ")
-        } * PHRASE_MATCH_WEIGHT
-        val keywordScore = rule.keywords.count { keyword ->
+        }
+        val matchedKeywords = rule.keywords.filterTo(LinkedHashSet()) { keyword ->
             keyword in tokenSet
-        } * KEYWORD_MATCH_WEIGHT
-        val baseScore = phraseScore + keywordScore
+        }
+        val baseScore = matchedPhrases.size * PHRASE_MATCH_WEIGHT +
+            matchedKeywords.size * KEYWORD_MATCH_WEIGHT
         if (baseScore < MIN_MATCH_BASE_SCORE) return null
 
         val specificityBonus = if (rule.subcategory != null) SUBCATEGORY_SPECIFICITY_BONUS else 0
@@ -275,7 +275,9 @@ class ExpenseCategoryClassifierServiceImpl(
             ),
             baseScore = baseScore,
             totalScore = baseScore + specificityBonus + contextBonus,
-            fitsContext = fitsContext
+            fitsContext = fitsContext,
+            matchedPhrases = matchedPhrases,
+            matchedKeywords = matchedKeywords
         )
     }
 
@@ -288,14 +290,19 @@ class ExpenseCategoryClassifierServiceImpl(
             candidates[scored.candidate] = scored
             return
         }
-        val combinedBaseScore = existing.baseScore + scored.baseScore
+        val combinedPhrases = existing.matchedPhrases + scored.matchedPhrases
+        val combinedKeywords = existing.matchedKeywords + scored.matchedKeywords
+        val combinedBaseScore = combinedPhrases.size * PHRASE_MATCH_WEIGHT +
+            combinedKeywords.size * KEYWORD_MATCH_WEIGHT
         val combinedFitsContext = existing.fitsContext || scored.fitsContext
         val specificityBonus = if (scored.candidate.subcategory != null) SUBCATEGORY_SPECIFICITY_BONUS else 0
         val contextBonus = if (combinedFitsContext) CONTEXT_MATCH_BONUS else 0
         candidates[scored.candidate] = existing.copy(
             baseScore = combinedBaseScore,
             totalScore = combinedBaseScore + specificityBonus + contextBonus,
-            fitsContext = combinedFitsContext
+            fitsContext = combinedFitsContext,
+            matchedPhrases = combinedPhrases,
+            matchedKeywords = combinedKeywords
         )
     }
 
@@ -334,10 +341,28 @@ class ExpenseCategoryClassifierServiceImpl(
         }
     }
 
+    private fun filterContextEligibleCandidates(
+        candidates: Map<CategoryCandidate, ScoredCategoryCandidate>
+    ): List<ScoredCategoryCandidate> = candidates.values.filter { scored ->
+        if (scored.fitsContext || scored.baseScore >= MIN_CROSS_CONTEXT_BASE_SCORE) {
+            return@filter true
+        }
+        val parentCandidate = scored.candidate.subcategory?.let {
+            candidates[CategoryCandidate(category = scored.candidate.category, subcategory = null)]
+        } ?: return@filter false
+
+        val combinedPhrases = scored.matchedPhrases + parentCandidate.matchedPhrases
+        val combinedKeywords = scored.matchedKeywords + parentCandidate.matchedKeywords
+        val corroboratedBaseScore = combinedPhrases.size * PHRASE_MATCH_WEIGHT +
+            combinedKeywords.size * KEYWORD_MATCH_WEIGHT
+        corroboratedBaseScore >= MIN_CROSS_CONTEXT_BASE_SCORE
+    }
+
     private companion object {
         private const val PHRASE_MATCH_WEIGHT = 6
         private const val KEYWORD_MATCH_WEIGHT = 3
         private const val MIN_MATCH_BASE_SCORE = 3
+        private const val MIN_CROSS_CONTEXT_BASE_SCORE = 6
         private const val SUBCATEGORY_SPECIFICITY_BONUS = 1
         private const val CONTEXT_MATCH_BONUS = 2
     }

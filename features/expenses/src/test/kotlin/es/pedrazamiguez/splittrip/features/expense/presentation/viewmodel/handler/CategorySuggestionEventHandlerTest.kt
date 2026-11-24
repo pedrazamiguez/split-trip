@@ -333,4 +333,19 @@ class CategorySuggestionEventHandlerTest {
             assertNull(uiState.value.selectedSubcategory)
             handlerScope.cancel()
         }
+
+    @Test
+    fun `keeps showAllCategories false and preserves default category when use case returns null for ambiguous title`():
+        Unit = runTest(testDispatcher) {
+        coEvery { suggestExpenseCategoryUseCase("agua", GroupContext.TRAVEL) } returns null
+
+        uiState.value = uiState.value.copy(expenseTitle = "agua")
+        handler.handleTitleChanged("agua")
+        advanceUntilIdle()
+
+        assertFalse(uiState.value.showAllCategories)
+        assertEquals(ExpenseCategory.OTHER.name, uiState.value.selectedCategory?.id)
+        assertNull(uiState.value.selectedSubcategory)
+        handlerScope.cancel()
+    }
 }

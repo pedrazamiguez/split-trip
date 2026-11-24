@@ -14,7 +14,9 @@ internal data class ScoredCategoryCandidate(
     val candidate: CategoryCandidate,
     val baseScore: Int,
     val totalScore: Int,
-    val fitsContext: Boolean
+    val fitsContext: Boolean,
+    val matchedPhrases: Set<String> = emptySet(),
+    val matchedKeywords: Set<String> = emptySet()
 )
 
 internal data class CompiledRuleSnapshot(
