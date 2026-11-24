@@ -77,7 +77,7 @@ internal object CategoryCommonRules {
         CategoryKeywordRule(
             category = ExpenseCategory.FOOD,
             subcategory = ExpenseSubcategory.GROCERIES_SUPERMARKET,
-            keywords = listOf("carrefour", "lidl", "aldi")
+            keywords = listOf("carrefour", "lidl", "aldi", "snack", "snacks")
         ),
         CategoryKeywordRule(
             category = ExpenseCategory.FOOD,
@@ -205,7 +205,7 @@ internal object CategoryCommonRules {
         CategoryKeywordRule(
             category = ExpenseCategory.HOME,
             subcategory = ExpenseSubcategory.UTILITIES,
-            keywords = listOf("gas", "internet", "wifi", "vodafone")
+            keywords = listOf("vodafone")
         ),
         CategoryKeywordRule(
             category = ExpenseCategory.HOME,

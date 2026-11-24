@@ -103,7 +103,11 @@ internal object CategoryEnglishRules {
         CategoryKeywordRule(
             category = ExpenseCategory.FOOD,
             subcategory = ExpenseSubcategory.GROCERIES_SUPERMARKET,
-            keywords = listOf("supermarket", "groceries", "grocery", "tesco", "sainsbury", "walmart", "wholefoods")
+            phrases = listOf("bottled water", "soft drink", "soft drinks"),
+            keywords = listOf(
+                "supermarket", "groceries", "grocery", "tesco", "sainsbury", "walmart", "wholefoods",
+                "water", "soda", "chips"
+            )
         ),
         CategoryKeywordRule(
             category = ExpenseCategory.FOOD,
@@ -125,6 +129,11 @@ internal object CategoryEnglishRules {
         ),
 
         // ── LODGING ────────────────────────────────────────────────────────
+        CategoryKeywordRule(
+            category = ExpenseCategory.LODGING,
+            subcategory = null,
+            keywords = listOf("lodging", "accommodation", "nights", "stay")
+        ),
         CategoryKeywordRule(
             category = ExpenseCategory.LODGING,
             subcategory = ExpenseSubcategory.HOSTEL,
@@ -237,7 +246,15 @@ internal object CategoryEnglishRules {
         CategoryKeywordRule(
             category = ExpenseCategory.HOME,
             subcategory = ExpenseSubcategory.UTILITIES,
-            phrases = listOf("water bill", "electricity bill", "electric bill", "gas bill", "internet bill"),
+            phrases = listOf(
+                "water bill",
+                "electricity bill",
+                "electric bill",
+                "gas bill",
+                "internet bill",
+                "wifi bill",
+                "utility bill"
+            ),
             keywords = listOf("utilities", "electricity")
         ),
         CategoryKeywordRule(

@@ -125,10 +125,11 @@ internal object CategorySpanishRules {
         CategoryKeywordRule(
             category = ExpenseCategory.FOOD,
             subcategory = ExpenseSubcategory.GROCERIES_SUPERMARKET,
-            phrases = listOf("compra semanal"),
+            phrases = listOf("compra semanal", "agua mineral", "botella agua", "botella de agua"),
             keywords = listOf(
                 "supermercado", "fruteria", "carniceria", "pescaderia", "panaderia",
-                "mercadona", "alcampo", "eroski", "consum", "ahorramas", "despensa"
+                "mercadona", "alcampo", "eroski", "consum", "ahorramas", "despensa",
+                "agua", "refresco", "refrescos", "aperitivo", "picoteo"
             )
         ),
         CategoryKeywordRule(
@@ -161,6 +162,11 @@ internal object CategorySpanishRules {
         ),
 
         // ── LODGING ────────────────────────────────────────────────────────
+        CategoryKeywordRule(
+            category = ExpenseCategory.LODGING,
+            subcategory = null,
+            keywords = listOf("noches", "estancia", "hospedaje")
+        ),
         CategoryKeywordRule(
             category = ExpenseCategory.LODGING,
             subcategory = ExpenseSubcategory.HOTEL,
@@ -292,11 +298,13 @@ internal object CategorySpanishRules {
             subcategory = ExpenseSubcategory.UTILITIES,
             phrases = listOf(
                 "factura agua", "factura del agua", "factura luz", "factura de la luz",
-                "factura gas", "factura internet", "recibo luz", "recibo agua", "recibo gas"
+                "factura gas", "factura del gas", "factura internet", "factura wifi",
+                "recibo luz", "recibo de la luz", "recibo agua", "recibo del agua",
+                "recibo gas", "recibo del gas", "recibo internet", "recibo wifi"
             ),
             keywords = listOf(
-                "factura", "recibo", "luz", "electricidad", "agua", "fibra",
-                "suministros", "calefaccion", "iberdrola", "endesa", "naturgy", "digi", "movistar"
+                "factura", "recibo", "electricidad", "fibra", "suministros",
+                "calefaccion", "iberdrola", "endesa", "naturgy", "digi", "movistar"
             )
         ),
         CategoryKeywordRule(

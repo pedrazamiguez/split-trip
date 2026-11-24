@@ -420,4 +420,140 @@ class ExpenseCategoryClassifierServiceImplTest {
             ).isEmpty
         )
     }
+
+    @Test
+    fun `classifies agua y snacks and water and snacks as groceries in both TRAVEL and EVERYDAY contexts`() {
+        val expected = CategorySuggestion(ExpenseCategory.FOOD, ExpenseSubcategory.GROCERIES_SUPERMARKET)
+        assertEquals(expected, classifier.classify("agua y snacks", GroupContext.TRAVEL, "es"))
+        assertEquals(expected, classifier.classify("agua y snacks", GroupContext.EVERYDAY, "es"))
+        assertEquals(expected, classifier.classify("agua y snacks", GroupContext.TRAVEL, "en"))
+        assertEquals(expected, classifier.classify("water and snacks", GroupContext.TRAVEL, "en"))
+        assertEquals(expected, classifier.classify("water and snacks", GroupContext.EVERYDAY, "en"))
+        assertEquals(expected, classifier.classify("agua con gas", GroupContext.TRAVEL, "es"))
+        assertEquals(expected, classifier.classify("agua con gas", GroupContext.EVERYDAY, "es"))
+        assertEquals(expected, classifier.classify("refrescos y picoteo", GroupContext.TRAVEL, "es"))
+    }
+
+    @Test
+    fun `does not classify standalone agua, luz, gas, internet, or wifi as HOME UTILITIES in TRAVEL or EVERYDAY`() {
+        val expectedGroceries = CategorySuggestion(ExpenseCategory.FOOD, ExpenseSubcategory.GROCERIES_SUPERMARKET)
+        assertEquals(expectedGroceries, classifier.classify("agua", GroupContext.TRAVEL, "es"))
+        assertEquals(expectedGroceries, classifier.classify("agua", GroupContext.EVERYDAY, "es"))
+        assertNull(classifier.classify("luz", GroupContext.TRAVEL, "es"))
+        assertNull(classifier.classify("luz", GroupContext.EVERYDAY, "es"))
+        assertNull(classifier.classify("gas", GroupContext.TRAVEL, "en"))
+        assertNull(classifier.classify("gas", GroupContext.EVERYDAY, "en"))
+        assertNull(classifier.classify("wifi", GroupContext.TRAVEL, "es"))
+        assertNull(classifier.classify("internet", GroupContext.TRAVEL, "en"))
+    }
+
+    @Test
+    fun `still classifies explicit utility titles and utility providers as HOME UTILITIES`() {
+        val expected = CategorySuggestion(ExpenseCategory.HOME, ExpenseSubcategory.UTILITIES)
+        assertEquals(expected, classifier.classify("factura del agua", GroupContext.EVERYDAY, "es"))
+        assertEquals(expected, classifier.classify("factura del agua", GroupContext.TRAVEL, "es"))
+        assertEquals(expected, classifier.classify("recibo agua", GroupContext.EVERYDAY, "es"))
+        assertEquals(expected, classifier.classify("recibo de la luz", GroupContext.EVERYDAY, "es"))
+        assertEquals(expected, classifier.classify("factura wifi", GroupContext.EVERYDAY, "es"))
+        assertEquals(expected, classifier.classify("water bill", GroupContext.EVERYDAY, "en"))
+        assertEquals(expected, classifier.classify("water bill", GroupContext.TRAVEL, "en"))
+        assertEquals(expected, classifier.classify("gas bill", GroupContext.EVERYDAY, "en"))
+        assertEquals(expected, classifier.classify("internet bill", GroupContext.EVERYDAY, "en"))
+        assertEquals(expected, classifier.classify("iberdrola", GroupContext.EVERYDAY, "es"))
+        assertEquals(expected, classifier.classify("endesa", GroupContext.EVERYDAY, "es"))
+    }
+
+    @Test
+    fun `preserves phrase precedence for water park and fish and chips over single food keywords`() {
+        assertEquals(
+            CategorySuggestion(ExpenseCategory.ACTIVITIES, ExpenseSubcategory.TICKETS_ATTRACTIONS),
+            classifier.classify("water park", GroupContext.TRAVEL, "en")
+        )
+        assertEquals(
+            CategorySuggestion(ExpenseCategory.ACTIVITIES, ExpenseSubcategory.TICKETS_ATTRACTIONS),
+            classifier.classify("water park", GroupContext.EVERYDAY, "en")
+        )
+        assertEquals(
+            CategorySuggestion(ExpenseCategory.FOOD, ExpenseSubcategory.RESTAURANT),
+            classifier.classify("fish and chips", GroupContext.TRAVEL, "en")
+        )
+    }
+
+    @Test
+    fun `blocks single-token out-of-context matches while allowing multi-token or phrase matches`() {
+        assertNull(classifier.classify("iberdrola", GroupContext.TRAVEL, "es"))
+        assertNull(classifier.classify("tostadora", GroupContext.TRAVEL, "es"))
+        assertNull(classifier.classify("hotel", GroupContext.EVERYDAY, "en"))
+
+        assertEquals(
+            CategorySuggestion(ExpenseCategory.LODGING, ExpenseSubcategory.HOTEL),
+            classifier.classify("3 nights Chengdu hotel", GroupContext.EVERYDAY, "en")
+        )
+        assertEquals(
+            CategorySuggestion(ExpenseCategory.LODGING, ExpenseSubcategory.HOTEL),
+            classifier.classify("3 nights Chengdu hotel", GroupContext.EVERYDAY, "es")
+        )
+        assertEquals(
+            CategorySuggestion(ExpenseCategory.LODGING, ExpenseSubcategory.HOTEL),
+            classifier.classify("3 noches hotel Madrid", GroupContext.EVERYDAY, "es")
+        )
+        assertEquals(
+            CategorySuggestion(ExpenseCategory.HEALTH_PERSONAL_CARE, ExpenseSubcategory.GYM_FITNESS),
+            classifier.classify("cuota gimnasio", GroupContext.TRAVEL, "es")
+        )
+        assertEquals(
+            CategorySuggestion(ExpenseCategory.HOME, ExpenseSubcategory.UTILITIES),
+            classifier.classify("factura iberdrola", GroupContext.TRAVEL, "es")
+        )
+
+        rulesConfigFlow.value = CategoryClassifierRuleConfig(
+            languageRules = mapOf(
+                "es" to listOf(
+                    CategoryKeywordRule(ExpenseCategory.HOME, null, keywords = listOf("recargoagua")),
+                    CategoryKeywordRule(
+                        ExpenseCategory.HOME,
+                        ExpenseSubcategory.UTILITIES,
+                        keywords = listOf("recargoagua", "empaste")
+                    ),
+                    CategoryKeywordRule(
+                        ExpenseCategory.HEALTH_PERSONAL_CARE,
+                        ExpenseSubcategory.DOCTOR_DENTIST,
+                        phrases = listOf("revision dental"),
+                        keywords = listOf("empaste")
+                    )
+                )
+            )
+        )
+
+        assertNull(classifier.classify("recargoagua", GroupContext.TRAVEL, "es"))
+        assertEquals(
+            CategorySuggestion(ExpenseCategory.HOME, ExpenseSubcategory.UTILITIES),
+            classifier.classify("recargoagua", GroupContext.EVERYDAY, "es")
+        )
+        assertNull(classifier.classify("empaste", GroupContext.TRAVEL, "es"))
+        assertEquals(
+            CategorySuggestion(ExpenseCategory.HEALTH_PERSONAL_CARE, ExpenseSubcategory.DOCTOR_DENTIST),
+            classifier.classify("revision dental", GroupContext.TRAVEL, "es")
+        )
+    }
+
+    @Test
+    fun `falls back to English pack when primary pack only has gated-out cross-context matches`() {
+        rulesConfigFlow.value = CategoryClassifierRuleConfig(
+            languageRules = mapOf(
+                "es" to listOf(
+                    CategoryKeywordRule(
+                        ExpenseCategory.HOME,
+                        ExpenseSubcategory.UTILITIES,
+                        keywords = listOf("domestic")
+                    )
+                )
+            )
+        )
+
+        assertEquals(
+            CategorySuggestion(ExpenseCategory.TRANSPORT, ExpenseSubcategory.DOMESTIC_FLIGHT),
+            classifier.classify("domestic flight to Tokyo", GroupContext.TRAVEL, "es")
+        )
+    }
 }
