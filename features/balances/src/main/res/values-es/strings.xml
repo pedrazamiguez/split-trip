@@ -204,8 +204,8 @@
     <!-- Exportación del resumen del grupo -->
     <string name="balances_export_action_cd">Exportar resumen del grupo</string>
     <string name="balances_export_sheet_title">Exportar resumen del grupo</string>
-    <string name="balances_export_sheet_subtitle">Comparte un resumen PDF o una hoja CSV con gastos detallados, balances y acuerdos de pago del periodo seleccionado.</string>
-    <string name="balances_export_sheet_subtitle_free">Comparte un resumen PDF con los totales del grupo, balances de miembros y acuerdos de pago del periodo seleccionado.</string>
+    <string name="balances_export_sheet_subtitle">Comparte o guarda un resumen PDF o una hoja CSV con gastos detallados, balances y acuerdos de pago del periodo seleccionado.</string>
+    <string name="balances_export_sheet_subtitle_free">Comparte o guarda un resumen PDF con los totales del grupo, balances de miembros y acuerdos de pago del periodo seleccionado.</string>
     <plurals name="balances_export_free_quota_badge">
         <item quantity="one">%1$d de %2$d PDF gratis disponible este mes</item>
         <item quantity="other">%1$d de %2$d PDF gratis disponibles este mes</item>
@@ -217,11 +217,15 @@
     <string name="balances_export_format_csv">Hoja CSV</string>
     <string name="balances_export_format_csv_pro">CSV · Pro</string>
     <string name="balances_export_confirm_button">Exportar y compartir</string>
+    <string name="balances_export_save_button">Guardar en el dispositivo</string>
     <string name="balances_export_cancel_button">Cancelar</string>
     <string name="balances_export_share_chooser_title">Compartir resumen del grupo</string>
+    <string name="balances_export_save_success">Guardado: %1$s</string>
     <string name="balances_export_error_failed">No hemos podido exportar el resumen del grupo. Inténtalo de nuevo.</string>
+    <string name="balances_export_save_error_failed">No se pudo guardar el resumen del grupo. Inténtalo de nuevo.</string>
     <string name="balances_export_error_group_not_ready">Los datos del grupo aún se están cargando. Inténtalo en un momento.</string>
     <string name="balances_export_error_no_share_app">No hay ninguna aplicación disponible para compartir este archivo</string>
+    <string name="balances_export_error_no_save_app">No hay ningún selector de archivos disponible para guardar este archivo</string>
     <string name="balances_export_report_title_pro">Resumen y registro del grupo</string>
     <string name="balances_export_report_title_free">Resumen del grupo</string>
     <string name="balances_export_generated_at">Generado el %1$s</string>

@@ -27,6 +27,7 @@ private fun TripReportExportBottomSheetDefaultPreview() {
             onSelectCustomEndDate = {},
             onSelectFormat = {},
             onConfirmExport = {},
+            onSaveToDevice = {},
             onDismiss = {}
         )
     }
@@ -51,6 +52,7 @@ private fun TripReportExportBottomSheetFreeTierPreview() {
             onSelectCustomEndDate = {},
             onSelectFormat = {},
             onConfirmExport = {},
+            onSaveToDevice = {},
             onDismiss = {}
         )
     }
@@ -77,6 +79,7 @@ private fun TripReportExportBottomSheetCustomCsvPreview() {
             onSelectCustomEndDate = {},
             onSelectFormat = {},
             onConfirmExport = {},
+            onSaveToDevice = {},
             onDismiss = {}
         )
     }

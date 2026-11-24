@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -22,13 +23,16 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.Share
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.navigation.KEY_EXPORT_REPORT_REQUESTED
+import es.pedrazamiguez.splittrip.features.balance.presentation.component.export.TripReportSaveEffect
 import es.pedrazamiguez.splittrip.features.balance.presentation.screen.SpendingInsightsScreen
+import es.pedrazamiguez.splittrip.features.balance.presentation.util.CreateTripReportDocumentRequest
 import es.pedrazamiguez.splittrip.features.balance.presentation.util.ReportShareLauncher
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.SpendingInsightsViewModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.action.SpendingInsightsUiAction
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.SpendingInsightsUiEvent
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
@@ -51,8 +55,30 @@ fun SpendingInsightsFeature(
     val uiState by spendingInsightsViewModel.uiState.collectAsStateWithLifecycle()
     val selectedGroupId by sharedViewModel.selectedGroupId.collectAsStateWithLifecycle()
     var proPreviewPrompt by remember { mutableStateOf<ProFeaturePreviewPrompt?>(null) }
+    var pendingSaveRequest by remember { mutableStateOf<CreateTripReportDocumentRequest?>(null) }
+    val coroutineScope = rememberCoroutineScope()
     val shareChooserTitle = stringResource(R.string.balances_export_share_chooser_title)
     val noShareAppMessage = stringResource(R.string.balances_export_error_no_share_app)
+    val noSaveAppMessage = stringResource(R.string.balances_export_error_no_save_app)
+
+    TripReportSaveEffect(
+        pendingSaveRequest = pendingSaveRequest,
+        onRequestConsumed = { pendingSaveRequest = null },
+        onDestinationSelected = { destinationUri ->
+            spendingInsightsViewModel.onEvent(
+                SpendingInsightsUiEvent.CompleteSaveExportedReport(destinationUri)
+            )
+        },
+        onCancelled = {
+            spendingInsightsViewModel.onEvent(SpendingInsightsUiEvent.CancelSaveExportedReport)
+        },
+        onLaunchFailed = {
+            spendingInsightsViewModel.onEvent(SpendingInsightsUiEvent.CancelSaveExportedReport)
+            coroutineScope.launch {
+                pillController.showPill(message = noSaveAppMessage)
+            }
+        }
+    )
 
     // Apply filter criteria before selectedGroupId so initial emission uses active filters without flashing.
     LaunchedEffect(initialFilterCriteria) {
@@ -100,6 +126,15 @@ fun SpendingInsightsFeature(
                     if (!launched) {
                         pillController.showPill(message = noShareAppMessage)
                     }
+                }
+                is SpendingInsightsUiAction.LaunchSaveDocumentPicker -> {
+                    pendingSaveRequest = CreateTripReportDocumentRequest(
+                        fileName = action.fileName,
+                        mimeType = action.mimeType
+                    )
+                }
+                is SpendingInsightsUiAction.ShowExportSaveSuccess -> {
+                    pillController.showPill(message = action.message.asString(context))
                 }
             }
         }

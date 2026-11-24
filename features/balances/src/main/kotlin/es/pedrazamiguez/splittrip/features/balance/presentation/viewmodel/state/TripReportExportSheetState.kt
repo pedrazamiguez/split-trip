@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state
 import androidx.compose.runtime.Immutable
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportFormat
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.SpendingPeriodPreset
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.TripReportExportTarget
 import java.time.LocalDate
 
 @Immutable
@@ -20,5 +21,6 @@ data class TripReportExportSheetState(
     val includesItemisedDetails: Boolean = true,
     val remainingFreeExports: Int? = null,
     val monthlyFreeExportLimit: Int? = null,
-    val isExporting: Boolean = false
+    val isExporting: Boolean = false,
+    val activeExportTarget: TripReportExportTarget? = null
 )

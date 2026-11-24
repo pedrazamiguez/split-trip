@@ -74,6 +74,13 @@ class SpendingInsightsViewModel(
                         mimeType = exportAction.mimeType,
                         fileName = exportAction.fileName
                     )
+                is TripReportExportAction.LaunchSaveDocumentPicker ->
+                    SpendingInsightsUiAction.LaunchSaveDocumentPicker(
+                        fileName = exportAction.fileName,
+                        mimeType = exportAction.mimeType
+                    )
+                is TripReportExportAction.ShowExportSaveSuccess ->
+                    SpendingInsightsUiAction.ShowExportSaveSuccess(exportAction.message)
                 is TripReportExportAction.ShowExportError ->
                     SpendingInsightsUiAction.ShowExportError(exportAction.message)
             }
@@ -217,18 +224,16 @@ class SpendingInsightsViewModel(
             is SpendingInsightsUiEvent.SelectExportCustomStartDate,
             is SpendingInsightsUiEvent.SelectExportCustomEndDate,
             is SpendingInsightsUiEvent.SelectExportFormat,
-            SpendingInsightsUiEvent.ConfirmExportReport -> handleExportEvent(event)
+            SpendingInsightsUiEvent.ConfirmExportReport,
+            SpendingInsightsUiEvent.SaveExportReport,
+            is SpendingInsightsUiEvent.CompleteSaveExportedReport,
+            SpendingInsightsUiEvent.CancelSaveExportedReport -> handleExportEvent(event)
         }
     }
 
     private fun handleExportEvent(event: SpendingInsightsUiEvent) {
         when (event) {
-            SpendingInsightsUiEvent.RequestExportReport -> {
-                val groupId = _selectedGroupId.value
-                if (groupId == null) {
-                    emitExportGroupNotReadyError()
-                    return
-                }
+            SpendingInsightsUiEvent.RequestExportReport -> withSelectedGroupIdOrError { groupId ->
                 val selection = _selectionState.value
                 tripReportExportEventHandler.handleExportRequested(
                     groupId = groupId,
@@ -250,16 +255,27 @@ class SpendingInsightsViewModel(
                 tripReportExportEventHandler.handleSelectCustomEndDate(event.date)
             is SpendingInsightsUiEvent.SelectExportFormat ->
                 tripReportExportEventHandler.handleSelectFormat(event.format)
-            SpendingInsightsUiEvent.ConfirmExportReport -> {
-                val groupId = _selectedGroupId.value
-                if (groupId == null) {
-                    emitExportGroupNotReadyError()
-                    return
-                }
+            SpendingInsightsUiEvent.ConfirmExportReport -> withSelectedGroupIdOrError { groupId ->
                 tripReportExportEventHandler.handleConfirmExport(groupId)
             }
+            SpendingInsightsUiEvent.SaveExportReport -> withSelectedGroupIdOrError { groupId ->
+                tripReportExportEventHandler.handleSaveExport(groupId)
+            }
+            is SpendingInsightsUiEvent.CompleteSaveExportedReport ->
+                tripReportExportEventHandler.handleCompleteSaveExport(event.destinationUri)
+            SpendingInsightsUiEvent.CancelSaveExportedReport ->
+                tripReportExportEventHandler.handleCancelSaveExport()
             else -> Unit
         }
+    }
+
+    private inline fun withSelectedGroupIdOrError(action: (String) -> Unit) {
+        val groupId = _selectedGroupId.value
+        if (groupId == null) {
+            emitExportGroupNotReadyError()
+            return
+        }
+        action(groupId)
     }
 
     private fun emitExportGroupNotReadyError() {

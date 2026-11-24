@@ -339,4 +339,254 @@ class TripReportExportEventHandlerImplTest {
             handler.handleDismissExportSheet()
             assertFalse(handler.exportSheetState.value.isVisible)
         }
+
+    @Test
+    fun `handleSaveExport for Free user emits LaunchSaveDocumentPicker without consuming quota`() =
+        runTest(testDispatcher) {
+            handler.bind(this) { emittedActions.add(it) }
+            every { featureGateService.observeReportExportQuota() } returns flowOf(freeAvailableQuota)
+            val report = mockk<GroupTripReport>()
+            val payload = mockk<TripReportExportPayload>()
+            val exportedFile = ExportedTripReportFile(
+                contentUri = "content://es.pedrazamiguez.splittrip.fileprovider/exports/summary.pdf",
+                fileName = "summary.pdf",
+                mimeType = "application/pdf"
+            )
+            coEvery {
+                buildGroupTripReportUseCase("group-1", SpendingInsightsPeriod.AllTime, fixedToday, any())
+            } returns report
+            every {
+                tripReportExportUiMapper.mapToExportPayload(report, fixedToday.year, false)
+            } returns payload
+            coEvery { tripReportExportService.export(payload, TripReportFormat.PDF) } returns exportedFile
+
+            handler.handleExportRequested(
+                groupId = "group-1",
+                gateEntryPoint = MonetizationTelemetry.GateEntryPoint.BALANCES_EXPORT_ACTION
+            )
+            advanceUntilIdle()
+            handler.handleSaveExport("group-1")
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { recordReportExportUseCase() }
+            assertTrue(handler.exportSheetState.value.isVisible)
+            assertFalse(handler.exportSheetState.value.isExporting)
+            assertNull(handler.exportSheetState.value.activeExportTarget)
+            assertEquals(
+                listOf(
+                    TripReportExportAction.LaunchSaveDocumentPicker(
+                        fileName = "summary.pdf",
+                        mimeType = "application/pdf"
+                    )
+                ),
+                emittedActions
+            )
+        }
+
+    @Test
+    fun `handleSaveExport for Pro user with CSV emits LaunchSaveDocumentPicker without quota`() =
+        runTest(testDispatcher) {
+            handler.bind(this) { emittedActions.add(it) }
+            every { featureGateService.observeReportExportQuota() } returns flowOf(proQuota)
+            val report = mockk<GroupTripReport>()
+            val payload = mockk<TripReportExportPayload>()
+            val exportedFile = ExportedTripReportFile(
+                contentUri = "content://es.pedrazamiguez.splittrip.fileprovider/exports/summary.csv",
+                fileName = "summary.csv",
+                mimeType = "text/csv"
+            )
+            coEvery {
+                buildGroupTripReportUseCase("group-1", SpendingInsightsPeriod.AllTime, fixedToday, any())
+            } returns report
+            every {
+                tripReportExportUiMapper.mapToExportPayload(report, fixedToday.year, true)
+            } returns payload
+            coEvery { tripReportExportService.export(payload, TripReportFormat.CSV) } returns exportedFile
+
+            handler.handleExportRequested(
+                groupId = "group-1",
+                gateEntryPoint = MonetizationTelemetry.GateEntryPoint.BALANCES_EXPORT_ACTION
+            )
+            advanceUntilIdle()
+            handler.handleSelectFormat(TripReportFormat.CSV)
+            handler.handleSaveExport("group-1")
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { recordReportExportUseCase() }
+            assertEquals(
+                listOf(
+                    TripReportExportAction.LaunchSaveDocumentPicker(
+                        fileName = "summary.csv",
+                        mimeType = "text/csv"
+                    )
+                ),
+                emittedActions
+            )
+        }
+
+    @Test
+    fun `handleSaveExport when Free quota exhausted or CSV locked dismisses sheet and emits ShowProFeaturePreview`() =
+        runTest(testDispatcher) {
+            handler.bind(this) { emittedActions.add(it) }
+            every { featureGateService.observeReportExportQuota() } returnsMany listOf(
+                flowOf(freeAvailableQuota),
+                flowOf(freeExhaustedQuota)
+            )
+
+            handler.handleExportRequested(
+                groupId = "group-1",
+                gateEntryPoint = MonetizationTelemetry.GateEntryPoint.BALANCES_EXPORT_ACTION
+            )
+            advanceUntilIdle()
+            handler.handleSaveExport("group-1")
+            advanceUntilIdle()
+
+            assertFalse(handler.exportSheetState.value.isVisible)
+            assertFalse(handler.exportSheetState.value.isExporting)
+            assertNull(handler.exportSheetState.value.activeExportTarget)
+            coVerify(exactly = 0) { tripReportExportService.export(any(), any()) }
+            assertTrue(emittedActions.single() is TripReportExportAction.ShowProFeaturePreview)
+            verify {
+                telemetryTracker.trackEvent(
+                    MonetizationTelemetry.Event.FEATURE_GATE_BLOCKED,
+                    any()
+                )
+            }
+        }
+
+    @Test
+    fun `handleCompleteSaveExport copies file, consumes quota, closes sheet, emits success`() =
+        runTest(testDispatcher) {
+            handler.bind(this) { emittedActions.add(it) }
+            every { featureGateService.observeReportExportQuota() } returns flowOf(freeAvailableQuota)
+            val report = mockk<GroupTripReport>()
+            val payload = mockk<TripReportExportPayload>()
+            val exportedFile = ExportedTripReportFile(
+                contentUri = "content://es.pedrazamiguez.splittrip.fileprovider/exports/summary.pdf",
+                fileName = "summary.pdf",
+                mimeType = "application/pdf"
+            )
+            coEvery {
+                buildGroupTripReportUseCase("group-1", SpendingInsightsPeriod.AllTime, fixedToday, any())
+            } returns report
+            every {
+                tripReportExportUiMapper.mapToExportPayload(report, fixedToday.year, false)
+            } returns payload
+            coEvery { tripReportExportService.export(payload, TripReportFormat.PDF) } returns exportedFile
+            coEvery {
+                tripReportExportService.saveToUri(exportedFile.contentUri, "content://documents/saved.pdf")
+            } just runs
+
+            handler.handleExportRequested(
+                groupId = "group-1",
+                gateEntryPoint = MonetizationTelemetry.GateEntryPoint.BALANCES_EXPORT_ACTION
+            )
+            advanceUntilIdle()
+            handler.handleSaveExport("group-1")
+            advanceUntilIdle()
+            handler.handleCompleteSaveExport("content://documents/saved.pdf")
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) {
+                tripReportExportService.saveToUri(exportedFile.contentUri, "content://documents/saved.pdf")
+            }
+            coVerify(exactly = 1) { recordReportExportUseCase() }
+            assertFalse(handler.exportSheetState.value.isVisible)
+            assertFalse(handler.exportSheetState.value.isExporting)
+            assertNull(handler.exportSheetState.value.activeExportTarget)
+            assertEquals(2, emittedActions.size)
+            assertTrue(emittedActions[1] is TripReportExportAction.ShowExportSaveSuccess)
+        }
+
+    @Test
+    fun `handleCancelSaveExport clears pending save, keeps sheet visible, and skips quota`() =
+        runTest(testDispatcher) {
+            handler.bind(this) { emittedActions.add(it) }
+            every { featureGateService.observeReportExportQuota() } returns flowOf(freeAvailableQuota)
+            val report = mockk<GroupTripReport>()
+            val payload = mockk<TripReportExportPayload>()
+            val exportedFile = ExportedTripReportFile(
+                contentUri = "content://es.pedrazamiguez.splittrip.fileprovider/exports/summary.pdf",
+                fileName = "summary.pdf",
+                mimeType = "application/pdf"
+            )
+            coEvery {
+                buildGroupTripReportUseCase("group-1", SpendingInsightsPeriod.AllTime, fixedToday, any())
+            } returns report
+            every {
+                tripReportExportUiMapper.mapToExportPayload(report, fixedToday.year, false)
+            } returns payload
+            coEvery { tripReportExportService.export(payload, TripReportFormat.PDF) } returns exportedFile
+
+            handler.handleExportRequested(
+                groupId = "group-1",
+                gateEntryPoint = MonetizationTelemetry.GateEntryPoint.BALANCES_EXPORT_ACTION
+            )
+            advanceUntilIdle()
+            handler.handleSaveExport("group-1")
+            advanceUntilIdle()
+            handler.handleCancelSaveExport()
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { tripReportExportService.saveToUri(any(), any()) }
+            coVerify(exactly = 0) { recordReportExportUseCase() }
+            assertTrue(handler.exportSheetState.value.isVisible)
+            assertFalse(handler.exportSheetState.value.isExporting)
+            assertNull(handler.exportSheetState.value.activeExportTarget)
+            assertEquals(1, emittedActions.size)
+            assertTrue(emittedActions.single() is TripReportExportAction.LaunchSaveDocumentPicker)
+        }
+
+    @Test
+    fun `handleCompleteSaveExport on IOException skips quota and emits ShowExportError`() =
+        runTest(testDispatcher) {
+            handler.bind(this) { emittedActions.add(it) }
+            every { featureGateService.observeReportExportQuota() } returns flowOf(freeAvailableQuota)
+            val report = mockk<GroupTripReport>()
+            val payload = mockk<TripReportExportPayload>()
+            val exportedFile = ExportedTripReportFile(
+                contentUri = "content://es.pedrazamiguez.splittrip.fileprovider/exports/summary.pdf",
+                fileName = "summary.pdf",
+                mimeType = "application/pdf"
+            )
+            coEvery {
+                buildGroupTripReportUseCase("group-1", SpendingInsightsPeriod.AllTime, fixedToday, any())
+            } returns report
+            every {
+                tripReportExportUiMapper.mapToExportPayload(report, fixedToday.year, false)
+            } returns payload
+            coEvery { tripReportExportService.export(payload, TripReportFormat.PDF) } returns exportedFile
+            coEvery {
+                tripReportExportService.saveToUri(exportedFile.contentUri, "content://documents/saved.pdf")
+            } throws IOException("Permission denied")
+
+            handler.handleExportRequested(
+                groupId = "group-1",
+                gateEntryPoint = MonetizationTelemetry.GateEntryPoint.BALANCES_EXPORT_ACTION
+            )
+            advanceUntilIdle()
+            handler.handleSaveExport("group-1")
+            advanceUntilIdle()
+            handler.handleCompleteSaveExport("content://documents/saved.pdf")
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { recordReportExportUseCase() }
+            assertFalse(handler.exportSheetState.value.isExporting)
+            assertNull(handler.exportSheetState.value.activeExportTarget)
+            assertEquals(2, emittedActions.size)
+            assertTrue(emittedActions[1] is TripReportExportAction.ShowExportError)
+        }
+
+    @Test
+    fun `handleCompleteSaveExport without pending save file emits ShowExportError without consuming quota`() =
+        runTest(testDispatcher) {
+            handler.bind(this) { emittedActions.add(it) }
+
+            handler.handleCompleteSaveExport("content://documents/orphan.pdf")
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { recordReportExportUseCase() }
+            assertEquals(1, emittedActions.size)
+            assertTrue(emittedActions.single() is TripReportExportAction.ShowExportError)
+        }
 }

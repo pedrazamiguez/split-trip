@@ -13,4 +13,9 @@ sealed interface SpendingInsightsUiAction {
         val mimeType: String,
         val fileName: String
     ) : SpendingInsightsUiAction
+    data class LaunchSaveDocumentPicker(
+        val fileName: String,
+        val mimeType: String
+    ) : SpendingInsightsUiAction
+    data class ShowExportSaveSuccess(val message: UiText) : SpendingInsightsUiAction
 }

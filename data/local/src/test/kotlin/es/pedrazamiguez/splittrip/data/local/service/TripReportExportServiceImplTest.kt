@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.data.local.service
 
+import android.content.ContentResolver
 import android.content.Context
+import android.net.Uri
 import es.pedrazamiguez.splittrip.data.local.service.export.TripReportCsvFormatter
 import es.pedrazamiguez.splittrip.data.local.service.export.TripReportPdfRenderer
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportBrandFooter
@@ -14,14 +16,19 @@ import es.pedrazamiguez.splittrip.domain.model.report.TripReportTone
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.IOException
 import java.nio.file.Files
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -30,16 +37,23 @@ class TripReportExportServiceImplTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var tempCacheDir: File
+    private lateinit var contentResolver: ContentResolver
     private lateinit var context: Context
     private lateinit var pdfRenderer: TripReportPdfRenderer
+    private lateinit var sourceUri: Uri
+    private lateinit var destinationUri: Uri
     private lateinit var service: TripReportExportServiceImpl
 
     @BeforeEach
     fun setUp() {
         tempCacheDir = Files.createTempDirectory("export-service-test").toFile()
+        contentResolver = mockk()
+        sourceUri = mockk()
+        destinationUri = mockk()
         context = mockk {
             every { cacheDir } returns tempCacheDir
             every { packageName } returns "es.pedrazamiguez.splittrip"
+            every { contentResolver } returns this@TripReportExportServiceImplTest.contentResolver
         }
         pdfRenderer = mockk(relaxed = true)
         service = TripReportExportServiceImpl(
@@ -49,6 +63,13 @@ class TripReportExportServiceImplTest {
             ioDispatcher = testDispatcher,
             uriResolver = { _, file ->
                 "content://es.pedrazamiguez.splittrip.fileprovider/exports/${file.name}"
+            },
+            uriParser = { raw ->
+                when (raw) {
+                    SOURCE_URI_STRING -> sourceUri
+                    DEST_URI_STRING -> destinationUri
+                    else -> mockk()
+                }
             }
         )
     }
@@ -99,6 +120,47 @@ class TripReportExportServiceImplTest {
             )
         }
 
+    @Test
+    fun `saveToUri copies bytes from sourceContentUri to destinationUri and flushes stream`() =
+        runTest(testDispatcher) {
+            val expectedBytes = "pdf-or-csv-content".toByteArray(Charsets.UTF_8)
+            val outputStream = ByteArrayOutputStream()
+            every { contentResolver.openInputStream(sourceUri) } returns ByteArrayInputStream(expectedBytes)
+            every { contentResolver.openOutputStream(destinationUri) } returns outputStream
+
+            service.saveToUri(SOURCE_URI_STRING, DEST_URI_STRING)
+
+            assertArrayEquals(expectedBytes, outputStream.toByteArray())
+        }
+
+    @Test
+    fun `saveToUri throws IOException when source stream is null`() =
+        runTest(testDispatcher) {
+            every { contentResolver.openInputStream(sourceUri) } returns null
+
+            try {
+                service.saveToUri(SOURCE_URI_STRING, DEST_URI_STRING)
+                fail("Expected IOException")
+            } catch (_: IOException) {
+                // Expected
+            }
+            verify(exactly = 0) { contentResolver.openOutputStream(any()) }
+        }
+
+    @Test
+    fun `saveToUri throws IOException when destination stream is null`() =
+        runTest(testDispatcher) {
+            every { contentResolver.openInputStream(sourceUri) } returns ByteArrayInputStream(byteArrayOf(1, 2, 3))
+            every { contentResolver.openOutputStream(destinationUri) } returns null
+
+            try {
+                service.saveToUri(SOURCE_URI_STRING, DEST_URI_STRING)
+                fail("Expected IOException")
+            } catch (_: IOException) {
+                // Expected
+            }
+        }
+
     private fun createSamplePayload(expenseRowCount: Int): TripReportExportPayload {
         val expenseRows = (1..expenseRowCount).map { index ->
             listOf("Coffee", "3.50", "Item $index")
@@ -144,5 +206,10 @@ class TripReportExportServiceImplTest {
                 )
             )
         )
+    }
+
+    private companion object {
+        const val SOURCE_URI_STRING = "content://es.pedrazamiguez.splittrip.fileprovider/exports/summary.pdf"
+        const val DEST_URI_STRING = "content://com.android.externalstorage.documents/document/primary%3Asummary.pdf"
     }
 }

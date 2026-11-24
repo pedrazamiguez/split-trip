@@ -8,14 +8,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import es.pedrazamiguez.splittrip.core.designsystem.extension.debounced
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Download
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Share
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
@@ -31,6 +35,7 @@ import es.pedrazamiguez.splittrip.domain.model.report.TripReportFormat
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.component.insights.SpendingInsightsPeriodCard
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.SpendingPeriodPreset
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.TripReportExportTarget
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.TripReportExportSheetState
 import java.time.LocalDate
 import kotlinx.collections.immutable.toImmutableList
@@ -46,6 +51,7 @@ fun TripReportExportBottomSheet(
     onSelectCustomEndDate: (LocalDate) -> Unit,
     onSelectFormat: (TripReportFormat) -> Unit,
     onConfirmExport: () -> Unit,
+    onSaveToDevice: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -125,19 +131,30 @@ fun TripReportExportBottomSheet(
                 text = stringResource(R.string.balances_export_confirm_button),
                 onClick = onConfirmExport,
                 leadingIcon = TablerIcons.Outline.Share,
-                isLoading = sheetState.isExporting,
+                isLoading = sheetState.isExporting && sheetState.activeExportTarget == TripReportExportTarget.SHARE,
                 enabled = !sheetState.isExporting,
                 modifier = Modifier.fillMaxWidth()
             )
 
             SecondaryButton(
-                text = stringResource(R.string.balances_export_cancel_button),
-                onClick = {
+                text = stringResource(R.string.balances_export_save_button),
+                onClick = onSaveToDevice,
+                leadingIcon = TablerIcons.Outline.Download,
+                isLoading = sheetState.isExporting &&
+                    sheetState.activeExportTarget == TripReportExportTarget.SAVE_TO_DEVICE,
+                enabled = !sheetState.isExporting,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            TextButton(
+                onClick = debounced {
                     scope.launch { modalSheetState.hide() }.invokeOnCompletion { onDismiss() }
                 },
                 enabled = !sheetState.isExporting,
                 modifier = Modifier.fillMaxWidth()
-            )
+            ) {
+                Text(text = stringResource(R.string.balances_export_cancel_button))
+            }
         }
     }
 }
