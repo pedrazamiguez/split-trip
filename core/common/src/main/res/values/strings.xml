@@ -71,4 +71,27 @@
     <string name="expense_subcategory_laundry">Laundry</string>
     <string name="expense_subcategory_fees_surcharges">Fees &amp; Surcharges</string>
     <string name="expense_subcategory_unspecified">Unspecified</string>
+    <string name="group_context_travel">Trip</string>
+    <string name="group_context_everyday">Everyday</string>
+    <string name="group_context_travel_description">Highlights travel categories like flights, stays, and tours</string>
+    <string name="group_context_everyday_description">Highlights everyday categories like home, health, and bills</string>
+    <string name="expense_category_home">Home</string>
+    <string name="expense_category_health_personal_care">Health &amp; Care</string>
+    <string name="expense_subcategory_car_repair_maintenance">Car Repair &amp; Maintenance</string>
+    <string name="expense_subcategory_rent_mortgage">Rent &amp; Mortgage</string>
+    <string name="expense_subcategory_utilities">Utilities</string>
+    <string name="expense_subcategory_home_repair">Home Repair</string>
+    <string name="expense_subcategory_furniture_appliances">Furniture &amp; Appliances</string>
+    <string name="expense_subcategory_home_supplies">Household Supplies</string>
+    <string name="expense_subcategory_doctor_dentist">Doctor &amp; Dentist</string>
+    <string name="expense_subcategory_hairdresser_barber">Hairdresser &amp; Barber</string>
+    <string name="expense_subcategory_gym_fitness">Gym &amp; Fitness</string>
+    <string name="expense_subcategory_personal_care">Personal Care</string>
+    <string name="expense_subcategory_pharmacy_medicine">Pharmacy &amp; Medicine</string>
+    <string name="expense_subcategory_subscriptions_streaming">Subscriptions &amp; Streaming</string>
+    <string name="expense_subcategory_gifts">Gifts</string>
+    <string name="expense_subcategory_home_insurance">Home Insurance</string>
+    <string name="expense_subcategory_pet_care">Pet Care</string>
+    <string name="expense_subcategory_tobacco_vaping">Tobacco &amp; Vaping</string>
+    <string name="expense_subcategory_hobbies">Hobbies</string>
 </resources>

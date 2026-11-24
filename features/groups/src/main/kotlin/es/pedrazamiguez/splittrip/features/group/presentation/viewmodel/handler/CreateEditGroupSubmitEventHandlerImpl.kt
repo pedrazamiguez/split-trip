@@ -110,7 +110,8 @@ class CreateEditGroupSubmitEventHandlerImpl(
                 description = state.groupDescription.trim(),
                 currency = state.selectedCurrency?.code ?: "EUR",
                 extraCurrencies = state.extraCurrencies.map { it.code },
-                mainImagePath = state.localGroupImagePath
+                mainImagePath = state.localGroupImagePath,
+                context = state.groupContext
             )
 
             updateGroupUseCase(updatedGroup)
@@ -371,7 +372,8 @@ class CreateEditGroupSubmitEventHandlerImpl(
                     currency = state.selectedCurrency?.code ?: appConfigService.defaultCurrencyCode.value,
                     extraCurrencies = state.extraCurrencies.map { it.code },
                     members = state.selectedMembers.map { it.userId },
-                    mainImagePath = state.localGroupImagePath
+                    mainImagePath = state.localGroupImagePath,
+                    context = state.groupContext
                 ),
                 state.selectedMembers
             ).onSuccess { groupId ->
@@ -383,7 +385,10 @@ class CreateEditGroupSubmitEventHandlerImpl(
                 _uiState.update { it.copy(isLoading = false) }
                 telemetryTracker.trackEvent(
                     "group_created",
-                    mapOf("currency" to (state.selectedCurrency?.code ?: ""))
+                    mapOf(
+                        "currency" to (state.selectedCurrency?.code ?: ""),
+                        "context" to state.groupContext.name
+                    )
                 )
                 _actions.emit(
                     CreateEditGroupUiAction.ShowSuccess(

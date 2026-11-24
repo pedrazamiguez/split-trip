@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveCurrencyException
 import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
 import es.pedrazamiguez.splittrip.domain.model.Group
@@ -803,5 +804,54 @@ class CreateEditGroupSubmitEventHandlerImplTest {
                 coVerify(exactly = 1) { removeGroupMemberUseCase(testGroup.id, "user-2") }
                 coVerify(exactly = 2) { removeGroupMemberUseCase(testGroup.id, "user-3") }
             }
+    }
+
+    @Nested
+    inner class GroupContextSubmission {
+
+        @Test
+        fun `createGroup passes selected groupContext to CreateGroupUseCase`() = runTest(testDispatcher) {
+            every { getUserGroupsFlowUseCase() } returns flowOf(emptyList())
+            coEvery { featureGateService.checkLimit(any(), any()) } returns flowOf(LimitResult.Allowed)
+            coEvery { createGroupUseCase(any(), any()) } returns Result.success("new-group-id")
+            stateFlow.value = CreateEditGroupUiState(
+                groupName = "Shared Apartment",
+                groupContext = GroupContext.EVERYDAY,
+                isEditMode = false
+            )
+
+            handler.handleSubmit {}
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) {
+                createGroupUseCase(
+                    match { it.context == GroupContext.EVERYDAY },
+                    any()
+                )
+            }
+        }
+
+        @Test
+        fun `updateGroup passes updated groupContext to UpdateGroupUseCase`() = runTest(testDispatcher) {
+            handler.setInitialGroup(testGroup.copy(context = GroupContext.TRAVEL))
+            stateFlow.value = CreateEditGroupUiState(
+                groupName = "Japan Trip",
+                isEditMode = true,
+                groupId = testGroup.id,
+                groupContext = GroupContext.EVERYDAY,
+                selectedMembers = persistentListOf(
+                    User(userId = "user-1", email = "user1@test.com"),
+                    User(userId = "user-2", email = "user2@test.com")
+                )
+            )
+            coEvery { updateGroupUseCase(any()) } returns Result.success(Unit)
+
+            handler.handleSubmit {}
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) {
+                updateGroupUseCase(match { it.context == GroupContext.EVERYDAY })
+            }
+        }
     }
 }

@@ -18,6 +18,7 @@
     <string name="group_review_title">Rebiça tu grupo</string>
     <string name="group_review_name">Nombre</string>
     <string name="group_review_description">Dêccrîççión</string>
+    <string name="group_review_context">Tipo de grupo</string>
     <string name="group_review_currency">Moneda prinçipâh</string>
     <string name="group_review_extra_currencies">Otrâ monedâ</string>
     <string name="group_review_members">Miembrô</string>
@@ -36,6 +37,7 @@
     <string name="group_extra_currency_clear">Limpiâh</string>
     <string name="group_extra_currencies_overflow">+%d</string>
     <string name="group_field_description">Dêccrîççión</string>
+    <string name="group_field_context">Tipo de grupo</string>
     <string name="group_field_created_at">Creao el</string>
     <string name="group_error_name_empty">¡Ey! Tu grupo neçeçita un nombre</string>
     <string name="group_error_creation_failed">¡Ups! Argo fayó ar creâh er grupo. Inténtalo de nuebo</string>
@@ -77,6 +79,7 @@
     <string name="group_detail_extra_currencies_label">Otrâ monedâ</string>
     <string name="group_detail_exchange_rate_format">1 %1$s ≈ %2$s %3$s</string>
     <string name="group_detail_description_label">Dêccrîççión</string>
+    <string name="group_detail_context_label">Tipo de grupo</string>
     <string name="group_field_members">Miembrô</string>
     <string name="group_member_search">Bûccâh por emaîh</string>
     <string name="group_member_search_hint">Êccribe el emaîh de un miembro</string>

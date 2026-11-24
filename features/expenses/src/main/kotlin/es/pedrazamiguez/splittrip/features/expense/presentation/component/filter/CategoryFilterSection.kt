@@ -1,46 +1,61 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.filter
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardTitleText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.CategoryGridSelector
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.subcategoryGridEnterTransition
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.subcategoryGridExitTransition
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.ShowAllCategoriesChip
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
-
-private val ALL_CATEGORIES = ExpenseCategory.entries.toImmutableList()
 
 @Composable
 fun CategoryFilterSection(
     criteria: ExpenseFilterCriteria,
     onCriteriaChange: (ExpenseFilterCriteria) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    groupContext: GroupContext = GroupContext.TRAVEL,
+    showAllCategories: Boolean = false,
+    onToggleShowAllCategories: () -> Unit = {}
 ) {
+    val visibleCategories = remember(groupContext, showAllCategories, criteria.selectedCategories) {
+        resolveVisibleCategories(groupContext, showAllCategories, criteria.selectedCategories)
+    }
+
     Column(modifier = modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
         ) {
-            CardSectionLabelText(text = stringResource(R.string.expenses_filter_section_category))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CardSectionLabelText(text = stringResource(R.string.expenses_filter_section_category))
+                ShowAllCategoriesChip(
+                    showAllCategories = showAllCategories,
+                    onToggleShowAllCategories = onToggleShowAllCategories
+                )
+            }
 
             CategoryGridSelector(
-                items = ALL_CATEGORIES,
+                items = visibleCategories,
                 isItemSelected = { it in criteria.selectedCategories },
                 onItemClicked = { category -> onCriteriaChange(toggleCategory(criteria, category)) },
                 itemId = { it.name },
@@ -49,37 +64,27 @@ fun CategoryFilterSection(
             )
         }
 
-        ALL_CATEGORIES.forEach { category ->
-            val subcategories = remember(category) { ExpenseSubcategory.forCategory(category).toImmutableList() }
-
-            AnimatedVisibility(
-                visible = category in criteria.selectedCategories && subcategories.isNotEmpty(),
-                enter = subcategoryGridEnterTransition(),
-                exit = subcategoryGridExitTransition()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = MaterialTheme.spacing.Medium),
-                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
-                ) {
-                    CardTitleText(
-                        text = stringResource(category.toStringRes()),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    CategoryGridSelector(
-                        items = subcategories,
-                        isItemSelected = { it in criteria.selectedSubcategories },
-                        onItemClicked = { subcategory -> onCriteriaChange(toggleSubcategory(criteria, subcategory)) },
-                        itemId = { it.name },
-                        itemLabel = { stringResource(it.toStringRes()) },
-                        itemIcon = { it.toIconVector() }
-                    )
-                }
-            }
+        visibleCategories.forEach { category ->
+            CategoryFilterSubcategorySection(
+                category = category,
+                criteria = criteria,
+                groupContext = groupContext,
+                showAllCategories = showAllCategories,
+                onSubcategoryToggled = { subcategory -> onCriteriaChange(toggleSubcategory(criteria, subcategory)) }
+            )
         }
     }
+}
+
+private fun resolveVisibleCategories(
+    groupContext: GroupContext,
+    showAllCategories: Boolean,
+    selectedCategories: Set<ExpenseCategory>
+): ImmutableList<ExpenseCategory> {
+    if (showAllCategories) return ExpenseCategory.entries.toImmutableList()
+    val base = ExpenseCategory.forContext(groupContext)
+    val missingSelected = selectedCategories.filter { it !in base }
+    return (base + missingSelected).toImmutableList()
 }
 
 private fun toggleCategory(

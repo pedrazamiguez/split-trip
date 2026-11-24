@@ -158,6 +158,8 @@ class EverydayGroupCopyTest {
             "expense_subcategory_domestic_flight",
             "expense_subcategory_hotel",
             "faq_answer_1",
+            "group_context_travel",
+            "group_context_travel_description",
             "onboarding_step_trips_description",
             "subscriptions_tier_free_description"
         )

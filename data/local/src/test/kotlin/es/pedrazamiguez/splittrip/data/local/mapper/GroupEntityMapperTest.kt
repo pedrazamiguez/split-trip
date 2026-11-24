@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.data.local.mapper
 
 import es.pedrazamiguez.splittrip.data.local.entity.GroupEntity
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Group
 import java.time.LocalDateTime
@@ -96,6 +97,18 @@ class GroupEntityMapperTest {
             val entity = fullEntity.copy(lastArchiveEventId = null)
             assertNull(entity.toDomain().lastArchiveEventId)
         }
+
+        @Test
+        fun `maps GroupEntity context EVERYDAY to Group domain context EVERYDAY`() {
+            val entity = fullEntity.copy(context = "EVERYDAY")
+            assertEquals(GroupContext.EVERYDAY, entity.toDomain().context)
+        }
+
+        @Test
+        fun `maps unknown GroupEntity context to TRAVEL default`() {
+            val entity = fullEntity.copy(context = "UNKNOWN_CONTEXT")
+            assertEquals(GroupContext.TRAVEL, entity.toDomain().context)
+        }
     }
 
     @Nested
@@ -158,6 +171,12 @@ class GroupEntityMapperTest {
         fun `null lastArchiveEventId maps to null in entity`() {
             val group = fullGroup.copy(lastArchiveEventId = null)
             assertNull(group.toEntity().lastArchiveEventId)
+        }
+
+        @Test
+        fun `maps Group domain context EVERYDAY to GroupEntity context string EVERYDAY`() {
+            val group = fullGroup.copy(context = GroupContext.EVERYDAY)
+            assertEquals("EVERYDAY", group.toEntity().context)
         }
     }
 

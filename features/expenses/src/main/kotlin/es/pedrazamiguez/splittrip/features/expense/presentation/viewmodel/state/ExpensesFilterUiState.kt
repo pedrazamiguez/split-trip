@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.DateRangePreset
 import java.time.LocalDate
@@ -20,7 +21,9 @@ data class ExpensesFilterUiState(
     val formattedEndDate: String = "",
     val activePreset: DateRangePreset? = null,
     val groupCurrency: String = "EUR",
-    val groupCurrencies: ImmutableList<String> = persistentListOf()
+    val groupCurrencies: ImmutableList<String> = persistentListOf(),
+    val groupContext: GroupContext = GroupContext.TRAVEL,
+    val showAllCategories: Boolean = false
 ) {
     val canReset: Boolean
         get() = draftCriteria.activeFilterCount > 0

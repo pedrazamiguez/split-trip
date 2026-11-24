@@ -10,6 +10,7 @@ import com.google.firebase.firestore.WriteBatch
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupMemberDocument
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import io.mockk.coEvery
@@ -674,6 +675,30 @@ class FirestoreGroupDataSourceImplTest {
             memberDocRefs.forEach { memberDocRef ->
                 verify(exactly = 1) { batch.delete(memberDocRef) }
             }
+        }
+    }
+
+    @Nested
+    inner class UpdateGroup {
+
+        @Test
+        fun `updateGroup passes context in Firestore update map`() = runTest {
+            val groupDocRef = mockGroupDocumentRef(testGroupId)
+            every { groupDocRef.update(any<Map<String, Any?>>()) } returns Tasks.forResult(null)
+            val group = Group(
+                id = testGroupId,
+                name = "Shared Flat",
+                description = "Monthly bills",
+                currency = "EUR",
+                lastUpdatedAt = LocalDateTime.of(2026, 6, 1, 12, 0),
+                context = GroupContext.EVERYDAY
+            )
+
+            dataSource.updateGroup(group)
+
+            val mapSlot = slot<Map<String, Any?>>()
+            verify(exactly = 1) { groupDocRef.update(capture(mapSlot)) }
+            assertEquals("EVERYDAY", mapSlot.captured["context"])
         }
     }
 }

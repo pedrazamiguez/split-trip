@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.Forma
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.Currency
@@ -751,7 +752,7 @@ class ConfigEventHandlerTest {
             )
 
             assertEquals(
-                ExpenseCategory.entries.map { it.name },
+                ExpenseCategory.forContext(testConfig.group.context).map { it.name },
                 defaults.mappedCategories.map { it.id }
             )
         }
@@ -770,7 +771,7 @@ class ConfigEventHandlerTest {
 
             assertEquals(ExpenseCategory.SHOPPING.name, defaults.defaultCategory?.id)
             assertEquals(
-                ExpenseSubcategory.forCategory(ExpenseCategory.SHOPPING),
+                ExpenseSubcategory.forCategory(ExpenseCategory.SHOPPING, testConfig.group.context),
                 defaults.availableSubcategories.map { it.subcategory }
             )
         }
@@ -786,7 +787,7 @@ class ConfigEventHandlerTest {
 
             assertEquals(ExpenseCategory.OTHER.name, defaults.defaultCategory?.id)
             assertEquals(
-                ExpenseSubcategory.forCategory(ExpenseCategory.OTHER),
+                ExpenseSubcategory.forCategory(ExpenseCategory.OTHER, testConfig.group.context),
                 defaults.availableSubcategories.map { it.subcategory }
             )
         }
@@ -801,6 +802,29 @@ class ConfigEventHandlerTest {
             )
 
             assertEquals(ExpenseCategory.OTHER.name, defaults.defaultCategory?.id)
+        }
+
+        @Test
+        fun `EVERYDAY group loads everyday categories and ignores travel-only recentCategoryIds`() {
+            val everydayConfig = testConfig.copy(
+                group = testGroup.copy(context = GroupContext.EVERYDAY)
+            )
+            val defaults = handler.resolveDefaultSelections(
+                config = everydayConfig,
+                lastUsedCode = null,
+                recentPaymentMethodIds = emptyList(),
+                recentCategoryIds = listOf(ExpenseCategory.LODGING.name)
+            )
+
+            assertEquals(
+                ExpenseCategory.forContext(GroupContext.EVERYDAY).map { it.name },
+                defaults.mappedCategories.map { it.id }
+            )
+            assertEquals(ExpenseCategory.OTHER.name, defaults.defaultCategory?.id)
+            assertEquals(
+                ExpenseSubcategory.forCategory(ExpenseCategory.OTHER, GroupContext.EVERYDAY),
+                defaults.availableSubcategories.map { it.subcategory }
+            )
         }
     }
 

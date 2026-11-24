@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -1478,6 +1479,31 @@ class CreateEditGroupViewModelTest {
 
             assertTrue(viewModel.uiState.value.isStepInfoSheetVisible)
             assertFalse(viewModel.uiState.value.isDirty)
+        }
+    }
+
+    @Nested
+    inner class GroupContextEvents {
+
+        @Test
+        fun `ContextSelected updates groupContext in uiState`() = runTest(testDispatcher) {
+            viewModel.init(null)
+            advanceUntilIdle()
+
+            viewModel.onEvent(CreateEditGroupUiEvent.ContextSelected(GroupContext.EVERYDAY)) {}
+            advanceUntilIdle()
+
+            assertEquals(GroupContext.EVERYDAY, viewModel.uiState.value.groupContext)
+        }
+
+        @Test
+        fun `edit mode hydrates groupContext from loaded group`() = runTest(testDispatcher) {
+            coEvery { getGroupByIdUseCase(testGroupId) } returns testGroup.copy(context = GroupContext.EVERYDAY)
+
+            viewModel.init(testGroupId)
+            advanceUntilIdle()
+
+            assertEquals(GroupContext.EVERYDAY, viewModel.uiState.value.groupContext)
         }
     }
 }

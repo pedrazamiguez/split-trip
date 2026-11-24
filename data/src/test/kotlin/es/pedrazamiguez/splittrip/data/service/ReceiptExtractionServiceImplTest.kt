@@ -344,4 +344,50 @@ class ReceiptExtractionServiceImplTest {
         assertFalse(prompt.contains("Private", ignoreCase = true))
         assertFalse(prompt.contains("Razor", ignoreCase = true))
     }
+
+    @Test
+    fun `parses HOME category from AI JSON output`() = runTest(testDispatcher) {
+        activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+        advanceUntilIdle()
+
+        val rawJsonResponse = """
+            {
+                "amounts": ["85.00"],
+                "currency": "EUR",
+                "date": "2026-05-20",
+                "title": "Electricity bill",
+                "category": "HOME"
+            }
+        """.trimIndent()
+        coEvery { aiCoreInferenceRepository.generateContent(any()) } returns Result.success(rawJsonResponse)
+
+        val result = service.extract(rawReceiptText)
+
+        assertTrue(result.isSuccess)
+        assertEquals("HOME", result.getOrThrow().category)
+    }
+
+    @Test
+    fun `parses HEALTH_PERSONAL_CARE category from AI JSON output`() = runTest(testDispatcher) {
+        activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+        advanceUntilIdle()
+
+        val rawJsonResponse = """
+            {
+                "amounts": ["22.50"],
+                "currency": "EUR",
+                "date": "2026-05-20",
+                "title": "Haircut",
+                "category": "HEALTH_PERSONAL_CARE"
+            }
+        """.trimIndent()
+        coEvery { aiCoreInferenceRepository.generateContent(any()) } returns Result.success(rawJsonResponse)
+
+        val result = service.extract(rawReceiptText)
+
+        assertTrue(result.isSuccess)
+        assertEquals("HEALTH_PERSONAL_CARE", result.getOrThrow().category)
+    }
 }

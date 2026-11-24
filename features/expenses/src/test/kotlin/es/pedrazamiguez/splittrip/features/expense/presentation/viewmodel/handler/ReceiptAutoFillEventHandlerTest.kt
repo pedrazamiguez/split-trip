@@ -571,6 +571,36 @@ class ReceiptAutoFillEventHandlerTest {
         }
 
         @Test
+        fun `tryMergeCategory selects valid category outside current availableCategories`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    title = "Electric Bill",
+                    amount = BigDecimal("85.00"),
+                    currency = "EUR",
+                    date = LocalDate.of(2025, 1, 1),
+                    time = null,
+                    vendor = "Iberdrola",
+                    category = "HOME",
+                    paymentMethod = null,
+                    notes = null,
+                    confidence = ExtractionConfidence.HIGH,
+                    source = ExtractionSource.AI_CORE
+                )
+            )
+            every { formattingHelper.formatCentsValue(8500L, 2) } returns "85.00"
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals("HOME", capturedCategorySelections.single())
+            assertTrue(
+                uiState.value.autoFillBanner?.fields?.contains(
+                    UiText.StringResource(R.string.add_expense_category_title)
+                ) == true
+            )
+        }
+
+        @Test
         fun `does not extract fields when AI mode is disabled`() = runTest {
             every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
             uiState.value = uiState.value.copy(isAiModeActive = false)

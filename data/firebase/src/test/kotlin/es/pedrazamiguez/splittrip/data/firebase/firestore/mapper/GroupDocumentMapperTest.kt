@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.mapper
 
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupDocument
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.Group
 import java.time.LocalDateTime
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -105,6 +106,13 @@ class GroupDocumentMapperTest {
             val document = groupWithoutArchiveEventId.toDocument(testGroupId, testUserId)
             assertNull(document.lastArchiveEventId)
         }
+
+        @Test
+        fun `maps Group domain context EVERYDAY to GroupDocument context EVERYDAY`() {
+            val everydayGroup = fullGroup.copy(context = GroupContext.EVERYDAY)
+            val document = everydayGroup.toDocument(testGroupId, testUserId)
+            assertEquals("EVERYDAY", document.context)
+        }
     }
 
     @Nested
@@ -202,6 +210,22 @@ class GroupDocumentMapperTest {
 
             assertNotNull(group)
             assertEquals(testGroupId, group!!.id)
+        }
+
+        @Test
+        fun `maps GroupDocument context EVERYDAY to Group domain context EVERYDAY`() {
+            val everydayDoc = fullDocument.copy(context = "EVERYDAY")
+            val group = everydayDoc.toDomain()!!
+            assertEquals(GroupContext.EVERYDAY, group.context)
+        }
+
+        @Test
+        fun `maps missing or unknown GroupDocument context to TRAVEL default`() {
+            val unknownDoc = fullDocument.copy(context = "UNKNOWN_CONTEXT")
+            val emptyDoc = fullDocument.copy(context = "")
+
+            assertEquals(GroupContext.TRAVEL, unknownDoc.toDomain()!!.context)
+            assertEquals(GroupContext.TRAVEL, emptyDoc.toDomain()!!.context)
         }
     }
 

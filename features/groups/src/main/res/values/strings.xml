@@ -20,6 +20,7 @@
     <string name="group_review_title">Review your group</string>
     <string name="group_review_name">Name</string>
     <string name="group_review_description">Description</string>
+    <string name="group_review_context">Group type</string>
     <string name="group_review_currency">Main currency</string>
     <string name="group_review_extra_currencies">Other currencies</string>
     <string name="group_review_members">Members</string>
@@ -38,6 +39,7 @@
     <string name="group_extra_currency_clear">Clear</string>
     <string name="group_extra_currencies_overflow">+%d</string>
     <string name="group_field_description">Description</string>
+    <string name="group_field_context">Group type</string>
     <string name="group_field_created_at">Created at</string>
     <string name="group_error_name_empty">Hey! Your group needs a name</string>
     <string name="group_error_creation_failed">Oops! Something went wrong. Try again</string>
@@ -81,6 +83,7 @@
     <string name="group_detail_extra_currencies_label">Other currencies</string>
     <string name="group_detail_exchange_rate_format">1 %1$s ≈ %2$s %3$s</string>
     <string name="group_detail_description_label">Description</string>
+    <string name="group_detail_context_label">Group type</string>
 
     <!-- Member search -->
     <string name="group_field_members">Members</string>

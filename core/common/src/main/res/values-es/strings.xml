@@ -71,4 +71,27 @@
     <string name="expense_subcategory_laundry">Lavandería</string>
     <string name="expense_subcategory_fees_surcharges">Comisiones y recargos</string>
     <string name="expense_subcategory_unspecified">Sin especificar</string>
+    <string name="group_context_travel">Viaje</string>
+    <string name="group_context_everyday">Día a día</string>
+    <string name="group_context_travel_description">Muestra categorías de viaje como vuelos, alojamiento y excursiones</string>
+    <string name="group_context_everyday_description">Muestra categorías diarias como hogar, salud y recibos</string>
+    <string name="expense_category_home">Hogar</string>
+    <string name="expense_category_health_personal_care">Salud y cuidado</string>
+    <string name="expense_subcategory_car_repair_maintenance">Taller y mantenimiento</string>
+    <string name="expense_subcategory_rent_mortgage">Alquiler e hipoteca</string>
+    <string name="expense_subcategory_utilities">Suministros</string>
+    <string name="expense_subcategory_home_repair">Reparaciones del hogar</string>
+    <string name="expense_subcategory_furniture_appliances">Muebles y electrodomésticos</string>
+    <string name="expense_subcategory_home_supplies">Productos del hogar</string>
+    <string name="expense_subcategory_doctor_dentist">Médico y dentista</string>
+    <string name="expense_subcategory_hairdresser_barber">Peluquería y barbería</string>
+    <string name="expense_subcategory_gym_fitness">Gimnasio y deporte</string>
+    <string name="expense_subcategory_personal_care">Cuidado personal</string>
+    <string name="expense_subcategory_pharmacy_medicine">Farmacia y medicamentos</string>
+    <string name="expense_subcategory_subscriptions_streaming">Suscripciones y streaming</string>
+    <string name="expense_subcategory_gifts">Regalos</string>
+    <string name="expense_subcategory_home_insurance">Seguro del hogar</string>
+    <string name="expense_subcategory_pet_care">Mascotas</string>
+    <string name="expense_subcategory_tobacco_vaping">Tabaco y vapeo</string>
+    <string name="expense_subcategory_hobbies">Aficiones</string>
 </resources>

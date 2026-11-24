@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMa
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseAttribute
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
@@ -801,5 +802,61 @@ class ExpensesFilterViewModelTest {
 
                 collectJob.cancel()
             }
+    }
+
+    @Nested
+    @DisplayName("GroupContext and Show All Categories")
+    inner class GroupContextAndShowAllCategories {
+
+        @Test
+        fun `propagates group context from observed group into uiState`() = runTest(testDispatcher) {
+            every { observeGroupUseCase(testGroupId) } returns flowOf(
+                testGroup.copy(context = GroupContext.EVERYDAY)
+            )
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setSelectedGroup(testGroupId)
+            advanceUntilIdle()
+
+            assertEquals(GroupContext.EVERYDAY, viewModel.uiState.value.groupContext)
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `ToggleShowAllCategories toggles showAllCategories in uiState`() = runTest(testDispatcher) {
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setSelectedGroup(testGroupId)
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.showAllCategories)
+
+            viewModel.onEvent(ExpensesFilterUiEvent.ToggleShowAllCategories)
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.showAllCategories)
+
+            viewModel.onEvent(ExpensesFilterUiEvent.ToggleShowAllCategories)
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.showAllCategories)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `ResetDraft resets showAllCategories back to false`() = runTest(testDispatcher) {
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.setSelectedGroup(testGroupId)
+            advanceUntilIdle()
+
+            viewModel.onEvent(ExpensesFilterUiEvent.ToggleShowAllCategories)
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.showAllCategories)
+
+            viewModel.onEvent(ExpensesFilterUiEvent.ResetDraft)
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.showAllCategories)
+
+            collectJob.cancel()
+        }
     }
 }

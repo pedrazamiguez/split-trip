@@ -296,6 +296,9 @@ class AddExpenseViewModel(
             is AddExpenseUiEvent.CategorySelected ->
                 formEventHandler.handleCategorySelected(event.categoryId)
 
+            is AddExpenseUiEvent.ToggleShowAllCategories ->
+                formEventHandler.handleToggleShowAllCategories()
+
             is AddExpenseUiEvent.SubcategorySelected ->
                 formEventHandler.handleSubcategorySelected(event.subcategoryId)
 

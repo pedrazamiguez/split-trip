@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.rememberAutoFocusRequester
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.group.R
+import es.pedrazamiguez.splittrip.features.group.presentation.component.GroupContextSelector
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 
@@ -63,6 +64,11 @@ fun GroupInfoStep(
                     onImeNext()
                 }
             )
+        )
+        GroupContextSelector(
+            selectedContext = uiState.groupContext,
+            onContextSelected = { onEvent(CreateEditGroupUiEvent.ContextSelected(it)) },
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }

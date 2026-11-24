@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.forma
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
@@ -24,6 +25,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIco
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CashTranchePreviewUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.EditCategorySelection
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
@@ -99,17 +101,90 @@ class AddExpenseOptionsUiMapper(
         }.toImmutableList()
 
     /**
-     * Maps available subcategories for a given [ExpenseCategory] to UI models.
+     * Maps categories filtered by [context] unless [showAll] is true,
+     * optionally keeping [alwaysInclude] visible so an active selection stays visible.
      */
-    fun mapSubcategories(category: ExpenseCategory): ImmutableList<SubcategoryUiModel> =
-        ExpenseSubcategory.forCategory(category)
-            .map { subcategory ->
-                SubcategoryUiModel(
-                    subcategory = subcategory,
-                    name = UiText.StringResource(subcategory.toStringRes()),
-                    icon = subcategory.toIconVector()
-                )
-            }.toImmutableList()
+    fun mapCategoriesForContext(
+        context: GroupContext,
+        showAll: Boolean,
+        alwaysInclude: ExpenseCategory? = null
+    ): ImmutableList<CategoryUiModel> {
+        val categories = if (showAll) {
+            ExpenseCategory.entries
+        } else {
+            val base = ExpenseCategory.forContext(context)
+            if (alwaysInclude != null && alwaysInclude !in base) {
+                base + alwaysInclude
+            } else {
+                base
+            }
+        }
+        return mapCategories(categories)
+    }
+
+    /**
+     * Maps available subcategories for a given [ExpenseCategory] to UI models,
+     * optionally filtered by [context] when [showAll] is false.
+     */
+    fun mapSubcategories(
+        category: ExpenseCategory,
+        context: GroupContext? = null,
+        showAll: Boolean = context == null,
+        alwaysInclude: ExpenseSubcategory? = null
+    ): ImmutableList<SubcategoryUiModel> {
+        val subcategories = if (showAll || context == null || !category.appliesTo(context)) {
+            ExpenseSubcategory.forCategory(category)
+        } else {
+            val base = ExpenseSubcategory.forCategory(category, context)
+            alwaysInclude?.takeIf { isAppendableSubcategory(it, category, base) }
+                ?.let { base + it }
+                ?: base
+        }
+        return subcategories.map { subcategory ->
+            SubcategoryUiModel(
+                subcategory = subcategory,
+                name = UiText.StringResource(subcategory.toStringRes()),
+                icon = subcategory.toIconVector()
+            )
+        }.toImmutableList()
+    }
+
+    /**
+     * Resolves category/subcategory lists and active selection when editing an existing expense,
+     * expanding [showAllCategories] automatically if the saved taxonomy falls outside [groupContext].
+     */
+    fun resolveCategorySelectionForEdit(
+        category: ExpenseCategory,
+        subcategory: ExpenseSubcategory,
+        groupContext: GroupContext
+    ): EditCategorySelection {
+        val showAllCategories = !category.appliesTo(groupContext) ||
+            (subcategory != ExpenseSubcategory.UNSPECIFIED && !subcategory.appliesTo(groupContext))
+        val availableCategories = mapCategoriesForContext(
+            context = groupContext,
+            showAll = showAllCategories,
+            alwaysInclude = category
+        )
+        val selectedCategory = availableCategories.find { it.id == category.name }
+        val availableSubcategories = mapSubcategories(
+            category = category,
+            context = groupContext,
+            showAll = showAllCategories,
+            alwaysInclude = subcategory
+        )
+        val selectedSubcategory = if (subcategory != ExpenseSubcategory.UNSPECIFIED) {
+            availableSubcategories.find { it.subcategory == subcategory }
+        } else {
+            null
+        }
+        return EditCategorySelection(
+            showAllCategories = showAllCategories,
+            availableCategories = availableCategories,
+            selectedCategory = selectedCategory,
+            availableSubcategories = availableSubcategories,
+            selectedSubcategory = selectedSubcategory
+        )
+    }
 
     /**
      * Maps a list of [PaymentStatus] enums to UI models, filtering to only
@@ -246,3 +321,11 @@ class AddExpenseOptionsUiMapper(
             )
         }.toImmutableList()
 }
+
+private fun isAppendableSubcategory(
+    alwaysInclude: ExpenseSubcategory,
+    category: ExpenseCategory,
+    base: List<ExpenseSubcategory>
+): Boolean = alwaysInclude.parentCategory == category &&
+    alwaysInclude != ExpenseSubcategory.UNSPECIFIED &&
+    alwaysInclude !in base

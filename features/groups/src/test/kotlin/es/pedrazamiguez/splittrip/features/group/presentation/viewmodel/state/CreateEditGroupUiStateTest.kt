@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.User
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -256,6 +257,23 @@ class CreateEditGroupUiStateTest {
         fun `proPreviewPrompt defaults to null`() {
             val state = CreateEditGroupUiState()
             assertNull(state.proPreviewPrompt)
+        }
+    }
+
+    @Nested
+    inner class IsDirty {
+
+        @Test
+        fun `changing groupContext from initial snapshot marks isDirty true`() {
+            val initialState = CreateEditGroupUiState(
+                groupName = "Shared Flat",
+                groupContext = GroupContext.TRAVEL
+            ).let { it.copy(initialFormSnapshot = it.toFormSnapshot()) }
+
+            assertFalse(initialState.isDirty)
+
+            val updatedState = initialState.copy(groupContext = GroupContext.EVERYDAY)
+            assertTrue(updatedState.isDirty)
         }
     }
 }

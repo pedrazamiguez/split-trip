@@ -21,6 +21,7 @@
     <string name="group_review_title">Revisa tu grupo</string>
     <string name="group_review_name">Nombre</string>
     <string name="group_review_description">Descripción</string>
+    <string name="group_review_context">Tipo de grupo</string>
     <string name="group_review_currency">Moneda principal</string>
     <string name="group_review_extra_currencies">Otras monedas</string>
     <string name="group_review_members">Miembros</string>
@@ -39,6 +40,7 @@
     <string name="group_extra_currency_clear">Limpiar</string>
     <string name="group_extra_currencies_overflow">+%d</string>
     <string name="group_field_description">Descripción</string>
+    <string name="group_field_context">Tipo de grupo</string>
     <string name="group_field_created_at">Creado el</string>
     <string name="group_error_name_empty">¡Ey! Tu grupo necesita un nombre</string>
     <string name="group_error_creation_failed">¡Ups! Algo falló al crear el grupo. Inténtalo de nuevo</string>
@@ -82,6 +84,7 @@
     <string name="group_detail_extra_currencies_label">Otras monedas</string>
     <string name="group_detail_exchange_rate_format">1 %1$s ≈ %2$s %3$s</string>
     <string name="group_detail_description_label">Descripción</string>
+    <string name="group_detail_context_label">Tipo de grupo</string>
 
     <!-- Member search -->
     <string name="group_field_members">Miembros</string>

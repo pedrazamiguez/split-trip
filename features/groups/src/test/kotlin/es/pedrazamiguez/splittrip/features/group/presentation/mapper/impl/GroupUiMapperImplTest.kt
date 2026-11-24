@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Currency
@@ -714,6 +715,20 @@ class GroupUiMapperImplTest {
 
             // Then
             assertEquals(GroupStatus.ARCHIVED, result.status)
+        }
+    }
+
+    @Nested
+    inner class GroupContextMapping {
+
+        @Test
+        fun `toGroupUiModel maps Group context to GroupUiModel context`() {
+            every { resourceProvider.getQuantityString(R.plurals.group_members_count, 0, 0) } returns "0 members"
+            val group = createGroup().copy(context = GroupContext.EVERYDAY)
+
+            val result = mapper.toGroupUiModel(group)
+
+            assertEquals(GroupContext.EVERYDAY, result.context)
         }
     }
 }

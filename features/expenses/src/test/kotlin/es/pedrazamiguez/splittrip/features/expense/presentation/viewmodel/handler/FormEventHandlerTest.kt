@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
@@ -443,8 +444,14 @@ class FormEventHandlerTest {
                 name = UiText.DynamicString("Restaurant"),
                 icon = TablerIcons.Outline.ChefHat
             )
-            every { addExpenseOptionsUiMapper.mapSubcategories(ExpenseCategory.FOOD) } returns
-                persistentListOf(subcategoryUiModel)
+            every {
+                addExpenseOptionsUiMapper.mapSubcategories(
+                    category = ExpenseCategory.FOOD,
+                    context = GroupContext.TRAVEL,
+                    showAll = false,
+                    alwaysInclude = null
+                )
+            } returns persistentListOf(subcategoryUiModel)
 
             uiState.value = uiState.value.copy(selectedSubcategory = subcategoryUiModel)
 
@@ -464,6 +471,84 @@ class FormEventHandlerTest {
 
             assertEquals(before, uiState.value.selectedCategory)
         }
+
+        @Test
+        fun `handleCategorySelected auto-expands showAllCategories when outside availableCategories`() =
+            runTest {
+                val homeCategory = CategoryUiModel(id = "HOME", displayText = "Home")
+                val rentSubcategory = SubcategoryUiModel(
+                    subcategory = ExpenseSubcategory.RENT_MORTGAGE,
+                    name = UiText.DynamicString("Rent"),
+                    icon = TablerIcons.Outline.ChefHat
+                )
+                every {
+                    addExpenseOptionsUiMapper.mapCategoriesForContext(
+                        context = GroupContext.TRAVEL,
+                        showAll = true,
+                        alwaysInclude = null
+                    )
+                } returns persistentListOf(foodCategory, otherCategory, homeCategory)
+                every {
+                    addExpenseOptionsUiMapper.mapSubcategories(
+                        category = ExpenseCategory.HOME,
+                        context = GroupContext.TRAVEL,
+                        showAll = true,
+                        alwaysInclude = null
+                    )
+                } returns persistentListOf(rentSubcategory)
+
+                handler.handleCategorySelected(ExpenseCategory.HOME.name)
+
+                assertTrue(uiState.value.showAllCategories)
+                assertEquals(homeCategory, uiState.value.selectedCategory)
+                assertEquals(listOf(rentSubcategory), uiState.value.availableSubcategories)
+            }
+
+        @Test
+        fun `handleToggleShowAllCategories toggles showAllCategories and refreshes categories and subcategories`() =
+            runTest {
+                val homeCategory = CategoryUiModel(id = "HOME", displayText = "Home")
+                val restaurantSubcategory = SubcategoryUiModel(
+                    subcategory = ExpenseSubcategory.RESTAURANT,
+                    name = UiText.DynamicString("Restaurant"),
+                    icon = TablerIcons.Outline.ChefHat
+                )
+                val streetFoodSubcategory = SubcategoryUiModel(
+                    subcategory = ExpenseSubcategory.STREET_FOOD,
+                    name = UiText.DynamicString("Street Food"),
+                    icon = TablerIcons.Outline.ChefHat
+                )
+                uiState.value = uiState.value.copy(
+                    groupContext = GroupContext.EVERYDAY,
+                    selectedCategory = foodCategory,
+                    selectedSubcategory = restaurantSubcategory,
+                    showAllCategories = false
+                )
+                every {
+                    addExpenseOptionsUiMapper.mapCategoriesForContext(
+                        context = GroupContext.EVERYDAY,
+                        showAll = true,
+                        alwaysInclude = ExpenseCategory.FOOD
+                    )
+                } returns persistentListOf(foodCategory, otherCategory, homeCategory)
+                every {
+                    addExpenseOptionsUiMapper.mapSubcategories(
+                        category = ExpenseCategory.FOOD,
+                        context = GroupContext.EVERYDAY,
+                        showAll = true,
+                        alwaysInclude = ExpenseSubcategory.RESTAURANT
+                    )
+                } returns persistentListOf(restaurantSubcategory, streetFoodSubcategory)
+
+                handler.handleToggleShowAllCategories()
+
+                assertTrue(uiState.value.showAllCategories)
+                assertEquals(listOf(foodCategory, otherCategory, homeCategory), uiState.value.availableCategories)
+                assertEquals(
+                    listOf(restaurantSubcategory, streetFoodSubcategory),
+                    uiState.value.availableSubcategories
+                )
+            }
     }
 
     @Nested

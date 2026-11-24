@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.action.CreateEditGroupUiAction
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.event.CreateEditGroupUiEvent
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupFormSnapshot
@@ -127,6 +128,7 @@ class CreateEditGroupNavigationEventHandlerImplTest {
                 initialFormSnapshot = CreateEditGroupFormSnapshot(
                     groupName = "Original",
                     groupDescription = "",
+                    groupContext = GroupContext.TRAVEL,
                     selectedCurrency = null,
                     extraCurrencies = persistentListOf(),
                     selectedMembers = persistentListOf(),
@@ -174,6 +176,7 @@ class CreateEditGroupNavigationEventHandlerImplTest {
                 initialFormSnapshot = CreateEditGroupFormSnapshot(
                     groupName = "Original",
                     groupDescription = "",
+                    groupContext = GroupContext.TRAVEL,
                     selectedCurrency = null,
                     extraCurrencies = persistentListOf(),
                     selectedMembers = persistentListOf(),

@@ -4,6 +4,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Bed
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Category
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Heartbeat
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Home
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.MasksTheater
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Route
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Run
@@ -16,6 +18,8 @@ fun ExpenseCategory.toIconVector(): ImageVector = when (this) {
     ExpenseCategory.TRANSPORT -> TablerIcons.Outline.Route
     ExpenseCategory.FOOD -> TablerIcons.Outline.ToolsKitchen2
     ExpenseCategory.LODGING -> TablerIcons.Outline.Bed
+    ExpenseCategory.HOME -> TablerIcons.Outline.Home
+    ExpenseCategory.HEALTH_PERSONAL_CARE -> TablerIcons.Outline.Heartbeat
     ExpenseCategory.ACTIVITIES -> TablerIcons.Outline.Run
     ExpenseCategory.INSURANCE -> TablerIcons.Outline.Shield
     ExpenseCategory.ENTERTAINMENT -> TablerIcons.Outline.MasksTheater

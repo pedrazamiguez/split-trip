@@ -1535,12 +1535,33 @@ class AddExpenseViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                ExpenseCategory.entries.map { it.name },
+                ExpenseCategory.forContext(configEur.group.context).map { it.name },
                 viewModel.uiState.value.availableCategories.map { it.id }
             )
             assertEquals(
                 ExpenseCategory.ENTERTAINMENT.name,
                 viewModel.uiState.value.selectedCategory?.id
+            )
+        }
+
+        @Test
+        fun `ToggleShowAllCategories expands availableCategories to all ExpenseCategory entries`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.showAllCategories)
+            assertEquals(
+                ExpenseCategory.forContext(configEur.group.context).map { it.name },
+                viewModel.uiState.value.availableCategories.map { it.id }
+            )
+
+            viewModel.onEvent(AddExpenseUiEvent.ToggleShowAllCategories)
+
+            assertTrue(viewModel.uiState.value.showAllCategories)
+            assertEquals(
+                ExpenseCategory.entries.map { it.name },
+                viewModel.uiState.value.availableCategories.map { it.id }
             )
         }
     }

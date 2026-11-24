@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyU
 import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
@@ -383,10 +384,12 @@ class ReceiptAutoFillEventHandler(
             !extractedCategory.equals(currentCategory?.id, ignoreCase = true)
 
         if (shouldPreFillCategory) {
-            val matchingCategory = currentState.availableCategories
+            val resolvedCategoryId = currentState.availableCategories
                 .find { it.id.equals(extractedCategory, ignoreCase = true) }
-            if (matchingCategory != null) {
-                onCategorySelected?.invoke(matchingCategory.id)
+                ?.id
+                ?: runCatching { ExpenseCategory.fromString(extractedCategory).name }.getOrNull()
+            if (resolvedCategoryId != null) {
+                onCategorySelected?.invoke(resolvedCategoryId)
                 bannerFields.add(UiText.StringResource(R.string.add_expense_category_title))
             }
         }

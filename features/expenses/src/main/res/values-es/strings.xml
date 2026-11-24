@@ -151,6 +151,7 @@
 
     
     <string name="add_expense_category_title">Categoría</string>
+    <string name="category_show_all_toggle">Mostrar todas</string>
     <string name="add_expense_subcategory_title">Subcategoría</string>
     <string name="add_expense_vendor_label">Empresa / Comercio (opcional)</string>
     <string name="add_expense_vendor_helper">¿Dónde compraste esto?</string>

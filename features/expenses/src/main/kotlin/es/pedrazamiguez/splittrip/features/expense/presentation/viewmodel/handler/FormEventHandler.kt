@@ -19,9 +19,12 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseOptionsUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ManualReceiptQuotaUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -233,15 +236,77 @@ class FormEventHandler(
     }
 
     fun handleCategorySelected(categoryId: String) {
-        val selectedCategory = _uiState.value.availableCategories
-            .find { it.id == categoryId } ?: return
-        val categoryEnum = runCatching { ExpenseCategory.fromString(categoryId) }.getOrDefault(ExpenseCategory.OTHER)
-        val availableSubcategories = addExpenseOptionsUiMapper.mapSubcategories(categoryEnum)
+        val categoryEnum = runCatching { ExpenseCategory.fromString(categoryId) }.getOrNull() ?: return
+        val currentState = _uiState.value
+        val existingMatch = currentState.availableCategories.find { it.id == categoryId }
+        val nextShowAll: Boolean
+        val updatedCategories: ImmutableList<CategoryUiModel>
+        val selectedCategory: CategoryUiModel
+        val availableSubcategories: ImmutableList<SubcategoryUiModel>
+
+        if (existingMatch == null) {
+            nextShowAll = true
+            val allMapped = addExpenseOptionsUiMapper.mapCategoriesForContext(
+                context = currentState.groupContext,
+                showAll = true
+            )
+            val resolved = allMapped.find { it.id == categoryEnum.name } ?: return
+            updatedCategories = allMapped
+            selectedCategory = resolved
+            availableSubcategories = addExpenseOptionsUiMapper.mapSubcategories(
+                category = categoryEnum,
+                context = currentState.groupContext,
+                showAll = true
+            )
+        } else {
+            nextShowAll = currentState.showAllCategories
+            updatedCategories = currentState.availableCategories
+            selectedCategory = existingMatch
+            availableSubcategories = addExpenseOptionsUiMapper.mapSubcategories(
+                category = categoryEnum,
+                context = currentState.groupContext,
+                showAll = nextShowAll
+            )
+        }
+
         _uiState.update {
             it.copy(
+                showAllCategories = nextShowAll,
+                availableCategories = updatedCategories,
                 selectedCategory = selectedCategory,
                 selectedSubcategory = null,
                 availableSubcategories = availableSubcategories
+            )
+        }
+    }
+
+    fun handleToggleShowAllCategories() {
+        val currentState = _uiState.value
+        val nextShowAll = !currentState.showAllCategories
+        val selectedCategoryEnum = currentState.selectedCategory?.id?.let { catId ->
+            runCatching { ExpenseCategory.fromString(catId) }.getOrNull()
+        }
+        val updatedCategories = addExpenseOptionsUiMapper.mapCategoriesForContext(
+            context = currentState.groupContext,
+            showAll = nextShowAll,
+            alwaysInclude = selectedCategoryEnum
+        )
+        val updatedSubcategories = if (selectedCategoryEnum != null) {
+            addExpenseOptionsUiMapper.mapSubcategories(
+                category = selectedCategoryEnum,
+                context = currentState.groupContext,
+                showAll = nextShowAll,
+                alwaysInclude = currentState.selectedSubcategory?.subcategory
+            )
+        } else {
+            currentState.availableSubcategories
+        }
+
+        _uiState.update {
+            it.copy(
+                showAllCategories = nextShowAll,
+                availableCategories = updatedCategories,
+                availableSubcategories = updatedSubcategories
             )
         }
     }
