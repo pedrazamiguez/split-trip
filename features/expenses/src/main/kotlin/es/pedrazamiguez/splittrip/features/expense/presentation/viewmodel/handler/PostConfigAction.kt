@@ -35,4 +35,7 @@ sealed interface PostConfigAction {
 
     /** Clear stale subunit state when the group has no subunits. */
     data object ClearEntitySplits : PostConfigAction
+
+    /** Reset category auto-suggestion lock and cancel in-flight prediction jobs on group change. */
+    data object ResetCategorySuggestion : PostConfigAction
 }

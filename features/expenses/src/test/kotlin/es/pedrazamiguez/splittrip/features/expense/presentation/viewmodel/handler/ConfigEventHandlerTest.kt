@@ -238,6 +238,36 @@ class ConfigEventHandlerTest {
 
             coVerify(exactly = 1) { getGroupExpenseConfigUseCase("group-2", false) }
         }
+
+        @Test
+        fun `emits ResetCategorySuggestion when loading a different group`() = runTest {
+            uiState.value = AddExpenseUiState(
+                loadedGroupId = "group-1",
+                isConfigLoaded = true
+            )
+            coEvery { getGroupExpenseConfigUseCase("group-2", false) } returns Result.success(testConfig)
+            handler.bind(uiState, actions, this)
+
+            handler.loadGroupConfig("group-2")
+            advanceUntilIdle()
+
+            assertTrue(capturedActions.contains(PostConfigAction.ResetCategorySuggestion))
+        }
+
+        @Test
+        fun `does not emit ResetCategorySuggestion on same-group force refresh`() = runTest {
+            uiState.value = AddExpenseUiState(
+                loadedGroupId = "group-1",
+                isConfigLoaded = true
+            )
+            coEvery { getGroupExpenseConfigUseCase("group-1", true) } returns Result.success(testConfig)
+            handler.bind(uiState, actions, this)
+
+            handler.loadGroupConfig("group-1", forceRefresh = true)
+            advanceUntilIdle()
+
+            assertFalse(capturedActions.contains(PostConfigAction.ResetCategorySuggestion))
+        }
     }
 
     // ── Success path ─────────────────────────────────────────────────────

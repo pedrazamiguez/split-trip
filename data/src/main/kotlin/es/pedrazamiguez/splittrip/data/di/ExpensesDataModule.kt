@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.data.repository.impl.ExpenseRepositoryImpl
 import es.pedrazamiguez.splittrip.data.repository.impl.LiteRtInferenceRepositoryImpl
 import es.pedrazamiguez.splittrip.data.service.AICoreCapabilityProvider
 import es.pedrazamiguez.splittrip.data.service.AiModelResolverImpl
+import es.pedrazamiguez.splittrip.data.service.ExpenseCategoryAiClassifierServiceImpl
 import es.pedrazamiguez.splittrip.data.service.MLKitOcrService
 import es.pedrazamiguez.splittrip.data.service.ReceiptExtractionServiceImpl
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
@@ -19,12 +20,14 @@ import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
 import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
+import es.pedrazamiguez.splittrip.domain.service.ExpenseCategoryAiClassifierService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
 import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val expensesDataModule = module {
@@ -65,14 +68,14 @@ val expensesDataModule = module {
         )
     }
 
-    single<AiInferenceRepository>(org.koin.core.qualifier.named("ai_core")) {
+    single<AiInferenceRepository>(named("ai_core")) {
         AICoreInferenceRepositoryImpl(
             generativeModel = get<GenerativeModel>(),
             defaultDispatcher = Dispatchers.Default
         )
     }
 
-    single<AiInferenceRepository>(org.koin.core.qualifier.named("lite_rt")) {
+    single<AiInferenceRepository>(named("lite_rt")) {
         LiteRtInferenceRepositoryImpl(
             defaultDispatcher = Dispatchers.Default
         )
@@ -89,9 +92,17 @@ val expensesDataModule = module {
             context = androidContext(),
             appConfigRepository = get(),
             aiCoreCapabilityProvider = get<AICoreCapabilityProvider>(),
-            aiCoreInferenceRepository = lazy { get<AiInferenceRepository>(org.koin.core.qualifier.named("ai_core")) },
-            liteRtInferenceRepository = lazy { get<AiInferenceRepository>(org.koin.core.qualifier.named("lite_rt")) },
+            aiCoreInferenceRepository = lazy { get<AiInferenceRepository>(named("ai_core")) },
+            liteRtInferenceRepository = lazy { get<AiInferenceRepository>(named("lite_rt")) },
             aiModelResolver = get<AiModelResolverService>(),
+            defaultDispatcher = Dispatchers.Default
+        )
+    }
+
+    single<ExpenseCategoryAiClassifierService> {
+        ExpenseCategoryAiClassifierServiceImpl(
+            aiCoreCapabilityProvider = get<AICoreCapabilityProvider>(),
+            aiCoreInferenceRepository = lazy { get<AiInferenceRepository>(named("ai_core")) },
             defaultDispatcher = Dispatchers.Default
         )
     }

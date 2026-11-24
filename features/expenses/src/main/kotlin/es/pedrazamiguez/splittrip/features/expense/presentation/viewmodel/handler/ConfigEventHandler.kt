@@ -121,6 +121,7 @@ class ConfigEventHandler(
                     submitLabelRes = current.submitLabelRes
                 )
             }
+            postConfigCallback?.invoke(PostConfigAction.ResetCategorySuggestion)
         } else {
             _uiState.update { it.copy(isLoading = true, configLoadFailed = false) }
         }
