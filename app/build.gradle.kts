@@ -1,3 +1,4 @@
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 import java.io.StringReader
 import java.util.Properties
 
@@ -107,6 +108,9 @@ android {
             buildConfigField("Boolean", "USE_DEBUG_APP_CHECK", "true")
             configure<com.google.firebase.perf.plugin.FirebasePerfExtension> {
                 setInstrumentationEnabled(false)
+            }
+            configure<CrashlyticsExtension> {
+                mappingFileUploadEnabled = false
             }
         }
         getByName("release") {
