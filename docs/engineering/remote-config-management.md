@@ -116,7 +116,7 @@ SplitTrip parameters are organized into 5 functional groups:
 
 | Parameter Key | Value Type | Default Value | Description |
 |---|---|---|---|
-| `category_classifier_rules_json` | `JSON` | `{"version":1,"merge_mode":"merge","common":[],"languages":{"en":[...],"es":[...]},"disabled_terms":{...}}` | JSON rules for overriding, adding, or disabling expense auto-categorization keywords by language. |
+| `category_classifier_rules_json` | `JSON` | `{"version":1,"merge_mode":"merge","common":[...],"languages":{"en":[...],"es":[...],"fr":[...]},"disabled_terms":{"common":[...],"en":[...],"es":[...],"*":[...]}}` | JSON rules for overriding, adding, or disabling expense auto-categorization keywords by language. |
 
 #### `category_classifier_rules_json` Schema & Semantics
 
@@ -128,30 +128,77 @@ SplitTrip parameters are organized into 5 functional groups:
     {
       "category": "FOOD",
       "subcategory": "DELIVERY",
-      "phrases": ["Uber Eats"],
-      "keywords": ["rappi", "pedidosya"]
+      "phrases": ["uber eats", "pedidos ya"],
+      "keywords": ["rappi", "wolt"]
+    },
+    {
+      "category": "HOME",
+      "subcategory": "UTILITIES",
+      "phrases": [],
+      "keywords": ["o2"]
     }
   ],
   "languages": {
-    "es": [
+    "en": [
+      {
+        "category": "HEALTH_PERSONAL_CARE",
+        "subcategory": "DOCTOR_DENTIST",
+        "phrases": ["dental checkup"],
+        "keywords": ["filling"]
+      },
       {
         "category": "FOOD",
         "subcategory": "GROCERIES_SUPERMARKET",
-        "phrases": ["BonPreu Super"]
+        "phrases": ["farmers market"],
+        "keywords": ["costco"]
+      },
+      {
+        "category": "SHOPPING",
+        "subcategory": "TOBACCO_VAPING",
+        "phrases": ["pocket lighter"],
+        "keywords": ["lighter", "lighters"]
+      }
+    ],
+    "es": [
+      {
+        "category": "HEALTH_PERSONAL_CARE",
+        "subcategory": "DOCTOR_DENTIST",
+        "phrases": ["revision dental"],
+        "keywords": ["empaste"]
+      },
+      {
+        "category": "FOOD",
+        "subcategory": "GROCERIES_SUPERMARKET",
+        "phrases": ["cash fresh"],
+        "keywords": ["hipercor"]
+      },
+      {
+        "category": "SHOPPING",
+        "subcategory": "TOBACCO_VAPING",
+        "phrases": ["mechero recargable"],
+        "keywords": ["mechero", "encendedor"]
       }
     ],
     "fr": [
       {
         "category": "FOOD",
         "subcategory": "CAFE_BREAKFAST",
+        "phrases": ["petit dejeuner"],
         "keywords": ["boulangerie"]
+      },
+      {
+        "category": "SHOPPING",
+        "subcategory": "PHARMACY_HEALTH",
+        "phrases": ["parapharmacie bio"],
+        "keywords": ["pharmacie"]
       }
     ]
   },
   "disabled_terms": {
-    "common": [],
-    "es": ["bote"],
-    "*": []
+    "common": ["example common term"],
+    "en": ["example en term"],
+    "es": ["example es term"],
+    "*": ["example global term"]
   }
 }
 ```

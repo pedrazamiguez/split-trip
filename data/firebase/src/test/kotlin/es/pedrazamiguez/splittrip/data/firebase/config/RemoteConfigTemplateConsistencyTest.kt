@@ -5,13 +5,21 @@ import com.google.gson.JsonParser
 import es.pedrazamiguez.splittrip.data.firebase.repository.FirebaseAppConfigRepository
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.CategoryKeywordRule
 import es.pedrazamiguez.splittrip.domain.model.CategoryRuleMergeMode
+import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
+import es.pedrazamiguez.splittrip.domain.service.AppConfigService
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCategoryClassifierServiceImpl
+import io.mockk.every
+import io.mockk.mockk
 import java.io.File
 import java.nio.charset.StandardCharsets
 import javax.xml.parsers.DocumentBuilderFactory
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -318,41 +326,215 @@ class RemoteConfigTemplateConsistencyTest {
         assertEquals("JSON", param?.valueType)
 
         val rawValue = param?.defaultValue.orEmpty()
-        val defaultJson = JsonParser.parseString(rawValue).asJsonObject
-        assertEquals(1, defaultJson.get("version")?.asInt)
-        assertEquals("merge", defaultJson.get("merge_mode")?.asString)
-        assertTrue(defaultJson.get("common")?.isJsonArray == true)
-        assertTrue(defaultJson.get("languages")?.isJsonObject == true)
-        val languages = defaultJson.getAsJsonObject("languages")
-        assertTrue(languages.has("en") && languages.get("en").isJsonArray)
-        assertTrue(languages.has("es") && languages.get("es").isJsonArray)
-        assertTrue(defaultJson.get("disabled_terms")?.isJsonObject == true)
-        val disabledTerms = defaultJson.getAsJsonObject("disabled_terms")
-        assertTrue(disabledTerms.has("common") && disabledTerms.has("en"))
-        assertTrue(disabledTerms.has("es") && disabledTerms.has("*"))
+        assertDefaultCategoryClassifierJsonStructure(rawValue)
 
         val parsed = CategoryClassifierRulesParser.parse(rawValue)
         assertEquals(CategoryRuleMergeMode.MERGE, parsed.mergeMode)
+        assertEquals(expectedCommonRules(), parsed.commonRules)
+        assertEquals(setOf("en", "es", "fr"), parsed.languageRules.keys)
+        assertEquals(expectedEnglishRules(), parsed.languageRules["en"])
+        assertEquals(expectedSpanishRules(), parsed.languageRules["es"])
+        assertEquals(expectedFrenchRules(), parsed.languageRules["fr"])
+        assertRuleInvariants(parsed.commonRules, parsed.languageRules)
         assertEquals(
-            listOf(
-                CategoryKeywordRule(
-                    category = ExpenseCategory.HEALTH_PERSONAL_CARE,
-                    subcategory = ExpenseSubcategory.DOCTOR_DENTIST,
-                    keywords = listOf("filling")
-                )
+            mapOf(
+                "common" to setOf("example common term"),
+                "en" to setOf("example en term"),
+                "es" to setOf("example es term"),
+                "*" to setOf("example global term")
             ),
-            parsed.languageRules["en"]
+            parsed.disabledTerms
         )
-        assertEquals(
-            listOf(
-                CategoryKeywordRule(
-                    category = ExpenseCategory.HEALTH_PERSONAL_CARE,
-                    subcategory = ExpenseSubcategory.DOCTOR_DENTIST,
-                    keywords = listOf("empaste")
-                )
-            ),
-            parsed.languageRules["es"]
+    }
+
+    @Test
+    fun `category_classifier_rules_json default integrates with classifier without suppressing bundled rules`() {
+        val rawValue = templateParameters["category_classifier_rules_json"]?.defaultValue.orEmpty()
+        val appConfigService = mockk<AppConfigService>(relaxed = true)
+        every { appConfigService.categoryClassifierRules } returns MutableStateFlow(
+            CategoryClassifierRulesParser.parse(rawValue)
         )
+
+        val classifier = ExpenseCategoryClassifierServiceImpl(appConfigService = appConfigService)
+        assertNewDefaultClassifications(classifier)
+        assertBundledClassificationsRemainActive(classifier)
+    }
+
+    private fun assertDefaultCategoryClassifierJsonStructure(rawValue: String) {
+        val defaultJson = JsonParser.parseString(rawValue).asJsonObject
+        val xmlJson = JsonParser.parseString(xmlDefaults["category_classifier_rules_json"].orEmpty())
+        assertEquals(defaultJson, xmlJson)
+
+        assertEquals(1, defaultJson.get("version")?.asInt)
+        assertEquals("merge", defaultJson.get("merge_mode")?.asString)
+        val commonArray = defaultJson.getAsJsonArray("common")
+        assertTrue(commonArray != null && commonArray.size() > 0)
+
+        assertTrue(defaultJson.get("languages")?.isJsonObject == true)
+        val languages = defaultJson.getAsJsonObject("languages")
+        assertTrue(languages.size() >= 3)
+        listOf("en", "es", "fr").forEach { lang ->
+            assertTrue(languages.has(lang) && languages.get(lang).isJsonArray)
+            assertTrue(languages.getAsJsonArray(lang).size() > 0)
+        }
+
+        assertTrue(defaultJson.get("disabled_terms")?.isJsonObject == true)
+        val disabledTerms = defaultJson.getAsJsonObject("disabled_terms")
+        listOf("common", "en", "es", "*").forEach { key ->
+            assertTrue(disabledTerms.has(key) && disabledTerms.get(key).isJsonArray)
+            assertTrue(disabledTerms.getAsJsonArray(key).size() > 0)
+        }
+    }
+
+    private fun expectedCommonRules(): List<CategoryKeywordRule> = listOf(
+        CategoryKeywordRule(
+            category = ExpenseCategory.FOOD,
+            subcategory = ExpenseSubcategory.DELIVERY,
+            phrases = listOf("uber eats", "pedidos ya"),
+            keywords = listOf("rappi", "wolt")
+        ),
+        CategoryKeywordRule(
+            category = ExpenseCategory.HOME,
+            subcategory = ExpenseSubcategory.UTILITIES,
+            phrases = emptyList(),
+            keywords = listOf("o2")
+        )
+    )
+
+    private fun expectedEnglishRules(): List<CategoryKeywordRule> = listOf(
+        CategoryKeywordRule(
+            category = ExpenseCategory.HEALTH_PERSONAL_CARE,
+            subcategory = ExpenseSubcategory.DOCTOR_DENTIST,
+            phrases = listOf("dental checkup"),
+            keywords = listOf("filling")
+        ),
+        CategoryKeywordRule(
+            category = ExpenseCategory.FOOD,
+            subcategory = ExpenseSubcategory.GROCERIES_SUPERMARKET,
+            phrases = listOf("farmers market"),
+            keywords = listOf("costco")
+        ),
+        CategoryKeywordRule(
+            category = ExpenseCategory.SHOPPING,
+            subcategory = ExpenseSubcategory.TOBACCO_VAPING,
+            phrases = listOf("pocket lighter"),
+            keywords = listOf("lighter", "lighters")
+        )
+    )
+
+    private fun expectedSpanishRules(): List<CategoryKeywordRule> = listOf(
+        CategoryKeywordRule(
+            category = ExpenseCategory.HEALTH_PERSONAL_CARE,
+            subcategory = ExpenseSubcategory.DOCTOR_DENTIST,
+            phrases = listOf("revision dental"),
+            keywords = listOf("empaste")
+        ),
+        CategoryKeywordRule(
+            category = ExpenseCategory.FOOD,
+            subcategory = ExpenseSubcategory.GROCERIES_SUPERMARKET,
+            phrases = listOf("cash fresh"),
+            keywords = listOf("hipercor")
+        ),
+        CategoryKeywordRule(
+            category = ExpenseCategory.SHOPPING,
+            subcategory = ExpenseSubcategory.TOBACCO_VAPING,
+            phrases = listOf("mechero recargable"),
+            keywords = listOf("mechero", "encendedor")
+        )
+    )
+
+    private fun expectedFrenchRules(): List<CategoryKeywordRule> = listOf(
+        CategoryKeywordRule(
+            category = ExpenseCategory.FOOD,
+            subcategory = ExpenseSubcategory.CAFE_BREAKFAST,
+            phrases = listOf("petit dejeuner"),
+            keywords = listOf("boulangerie")
+        ),
+        CategoryKeywordRule(
+            category = ExpenseCategory.SHOPPING,
+            subcategory = ExpenseSubcategory.PHARMACY_HEALTH,
+            phrases = listOf("parapharmacie bio"),
+            keywords = listOf("pharmacie")
+        )
+    )
+
+    private fun assertRuleInvariants(
+        commonRules: List<CategoryKeywordRule>,
+        languageRules: Map<String, List<CategoryKeywordRule>>
+    ) {
+        val allRules = commonRules + languageRules.values.flatten()
+        allRules.forEach { rule ->
+            assertTrue(rule.phrases.isNotEmpty() || rule.keywords.isNotEmpty())
+            val sub = rule.subcategory
+            assertTrue(
+                sub == null ||
+                    (sub != ExpenseSubcategory.UNSPECIFIED && sub.parentCategory == rule.category)
+            )
+        }
+        assertTrue(commonRules.any { it.phrases.isNotEmpty() && it.keywords.isNotEmpty() })
+        languageRules.values.flatten().forEach { rule ->
+            assertTrue(rule.phrases.isNotEmpty() && rule.keywords.isNotEmpty())
+        }
+    }
+
+    private fun assertNewDefaultClassifications(classifier: ExpenseCategoryClassifierServiceImpl) {
+        val expected = listOf(
+            Triple("Uber Eats", GroupContext.EVERYDAY, "en") to
+                CategorySuggestion(ExpenseCategory.FOOD, ExpenseSubcategory.DELIVERY),
+            Triple("Rappi", GroupContext.TRAVEL, "es") to
+                CategorySuggestion(ExpenseCategory.FOOD, ExpenseSubcategory.DELIVERY),
+            Triple("o2", GroupContext.EVERYDAY, "es") to
+                CategorySuggestion(ExpenseCategory.HOME, ExpenseSubcategory.UTILITIES),
+            Triple("o2", GroupContext.EVERYDAY, "en") to
+                CategorySuggestion(ExpenseCategory.HOME, ExpenseSubcategory.UTILITIES),
+            Triple("filling", GroupContext.EVERYDAY, "en") to
+                CategorySuggestion(ExpenseCategory.HEALTH_PERSONAL_CARE, ExpenseSubcategory.DOCTOR_DENTIST),
+            Triple("dental checkup", GroupContext.TRAVEL, "en") to
+                CategorySuggestion(ExpenseCategory.HEALTH_PERSONAL_CARE, ExpenseSubcategory.DOCTOR_DENTIST),
+            Triple("lighter", GroupContext.EVERYDAY, "en") to
+                CategorySuggestion(ExpenseCategory.SHOPPING, ExpenseSubcategory.TOBACCO_VAPING),
+            Triple("pocket lighter", GroupContext.TRAVEL, "en") to
+                CategorySuggestion(ExpenseCategory.SHOPPING, ExpenseSubcategory.TOBACCO_VAPING),
+            Triple("empaste", GroupContext.EVERYDAY, "es") to
+                CategorySuggestion(ExpenseCategory.HEALTH_PERSONAL_CARE, ExpenseSubcategory.DOCTOR_DENTIST),
+            Triple("cash fresh", GroupContext.EVERYDAY, "es") to
+                CategorySuggestion(ExpenseCategory.FOOD, ExpenseSubcategory.GROCERIES_SUPERMARKET),
+            Triple("cash fresh", GroupContext.TRAVEL, "es") to
+                CategorySuggestion(ExpenseCategory.FOOD, ExpenseSubcategory.GROCERIES_SUPERMARKET),
+            Triple("hipercor", GroupContext.EVERYDAY, "es") to
+                CategorySuggestion(ExpenseCategory.FOOD, ExpenseSubcategory.GROCERIES_SUPERMARKET),
+            Triple("mechero", GroupContext.EVERYDAY, "es") to
+                CategorySuggestion(ExpenseCategory.SHOPPING, ExpenseSubcategory.TOBACCO_VAPING),
+            Triple("mechero recargable", GroupContext.TRAVEL, "es") to
+                CategorySuggestion(ExpenseCategory.SHOPPING, ExpenseSubcategory.TOBACCO_VAPING),
+            Triple("boulangerie", GroupContext.TRAVEL, "fr") to
+                CategorySuggestion(ExpenseCategory.FOOD, ExpenseSubcategory.CAFE_BREAKFAST),
+            Triple("pharmacie", GroupContext.EVERYDAY, "fr") to
+                CategorySuggestion(ExpenseCategory.SHOPPING, ExpenseSubcategory.PHARMACY_HEALTH)
+        )
+        expected.forEach { (input, suggestion) ->
+            val (description, context, lang) = input
+            assertEquals(suggestion, classifier.classify(description, context, lang))
+        }
+        assertNull(classifier.classify("o2", GroupContext.TRAVEL, "es"))
+        assertNull(classifier.classify("filling", GroupContext.TRAVEL, "en"))
+    }
+
+    private fun assertBundledClassificationsRemainActive(classifier: ExpenseCategoryClassifierServiceImpl) {
+        val bundledCases = listOf(
+            Triple("taxi", GroupContext.TRAVEL, "en") to
+                CategorySuggestion(ExpenseCategory.TRANSPORT, ExpenseSubcategory.TAXI_RIDESHARE),
+            Triple("bote", GroupContext.TRAVEL, "es") to
+                CategorySuggestion(ExpenseCategory.OTHER, ExpenseSubcategory.TIPS_GRATUITIES),
+            Triple("hotel", GroupContext.TRAVEL, "en") to
+                CategorySuggestion(ExpenseCategory.LODGING, ExpenseSubcategory.HOTEL),
+            Triple("factura del agua", GroupContext.EVERYDAY, "es") to
+                CategorySuggestion(ExpenseCategory.HOME, ExpenseSubcategory.UTILITIES)
+        )
+        bundledCases.forEach { (input, suggestion) ->
+            val (description, context, lang) = input
+            assertEquals(suggestion, classifier.classify(description, context, lang))
+        }
     }
 
     private fun resolveProjectRoot(): File {
