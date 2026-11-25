@@ -34,6 +34,7 @@ internal fun SubcategorySelectionSection(
         onSubcategoryClicked = { id ->
             onSubcategorySelected(if (selectedSubcategory?.subcategory?.name == id) null else id)
         },
-        modifier = modifier
+        modifier = modifier,
+        useSectionHeading = true
     )
 }

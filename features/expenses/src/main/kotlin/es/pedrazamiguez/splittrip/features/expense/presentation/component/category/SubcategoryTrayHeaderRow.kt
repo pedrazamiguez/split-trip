@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagDefaults
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
 
 @Composable
 internal fun SubcategoryTrayHeaderRow(
@@ -25,6 +26,7 @@ internal fun SubcategoryTrayHeaderRow(
     badgeStyle: PassportTagStyle,
     badgeModifier: Modifier,
     modifier: Modifier = Modifier,
+    useSectionHeading: Boolean = false,
     trailingContent: @Composable (() -> Unit)? = null
 ) {
     Row(
@@ -38,11 +40,19 @@ internal fun SubcategoryTrayHeaderRow(
             modifier = Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CardSectionLabelText(
-                text = title,
-                modifier = Modifier.weight(1f, fill = false),
-                maxLines = 1
-            )
+            if (useSectionHeading) {
+                SectionHeadingText(
+                    text = title,
+                    modifier = Modifier.weight(1f, fill = false),
+                    maxLines = 1
+                )
+            } else {
+                CardSectionLabelText(
+                    text = title,
+                    modifier = Modifier.weight(1f, fill = false),
+                    maxLines = 1
+                )
+            }
             AnimatedVisibility(
                 visible = showBadge,
                 enter = CategorySelectorTransitions.badgeEnterTransition(),

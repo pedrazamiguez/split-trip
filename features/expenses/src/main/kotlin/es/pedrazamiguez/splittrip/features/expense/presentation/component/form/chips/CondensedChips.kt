@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,6 +27,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Dots
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.filterChipLeadingIcon
 
 /**
  * A reusable chip selector that shows the top [visibleCount] items as PassportChips
@@ -102,15 +105,10 @@ fun <T> CondensedChips(
                 label = itemLabel(item),
                 selected = isSelected,
                 onClick = { onItemSelected(id) },
-                leadingIcon = when {
-                    isSelected -> {
-                        { Icon(TablerIcons.Outline.Check, contentDescription = null) }
-                    }
-                    itemIcon != null -> itemIcon(item)?.let { icon ->
-                        { Icon(icon, contentDescription = null) }
-                    }
-                    else -> null
-                }
+                leadingIcon = filterChipLeadingIcon(
+                    isSelected = isSelected,
+                    unselectedIcon = itemIcon?.invoke(item)
+                )
             )
         }
 
@@ -127,7 +125,8 @@ fun <T> CondensedChips(
                     trailingIcon = {
                         Icon(
                             imageVector = TablerIcons.Outline.Dots,
-                            contentDescription = stringResource(R.string.add_expense_chips_more)
+                            contentDescription = stringResource(R.string.add_expense_chips_more),
+                            modifier = Modifier.size(FilterChipDefaults.IconSize)
                         )
                     }
                 )

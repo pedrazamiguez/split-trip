@@ -72,7 +72,6 @@ internal fun CategoryFilterSubcategorySection(
         modifier = modifier,
         badgeText = if (selectedCount > 0) selectedCount.toString() else null,
         badgeStyle = PassportTagStyle.INFO,
-        badgeContentDescription = badgeContentDescription,
-        containedInCard = false
+        badgeContentDescription = badgeContentDescription
     )
 }

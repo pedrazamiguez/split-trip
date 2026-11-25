@@ -11,5 +11,6 @@ internal data class SubcategoryTraySnapshot(
     val items: ImmutableList<SubcategoryStampItem>,
     val badgeText: String?,
     val badgeStyle: PassportTagStyle,
-    val badgeContentDescription: String?
+    val badgeContentDescription: String?,
+    val useSectionHeading: Boolean = false
 )
