@@ -66,9 +66,6 @@ fun ExpensesFilterFeature(
         onResetFilters = {
             filterViewModel.onEvent(ExpensesFilterUiEvent.ResetDraft)
         },
-        onToggleShowAllCategories = {
-            filterViewModel.onEvent(ExpensesFilterUiEvent.ToggleShowAllCategories)
-        },
         onApplyFilters = {
             filterViewModel.onEvent(ExpensesFilterUiEvent.ApplyFilters)
         }

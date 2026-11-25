@@ -34,6 +34,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStr
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.ExpensesFilterScreen
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesFilterUiState
 import es.pedrazamiguez.splittrip.helpers.ScreenshotRule
+import kotlinx.collections.immutable.persistentListOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -187,7 +188,21 @@ class ExpensesFilterScreenTest {
         val taxiLabel = context.getString(ExpenseSubcategory.TAXI_RIDESHARE.toStringRes())
 
         composeRule.setContent {
-            var uiState by remember { mutableStateOf(ExpensesFilterUiState()) }
+            var uiState by remember {
+                mutableStateOf(
+                    ExpensesFilterUiState(
+                        availableCategories = persistentListOf(
+                            ExpenseCategory.TRANSPORT,
+                            ExpenseCategory.FOOD
+                        ),
+                        availableSubcategories = persistentListOf(
+                            ExpenseSubcategory.TRAIN,
+                            ExpenseSubcategory.TAXI_RIDESHARE,
+                            ExpenseSubcategory.RESTAURANT
+                        )
+                    )
+                )
+            }
             SplitTripTheme {
                 ExpensesFilterScreen(
                     uiState = uiState,
@@ -232,7 +247,20 @@ class ExpensesFilterScreenTest {
 
         composeRule.setContent {
             var uiState by remember {
-                mutableStateOf(ExpensesFilterUiState(draftCriteria = latestCriteria))
+                mutableStateOf(
+                    ExpensesFilterUiState(
+                        draftCriteria = latestCriteria,
+                        availableCategories = persistentListOf(
+                            ExpenseCategory.TRANSPORT,
+                            ExpenseCategory.FOOD
+                        ),
+                        availableSubcategories = persistentListOf(
+                            ExpenseSubcategory.TRAIN,
+                            ExpenseSubcategory.TAXI_RIDESHARE,
+                            ExpenseSubcategory.RESTAURANT
+                        )
+                    )
+                )
             }
             SplitTripTheme {
                 ExpensesFilterScreen(
@@ -270,24 +298,83 @@ class ExpensesFilterScreenTest {
     }
 
     @Test
-    fun togglingShowAllCategories_invokesCallback() {
-        var toggleInvoked = false
+    fun rendersOnlyAvailableCategoriesAndSubcategories_andHidesUnusedOnes() {
+        val foodLabel = context.getString(ExpenseCategory.FOOD.toStringRes())
+        val transportLabel = context.getString(ExpenseCategory.TRANSPORT.toStringRes())
+        val lodgingLabel = context.getString(ExpenseCategory.LODGING.toStringRes())
         val showAllLabel = context.getString(R.string.category_show_all_toggle)
+        val restaurantLabel = context.getString(ExpenseSubcategory.RESTAURANT.toStringRes())
+        val cafeBreakfastLabel = context.getString(ExpenseSubcategory.CAFE_BREAKFAST.toStringRes())
 
         composeRule.setContent {
+            var uiState by remember {
+                mutableStateOf(
+                    ExpensesFilterUiState(
+                        availableCategories = persistentListOf(ExpenseCategory.FOOD),
+                        availableSubcategories = persistentListOf(ExpenseSubcategory.RESTAURANT)
+                    )
+                )
+            }
             SplitTripTheme {
                 ExpensesFilterScreen(
-                    uiState = ExpensesFilterUiState(),
-                    onToggleShowAllCategories = { toggleInvoked = true }
+                    uiState = uiState,
+                    onUpdateDraft = { criteria -> uiState = uiState.copy(draftCriteria = criteria) }
                 )
             }
         }
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText(showAllLabel).performClick()
+        composeRule.onNodeWithText(foodLabel).assertIsDisplayed()
+        composeRule.onNodeWithText(transportLabel).assertDoesNotExist()
+        composeRule.onNodeWithText(lodgingLabel).assertDoesNotExist()
+        composeRule.onNodeWithText(showAllLabel).assertDoesNotExist()
+
+        composeRule.onNodeWithText(foodLabel).performClick()
         composeRule.waitForIdle()
 
-        assertTrue(toggleInvoked)
+        composeRule.onNodeWithText(restaurantLabel).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText(cafeBreakfastLabel).assertDoesNotExist()
+    }
+
+    @Test
+    fun hidesCategoryFilterSection_whenNoAvailableOrSelectedCategories() {
+        val categorySectionTitle = context.getString(R.string.expenses_filter_section_category)
+
+        composeRule.setContent {
+            SplitTripTheme {
+                ExpensesFilterScreen(
+                    uiState = ExpensesFilterUiState()
+                )
+            }
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(categorySectionTitle).assertDoesNotExist()
+    }
+
+    @Test
+    fun retainsPreSelectedMissingCategoryAndSubcategory_soUserCanDeselect() {
+        val entertainmentLabel = context.getString(ExpenseCategory.ENTERTAINMENT.toStringRes())
+        val concertLabel = context.getString(ExpenseSubcategory.CONCERT_FESTIVAL.toStringRes())
+
+        composeRule.setContent {
+            SplitTripTheme {
+                ExpensesFilterScreen(
+                    uiState = ExpensesFilterUiState(
+                        availableCategories = persistentListOf(ExpenseCategory.FOOD),
+                        availableSubcategories = persistentListOf(ExpenseSubcategory.RESTAURANT),
+                        draftCriteria = ExpenseFilterCriteria(
+                            selectedCategories = setOf(ExpenseCategory.ENTERTAINMENT),
+                            selectedSubcategories = setOf(ExpenseSubcategory.CONCERT_FESTIVAL)
+                        )
+                    )
+                )
+            }
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNode(hasText(entertainmentLabel).and(isSelected())).assertIsDisplayed()
+        composeRule.onNode(hasText(concertLabel).and(isSelected())).performScrollTo().assertIsDisplayed()
     }
 
     @Test

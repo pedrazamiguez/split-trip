@@ -2,7 +2,6 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.filte
 
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
-import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -12,67 +11,101 @@ import org.junit.jupiter.api.Test
 class CategoryFilterLogicTest {
 
     @Test
-    fun `resolveVisibleCategories returns context categories when showAll is false and nothing selected`() {
+    fun `resolveVisibleCategories returns empty list when available and selected are both empty`() {
         val result = CategoryFilterLogic.resolveVisibleCategories(
-            groupContext = GroupContext.TRAVEL,
-            showAllCategories = false,
+            availableCategories = emptyList(),
             selectedCategories = emptySet()
         )
 
-        assertEquals(ExpenseCategory.forContext(GroupContext.TRAVEL), result)
-        assertTrue(ExpenseCategory.HOME !in result)
-        assertTrue(ExpenseCategory.HEALTH_PERSONAL_CARE !in result)
+        assertTrue(result.isEmpty())
     }
 
     @Test
-    fun `resolveVisibleCategories preserves out-of-context pre-selected categories when showAll is false`() {
+    fun `resolveVisibleCategories returns only available categories in canonical enum order`() {
         val result = CategoryFilterLogic.resolveVisibleCategories(
-            groupContext = GroupContext.TRAVEL,
-            showAllCategories = false,
-            selectedCategories = setOf(ExpenseCategory.HOME)
-        )
-
-        val expected = ExpenseCategory.forContext(GroupContext.TRAVEL) + ExpenseCategory.HOME
-        assertEquals(expected, result)
-    }
-
-    @Test
-    fun `resolveVisibleCategories returns all ExpenseCategory entries when showAll is true`() {
-        val result = CategoryFilterLogic.resolveVisibleCategories(
-            groupContext = GroupContext.TRAVEL,
-            showAllCategories = true,
+            availableCategories = listOf(
+                ExpenseCategory.SHOPPING,
+                ExpenseCategory.TRANSPORT,
+                ExpenseCategory.FOOD
+            ),
             selectedCategories = emptySet()
         )
 
-        assertEquals(ExpenseCategory.entries, result)
+        assertEquals(
+            listOf(ExpenseCategory.TRANSPORT, ExpenseCategory.FOOD, ExpenseCategory.SHOPPING),
+            result
+        )
     }
 
     @Test
-    fun `resolveVisibleSubcategories scopes to groupContext and keeps out-of-context selections`() {
-        val result = CategoryFilterLogic.resolveVisibleSubcategories(
-            category = ExpenseCategory.TRANSPORT,
-            selectedSubcategories = setOf(ExpenseSubcategory.INTERNATIONAL_FLIGHT),
-            groupContext = GroupContext.EVERYDAY,
-            showAllCategories = false
+    fun `resolveVisibleCategories retains pre-selected categories missing from available in canonical order`() {
+        val result = CategoryFilterLogic.resolveVisibleCategories(
+            availableCategories = listOf(ExpenseCategory.FOOD),
+            selectedCategories = setOf(ExpenseCategory.HOME, ExpenseCategory.TRANSPORT)
         )
 
-        val expected = (
-            ExpenseSubcategory.forCategory(ExpenseCategory.TRANSPORT, GroupContext.EVERYDAY) +
-                ExpenseSubcategory.INTERNATIONAL_FLIGHT
-            ).distinct()
-        assertEquals(expected, result)
+        assertEquals(
+            listOf(ExpenseCategory.TRANSPORT, ExpenseCategory.FOOD, ExpenseCategory.HOME),
+            result
+        )
     }
 
     @Test
-    fun `resolveVisibleSubcategories returns all subcategories for out-of-context category`() {
-        val result = CategoryFilterLogic.resolveVisibleSubcategories(
-            category = ExpenseCategory.HOME,
-            selectedSubcategories = emptySet(),
-            groupContext = GroupContext.TRAVEL,
-            showAllCategories = false
+    fun `resolveVisibleCategories deduplicates categories present in both available and selected`() {
+        val result = CategoryFilterLogic.resolveVisibleCategories(
+            availableCategories = listOf(ExpenseCategory.FOOD, ExpenseCategory.TRANSPORT),
+            selectedCategories = setOf(ExpenseCategory.FOOD)
         )
 
-        assertEquals(ExpenseSubcategory.forCategory(ExpenseCategory.HOME), result)
+        assertEquals(listOf(ExpenseCategory.TRANSPORT, ExpenseCategory.FOOD), result)
+    }
+
+    @Test
+    fun `resolveVisibleSubcategories returns empty list when none belong to category`() {
+        val result = CategoryFilterLogic.resolveVisibleSubcategories(
+            category = ExpenseCategory.FOOD,
+            availableSubcategories = listOf(ExpenseSubcategory.TAXI_RIDESHARE),
+            selectedSubcategories = setOf(ExpenseSubcategory.HOTEL)
+        )
+
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `resolveVisibleSubcategories returns available subcategories for category in canonical order`() {
+        val result = CategoryFilterLogic.resolveVisibleSubcategories(
+            category = ExpenseCategory.FOOD,
+            availableSubcategories = listOf(
+                ExpenseSubcategory.DELIVERY,
+                ExpenseSubcategory.TAXI_RIDESHARE,
+                ExpenseSubcategory.RESTAURANT
+            ),
+            selectedSubcategories = emptySet()
+        )
+
+        assertEquals(listOf(ExpenseSubcategory.RESTAURANT, ExpenseSubcategory.DELIVERY), result)
+    }
+
+    @Test
+    fun `resolveVisibleSubcategories retains pre-selected subcategories for category missing from available`() {
+        val result = CategoryFilterLogic.resolveVisibleSubcategories(
+            category = ExpenseCategory.FOOD,
+            availableSubcategories = listOf(ExpenseSubcategory.RESTAURANT),
+            selectedSubcategories = setOf(ExpenseSubcategory.CAFE_BREAKFAST, ExpenseSubcategory.HOTEL)
+        )
+
+        assertEquals(listOf(ExpenseSubcategory.RESTAURANT, ExpenseSubcategory.CAFE_BREAKFAST), result)
+    }
+
+    @Test
+    fun `resolveVisibleSubcategories excludes UNSPECIFIED even if present in available or selected`() {
+        val result = CategoryFilterLogic.resolveVisibleSubcategories(
+            category = ExpenseCategory.OTHER,
+            availableSubcategories = listOf(ExpenseSubcategory.UNSPECIFIED, ExpenseSubcategory.LAUNDRY),
+            selectedSubcategories = setOf(ExpenseSubcategory.UNSPECIFIED)
+        )
+
+        assertEquals(listOf(ExpenseSubcategory.LAUNDRY), result)
     }
 
     @Test

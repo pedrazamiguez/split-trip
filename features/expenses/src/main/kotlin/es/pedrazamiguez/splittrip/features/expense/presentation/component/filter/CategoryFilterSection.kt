@@ -20,25 +20,31 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
-import es.pedrazamiguez.splittrip.domain.enums.GroupContext
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
+import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.CategoryCarousel
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.CategoryCarouselItem
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 
 @Composable
 fun CategoryFilterSection(
+    availableCategories: ImmutableList<ExpenseCategory>,
+    availableSubcategories: ImmutableList<ExpenseSubcategory>,
     criteria: ExpenseFilterCriteria,
     onCriteriaChange: (ExpenseFilterCriteria) -> Unit,
     modifier: Modifier = Modifier,
-    groupContext: GroupContext = GroupContext.TRAVEL,
-    showAllCategories: Boolean = false,
-    onToggleShowAllCategories: () -> Unit = {},
     carouselEdgePadding: Dp = 0.dp
 ) {
-    val visible = remember(groupContext, showAllCategories, criteria.selectedCategories) {
-        CategoryFilterLogic.resolveVisibleCategories(groupContext, showAllCategories, criteria.selectedCategories)
+    val visible = remember(availableCategories, criteria.selectedCategories) {
+        CategoryFilterLogic.resolveVisibleCategories(
+            availableCategories = availableCategories,
+            selectedCategories = criteria.selectedCategories
+        )
     }
+    if (visible.isEmpty()) return
+
     var focusedCategory by rememberSaveable { mutableStateOf<ExpenseCategory?>(null) }
     val effectiveFocused = CategoryFilterLogic.resolveFocusedCategory(
         focusedCategory,
@@ -59,10 +65,9 @@ fun CategoryFilterSection(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)) {
-            CategoryFilterHeader(
-                selectedCount = criteria.selectedCategories.size,
-                showAllCategories = showAllCategories,
-                onToggleShowAllCategories = onToggleShowAllCategories
+            FilterSectionHeader(
+                title = stringResource(R.string.expenses_filter_section_category),
+                selectedCount = criteria.selectedCategories.size
             )
             CategoryCarousel(
                 items = carouselItems,
@@ -77,8 +82,13 @@ fun CategoryFilterSection(
                 selectionRole = Role.Checkbox
             )
         }
-        CategoryFilterSubcategorySection(effectiveFocused, criteria, groupContext, showAllCategories, {
-            onCriteriaChange(CategoryFilterLogic.toggleSubcategory(criteria, it))
-        })
+        CategoryFilterSubcategorySection(
+            focusedCategory = effectiveFocused,
+            availableSubcategories = availableSubcategories,
+            criteria = criteria,
+            onSubcategoryToggled = {
+                onCriteriaChange(CategoryFilterLogic.toggleSubcategory(criteria, it))
+            }
+        )
     }
 }

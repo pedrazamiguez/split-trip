@@ -20,6 +20,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUi
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 
 private val PREVIEW_PAYMENT_CARD = PaymentMethodUiModel(
@@ -129,6 +130,19 @@ private fun CategorySectionCarouselNarrowPreview() {
 private fun CategoryFilterSectionCarouselPreviewContent() {
     PreviewThemeWrapper {
         CategoryFilterSection(
+            availableCategories = persistentListOf(
+                ExpenseCategory.TRANSPORT,
+                ExpenseCategory.FOOD,
+                ExpenseCategory.LODGING,
+                ExpenseCategory.SHOPPING
+            ),
+            availableSubcategories = persistentListOf(
+                ExpenseSubcategory.TRAIN,
+                ExpenseSubcategory.TAXI_RIDESHARE,
+                ExpenseSubcategory.RESTAURANT,
+                ExpenseSubcategory.CAFE_BREAKFAST,
+                ExpenseSubcategory.HOTEL
+            ),
             criteria = ExpenseFilterCriteria(
                 selectedCategories = setOf(ExpenseCategory.TRANSPORT, ExpenseCategory.FOOD),
                 selectedSubcategories = setOf(

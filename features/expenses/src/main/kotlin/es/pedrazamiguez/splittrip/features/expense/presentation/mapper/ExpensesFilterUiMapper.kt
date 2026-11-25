@@ -5,6 +5,8 @@ import es.pedrazamiguez.splittrip.core.common.extensions.utcToSystemLocalDate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.DateBounds
@@ -15,12 +17,34 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 
 class ExpensesFilterUiMapper(
     private val formattingHelper: FormattingHelper,
     private val userUiMapper: UserUiMapper
 ) {
+
+    fun extractAvailableCategories(expenses: List<Expense>): ImmutableList<ExpenseCategory> {
+        if (expenses.isEmpty()) return persistentListOf()
+        val usedCategories = expenses.mapTo(mutableSetOf()) { it.category }
+        return ExpenseCategory.entries
+            .filter { it in usedCategories }
+            .toImmutableList()
+    }
+
+    fun extractAvailableSubcategories(expenses: List<Expense>): ImmutableList<ExpenseSubcategory> {
+        if (expenses.isEmpty()) return persistentListOf()
+        val usedSubcategories = expenses
+            .asSequence()
+            .map { it.subcategory }
+            .filter { it != ExpenseSubcategory.UNSPECIFIED }
+            .toSet()
+        if (usedSubcategories.isEmpty()) return persistentListOf()
+        return ExpenseSubcategory.entries
+            .filter { it in usedSubcategories }
+            .toImmutableList()
+    }
 
     fun extractDateBounds(
         expenses: List<Expense>,

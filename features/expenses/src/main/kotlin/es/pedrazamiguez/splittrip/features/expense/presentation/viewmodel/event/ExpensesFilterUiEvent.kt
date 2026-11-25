@@ -8,6 +8,5 @@ sealed interface ExpensesFilterUiEvent {
     data class UpdateDraft(val criteria: ExpenseFilterCriteria) : ExpensesFilterUiEvent
     data class DatePresetSelected(val preset: DateRangePreset) : ExpensesFilterUiEvent
     data object ResetDraft : ExpensesFilterUiEvent
-    data object ToggleShowAllCategories : ExpensesFilterUiEvent
     data object ApplyFilters : ExpensesFilterUiEvent
 }
