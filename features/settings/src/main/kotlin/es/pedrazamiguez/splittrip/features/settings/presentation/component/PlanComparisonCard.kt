@@ -21,6 +21,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButtonDefaults
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.InlineWarningBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionPlanUiModel
@@ -118,6 +119,11 @@ fun PlanComparisonCard(
                 plan.features.forEach { feature ->
                     PlanFeatureItem(feature = feature)
                 }
+            }
+
+            if (plan.compatibilityNotice != null) {
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.Large))
+                InlineWarningBanner(warning = plan.compatibilityNotice)
             }
 
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraLarge))

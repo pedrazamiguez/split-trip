@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetReceiptExtractionCapabilityUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObservePlanAllowancesUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.PlanAllowancesUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.action.PlanAllowancesUiAction
@@ -19,11 +20,17 @@ import kotlinx.coroutines.launch
 
 class PlanAllowancesViewModel(
     observePlanAllowancesUseCase: ObservePlanAllowancesUseCase,
+    private val getReceiptExtractionCapabilityUseCase: GetReceiptExtractionCapabilityUseCase,
     private val planAllowancesUiMapper: PlanAllowancesUiMapper
 ) : ViewModel() {
 
     val uiState: StateFlow<PlanAllowancesUiState> = observePlanAllowancesUseCase()
-        .map(planAllowancesUiMapper::map)
+        .map { allowances ->
+            planAllowancesUiMapper.map(
+                allowances = allowances,
+                extractionCapability = getReceiptExtractionCapabilityUseCase()
+            )
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(

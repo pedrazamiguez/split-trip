@@ -377,5 +377,11 @@
     <string name="plan_allowances_perk_status_pro_only">Pro</string>
     <string name="plan_allowances_upgrade_title">Need higher limits?</string>
     <string name="plan_allowances_upgrade_description">Upgrade to SplitTrip Pro for more groups, larger member limits, more AI receipt scans, unlimited media uploads, unlimited subunits, and an ad-free experience.</string>
+    <string name="subscriptions_tier_pro_description_no_ai">Unlimited group management, full exports, and an ad-free experience</string>
+    <string name="subscriptions_feature_pro_ai_ocr_unsupported">AI Receipt scanning (not supported on this device)</string>
+    <string name="subscriptions_ai_unsupported_device_notice">On-device AI receipt scanning is not supported on this device. All other Pro features work normally, and AI scanning works on compatible devices.</string>
+    <string name="plan_allowances_quota_ai_scans_subtitle_unsupported">On-device AI is not supported on this device</string>
+    <string name="plan_allowances_status_not_supported">Not supported</string>
+    <string name="plan_allowances_upgrade_description_no_ai">Upgrade to SplitTrip Pro for unlimited groups, larger member limits, unlimited media uploads, full PDF &amp; CSV exports, unlimited subunits, and an ad-free experience.</string>
 </resources>
 

@@ -5,8 +5,10 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
 import es.pedrazamiguez.splittrip.features.settings.R
+import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionFeatureStatus
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionFeatureUiModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionPlanUiModel
 import io.mockk.every
@@ -38,12 +40,13 @@ class SubscriptionsUiMapperImplTest {
     private fun assertFeature(
         feature: SubscriptionFeatureUiModel,
         expectedResId: Int,
-        expectedIncluded: Boolean,
+        expectedStatus: SubscriptionFeatureStatus,
         expectedHighlighted: Boolean = false
     ) {
         val labelRes = assertInstanceOf(UiText.StringResource::class.java, feature.label)
         assertEquals(expectedResId, labelRes.resId)
-        assertEquals(expectedIncluded, feature.isIncluded)
+        assertEquals(expectedStatus, feature.status)
+        assertEquals(expectedStatus == SubscriptionFeatureStatus.INCLUDED, feature.isIncluded)
         assertEquals(expectedHighlighted, feature.isHighlighted)
     }
 
@@ -57,26 +60,51 @@ class SubscriptionsUiMapperImplTest {
         assertEquals(R.string.subscriptions_tier_free_period, freePeriod.resId)
         assertNull(freePlan.badge)
         assertNull(freePlan.billingDetail)
+        assertNull(freePlan.compatibilityNotice)
         assertTrue(freePlan.isCurrentPlan)
         assertFalse(freePlan.isCtaButtonEnabled)
         assertFalse(freePlan.isHighlightedCard)
         assertEquals(8, freePlan.features.size)
-        assertFeature(freePlan.features[0], R.string.subscriptions_feature_free_groups, expectedIncluded = true)
-        assertFeature(freePlan.features[1], R.string.subscriptions_feature_free_members, expectedIncluded = true)
+        assertFeature(
+            freePlan.features[0],
+            R.string.subscriptions_feature_free_groups,
+            expectedStatus = SubscriptionFeatureStatus.INCLUDED
+        )
+        assertFeature(
+            freePlan.features[1],
+            R.string.subscriptions_feature_free_members,
+            expectedStatus = SubscriptionFeatureStatus.INCLUDED
+        )
         assertFeature(
             freePlan.features[2],
             R.string.subscriptions_feature_free_standard_calc,
-            expectedIncluded = true
+            expectedStatus = SubscriptionFeatureStatus.INCLUDED
         )
         assertFeature(
             freePlan.features[3],
             R.string.subscriptions_feature_free_multi_currency,
-            expectedIncluded = true
+            expectedStatus = SubscriptionFeatureStatus.INCLUDED
         )
-        assertFeature(freePlan.features[4], R.string.subscriptions_feature_subunits, expectedIncluded = false)
-        assertFeature(freePlan.features[5], R.string.subscriptions_feature_pro_ai_ocr, expectedIncluded = false)
-        assertFeature(freePlan.features[6], R.string.subscriptions_feature_pro_report_exports, expectedIncluded = false)
-        assertFeature(freePlan.features[7], R.string.subscriptions_feature_pro_ad_free, expectedIncluded = false)
+        assertFeature(
+            freePlan.features[4],
+            R.string.subscriptions_feature_subunits,
+            expectedStatus = SubscriptionFeatureStatus.EXCLUDED
+        )
+        assertFeature(
+            freePlan.features[5],
+            R.string.subscriptions_feature_pro_ai_ocr,
+            expectedStatus = SubscriptionFeatureStatus.EXCLUDED
+        )
+        assertFeature(
+            freePlan.features[6],
+            R.string.subscriptions_feature_pro_report_exports,
+            expectedStatus = SubscriptionFeatureStatus.EXCLUDED
+        )
+        assertFeature(
+            freePlan.features[7],
+            R.string.subscriptions_feature_pro_ad_free,
+            expectedStatus = SubscriptionFeatureStatus.EXCLUDED
+        )
     }
 
     private fun assertProPlan(
@@ -97,6 +125,7 @@ class SubscriptionsUiMapperImplTest {
         assertEquals(R.string.subscriptions_tier_pro_price_annual_total, detailArg.resId)
         val proBadge = assertInstanceOf(UiText.StringResource::class.java, proPlan.badge)
         assertEquals(R.string.subscriptions_badge_popular, proBadge.resId)
+        assertNull(proPlan.compatibilityNotice)
         assertFalse(proPlan.isCurrentPlan)
         assertEquals(expectedCtaEnabled, proPlan.isCtaButtonEnabled)
         assertTrue(proPlan.isHighlightedCard)
@@ -108,37 +137,37 @@ class SubscriptionsUiMapperImplTest {
         assertFeature(
             features[0],
             R.string.subscriptions_feature_pro_unlimited_groups,
-            expectedIncluded = true,
+            expectedStatus = SubscriptionFeatureStatus.INCLUDED,
             expectedHighlighted = true
         )
         assertFeature(
             features[1],
             R.string.subscriptions_feature_pro_members,
-            expectedIncluded = true,
+            expectedStatus = SubscriptionFeatureStatus.INCLUDED,
             expectedHighlighted = true
         )
         assertFeature(
             features[2],
             R.string.subscriptions_feature_subunits,
-            expectedIncluded = true,
+            expectedStatus = SubscriptionFeatureStatus.INCLUDED,
             expectedHighlighted = true
         )
         assertFeature(
             features[3],
             R.string.subscriptions_feature_pro_ai_ocr,
-            expectedIncluded = true,
+            expectedStatus = SubscriptionFeatureStatus.INCLUDED,
             expectedHighlighted = true
         )
         assertFeature(
             features[4],
             R.string.subscriptions_feature_pro_report_exports,
-            expectedIncluded = true,
+            expectedStatus = SubscriptionFeatureStatus.INCLUDED,
             expectedHighlighted = true
         )
         assertFeature(
             features[5],
             R.string.subscriptions_feature_pro_ad_free,
-            expectedIncluded = true,
+            expectedStatus = SubscriptionFeatureStatus.INCLUDED,
             expectedHighlighted = true
         )
     }
@@ -152,7 +181,8 @@ class SubscriptionsUiMapperImplTest {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.ANNUAL,
-                products = emptyList()
+                products = emptyList(),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
 
             assertEquals(2, plans.size)
@@ -165,7 +195,8 @@ class SubscriptionsUiMapperImplTest {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.MONTHLY,
-                products = emptyList()
+                products = emptyList(),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
 
             val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
@@ -190,7 +221,8 @@ class SubscriptionsUiMapperImplTest {
             val monthlyPlans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.MONTHLY,
-                products = listOf(monthlyProduct)
+                products = listOf(monthlyProduct),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
             val monthlyPro = monthlyPlans.first { it.tier == SubscriptionTier.PRO }
             val dynamicMonthlyPrice = assertInstanceOf(UiText.DynamicString::class.java, monthlyPro.price)
@@ -214,7 +246,8 @@ class SubscriptionsUiMapperImplTest {
             val annualPlans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.ANNUAL,
-                products = listOf(annualProduct)
+                products = listOf(annualProduct),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
             val annualPro = annualPlans.first { it.tier == SubscriptionTier.PRO }
             val dynamicAnnualPrice = assertInstanceOf(UiText.DynamicString::class.java, annualPro.price)
@@ -232,7 +265,8 @@ class SubscriptionsUiMapperImplTest {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.MONTHLY,
-                products = emptyList()
+                products = emptyList(),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
             val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
             assertNull(proPlan.billingDetail)
@@ -245,7 +279,8 @@ class SubscriptionsUiMapperImplTest {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.PRO,
                 selectedInterval = BillingInterval.ANNUAL,
-                products = emptyList()
+                products = emptyList(),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
 
             val freePlan = plans.first { it.tier == SubscriptionTier.FREE }
@@ -342,7 +377,8 @@ class SubscriptionsUiMapperImplTest {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.ANNUAL,
-                products = emptyList()
+                products = emptyList(),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
             val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
             assertFalse(proPlan.isCtaButtonEnabled)
@@ -361,7 +397,8 @@ class SubscriptionsUiMapperImplTest {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.ANNUAL,
-                products = listOf(annualProduct)
+                products = listOf(annualProduct),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
             val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
             assertTrue(proPlan.isCtaButtonEnabled)
@@ -389,6 +426,102 @@ class SubscriptionsUiMapperImplTest {
             val res = assertInstanceOf(UiText.StringResource::class.java, result)
             assertEquals(R.string.subscriptions_complimentary_pro_manage_info, res.resId)
             assertTrue(res.args.isEmpty())
+        }
+    }
+
+    @Nested
+    @DisplayName("UnsupportedDevice")
+    inner class UnsupportedDevice {
+
+        @Test
+        fun `mapPlans on UNSUPPORTED device adapts Pro description, AI feature, and compatibilityNotice`() {
+            val plans = mapper.mapPlans(
+                currentTier = SubscriptionTier.FREE,
+                selectedInterval = BillingInterval.ANNUAL,
+                products = emptyList(),
+                extractionCapability = ExtractionCapability.UNSUPPORTED
+            )
+
+            val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
+            val descriptionRes = assertInstanceOf(UiText.StringResource::class.java, proPlan.description)
+            assertEquals(R.string.subscriptions_tier_pro_description_no_ai, descriptionRes.resId)
+
+            val noticeRes = assertInstanceOf(UiText.StringResource::class.java, proPlan.compatibilityNotice)
+            assertEquals(R.string.subscriptions_ai_unsupported_device_notice, noticeRes.resId)
+
+            assertEquals(6, proPlan.features.size)
+            assertFeature(
+                proPlan.features[0],
+                R.string.subscriptions_feature_pro_unlimited_groups,
+                expectedStatus = SubscriptionFeatureStatus.INCLUDED,
+                expectedHighlighted = true
+            )
+            assertFeature(
+                proPlan.features[1],
+                R.string.subscriptions_feature_pro_members,
+                expectedStatus = SubscriptionFeatureStatus.INCLUDED,
+                expectedHighlighted = true
+            )
+            assertFeature(
+                proPlan.features[2],
+                R.string.subscriptions_feature_subunits,
+                expectedStatus = SubscriptionFeatureStatus.INCLUDED,
+                expectedHighlighted = true
+            )
+            assertFeature(
+                proPlan.features[3],
+                R.string.subscriptions_feature_pro_report_exports,
+                expectedStatus = SubscriptionFeatureStatus.INCLUDED,
+                expectedHighlighted = true
+            )
+            assertFeature(
+                proPlan.features[4],
+                R.string.subscriptions_feature_pro_ad_free,
+                expectedStatus = SubscriptionFeatureStatus.INCLUDED,
+                expectedHighlighted = true
+            )
+            assertFeature(
+                proPlan.features[5],
+                R.string.subscriptions_feature_pro_ai_ocr_unsupported,
+                expectedStatus = SubscriptionFeatureStatus.UNAVAILABLE_ON_DEVICE,
+                expectedHighlighted = false
+            )
+        }
+
+        @Test
+        fun `mapPlans on UNSUPPORTED device omits AI receipt scanning from Free plan excluded features`() {
+            val plans = mapper.mapPlans(
+                currentTier = SubscriptionTier.FREE,
+                selectedInterval = BillingInterval.ANNUAL,
+                products = emptyList(),
+                extractionCapability = ExtractionCapability.UNSUPPORTED
+            )
+
+            val freePlan = plans.first { it.tier == SubscriptionTier.FREE }
+            assertNull(freePlan.compatibilityNotice)
+            assertEquals(7, freePlan.features.size)
+            val featureResIds = freePlan.features.map {
+                assertInstanceOf(UiText.StringResource::class.java, it.label).resId
+            }
+            assertFalse(featureResIds.contains(R.string.subscriptions_feature_pro_ai_ocr))
+        }
+
+        @Test
+        fun `mapPlans on UNSUPPORTED device keeps adapted Pro copy and compatibilityNotice when user is already PRO`() {
+            val plans = mapper.mapPlans(
+                currentTier = SubscriptionTier.PRO,
+                selectedInterval = BillingInterval.MONTHLY,
+                products = emptyList(),
+                extractionCapability = ExtractionCapability.UNSUPPORTED
+            )
+
+            val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
+            assertTrue(proPlan.isCurrentPlan)
+            val descriptionRes = assertInstanceOf(UiText.StringResource::class.java, proPlan.description)
+            assertEquals(R.string.subscriptions_tier_pro_description_no_ai, descriptionRes.resId)
+            val noticeRes = assertInstanceOf(UiText.StringResource::class.java, proPlan.compatibilityNotice)
+            assertEquals(R.string.subscriptions_ai_unsupported_device_notice, noticeRes.resId)
+            assertEquals(SubscriptionFeatureStatus.UNAVAILABLE_ON_DEVICE, proPlan.features[5].status)
         }
     }
 }

@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.BiometricAuthService
+import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.impl.AppConfigServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.GetDiagnosticLogsUseCase
@@ -25,6 +26,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategor
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedPaymentMethodUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetLastSeenBalanceUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetReceiptExtractionCapabilityUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetSelectedGroupNameUseCase
@@ -55,6 +57,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetGroupLastUsedCa
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetGroupLastUsedCurrencyUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetGroupLastUsedPaymentMethodUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetLastSeenBalanceUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetReceiptExtractionCapabilityUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetSelectedGroupCurrencyUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetSelectedGroupIdUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetSelectedGroupNameUseCaseImpl
@@ -265,6 +268,13 @@ val settingsDomainModule = module {
         val featureGateService = get<FeatureGateService>()
         ObservePlanAllowancesUseCaseImpl(
             featureGateService = featureGateService
+        )
+    }
+
+    factory<GetReceiptExtractionCapabilityUseCase> {
+        val receiptExtractionService = get<ReceiptExtractionService>()
+        GetReceiptExtractionCapabilityUseCaseImpl(
+            receiptExtractionService = receiptExtractionService
         )
     }
 

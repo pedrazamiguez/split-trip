@@ -59,6 +59,7 @@ internal fun PlanAllowancesContent(
 
         if (uiState.showUpgradeCta) {
             PlanAllowancesUpgradeCard(
+                description = uiState.upgradeDescription,
                 onUpgradeClick = { onEvent(PlanAllowancesUiEvent.RequestUpgrade) }
             )
         }

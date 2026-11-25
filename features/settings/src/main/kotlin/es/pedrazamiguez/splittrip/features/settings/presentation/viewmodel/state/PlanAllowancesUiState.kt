@@ -17,5 +17,6 @@ data class PlanAllowancesUiState(
     val tierBadge: UiText = UiText.DynamicString(""),
     val quotas: ImmutableList<AllowanceQuotaUiModel> = persistentListOf(),
     val perks: ImmutableList<AllowancePerkUiModel> = persistentListOf(),
-    val showUpgradeCta: Boolean = false
+    val showUpgradeCta: Boolean = false,
+    val upgradeDescription: UiText = UiText.DynamicString("")
 )

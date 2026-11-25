@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.MediaUploadQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.PlanAllowances
@@ -18,6 +19,7 @@ import io.mockk.mockk
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -50,12 +52,13 @@ class PlanAllowancesUiMapperImplTest {
             isAdFreeEnabled = false
         )
 
-        val result = mapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         assertFalse(result.isLoading)
         assertFalse(result.isProTier)
         assertTrue(result.isGatingEnabled)
         assertTrue(result.showUpgradeCta)
+        assertEquals(UiText.StringResource(R.string.plan_allowances_upgrade_description), result.upgradeDescription)
         assertEquals(UiText.StringResource(R.string.subscriptions_tier_free_title), result.tierTitle)
         assertEquals(UiText.StringResource(R.string.plan_allowances_tier_free_subtitle), result.tierSubtitle)
         assertEquals(UiText.StringResource(R.string.plan_allowances_badge_free), result.tierBadge)
@@ -118,7 +121,7 @@ class PlanAllowancesUiMapperImplTest {
             mediaMonthlyFreeLimit = 5
         )
 
-        val result = mapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         val aiQuota = result.quotas[0]
         assertEquals(AllowanceUsageStatus.APPROACHING_LIMIT, aiQuota.status)
@@ -151,7 +154,7 @@ class PlanAllowancesUiMapperImplTest {
             maxOwnedGroups = 1
         )
 
-        val result = mapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         assertTrue(result.showUpgradeCta)
         result.quotas.forEach { quota ->
@@ -171,7 +174,7 @@ class PlanAllowancesUiMapperImplTest {
             aiMonthlyLimit = 0
         )
 
-        val result = mapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         val aiQuota = result.quotas[0]
         assertEquals(AllowanceUsageStatus.EXHAUSTED, aiQuota.status)
@@ -188,7 +191,7 @@ class PlanAllowancesUiMapperImplTest {
             maxSubunitsPerGroup = 0
         )
 
-        val result = mapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         val subunitsPerk = result.perks.first { it.type == AllowancePerkType.SUBUNITS_PER_GROUP }
         assertFalse(subunitsPerk.isIncluded)
@@ -205,7 +208,7 @@ class PlanAllowancesUiMapperImplTest {
             maxOwnedGroups = 1
         )
 
-        val result = mapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         val mediaQuota = result.quotas[1]
         assertEquals(AllowanceUsageStatus.EXHAUSTED, mediaQuota.status)
@@ -233,7 +236,7 @@ class PlanAllowancesUiMapperImplTest {
             isAdFreeEnabled = true
         )
 
-        val result = mapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         assertTrue(result.isProTier)
         assertFalse(result.showUpgradeCta)
@@ -290,7 +293,7 @@ class PlanAllowancesUiMapperImplTest {
             usedUploads = 0
         )
 
-        val result = mapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         val mediaQuota = result.quotas[1]
         assertEquals(AllowanceUsageStatus.UNLIMITED, mediaQuota.status)
@@ -307,7 +310,7 @@ class PlanAllowancesUiMapperImplTest {
             aiMonthlyLimit = null
         )
 
-        val result = mapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         val aiQuota = result.quotas[0]
         assertEquals(AllowanceUsageStatus.UNLIMITED, aiQuota.status)
@@ -332,7 +335,7 @@ class PlanAllowancesUiMapperImplTest {
             isAdFreeEnabled = true
         )
 
-        val result = mapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         assertFalse(result.isGatingEnabled)
         assertFalse(result.showUpgradeCta)
@@ -369,18 +372,84 @@ class PlanAllowancesUiMapperImplTest {
         )
 
         every { localeProvider.getCurrentLocale() } returns Locale.ENGLISH
-        val enResult = mapper.map(allowances)
+        val enResult = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
         assertEquals(
             UiText.StringResource(R.string.plan_allowances_usage_fraction, "1,000", "2,000"),
             enResult.quotas[0].usageText
         )
 
         every { localeProvider.getCurrentLocale() } returns Locale.forLanguageTag("es-ES")
-        val esResult = mapper.map(allowances)
+        val esResult = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
         assertEquals(
             UiText.StringResource(R.string.plan_allowances_usage_fraction, "1.000", "2.000"),
             esResult.quotas[0].usageText
         )
+    }
+
+    @Test
+    fun `map Free tier on UNSUPPORTED device sets AI quota to UNSUPPORTED_ON_DEVICE and adapts CTA`() {
+        val allowances = createAllowances(tier = SubscriptionTier.FREE)
+
+        val result = mapper.map(allowances, ExtractionCapability.UNSUPPORTED)
+
+        val aiQuota = result.quotas[0]
+        assertEquals(AllowanceQuotaType.AI_RECEIPT_SCANS, aiQuota.type)
+        assertEquals(AllowanceUsageStatus.UNSUPPORTED_ON_DEVICE, aiQuota.status)
+        assertEquals(
+            UiText.StringResource(R.string.plan_allowances_quota_ai_scans_subtitle_unsupported),
+            aiQuota.subtitle
+        )
+        assertEquals(UiText.StringResource(R.string.plan_allowances_status_not_supported), aiQuota.statusBadge)
+        assertNull(aiQuota.usageText)
+        assertEquals(0f, aiQuota.progressFraction, 0.0001f)
+        assertFalse(aiQuota.showProgressBar)
+
+        assertEquals(AllowanceUsageStatus.HEALTHY, result.quotas[1].status)
+        assertEquals(AllowanceUsageStatus.HEALTHY, result.quotas[2].status)
+        assertEquals(AllowanceUsageStatus.HEALTHY, result.quotas[3].status)
+        assertEquals(
+            UiText.StringResource(R.string.plan_allowances_upgrade_description_no_ai),
+            result.upgradeDescription
+        )
+    }
+
+    @Test
+    fun `map Pro tier on UNSUPPORTED device shows AI quota as UNSUPPORTED_ON_DEVICE instead of UNLIMITED`() {
+        val allowances = createAllowances(
+            tier = SubscriptionTier.PRO,
+            usedScans = 0,
+            aiMonthlyLimit = null,
+            maxOwnedGroups = null,
+            maxSubunitsPerGroup = null
+        )
+
+        val result = mapper.map(allowances, ExtractionCapability.UNSUPPORTED)
+
+        val aiQuota = result.quotas[0]
+        assertEquals(AllowanceUsageStatus.UNSUPPORTED_ON_DEVICE, aiQuota.status)
+        assertNull(aiQuota.usageText)
+        assertFalse(aiQuota.showProgressBar)
+        assertEquals(AllowanceUsageStatus.UNLIMITED, result.quotas[1].status)
+        assertEquals(AllowanceUsageStatus.UNLIMITED, result.quotas[2].status)
+        assertEquals(AllowanceUsageStatus.UNLIMITED, result.quotas[3].status)
+    }
+
+    @Test
+    fun `map ungated state on UNSUPPORTED device shows AI quota as UNSUPPORTED_ON_DEVICE instead of UNLIMITED`() {
+        val allowances = createAllowances(
+            tier = SubscriptionTier.FREE,
+            isGatingEnabled = false,
+            maxSubunitsPerGroup = null
+        )
+
+        val result = mapper.map(allowances, ExtractionCapability.UNSUPPORTED)
+
+        val aiQuota = result.quotas[0]
+        assertEquals(AllowanceUsageStatus.UNSUPPORTED_ON_DEVICE, aiQuota.status)
+        assertFalse(aiQuota.showProgressBar)
+        assertEquals(AllowanceUsageStatus.UNLIMITED, result.quotas[1].status)
+        assertEquals(AllowanceUsageStatus.UNLIMITED, result.quotas[2].status)
+        assertEquals(AllowanceUsageStatus.UNLIMITED, result.quotas[3].status)
     }
 
     private fun assertHealthyQuota(
