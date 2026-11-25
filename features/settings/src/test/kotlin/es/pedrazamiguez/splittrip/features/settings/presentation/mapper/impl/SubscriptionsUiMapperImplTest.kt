@@ -8,6 +8,7 @@ import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
 import es.pedrazamiguez.splittrip.features.settings.R
+import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.SubscriptionsUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionFeatureStatus
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionFeatureUiModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionPlanUiModel
@@ -178,7 +179,8 @@ class SubscriptionsUiMapperImplTest {
 
         @Test
         fun `mapPlans generates Free and Pro plans with Annual pricing when Annual selected`() {
-            val plans = mapper.mapPlans(
+            val interfaceMapper: SubscriptionsUiMapper = mapper
+            val plans = interfaceMapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.ANNUAL,
                 products = emptyList()
