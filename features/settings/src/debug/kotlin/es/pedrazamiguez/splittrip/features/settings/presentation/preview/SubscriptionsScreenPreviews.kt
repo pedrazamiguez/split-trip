@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewLocaleProvide
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.SubscriptionsUiMapperImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.SubscriptionsScreen
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.state.SubscriptionsUiState
@@ -53,6 +54,32 @@ private fun SubscriptionsScreenProPlanPreview() {
                 selectedInterval = BillingInterval.MONTHLY,
                 plans = plans,
                 currentTier = SubscriptionTier.PRO,
+                isAnonymous = false,
+                isLoading = false
+            ),
+            onEvent = {}
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun SubscriptionsScreenUnsupportedDevicePreview() {
+    val context = LocalContext.current
+    val mapper = SubscriptionsUiMapperImpl(PreviewLocaleProvider(context))
+    val plans = mapper.mapPlans(
+        currentTier = SubscriptionTier.FREE,
+        selectedInterval = BillingInterval.ANNUAL,
+        products = emptyList(),
+        extractionCapability = ExtractionCapability.UNSUPPORTED
+    )
+
+    PreviewThemeWrapper {
+        SubscriptionsScreen(
+            uiState = SubscriptionsUiState(
+                selectedInterval = BillingInterval.ANNUAL,
+                plans = plans,
+                currentTier = SubscriptionTier.FREE,
                 isAnonymous = false,
                 isLoading = false
             ),

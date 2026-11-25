@@ -4,5 +4,6 @@ enum class AllowanceUsageStatus {
     HEALTHY,
     APPROACHING_LIMIT,
     EXHAUSTED,
-    UNLIMITED
+    UNLIMITED,
+    UNSUPPORTED_ON_DEVICE
 }

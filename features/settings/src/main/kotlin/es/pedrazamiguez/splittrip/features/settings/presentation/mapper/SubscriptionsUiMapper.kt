@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.mapper
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionPlanUiModel
 import kotlinx.collections.immutable.ImmutableList
@@ -11,7 +12,8 @@ interface SubscriptionsUiMapper {
     fun mapPlans(
         currentTier: SubscriptionTier,
         selectedInterval: BillingInterval,
-        products: List<SubscriptionProduct>
+        products: List<SubscriptionProduct>,
+        extractionCapability: ExtractionCapability = ExtractionCapability.ON_DEVICE_AI
     ): ImmutableList<SubscriptionPlanUiModel>
 
     fun formatSavingsBadge(): UiText

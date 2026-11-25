@@ -331,4 +331,10 @@
     <string name="plan_allowances_perk_status_pro_only">Pro</string>
     <string name="plan_allowances_upgrade_title">¿Neçeçitâ mâh capaçidá?</string>
     <string name="plan_allowances_upgrade_description">Mehora a SplîTTrîh Pro pa tenêh mâh grupô, mâh miembrô por grupo, mâh êccaneô IA de reçibô, çubidâ de arxibô ilimitâh, çubunidadê ilimitâh y una êpperiençia çin anunçiô.</string>
+    <string name="subscriptions_tier_pro_description_no_ai">Hêttión ilimitá de grupô, êpportaçionê completâ y êpperiençia çin publiçidá</string>
+    <string name="subscriptions_feature_pro_ai_ocr_unsupported">Êccaneo de reçibô con IA (no compatible con êtte dîppoçitibo)</string>
+    <string name="subscriptions_ai_unsupported_device_notice">El êccaneo de reçibô con IA en er dîppoçitibo no êh compatible con êtte dîppoçitibo. El rêtto de funçionê Pro funçionan con normalidá y el êccaneo con IA êttá dîpponible en dîppoçitibô compatiblê.</string>
+    <string name="plan_allowances_quota_ai_scans_subtitle_unsupported">La IA en er dîppoçitibo no êh compatible con êtte dîppoçitibo</string>
+    <string name="plan_allowances_status_not_supported">No compatible</string>
+    <string name="plan_allowances_upgrade_description_no_ai">Mehora a SplîTTrîh Pro pa tenêh grupô ilimitáô, mâh miembrô por grupo, çubidâ de arxibô ilimitâh, êpportaçionê completâ en PDF y CSB, çubunidadê ilimitâh y una êpperiençia çin anunçiô.</string>
 </resources>

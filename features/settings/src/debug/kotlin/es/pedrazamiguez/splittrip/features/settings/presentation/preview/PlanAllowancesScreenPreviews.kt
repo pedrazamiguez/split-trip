@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewLocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.MediaUploadQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.PlanAllowances
@@ -141,6 +142,41 @@ private fun PlanAllowancesUngatedPreview() {
             maxSubunitsPerGroup = null,
             isAdFreeEnabled = true
         )
+    )
+
+    PreviewThemeWrapper {
+        PlanAllowancesScreen(uiState = uiState, onEvent = {})
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun PlanAllowancesUnsupportedAiDevicePreview() {
+    val context = LocalContext.current
+    val mapper = PlanAllowancesUiMapperImpl(PreviewLocaleProvider(context))
+    val uiState = mapper.map(
+        allowances = PlanAllowances(
+            tier = SubscriptionTier.FREE,
+            isGatingEnabled = true,
+            aiReceiptQuota = AiReceiptQuota(
+                usedScans = 0,
+                monthlyLimit = 3,
+                isProTier = false,
+                isGatingEnabled = true
+            ),
+            mediaUploadQuota = MediaUploadQuota(
+                usedUploads = 2,
+                monthlyFreeLimit = 5,
+                isProTier = false,
+                isGatingEnabled = true
+            ),
+            ownedGroupsUsed = 0,
+            maxOwnedGroups = 1,
+            maxMembersPerGroup = 4,
+            maxSubunitsPerGroup = 1,
+            isAdFreeEnabled = false
+        ),
+        extractionCapability = ExtractionCapability.UNSUPPORTED
     )
 
     PreviewThemeWrapper {
