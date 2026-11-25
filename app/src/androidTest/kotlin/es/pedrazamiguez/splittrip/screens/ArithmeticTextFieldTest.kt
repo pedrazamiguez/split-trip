@@ -269,4 +269,173 @@ class ArithmeticTextFieldTest {
 
         composeRule.onNodeWithText("42").assertIsDisplayed()
     }
+
+    @Test
+    fun typingDotDecimalWhileFocused_propagatesValueWithoutBlurOrImeDone() {
+        var latestParentValue = ""
+        var textValue by mutableStateOf("")
+
+        composeRule.setContent {
+            SplitTripTheme {
+                ArithmeticTextField(
+                    value = textValue,
+                    onValueChange = {
+                        latestParentValue = it
+                        textValue = it
+                    },
+                    evaluator = evaluator,
+                    modifier = Modifier.testTag("arithmetic_field")
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performClick()
+        composeRule.onNodeWithTag("arithmetic_field").performTextInput("12.34")
+        composeRule.waitForIdle()
+
+        assertEquals("12.34", latestParentValue)
+        composeRule.onNodeWithText("12.34").assertIsDisplayed()
+    }
+
+    @Test
+    fun typingCommaDecimalWhileFocused_propagatesNormalizedValueWithoutOverwritingBuffer() {
+        var latestParentValue = ""
+        var textValue by mutableStateOf("")
+
+        composeRule.setContent {
+            SplitTripTheme {
+                ArithmeticTextField(
+                    value = textValue,
+                    onValueChange = {
+                        latestParentValue = it
+                        textValue = it
+                    },
+                    evaluator = evaluator,
+                    modifier = Modifier.testTag("arithmetic_field")
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performClick()
+        composeRule.onNodeWithTag("arithmetic_field").performTextInput("12,34")
+        composeRule.waitForIdle()
+
+        assertEquals("12.34", latestParentValue)
+        composeRule.onNodeWithText("12,34").assertIsDisplayed()
+    }
+
+    @Test
+    fun typingArithmeticExpressionWhileFocused_propagatesEvaluatedResultWithoutRewritingBuffer_andCommitsOnDone() {
+        var latestParentValue = ""
+        var textValue by mutableStateOf("")
+
+        composeRule.setContent {
+            SplitTripTheme {
+                ArithmeticTextField(
+                    value = textValue,
+                    onValueChange = {
+                        latestParentValue = it
+                        textValue = it
+                    },
+                    evaluator = evaluator,
+                    modifier = Modifier.testTag("arithmetic_field")
+                )
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performClick()
+        composeRule.onNodeWithTag("arithmetic_field").performTextInput("10+2")
+        composeRule.waitForIdle()
+
+        assertEquals("12", latestParentValue)
+        composeRule.onNodeWithText("10+2").assertIsDisplayed()
+
+        composeRule.onNodeWithTag("arithmetic_field").performImeAction()
+        composeRule.waitForIdle()
+
+        assertEquals("12", latestParentValue)
+        composeRule.onNodeWithText("12").assertIsDisplayed()
+    }
+
+    @Test
+    fun typingIncompleteExpressionOrZeroWhileFocused_propagatesEmptyOrZeroToParent() {
+        var latestParentValue = ""
+        var textValue by mutableStateOf("")
+        val keyboardState = mutableStateOf(ArithmeticKeyboardState())
+
+        composeRule.setContent {
+            CompositionLocalProvider(LocalArithmeticKeyboardState provides keyboardState) {
+                SplitTripTheme {
+                    ArithmeticTextField(
+                        value = textValue,
+                        onValueChange = {
+                            latestParentValue = it
+                            textValue = it
+                        },
+                        evaluator = evaluator,
+                        modifier = Modifier.testTag("arithmetic_field")
+                    )
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performClick()
+        composeRule.onNodeWithTag("arithmetic_field").performTextInput("10")
+        composeRule.waitForIdle()
+        assertEquals("10", latestParentValue)
+
+        keyboardState.value.onOperatorClick("+")
+        composeRule.waitForIdle()
+        assertEquals("", latestParentValue)
+        composeRule.onNodeWithText("10+").assertIsDisplayed()
+
+        keyboardState.value.onClear()
+        composeRule.waitForIdle()
+        assertEquals("", latestParentValue)
+
+        composeRule.onNodeWithTag("arithmetic_field").performTextInput("0")
+        composeRule.waitForIdle()
+        assertEquals("0", latestParentValue)
+    }
+
+    @Test
+    fun clearingPrepopulatedFieldWhileFocused_propagatesEmptyWithoutBlur() {
+        var latestParentValue = "50"
+        var textValue by mutableStateOf("50")
+        val keyboardState = mutableStateOf(ArithmeticKeyboardState())
+
+        composeRule.setContent {
+            CompositionLocalProvider(LocalArithmeticKeyboardState provides keyboardState) {
+                SplitTripTheme {
+                    ArithmeticTextField(
+                        value = textValue,
+                        onValueChange = {
+                            latestParentValue = it
+                            textValue = it
+                        },
+                        evaluator = evaluator,
+                        modifier = Modifier.testTag("arithmetic_field")
+                    )
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("arithmetic_field").performClick()
+        composeRule.waitForIdle()
+
+        keyboardState.value.onClear()
+        composeRule.waitForIdle()
+
+        assertEquals("", latestParentValue)
+    }
 }

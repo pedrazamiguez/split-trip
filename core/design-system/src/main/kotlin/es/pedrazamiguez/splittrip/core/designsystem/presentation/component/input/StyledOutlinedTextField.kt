@@ -30,6 +30,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
@@ -87,7 +88,12 @@ fun StyledOutlinedTextField(
     colors: TextFieldColors = softFieldColors()
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val innerModifier = buildInnerFieldModifier(label, focusRequester, focusable)
+    val isReadOnlyClickable = readOnly && onClick != null
+    val innerModifier = buildInnerFieldModifier(
+        label = if (isReadOnlyClickable) null else label,
+        focusRequester = focusRequester,
+        focusable = focusable
+    )
     val fieldConfig = TextFieldConfig(
         placeholder = placeholder,
         leadingIcon = leadingIcon,
@@ -123,7 +129,15 @@ fun StyledOutlinedTextField(
         )
 
         when {
-            readOnly && onClick != null -> ReadOnlyClickableOverlay(onClick = onClick) {
+            readOnly && onClick != null -> ReadOnlyClickableOverlay(
+                onClick = onClick,
+                enabled = enabled,
+                accessibilityLabel = buildReadOnlyFieldContentDescription(
+                    label = label,
+                    value = value,
+                    placeholder = placeholder
+                )
+            ) {
                 CoreOutlinedTextField(
                     value = value,
                     onValueChange = onValueChange,
@@ -184,7 +198,12 @@ fun StyledOutlinedTextField(
     colors: TextFieldColors = softFieldColors()
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val innerModifier = buildInnerFieldModifier(label, focusRequester, focusable)
+    val isReadOnlyClickable = readOnly && onClick != null
+    val innerModifier = buildInnerFieldModifier(
+        label = if (isReadOnlyClickable) null else label,
+        focusRequester = focusRequester,
+        focusable = focusable
+    )
     val fieldConfig = TextFieldConfig(
         placeholder = placeholder,
         leadingIcon = leadingIcon,
@@ -233,7 +252,15 @@ fun StyledOutlinedTextField(
         }
 
         when {
-            readOnly && onClick != null -> ReadOnlyClickableOverlay(onClick = onClick) {
+            readOnly && onClick != null -> ReadOnlyClickableOverlay(
+                onClick = onClick,
+                enabled = enabled,
+                accessibilityLabel = buildReadOnlyFieldContentDescription(
+                    label = label,
+                    value = value.text,
+                    placeholder = placeholder
+                )
+            ) {
                 CoreOutlinedTextField(
                     value = value,
                     onValueChange = onValueChange,
@@ -349,6 +376,8 @@ private data class TextFieldConfig(
 @Composable
 private fun ReadOnlyClickableOverlay(
     onClick: () -> Unit,
+    enabled: Boolean,
+    accessibilityLabel: String?,
     content: @Composable () -> Unit
 ) {
     Box {
@@ -356,9 +385,16 @@ private fun ReadOnlyClickableOverlay(
         Box(
             modifier = Modifier
                 .matchParentSize()
+                .semantics {
+                    if (accessibilityLabel != null) {
+                        contentDescription = accessibilityLabel
+                    }
+                }
                 .debouncedClickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() },
+                    enabled = enabled,
+                    role = Role.DropdownList,
                     onClick = onClick
                 )
         )
