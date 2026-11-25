@@ -5,17 +5,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.filterChipLeadingIcon
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
 
@@ -30,7 +29,10 @@ fun PaymentMethodFilterSection(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
-        CardSectionLabelText(text = stringResource(R.string.expenses_filter_section_payment_method))
+        FilterSectionHeader(
+            title = stringResource(R.string.expenses_filter_section_payment_method),
+            selectedCount = criteria.selectedPaymentMethods.size
+        )
 
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
@@ -45,12 +47,10 @@ fun PaymentMethodFilterSection(
                     onClick = {
                         onCriteriaChange(togglePaymentMethod(criteria, method))
                     },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = method.toIconVector(),
-                            contentDescription = null
-                        )
-                    }
+                    leadingIcon = filterChipLeadingIcon(
+                        isSelected = isSelected,
+                        unselectedIcon = method.toIconVector()
+                    )
                 )
             }
         }

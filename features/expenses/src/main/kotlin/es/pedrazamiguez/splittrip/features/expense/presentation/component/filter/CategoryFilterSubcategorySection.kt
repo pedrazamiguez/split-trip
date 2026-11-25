@@ -1,82 +1,77 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.filter
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardTitleText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.CategoryGridSelector
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.subcategoryGridEnterTransition
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.subcategoryGridExitTransition
-import kotlinx.collections.immutable.ImmutableList
+import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.SubcategoryStampItem
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.SubcategoryStampTray
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 
 @Composable
 internal fun CategoryFilterSubcategorySection(
-    category: ExpenseCategory,
+    focusedCategory: ExpenseCategory?,
     criteria: ExpenseFilterCriteria,
     groupContext: GroupContext,
     showAllCategories: Boolean,
     onSubcategoryToggled: (ExpenseSubcategory) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val subcategories = remember(category, groupContext, showAllCategories, criteria.selectedSubcategories) {
-        resolveVisibleSubcategories(category, criteria.selectedSubcategories, groupContext, showAllCategories)
-    }
-
-    AnimatedVisibility(
-        visible = category in criteria.selectedCategories && subcategories.isNotEmpty(),
-        modifier = modifier,
-        enter = subcategoryGridEnterTransition(),
-        exit = subcategoryGridExitTransition()
+    val subcategories = remember(
+        focusedCategory,
+        groupContext,
+        showAllCategories,
+        criteria.selectedSubcategories
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = MaterialTheme.spacing.Medium),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
-        ) {
-            CardTitleText(
-                text = stringResource(category.toStringRes()),
-                color = MaterialTheme.colorScheme.primary
+        focusedCategory?.let { category ->
+            CategoryFilterLogic.resolveVisibleSubcategories(
+                category = category,
+                selectedSubcategories = criteria.selectedSubcategories,
+                groupContext = groupContext,
+                showAllCategories = showAllCategories
             )
-
-            CategoryGridSelector(
-                items = subcategories,
-                isItemSelected = { it in criteria.selectedSubcategories },
-                onItemClicked = onSubcategoryToggled,
-                itemId = { it.name },
-                itemLabel = { stringResource(it.toStringRes()) },
-                itemIcon = { it.toIconVector() }
-            )
-        }
+        } ?: persistentListOf()
     }
-}
 
-private fun resolveVisibleSubcategories(
-    category: ExpenseCategory,
-    selectedSubcategories: Set<ExpenseSubcategory>,
-    groupContext: GroupContext,
-    showAllCategories: Boolean
-): ImmutableList<ExpenseSubcategory> {
-    if (showAllCategories || !category.appliesTo(groupContext)) {
-        return ExpenseSubcategory.forCategory(category).toImmutableList()
+    val stampItems = subcategories.map { subcategory ->
+        SubcategoryStampItem(
+            id = subcategory.name,
+            label = stringResource(subcategory.toStringRes()),
+            icon = subcategory.toIconVector(),
+            isSelected = subcategory in criteria.selectedSubcategories
+        )
+    }.toImmutableList()
+
+    val selectedCount = focusedCategory?.let {
+        CategoryFilterLogic.countSelectedSubcategories(criteria, it)
+    } ?: 0
+
+    val badgeContentDescription = if (selectedCount > 0) {
+        pluralStringResource(R.plurals.category_filter_selected_count, selectedCount, selectedCount)
+    } else {
+        null
     }
-    val base = ExpenseSubcategory.forCategory(category, groupContext)
-    val selectedForCategory = selectedSubcategories
-        .filter { it.parentCategory == category && it !in base }
-    return (base + selectedForCategory).distinct().toImmutableList()
+
+    SubcategoryStampTray(
+        focusedCategoryId = focusedCategory?.name,
+        focusedCategoryLabel = focusedCategory?.let { stringResource(it.toStringRes()) },
+        items = stampItems,
+        onSubcategoryClicked = { id ->
+            subcategories.find { it.name == id }?.let(onSubcategoryToggled)
+        },
+        modifier = modifier,
+        badgeText = if (selectedCount > 0) selectedCount.toString() else null,
+        badgeStyle = PassportTagStyle.INFO,
+        badgeContentDescription = badgeContentDescription
+    )
 }

@@ -85,6 +85,7 @@ fun ExpensesFilterScreen(
                         groupContext = uiState.groupContext,
                         showAllCategories = uiState.showAllCategories,
                         onToggleShowAllCategories = onToggleShowAllCategories,
+                        carouselEdgePadding = MaterialTheme.spacing.Default,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

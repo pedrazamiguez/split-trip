@@ -380,7 +380,7 @@ A signature chip designed to feel like a **collectible travel stamp**:
 - Both `secondaryFixedDim` and `onSecondaryFixed` are tone-stable (same in light and dark by M3 design).
 - **Interactive-only reservation:** `secondaryFixedDim` / `secondaryContainer` bright cyan is strictly for **interactive selected** controls (`PassportChip`). NEVER use it for read-only tags, pills, or badges — use `PassportTag` with semantic `PassportTagStyle` (`INFO`, `SUCCESS`, `WARNING`, `ERROR`, `NEUTRAL`) instead.
 
-Used across: `CategoryChips`, `PaymentMethodChips`, `PaymentStatusChips`, `CondensedChips`, `AddOnItemEditor`, `SearchableChipSelector`, `AsyncSearchableChipSelector`.
+Used across: `SubcategoryStampTray`, `PaymentMethodChips`, `PaymentStatusChips`, `CondensedChips`, `AddOnItemEditor`, `SearchableChipSelector`, `AsyncSearchableChipSelector`.
 
 > **Implementation:** `PassportChip.kt` in `core/design-system/.../component/chip/`
 
@@ -410,7 +410,7 @@ Used across: `HeroSection` (expense details), `ContributionHeroSection`, `SplitB
 | Component / Location | Visual Role | Rationale for Exception |
 |---|---|---|
 | `ProBadge` (`:core:design-system`), `ProMicroBadge` (`ProfileAvatarButton`), `ProfileAvatarBadge` (`:features:profile`) | Brand premium tier micro-badge (`tertiary`/`onTertiary`, `7–11.sp` ExtraBold, optional surface cutout border) | Compact brand mark designed to sit inline next to titles or overlay circular avatars; `28.dp` `PassportTag` would break proportions and overlap avatar bounds. |
-| `PassportChip` (`:core:design-system`), `CategoryGridTile` (`:features:expenses`) | Interactive selection / filter controls (`secondaryFixedDim` when selected) | Interactive controls; explicitly out of scope per §5.4. |
+| `PassportChip` (`:core:design-system`), `CategoryCarouselPill` (`:features:expenses`) | Interactive selection / filter controls (`secondaryFixedDim` / `primary` when selected) | Interactive controls; explicitly out of scope per §5.4. |
 | `ExpensesFilterActionButton` active filter count dot (`:features:expenses`) | `16.dp` circular numeric overlay badge on an interactive top-bar icon button | Interactive active-filter indicator overlaid on an icon button (not a standalone read-only text pill). |
 | `ExpenseItem` primary hero amount pill (`:features:expenses`) | Primary monetary amount (`titleSmall` ExtraBold, `sharedTextAnimation`, cancelled `TextDecoration.LineThrough`) | Requires shared-element text transition, `titleSmall` ExtraBold emphasis, and strikethrough support incompatible with `PassportTag`'s sealed `labelSmall` contract. |
 | `SyncStatusIndicator` / `SyncStatusBadge` (`:core:design-system`) | Floating scalloped-circle (`RoundedPolygonShape`) offline/error sync indicator with delayed `AnimatedVisibility` | Expressive floating corner overlay badge with custom polygon shape and debounce animation. |

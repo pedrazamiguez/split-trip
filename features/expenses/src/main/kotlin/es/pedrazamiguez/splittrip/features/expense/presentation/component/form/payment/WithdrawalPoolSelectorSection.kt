@@ -7,18 +7,16 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.filterChipLeadingIcon
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.WithdrawalPoolOptionUiModel
 import kotlinx.collections.immutable.ImmutableList
 
@@ -65,11 +63,7 @@ fun WithdrawalPoolSelectorSection(
                     label = pool.displayLabel,
                     selected = isSelected,
                     onClick = { onPoolSelected(pool.scope, pool.ownerId) },
-                    leadingIcon = if (isSelected) {
-                        { Icon(TablerIcons.Outline.Check, contentDescription = null) }
-                    } else {
-                        null
-                    }
+                    leadingIcon = filterChipLeadingIcon(isSelected = isSelected)
                 )
             }
         }

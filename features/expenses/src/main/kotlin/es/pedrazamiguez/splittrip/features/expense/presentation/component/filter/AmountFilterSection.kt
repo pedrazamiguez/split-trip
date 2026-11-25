@@ -22,11 +22,11 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.rememberLocale
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.parseAmountToSmallestUnit
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.resolveCurrencySymbol
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.filterChipLeadingIcon
 import java.math.BigDecimal
 import java.util.Currency
 import kotlinx.collections.immutable.ImmutableList
@@ -56,7 +56,10 @@ fun AmountFilterSection(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
-        CardSectionLabelText(text = stringResource(R.string.expenses_filter_section_amount))
+        FilterSectionHeader(
+            title = stringResource(R.string.expenses_filter_section_amount),
+            selectedCount = if (criteria.isAmountFiltered) 1 else 0
+        )
 
         if (groupCurrencies.isNotEmpty()) {
             FlowRow(
@@ -78,7 +81,8 @@ fun AmountFilterSection(
                                 defaultCurrency = defaultCurrency
                             )
                             onCriteriaChange(updated)
-                        }
+                        },
+                        leadingIcon = filterChipLeadingIcon(isSelected = isSelected)
                     )
                 }
             }
