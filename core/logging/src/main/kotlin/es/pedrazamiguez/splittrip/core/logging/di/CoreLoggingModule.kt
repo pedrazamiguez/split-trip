@@ -12,11 +12,18 @@ val coreLoggingModule = module {
     single<RollingLogBuffer> { RollingLogBuffer() }
 
     single<TelemetryTracker> {
-        val firebaseTracker = FirebaseTelemetryTracker(context = androidContext())
-        if (BuildConfig.DEBUG) {
-            DebugTelemetryTracker(firebaseTracker = firebaseTracker)
-        } else {
-            firebaseTracker
-        }
+        createTelemetryTracker(
+            isDebug = BuildConfig.DEBUG,
+            firebaseTrackerFactory = { FirebaseTelemetryTracker(context = androidContext()) }
+        )
     }
+}
+
+internal fun createTelemetryTracker(
+    isDebug: Boolean,
+    firebaseTrackerFactory: () -> TelemetryTracker
+): TelemetryTracker = if (isDebug) {
+    DebugTelemetryTracker(firebaseTracker = null)
+} else {
+    firebaseTrackerFactory()
 }
