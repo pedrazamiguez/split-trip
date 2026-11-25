@@ -132,7 +132,7 @@ class AddExpenseUiMapper(
 
         val paymentMethod = state.selectedPaymentMethod?.let {
             PaymentMethod.fromString(it.id)
-        } ?: PaymentMethod.CASH
+        } ?: PaymentMethod.DEBIT_CARD
 
         val category = state.selectedCategory?.let {
             runCatching { ExpenseCategory.fromString(it.id) }.getOrDefault(ExpenseCategory.OTHER)
