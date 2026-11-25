@@ -7,7 +7,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -58,17 +57,10 @@ fun CategoryFilterSection(
         )
     }.toImmutableList()
 
-    val count = criteria.selectedCategories.size
-    var retainedCount by remember { mutableIntStateOf(count) }
-    if (count > 0) {
-        retainedCount = count
-    }
-
     Column(modifier = modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)) {
             CategoryFilterHeader(
-                selectedCount = count,
-                retainedCount = retainedCount,
+                selectedCount = criteria.selectedCategories.size,
                 showAllCategories = showAllCategories,
                 onToggleShowAllCategories = onToggleShowAllCategories
             )

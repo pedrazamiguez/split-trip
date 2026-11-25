@@ -23,10 +23,14 @@ import androidx.test.platform.app.InstrumentationRegistry
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseAttribute
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.ExpensesFilterScreen
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.ExpensesFilterUiState
 import es.pedrazamiguez.splittrip.helpers.ScreenshotRule
@@ -284,5 +288,44 @@ class ExpensesFilterScreenTest {
         composeRule.waitForIdle()
 
         assertTrue(toggleInvoked)
+    }
+
+    @Test
+    fun selectingNonCategoryFilters_displaysCountBadgesAndSelectedChips() {
+        val cashLabel = context.getString(PaymentMethod.CASH.toStringRes())
+        val bizumLabel = context.getString(PaymentMethod.BIZUM.toStringRes())
+        val paidLabel = context.getString(PaymentStatus.FINISHED.toStringRes())
+        val hasReceiptLabel = context.getString(ExpenseAttribute.HAS_RECEIPT.toStringRes())
+
+        composeRule.setContent {
+            var uiState by remember {
+                mutableStateOf(
+                    ExpensesFilterUiState(
+                        draftCriteria = ExpenseFilterCriteria(
+                            selectedPaymentMethods = setOf(PaymentMethod.CASH),
+                            selectedPaymentStatuses = setOf(PaymentStatus.FINISHED),
+                            selectedAttributes = setOf(ExpenseAttribute.HAS_RECEIPT)
+                        )
+                    )
+                )
+            }
+            SplitTripTheme {
+                ExpensesFilterScreen(
+                    uiState = uiState,
+                    onUpdateDraft = { criteria -> uiState = uiState.copy(draftCriteria = criteria) }
+                )
+            }
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(cashLabel).performScrollTo().assertIsSelected()
+        composeRule.onNodeWithText(bizumLabel).performScrollTo().performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(bizumLabel).assertIsSelected()
+        composeRule.onNodeWithText("2").assertIsDisplayed()
+        composeRule.onNodeWithText(paidLabel).performScrollTo().assertIsSelected()
+        composeRule.onNodeWithText(hasReceiptLabel).performScrollTo().assertIsSelected()
+        composeRule.onAllNodesWithText("1").assertCountEquals(2)
     }
 }

@@ -21,7 +21,8 @@ internal fun SubcategoryStampTray(
     modifier: Modifier = Modifier,
     badgeText: String? = null,
     badgeStyle: PassportTagStyle = PassportTagStyle.INFO,
-    badgeContentDescription: String? = null
+    badgeContentDescription: String? = null,
+    containedInCard: Boolean = true
 ) {
     AnimatedVisibility(
         visible = items.isNotEmpty(),
@@ -55,7 +56,8 @@ internal fun SubcategoryStampTray(
                 modifier = Modifier.padding(top = MaterialTheme.spacing.Default),
                 badgeText = state.badgeText,
                 badgeStyle = state.badgeStyle,
-                badgeContentDescription = state.badgeContentDescription
+                badgeContentDescription = state.badgeContentDescription,
+                containedInCard = containedInCard
             )
         }
     }

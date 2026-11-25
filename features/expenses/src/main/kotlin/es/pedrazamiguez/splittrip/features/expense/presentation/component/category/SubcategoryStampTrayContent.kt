@@ -1,18 +1,11 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.category
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -22,18 +15,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
-import es.pedrazamiguez.splittrip.core.designsystem.extension.debounced
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import kotlinx.collections.immutable.ImmutableList
 
-private val STAMP_ICON_SIZE = 16.dp
-
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun SubcategoryStampTrayContent(
     title: String,
@@ -42,7 +28,8 @@ internal fun SubcategoryStampTrayContent(
     modifier: Modifier = Modifier,
     badgeText: String? = null,
     badgeStyle: PassportTagStyle = PassportTagStyle.INFO,
-    badgeContentDescription: String? = null
+    badgeContentDescription: String? = null,
+    containedInCard: Boolean = true
 ) {
     val isNarrow = LocalConfiguration.current.screenWidthDp.dp <= UiConstants.NARROW_SCREEN_BREAKPOINT
     val contentPadding = if (isNarrow) MaterialTheme.spacing.Medium else MaterialTheme.spacing.Default
@@ -56,43 +43,33 @@ internal fun SubcategoryStampTrayContent(
     val badgeModifier = retainedBadgeDescription?.let { desc ->
         Modifier.semantics { contentDescription = desc }
     } ?: Modifier
+    val animatedModifier = modifier
+        .fillMaxWidth()
+        .animateContentSize(animationSpec = CategorySelectorTransitions.trayResizeSpec())
 
-    FlatCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .animateContentSize(animationSpec = CategorySelectorTransitions.trayResizeSpec())
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(contentPadding),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
-        ) {
-            SubcategoryTrayHeaderRow(
+    if (containedInCard) {
+        FlatCard(modifier = animatedModifier) {
+            SubcategoryStampTrayBody(
                 title = title,
+                items = items,
+                onSubcategoryClicked = onSubcategoryClicked,
                 showBadge = showBadge,
                 retainedBadgeText = retainedBadgeText,
                 badgeStyle = badgeStyle,
-                badgeModifier = badgeModifier
+                badgeModifier = badgeModifier,
+                modifier = Modifier.padding(contentPadding)
             )
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
-            ) {
-                items.forEach { item ->
-                    key(item.id) {
-                        val debouncedClick = debounced { onSubcategoryClicked(item.id) }
-                        val iconVector = if (item.isSelected) TablerIcons.Outline.Check else item.icon
-                        PassportChip(
-                            label = item.label,
-                            selected = item.isSelected,
-                            onClick = debouncedClick,
-                            leadingIcon = iconVector?.let { vector ->
-                                { Icon(vector, contentDescription = null, modifier = Modifier.size(STAMP_ICON_SIZE)) }
-                            }
-                        )
-                    }
-                }
-            }
         }
+    } else {
+        SubcategoryStampTrayBody(
+            title = title,
+            items = items,
+            onSubcategoryClicked = onSubcategoryClicked,
+            showBadge = showBadge,
+            retainedBadgeText = retainedBadgeText,
+            badgeStyle = badgeStyle,
+            badgeModifier = badgeModifier,
+            modifier = animatedModifier
+        )
     }
 }

@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.categ
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -23,30 +24,42 @@ internal fun SubcategoryTrayHeaderRow(
     retainedBadgeText: String,
     badgeStyle: PassportTagStyle,
     badgeModifier: Modifier,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    trailingContent: @Composable (() -> Unit)? = null
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = PassportTagDefaults.Height),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        CardSectionLabelText(text = title, modifier = Modifier.weight(1f), maxLines = 1)
-        AnimatedVisibility(
-            visible = showBadge,
-            enter = CategorySelectorTransitions.badgeEnterTransition(),
-            exit = CategorySelectorTransitions.badgeExitTransition()
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            AnimatedContent(
-                targetState = retainedBadgeText,
-                transitionSpec = {
-                    with(CategorySelectorTransitions) { badgeCountTransform() }
-                },
-                modifier = Modifier.padding(start = MaterialTheme.spacing.Small),
-                label = "SubcategoryTrayBadgeCount"
-            ) { text ->
-                PassportTag(text = text, style = badgeStyle, modifier = badgeModifier)
+            CardSectionLabelText(
+                text = title,
+                modifier = Modifier.weight(1f, fill = false),
+                maxLines = 1
+            )
+            AnimatedVisibility(
+                visible = showBadge,
+                enter = CategorySelectorTransitions.badgeEnterTransition(),
+                exit = CategorySelectorTransitions.badgeExitTransition()
+            ) {
+                AnimatedContent(
+                    targetState = retainedBadgeText,
+                    transitionSpec = {
+                        with(CategorySelectorTransitions) { badgeCountTransform() }
+                    },
+                    modifier = Modifier.padding(start = MaterialTheme.spacing.Small),
+                    label = "SubcategoryTrayBadgeCount"
+                ) { text ->
+                    PassportTag(text = text, style = badgeStyle, modifier = badgeModifier)
+                }
             }
         }
+        trailingContent?.invoke()
     }
 }
