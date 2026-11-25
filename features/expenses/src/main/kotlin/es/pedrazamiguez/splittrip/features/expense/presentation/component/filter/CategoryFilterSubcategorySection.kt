@@ -10,35 +10,32 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIc
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
-import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.SubcategoryStampItem
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.SubcategoryStampTray
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 
 @Composable
 internal fun CategoryFilterSubcategorySection(
     focusedCategory: ExpenseCategory?,
+    availableSubcategories: ImmutableList<ExpenseSubcategory>,
     criteria: ExpenseFilterCriteria,
-    groupContext: GroupContext,
-    showAllCategories: Boolean,
     onSubcategoryToggled: (ExpenseSubcategory) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val subcategories = remember(
         focusedCategory,
-        groupContext,
-        showAllCategories,
+        availableSubcategories,
         criteria.selectedSubcategories
     ) {
         focusedCategory?.let { category ->
             CategoryFilterLogic.resolveVisibleSubcategories(
                 category = category,
-                selectedSubcategories = criteria.selectedSubcategories,
-                groupContext = groupContext,
-                showAllCategories = showAllCategories
+                availableSubcategories = availableSubcategories,
+                selectedSubcategories = criteria.selectedSubcategories
             )
         } ?: persistentListOf()
     }

@@ -2,6 +2,8 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.DateRangePreset
@@ -249,6 +251,97 @@ class ExpensesFilterUiMapperTest {
             val customStart = LocalDate.of(2026, 7, 1)
             val customEnd = LocalDate.of(2026, 7, 10)
             assertNull(mapper.findMatchingPreset(customStart, customEnd, anchor))
+        }
+    }
+
+    @Nested
+    @DisplayName("extractAvailableCategories")
+    inner class ExtractAvailableCategories {
+
+        @Test
+        fun `returns empty list when expenses list is empty`() {
+            val result = mapper.extractAvailableCategories(emptyList())
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `returns distinct used categories in canonical enum order`() {
+            val expenses = listOf(
+                Expense(id = "exp-1", category = ExpenseCategory.SHOPPING),
+                Expense(id = "exp-2", category = ExpenseCategory.FOOD),
+                Expense(id = "exp-3", category = ExpenseCategory.TRANSPORT),
+                Expense(id = "exp-4", category = ExpenseCategory.FOOD)
+            )
+
+            val result = mapper.extractAvailableCategories(expenses)
+
+            assertEquals(
+                listOf(ExpenseCategory.TRANSPORT, ExpenseCategory.FOOD, ExpenseCategory.SHOPPING),
+                result
+            )
+        }
+
+        @Test
+        fun `includes everyday-only categories whenever expenses use them`() {
+            val expenses = listOf(
+                Expense(id = "exp-1", category = ExpenseCategory.HOME),
+                Expense(id = "exp-2", category = ExpenseCategory.HEALTH_PERSONAL_CARE)
+            )
+
+            val result = mapper.extractAvailableCategories(expenses)
+
+            assertEquals(
+                listOf(ExpenseCategory.HOME, ExpenseCategory.HEALTH_PERSONAL_CARE),
+                result
+            )
+        }
+    }
+
+    @Nested
+    @DisplayName("extractAvailableSubcategories")
+    inner class ExtractAvailableSubcategories {
+
+        @Test
+        fun `returns empty list when expenses list is empty`() {
+            val result = mapper.extractAvailableSubcategories(emptyList())
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `excludes UNSPECIFIED subcategory when expenses have no specific subcategory`() {
+            val expenses = listOf(
+                Expense(
+                    id = "exp-1",
+                    category = ExpenseCategory.OTHER,
+                    subcategory = ExpenseSubcategory.UNSPECIFIED
+                )
+            )
+
+            val result = mapper.extractAvailableSubcategories(expenses)
+
+            assertTrue(result.isEmpty())
+        }
+
+        @Test
+        fun `returns distinct used subcategories in canonical enum order excluding UNSPECIFIED`() {
+            val expenses = listOf(
+                Expense(id = "exp-1", subcategory = ExpenseSubcategory.GROCERIES_SUPERMARKET),
+                Expense(id = "exp-2", subcategory = ExpenseSubcategory.TAXI_RIDESHARE),
+                Expense(id = "exp-3", subcategory = ExpenseSubcategory.UNSPECIFIED),
+                Expense(id = "exp-4", subcategory = ExpenseSubcategory.RESTAURANT),
+                Expense(id = "exp-5", subcategory = ExpenseSubcategory.TAXI_RIDESHARE)
+            )
+
+            val result = mapper.extractAvailableSubcategories(expenses)
+
+            assertEquals(
+                listOf(
+                    ExpenseSubcategory.TAXI_RIDESHARE,
+                    ExpenseSubcategory.RESTAURANT,
+                    ExpenseSubcategory.GROCERIES_SUPERMARKET
+                ),
+                result
+            )
         }
     }
 }

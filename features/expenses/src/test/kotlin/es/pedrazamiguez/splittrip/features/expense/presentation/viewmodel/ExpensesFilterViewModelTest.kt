@@ -34,6 +34,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -805,58 +806,143 @@ class ExpensesFilterViewModelTest {
     }
 
     @Nested
-    @DisplayName("GroupContext and Show All Categories")
-    inner class GroupContextAndShowAllCategories {
+    @DisplayName("Dynamic Available Categories and Subcategories")
+    inner class DynamicAvailableCategoriesAndSubcategories {
 
         @Test
-        fun `propagates group context from observed group into uiState`() = runTest(testDispatcher) {
-            every { observeGroupUseCase(testGroupId) } returns flowOf(
-                testGroup.copy(context = GroupContext.EVERYDAY)
-            )
-            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+        fun `populates availableCategories and availableSubcategories from group expenses in canonical order`() =
+            runTest(testDispatcher) {
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 
-            viewModel.setSelectedGroup(testGroupId)
-            advanceUntilIdle()
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
 
-            assertEquals(GroupContext.EVERYDAY, viewModel.uiState.value.groupContext)
-            collectJob.cancel()
-        }
+                val state = viewModel.uiState.value
+                assertEquals(listOf(ExpenseCategory.TRANSPORT, ExpenseCategory.FOOD), state.availableCategories)
+                assertEquals(
+                    listOf(
+                        ExpenseSubcategory.TAXI_RIDESHARE,
+                        ExpenseSubcategory.RESTAURANT,
+                        ExpenseSubcategory.GROCERIES_SUPERMARKET
+                    ),
+                    state.availableSubcategories
+                )
+                assertTrue(state.hasVisibleCategories)
 
-        @Test
-        fun `ToggleShowAllCategories toggles showAllCategories in uiState`() = runTest(testDispatcher) {
-            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
-
-            viewModel.setSelectedGroup(testGroupId)
-            advanceUntilIdle()
-            assertFalse(viewModel.uiState.value.showAllCategories)
-
-            viewModel.onEvent(ExpensesFilterUiEvent.ToggleShowAllCategories)
-            advanceUntilIdle()
-            assertTrue(viewModel.uiState.value.showAllCategories)
-
-            viewModel.onEvent(ExpensesFilterUiEvent.ToggleShowAllCategories)
-            advanceUntilIdle()
-            assertFalse(viewModel.uiState.value.showAllCategories)
-
-            collectJob.cancel()
-        }
+                collectJob.cancel()
+            }
 
         @Test
-        fun `ResetDraft resets showAllCategories back to false`() = runTest(testDispatcher) {
-            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+        fun `returns empty availableCategories and availableSubcategories when group has no expenses`() =
+            runTest(testDispatcher) {
+                every { getGroupExpensesFlowUseCase(testGroupId) } returns flowOf(emptyList())
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
 
-            viewModel.setSelectedGroup(testGroupId)
-            advanceUntilIdle()
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
 
-            viewModel.onEvent(ExpensesFilterUiEvent.ToggleShowAllCategories)
-            advanceUntilIdle()
-            assertTrue(viewModel.uiState.value.showAllCategories)
+                val state = viewModel.uiState.value
+                assertTrue(state.availableCategories.isEmpty())
+                assertTrue(state.availableSubcategories.isEmpty())
+                assertFalse(state.hasVisibleCategories)
 
-            viewModel.onEvent(ExpensesFilterUiEvent.ResetDraft)
-            advanceUntilIdle()
-            assertFalse(viewModel.uiState.value.showAllCategories)
+                collectJob.cancel()
+            }
 
-            collectJob.cancel()
-        }
+        @Test
+        fun `excludes UNSPECIFIED subcategory while retaining parent category`() =
+            runTest(testDispatcher) {
+                val unspecifiedExpense = Expense(
+                    id = "exp-unspecified",
+                    groupId = testGroupId,
+                    category = ExpenseCategory.OTHER,
+                    subcategory = ExpenseSubcategory.UNSPECIFIED
+                )
+                every { getGroupExpensesFlowUseCase(testGroupId) } returns flowOf(listOf(unspecifiedExpense))
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(listOf(ExpenseCategory.OTHER), state.availableCategories)
+                assertTrue(state.availableSubcategories.isEmpty())
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `exposes expense categories regardless of groupContext`() =
+            runTest(testDispatcher) {
+                val homeExpense = Expense(
+                    id = "exp-home",
+                    groupId = testGroupId,
+                    category = ExpenseCategory.HOME,
+                    subcategory = ExpenseSubcategory.UTILITIES
+                )
+                every { observeGroupUseCase(testGroupId) } returns flowOf(
+                    testGroup.copy(context = GroupContext.TRAVEL)
+                )
+                every { getGroupExpensesFlowUseCase(testGroupId) } returns flowOf(listOf(homeExpense))
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(listOf(ExpenseCategory.HOME), state.availableCategories)
+                assertEquals(listOf(ExpenseSubcategory.UTILITIES), state.availableSubcategories)
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `updates availableCategories and availableSubcategories reactively when expenses flow changes`() =
+            runTest(testDispatcher) {
+                val expensesFlow = MutableStateFlow(listOf(expense1))
+                every { getGroupExpensesFlowUseCase(testGroupId) } returns expensesFlow
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                assertEquals(listOf(ExpenseCategory.FOOD), viewModel.uiState.value.availableCategories)
+                assertEquals(listOf(ExpenseSubcategory.RESTAURANT), viewModel.uiState.value.availableSubcategories)
+
+                expensesFlow.value = listOf(expense1, expense2)
+                advanceUntilIdle()
+
+                assertEquals(
+                    listOf(ExpenseCategory.TRANSPORT, ExpenseCategory.FOOD),
+                    viewModel.uiState.value.availableCategories
+                )
+                assertEquals(
+                    listOf(ExpenseSubcategory.TAXI_RIDESHARE, ExpenseSubcategory.RESTAURANT),
+                    viewModel.uiState.value.availableSubcategories
+                )
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `keeps hasVisibleCategories true when pre-selected category has no matching expenses`() =
+            runTest(testDispatcher) {
+                every { getGroupExpensesFlowUseCase(testGroupId) } returns flowOf(emptyList())
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+                viewModel.onEvent(
+                    ExpensesFilterUiEvent.Initialize(
+                        ExpenseFilterCriteria(selectedCategories = setOf(ExpenseCategory.ENTERTAINMENT))
+                    )
+                )
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertTrue(state.availableCategories.isEmpty())
+                assertTrue(state.hasVisibleCategories)
+
+                collectJob.cancel()
+            }
     }
 }

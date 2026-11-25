@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.constant.AppConstants
-import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseFilterService
@@ -45,7 +44,6 @@ class ExpensesFilterViewModel(
 
     private val _selectedGroupId = MutableStateFlow<String?>(null)
     private val _draftCriteria = MutableStateFlow(ExpenseFilterCriteria())
-    private val _showAllCategories = MutableStateFlow(false)
     private var isInitialized = false
 
     private val _actions = MutableSharedFlow<ExpensesFilterUiAction>()
@@ -57,9 +55,8 @@ class ExpensesFilterViewModel(
             combine(
                 observeGroupUseCase(groupId),
                 getGroupExpensesFlowUseCase(groupId),
-                _draftCriteria,
-                _showAllCategories
-            ) { group, expenses, draft, showAllCategories ->
+                _draftCriteria
+            ) { group, expenses, draft ->
                 val totalExpensesCount = expenses.size
                 val matchingExpenses = expenseFilterService.filter(expenses, draft)
                 val currentUserId = authenticationService.currentUserId()
@@ -90,7 +87,8 @@ class ExpensesFilterViewModel(
                     persistentListOf()
                 }
 
-                val groupContext = group?.context ?: GroupContext.TRAVEL
+                val availableCategories = expensesFilterUiMapper.extractAvailableCategories(expenses)
+                val availableSubcategories = expensesFilterUiMapper.extractAvailableSubcategories(expenses)
                 val dateBounds = expensesFilterUiMapper.extractDateBounds(expenses)
                 val formattedStartDate = expensesFilterUiMapper.formatFilterDate(draft.startDate)
                 val formattedEndDate = expensesFilterUiMapper.formatFilterDate(draft.endDate)
@@ -99,6 +97,8 @@ class ExpensesFilterViewModel(
                 ExpensesFilterUiState(
                     draftCriteria = draft,
                     availableMembers = availableMembers,
+                    availableCategories = availableCategories,
+                    availableSubcategories = availableSubcategories,
                     matchingExpensesCount = matchingExpenses.size,
                     totalExpensesCount = totalExpensesCount,
                     isLoading = false,
@@ -109,9 +109,7 @@ class ExpensesFilterViewModel(
                     formattedEndDate = formattedEndDate,
                     activePreset = activePreset,
                     groupCurrency = groupCurrency,
-                    groupCurrencies = groupCurrencies,
-                    groupContext = groupContext,
-                    showAllCategories = showAllCategories
+                    groupCurrencies = groupCurrencies
                 )
             }
         }
@@ -157,14 +155,9 @@ class ExpensesFilterViewModel(
             ExpensesFilterUiEvent.ResetDraft -> {
                 val cleared = _draftCriteria.value.clearNonSearchFilters()
                 _draftCriteria.value = cleared
-                _showAllCategories.value = false
                 viewModelScope.launch {
                     _actions.emit(ExpensesFilterUiAction.FiltersReset(cleared))
                 }
-            }
-
-            ExpensesFilterUiEvent.ToggleShowAllCategories -> {
-                _showAllCategories.value = !_showAllCategories.value
             }
 
             ExpensesFilterUiEvent.ApplyFilters -> {

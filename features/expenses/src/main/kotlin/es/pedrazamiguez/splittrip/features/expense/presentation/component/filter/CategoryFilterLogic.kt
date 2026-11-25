@@ -2,9 +2,9 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.filte
 
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
-import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 
 internal object CategoryFilterLogic {
@@ -15,30 +15,34 @@ internal object CategoryFilterLogic {
     )
 
     fun resolveVisibleCategories(
-        groupContext: GroupContext,
-        showAllCategories: Boolean,
+        availableCategories: List<ExpenseCategory>,
         selectedCategories: Set<ExpenseCategory>
     ): ImmutableList<ExpenseCategory> {
-        if (showAllCategories) return ExpenseCategory.entries.toImmutableList()
-        val base = ExpenseCategory.forContext(groupContext)
-        val missingSelected = selectedCategories.filter { it !in base }
-        return (base + missingSelected).toImmutableList()
+        if (availableCategories.isEmpty() && selectedCategories.isEmpty()) {
+            return persistentListOf()
+        }
+        val visibleSet = buildSet {
+            addAll(availableCategories)
+            addAll(selectedCategories)
+        }
+        return ExpenseCategory.entries
+            .filter { it in visibleSet }
+            .toImmutableList()
     }
 
     fun resolveVisibleSubcategories(
         category: ExpenseCategory,
-        selectedSubcategories: Set<ExpenseSubcategory>,
-        groupContext: GroupContext,
-        showAllCategories: Boolean
+        availableSubcategories: List<ExpenseSubcategory>,
+        selectedSubcategories: Set<ExpenseSubcategory>
     ): ImmutableList<ExpenseSubcategory> {
-        if (showAllCategories || !category.appliesTo(groupContext)) {
-            return ExpenseSubcategory.forCategory(category).toImmutableList()
+        val visibleSet = buildSet {
+            availableSubcategories.forEach { if (it.parentCategory == category) add(it) }
+            selectedSubcategories.forEach { if (it.parentCategory == category) add(it) }
         }
-        val base = ExpenseSubcategory.forCategory(category, groupContext)
-        val selectedForCategory = selectedSubcategories.filter {
-            it.parentCategory == category && it !in base
-        }
-        return (base + selectedForCategory).distinct().toImmutableList()
+        if (visibleSet.isEmpty()) return persistentListOf()
+        return ExpenseSubcategory.forCategory(category)
+            .filter { it in visibleSet }
+            .toImmutableList()
     }
 
     fun resolveFocusedCategory(

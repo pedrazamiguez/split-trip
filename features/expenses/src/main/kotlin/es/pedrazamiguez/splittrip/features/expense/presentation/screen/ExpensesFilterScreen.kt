@@ -47,7 +47,6 @@ fun ExpensesFilterScreen(
     onUpdateDraft: (ExpenseFilterCriteria) -> Unit = {},
     onPresetSelected: (DateRangePreset) -> Unit = {},
     onResetFilters: () -> Unit = {},
-    onToggleShowAllCategories: () -> Unit = {},
     onApplyFilters: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -78,16 +77,17 @@ fun ExpensesFilterScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraLarge)
             ) {
-                item(key = "category_section") {
-                    CategoryFilterSection(
-                        criteria = uiState.draftCriteria,
-                        onCriteriaChange = onUpdateDraft,
-                        groupContext = uiState.groupContext,
-                        showAllCategories = uiState.showAllCategories,
-                        onToggleShowAllCategories = onToggleShowAllCategories,
-                        carouselEdgePadding = MaterialTheme.spacing.Default,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                if (uiState.hasVisibleCategories) {
+                    item(key = "category_section") {
+                        CategoryFilterSection(
+                            availableCategories = uiState.availableCategories,
+                            availableSubcategories = uiState.availableSubcategories,
+                            criteria = uiState.draftCriteria,
+                            onCriteriaChange = onUpdateDraft,
+                            carouselEdgePadding = MaterialTheme.spacing.Default,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
 
                 item(key = "payment_method_section") {
