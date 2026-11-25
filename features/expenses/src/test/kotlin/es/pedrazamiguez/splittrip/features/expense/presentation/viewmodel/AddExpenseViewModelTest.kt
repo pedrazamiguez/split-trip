@@ -501,6 +501,30 @@ class AddExpenseViewModelTest {
         }
 
         @Test
+        fun `defaults selectedPaymentMethod to DEBIT_CARD when no payment method history exists`() = runTest {
+            every { getGroupLastUsedPaymentMethodUseCase(any()) } returns flowOf(emptyList())
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(PaymentMethod.DEBIT_CARD.name, state.selectedPaymentMethod?.id)
+            assertEquals(PaymentMethod.CASH.name, state.paymentMethods.firstOrNull()?.id)
+        }
+
+        @Test
+        fun `defaults selectedPaymentMethod to CASH when CASH is most recently used`() = runTest {
+            every { getGroupLastUsedPaymentMethodUseCase(any()) } returns flowOf(listOf(PaymentMethod.CASH.name))
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            assertEquals(PaymentMethod.CASH.name, viewModel.uiState.value.selectedPaymentMethod?.id)
+        }
+
+        @Test
         fun `defaults fundingSource to USER when no pocket activity`() = runTest {
             coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(
                 configEur.copy(hasManualPocketContributions = false)
@@ -991,9 +1015,7 @@ class AddExpenseViewModelTest {
 
         @BeforeEach
         fun setUpNonCashDefault() {
-            // Set default payment method to CREDIT_CARD so these tests exercise the API rate path.
-            // CASH is the first entry in PaymentMethod.entries, so without this override the
-            // auto-selected default would be CASH, which locks the exchange rate section.
+            // Explicitly pin CREDIT_CARD as the MRU payment method for these exchange-rate tests.
             every { getGroupLastUsedPaymentMethodUseCase(any()) } returns flowOf(listOf("CREDIT_CARD"))
         }
 
@@ -2288,6 +2310,7 @@ class AddExpenseViewModelTest {
 
             viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
             advanceUntilIdle()
+            viewModel.onEvent(AddExpenseUiEvent.PaymentMethodSelected(PaymentMethod.CASH.name))
             viewModel.onEvent(AddExpenseUiEvent.TitleChanged("Lunch"))
             viewModel.onEvent(AddExpenseUiEvent.CurrencySelected("USD"))
             viewModel.onEvent(AddExpenseUiEvent.SourceAmountChanged("50.00"))

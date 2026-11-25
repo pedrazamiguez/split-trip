@@ -306,7 +306,8 @@ class ConfigEventHandler(
         val defaultPaymentMethod =
             recentPaymentMethodIds.firstOrNull()?.let { lastId ->
                 reorderedPaymentMethods.find { it.id == lastId }
-            } ?: reorderedPaymentMethods.firstOrNull()
+            } ?: reorderedPaymentMethods.find { it.id == PaymentMethod.DEBIT_CARD.name }
+                ?: reorderedPaymentMethods.firstOrNull()
 
         val groupContext = config.group.context
         val mappedCategories = addExpenseOptionsMapper.mapCategoriesForContext(

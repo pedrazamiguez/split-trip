@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBl
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
@@ -402,7 +403,9 @@ class ReceiptAutoFillEventHandler(
     ) {
         val extractedPaymentMethod = extracted.paymentMethod
         val currentState = _uiState.value
-        val defaultPaymentMethod = currentState.paymentMethods.firstOrNull()
+        val defaultPaymentMethod = currentState.initialFormSnapshot?.selectedPaymentMethod
+            ?: currentState.paymentMethods.find { it.id == PaymentMethod.DEBIT_CARD.name }
+            ?: currentState.paymentMethods.firstOrNull()
         val shouldPreFillPaymentMethod = !extractedPaymentMethod.isNullOrBlank() &&
             currentState.selectedPaymentMethod == preScanPaymentMethod &&
             (

@@ -564,6 +564,34 @@ class ConfigEventHandlerTest {
             // After loading the new group the form should be clean (title was reset on group switch)
             assertEquals("", uiState.value.expenseTitle)
         }
+
+        @Test
+        fun `auto-selects DEBIT_CARD without FetchCashRate for same-currency when no history`() =
+            runTest {
+                every { getGroupLastUsedPaymentMethodUseCase(any()) } returns flowOf(emptyList())
+                handler.bind(uiState, actions, this)
+
+                handler.loadGroupConfig("group-1")
+                advanceUntilIdle()
+
+                assertEquals(PaymentMethod.DEBIT_CARD.name, uiState.value.selectedPaymentMethod?.id)
+                assertTrue(capturedActions.none { it is PostConfigAction.FetchCashRate })
+            }
+
+        @Test
+        fun `emits FetchRate instead of FetchCashRate for foreign currency when no history`() =
+            runTest {
+                every { getGroupLastUsedCurrencyUseCase(any()) } returns flowOf("USD")
+                every { getGroupLastUsedPaymentMethodUseCase(any()) } returns flowOf(emptyList())
+                handler.bind(uiState, actions, this)
+
+                handler.loadGroupConfig("group-1")
+                advanceUntilIdle()
+
+                assertEquals(PaymentMethod.DEBIT_CARD.name, uiState.value.selectedPaymentMethod?.id)
+                assertTrue(capturedActions.any { it is PostConfigAction.FetchRate })
+                assertTrue(capturedActions.none { it is PostConfigAction.FetchCashRate })
+            }
     }
 
     // ── Failure path ─────────────────────────────────────────────────────
@@ -855,6 +883,45 @@ class ConfigEventHandlerTest {
                 ExpenseSubcategory.forCategory(ExpenseCategory.OTHER, GroupContext.EVERYDAY),
                 defaults.availableSubcategories.map { it.subcategory }
             )
+        }
+
+        @Test
+        fun `defaultPaymentMethod selects DEBIT_CARD when empty while keeping canonical order`() {
+            val defaults = handler.resolveDefaultSelections(
+                config = testConfig,
+                lastUsedCode = null,
+                recentPaymentMethodIds = emptyList(),
+                recentCategoryIds = emptyList()
+            )
+
+            assertEquals(PaymentMethod.DEBIT_CARD.name, defaults.defaultPaymentMethod?.id)
+            assertEquals(PaymentMethod.CASH.name, defaults.reorderedPaymentMethods.firstOrNull()?.id)
+            assertTrue("SCHEDULED" in defaults.mappedPaymentStatuses.map { it.id })
+        }
+
+        @Test
+        fun `defaultPaymentMethod selects DEBIT_CARD when recentPaymentMethodIds contains unknown id`() {
+            val defaults = handler.resolveDefaultSelections(
+                config = testConfig,
+                lastUsedCode = null,
+                recentPaymentMethodIds = listOf("UNKNOWN_METHOD"),
+                recentCategoryIds = emptyList()
+            )
+
+            assertEquals(PaymentMethod.DEBIT_CARD.name, defaults.defaultPaymentMethod?.id)
+        }
+
+        @Test
+        fun `defaultPaymentMethod selects CASH when CASH is most recently used`() {
+            val defaults = handler.resolveDefaultSelections(
+                config = testConfig,
+                lastUsedCode = null,
+                recentPaymentMethodIds = listOf(PaymentMethod.CASH.name),
+                recentCategoryIds = emptyList()
+            )
+
+            assertEquals(PaymentMethod.CASH.name, defaults.defaultPaymentMethod?.id)
+            assertEquals(PaymentMethod.CASH.name, defaults.reorderedPaymentMethods.firstOrNull()?.id)
         }
     }
 
