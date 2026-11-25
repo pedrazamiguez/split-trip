@@ -68,4 +68,26 @@
     <string name="expense_subcategory_laundry">Labandería</string>
     <string name="expense_subcategory_fees_surcharges">Comiçionê y recargô</string>
     <string name="expense_subcategory_unspecified">Çin êppeçificâh</string>
+    <string name="group_context_travel">Biahe</string>
+    <string name="group_context_everyday">Día a día</string>
+    <string name="group_context_travel_description">Muêttra categoríâ de biahe como buelô, alohamiento y êccurçionê</string>
+    <string name="group_context_everyday_description">Muêttra categoríâ diariâ como ogâh, çalûh y reçibô</string>
+    <string name="expense_category_home">Ogâh</string>
+    <string name="expense_category_health_personal_care">Çalûh y cuidao</string>
+    <string name="expense_subcategory_car_repair_maintenance">Tayêh y mantenimiento</string>
+    <string name="expense_subcategory_rent_mortgage">Arquilêh e ipoteca</string>
+    <string name="expense_subcategory_utilities">Çuminîttrô</string>
+    <string name="expense_subcategory_home_repair">Reparaçionê del ogâh</string>
+    <string name="expense_subcategory_furniture_appliances">Mueblê y elêttrodométticô</string>
+    <string name="expense_subcategory_home_supplies">Prodûttô del ogâh</string>
+    <string name="expense_subcategory_doctor_dentist">Médico y dentîtta</string>
+    <string name="expense_subcategory_hairdresser_barber">Peluquería y barbería</string>
+    <string name="expense_subcategory_gym_fitness">Hînnaçio y deporte</string>
+    <string name="expense_subcategory_personal_care">Cuidao perçonâh</string>
+    <string name="expense_subcategory_subscriptions_streaming">Çûccrîççionê y streaming</string>
+    <string name="expense_subcategory_gifts">Regalô</string>
+    <string name="expense_subcategory_home_insurance">Çeguro del ogâh</string>
+    <string name="expense_subcategory_pet_care">Mâccotâ</string>
+    <string name="expense_subcategory_tobacco_vaping">Tabaco y bapeo</string>
+    <string name="expense_subcategory_hobbies">Afiçionê</string>
 </resources>

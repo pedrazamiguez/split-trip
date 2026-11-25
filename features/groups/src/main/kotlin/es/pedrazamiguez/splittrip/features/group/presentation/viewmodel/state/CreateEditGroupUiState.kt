@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.exception.CannotRemoveMemberException
 import es.pedrazamiguez.splittrip.domain.model.User
 import kotlinx.collections.immutable.ImmutableList
@@ -20,6 +21,7 @@ data class CreateEditGroupUiState(
     val groupId: String? = null,
     val groupName: String = "",
     val groupDescription: String = "",
+    val groupContext: GroupContext = GroupContext.TRAVEL,
     val groupMembers: ImmutableList<String> = persistentListOf(),
 
     // Currency selection
@@ -58,6 +60,7 @@ data class CreateEditGroupUiState(
     fun toFormSnapshot() = CreateEditGroupFormSnapshot(
         groupName = groupName,
         groupDescription = groupDescription,
+        groupContext = groupContext,
         selectedCurrency = selectedCurrency,
         extraCurrencies = extraCurrencies,
         selectedMembers = selectedMembers,
@@ -68,6 +71,7 @@ data class CreateEditGroupUiState(
             if (selectedMembers.any { it.isPending }) {
                 listOf(
                     CreateEditGroupStep.INFO,
+                    CreateEditGroupStep.CONTEXT,
                     CreateEditGroupStep.CURRENCY,
                     CreateEditGroupStep.MEMBERS,
                     CreateEditGroupStep.UNREGISTERED_NAMES,
@@ -77,6 +81,7 @@ data class CreateEditGroupUiState(
             } else {
                 listOf(
                     CreateEditGroupStep.INFO,
+                    CreateEditGroupStep.CONTEXT,
                     CreateEditGroupStep.CURRENCY,
                     CreateEditGroupStep.MEMBERS,
                     CreateEditGroupStep.IMAGE,
@@ -103,6 +108,7 @@ data class CreateEditGroupUiState(
             if (isCreationBlocked) return false
             return when (currentStep) {
                 CreateEditGroupStep.INFO -> groupName.isNotBlank() && isNameValid
+                CreateEditGroupStep.CONTEXT -> true
                 CreateEditGroupStep.CURRENCY -> selectedCurrency != null
                 CreateEditGroupStep.MEMBERS -> true
                 CreateEditGroupStep.UNREGISTERED_NAMES -> true
@@ -115,6 +121,7 @@ data class CreateEditGroupUiState(
 data class CreateEditGroupFormSnapshot(
     val groupName: String,
     val groupDescription: String,
+    val groupContext: GroupContext,
     val selectedCurrency: CurrencyUiModel?,
     val extraCurrencies: ImmutableList<CurrencyUiModel>,
     val selectedMembers: ImmutableList<User>,

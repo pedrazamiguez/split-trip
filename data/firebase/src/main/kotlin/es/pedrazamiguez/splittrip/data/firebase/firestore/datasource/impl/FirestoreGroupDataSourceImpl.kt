@@ -139,7 +139,8 @@ class FirestoreGroupDataSourceImpl(
                 "extraCurrencies" to group.extraCurrencies,
                 "mainImagePath" to (group.mainImagePath ?: ""),
                 "lastUpdatedAt" to group.lastUpdatedAt.toTimestampUtc(),
-                "status" to group.status.name
+                "status" to group.status.name,
+                "context" to group.context.name
             )
 
             groupDocRef.update(updates).await()

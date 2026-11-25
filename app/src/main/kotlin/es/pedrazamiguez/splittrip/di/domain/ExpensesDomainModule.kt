@@ -12,6 +12,8 @@ import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ExchangeRateCalculationService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCalculatorService
+import es.pedrazamiguez.splittrip.domain.service.ExpenseCategoryAiClassifierService
+import es.pedrazamiguez.splittrip.domain.service.ExpenseCategoryClassifierService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseFilterService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseSearchService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseValidationService
@@ -24,6 +26,7 @@ import es.pedrazamiguez.splittrip.domain.service.addon.AddOnResolverFactory
 import es.pedrazamiguez.splittrip.domain.service.impl.AddOnCalculationServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.ExchangeRateCalculationServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCalculatorServiceImpl
+import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCategoryClassifierServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseFilterServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseSearchServiceImpl
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseValidationServiceImpl
@@ -44,6 +47,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpensesFlowUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.SuggestExpenseCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.factory.PersistExpenseStrategyFactory
 import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.AddExpenseUseCaseImpl
@@ -57,6 +61,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.GetExpenseByIdUseC
 import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.GetGroupExpenseConfigUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.GetGroupExpensesFlowUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.PreviewCashExchangeRateUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.SuggestExpenseCategoryUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.expense.impl.UpdateExpenseUseCaseImpl
 import org.koin.dsl.module
 
@@ -114,6 +119,18 @@ val expensesDomainModule = module {
     }
     factory { AddOnResolverFactory() }
     factory<ExpenseCalculatorService> { ExpenseCalculatorServiceImpl() }
+    single<ExpenseCategoryClassifierService> {
+        ExpenseCategoryClassifierServiceImpl(
+            appConfigService = get<AppConfigService>()
+        )
+    }
+    factory<SuggestExpenseCategoryUseCase> {
+        SuggestExpenseCategoryUseCaseImpl(
+            expenseCategoryClassifierService = get<ExpenseCategoryClassifierService>(),
+            expenseCategoryAiClassifierService = get<ExpenseCategoryAiClassifierService>(),
+            userPreferenceRepository = get<UserPreferenceRepository>()
+        )
+    }
     factory<ExpenseSearchService> { ExpenseSearchServiceImpl() }
     factory<ExpenseFilterService> { ExpenseFilterServiceImpl(expenseSearchService = get<ExpenseSearchService>()) }
     factory<AddOnCalculationService> { AddOnCalculationServiceImpl(addOnResolverFactory = get<AddOnResolverFactory>()) }

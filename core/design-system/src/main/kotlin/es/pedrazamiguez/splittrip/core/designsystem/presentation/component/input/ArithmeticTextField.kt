@@ -9,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -71,29 +72,51 @@ fun ArithmeticTextField(
     var textFieldValue by remember {
         mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length)))
     }
-    var evaluationResult by remember { mutableStateOf<ExpressionResult?>(null) }
+    var evaluationResult by remember {
+        mutableStateOf<ExpressionResult?>(evaluator.evaluate(value))
+    }
+    var lastEmittedValue by remember { mutableStateOf(value) }
+    val currentOnValueChange by rememberUpdatedState(onValueChange)
+    val currentMaxDecimalPlaces by rememberUpdatedState(maxDecimalPlaces)
     val keyboardState = LocalArithmeticKeyboardState.current
     val locale = rememberLocale()
-
-    LaunchedEffect(textFieldValue.text) {
-        evaluationResult = evaluator.evaluate(textFieldValue.text)
-    }
 
     LaunchedEffect(value, isFocused) {
         if (!isFocused) {
             textFieldValue = TextFieldValue(text = value, selection = TextRange(value.length))
+            evaluationResult = evaluator.evaluate(value)
+            lastEmittedValue = value
+        }
+    }
+
+    val updateFocusedInput: (TextFieldValue) -> Unit = { newTfv ->
+        val textChanged = newTfv.text != textFieldValue.text
+        textFieldValue = newTfv
+        if (textChanged) {
+            val result = evaluator.evaluate(newTfv.text)
+            evaluationResult = result
+            val syncedValue = resolveFocusedSyncValue(
+                evaluationResult = result,
+                maxDecimalPlaces = currentMaxDecimalPlaces
+            )
+            if (syncedValue != lastEmittedValue) {
+                lastEmittedValue = syncedValue
+                currentOnValueChange(syncedValue)
+            }
         }
     }
 
     val commitResult = {
-        val res = evaluationResult
+        val res = evaluator.evaluate(textFieldValue.text)
+        evaluationResult = res
         if (res is ExpressionResult.Success) {
-            val scaledValue = res.value.setScale(maxDecimalPlaces, RoundingMode.HALF_UP).stripTrailingZeros()
-            val rawValue = scaledValue.toPlainString()
-            onValueChange(rawValue)
+            val rawValue = formatEvaluatedValue(res.value, currentMaxDecimalPlaces)
+            lastEmittedValue = rawValue
+            currentOnValueChange(rawValue)
             textFieldValue = TextFieldValue(text = rawValue, selection = TextRange(rawValue.length))
         } else {
-            onValueChange(textFieldValue.text)
+            lastEmittedValue = textFieldValue.text
+            currentOnValueChange(textFieldValue.text)
         }
     }
 
@@ -115,7 +138,7 @@ fun ArithmeticTextField(
                 minDecimalPlaces = minDecimalPlaces,
                 owner = fieldId,
                 onClear = {
-                    textFieldValue = TextFieldValue(text = "", selection = TextRange.Zero)
+                    updateFocusedInput(TextFieldValue(text = "", selection = TextRange.Zero))
                 },
                 onOperatorClick = { op ->
                     val text = textFieldValue.text
@@ -126,9 +149,11 @@ fun ArithmeticTextField(
                         append(text.substring(selection.max))
                     }
                     val newCursorPosition = selection.min + op.length
-                    textFieldValue = TextFieldValue(
-                        text = newText,
-                        selection = TextRange(newCursorPosition)
+                    updateFocusedInput(
+                        TextFieldValue(
+                            text = newText,
+                            selection = TextRange(newCursorPosition)
+                        )
                     )
                 },
                 onCommit = commitResult
@@ -171,24 +196,31 @@ fun ArithmeticTextField(
         )
     }
 
+    val isDivisionByZero = isFocused && evaluationResult is ExpressionResult.Failure.DivisionByZero
     val effectiveIsError = if (requirePositive) {
         if (isFocused) {
             val res = evaluationResult
-            isError || (res is ExpressionResult.Success && res.value <= BigDecimal.ZERO)
+            isError || isDivisionByZero || (res is ExpressionResult.Success && res.value <= BigDecimal.ZERO)
         } else {
             isError || (value.isNotBlank() && !CurrencyConverter.isPositiveAmount(value))
         }
     } else {
-        isError
+        isError || isDivisionByZero
     }
 
     StyledOutlinedTextField(
         value = currentTextFieldValue,
         onValueChange = { newTfv ->
             if (isFocused) {
-                textFieldValue = newTfv
-            } else {
-                onValueChange(newTfv.text)
+                updateFocusedInput(newTfv)
+            } else if (newTfv.text != textFieldValue.text) {
+                val result = evaluator.evaluate(newTfv.text)
+                evaluationResult = result
+                val syncedValue = resolveFocusedSyncValue(result, currentMaxDecimalPlaces)
+                if (syncedValue != lastEmittedValue) {
+                    lastEmittedValue = syncedValue
+                    currentOnValueChange(syncedValue)
+                }
             }
         },
         modifier = modifier.onFocusChanged {
@@ -199,6 +231,8 @@ fun ArithmeticTextField(
                     TextRange.Zero
                 }
                 textFieldValue = TextFieldValue(text = value, selection = selection)
+                evaluationResult = evaluator.evaluate(value)
+                lastEmittedValue = value
             } else if (!it.isFocused && isFocused) {
                 commitResult()
             }
@@ -244,4 +278,20 @@ private fun resolveDisplayValue(
         maxDecimalPlaces = maxDecimalPlaces,
         minDecimalPlaces = minDecimalPlaces
     ) ?: value
+}
+
+internal fun formatEvaluatedValue(
+    value: BigDecimal,
+    maxDecimalPlaces: Int
+): String = value
+    .setScale(maxDecimalPlaces, RoundingMode.HALF_UP)
+    .stripTrailingZeros()
+    .toPlainString()
+
+internal fun resolveFocusedSyncValue(
+    evaluationResult: ExpressionResult,
+    maxDecimalPlaces: Int
+): String = when (evaluationResult) {
+    is ExpressionResult.Success -> formatEvaluatedValue(evaluationResult.value, maxDecimalPlaces)
+    is ExpressionResult.Failure -> ""
 }

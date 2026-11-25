@@ -25,6 +25,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppThemeUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetBiometricCapabilityUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetBiometricLockEnabledUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetDeveloperInfoUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetReceiptExtractionCapabilityUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
@@ -75,6 +76,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.Langu
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.NotificationPreferencesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.PlanAllowancesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SettingsViewModel
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SubscriptionsUseCases
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SubscriptionsViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.ThemeViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.handler.AccountStatusEventHandler
@@ -214,9 +216,11 @@ val settingsUiModule = module {
 
     viewModel {
         val observePlanAllowancesUseCase = get<ObservePlanAllowancesUseCase>()
+        val getReceiptExtractionCapabilityUseCase = get<GetReceiptExtractionCapabilityUseCase>()
         val planAllowancesUiMapper = get<PlanAllowancesUiMapper>()
         PlanAllowancesViewModel(
             observePlanAllowancesUseCase = observePlanAllowancesUseCase,
+            getReceiptExtractionCapabilityUseCase = getReceiptExtractionCapabilityUseCase,
             planAllowancesUiMapper = planAllowancesUiMapper
         )
     }
@@ -244,22 +248,20 @@ val settingsUiModule = module {
 
     viewModel { params ->
         val entrySource = params.getOrNull<String>()
-        val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
-        val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
-        val observeProAllowlistAccessUseCase = get<ObserveProAllowlistAccessUseCase>()
-        val updateUserTierUseCase = get<UpdateUserTierUseCase>()
-        val isUserAnonymousUseCase = get<IsUserAnonymousUseCase>()
-        val reconcileSubscriptionEntitlementsUseCase = get<ReconcileSubscriptionEntitlementsUseCase>()
+        val subscriptionsUseCases = SubscriptionsUseCases(
+            getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>(),
+            observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>(),
+            observeProAllowlistAccessUseCase = get<ObserveProAllowlistAccessUseCase>(),
+            updateUserTierUseCase = get<UpdateUserTierUseCase>(),
+            isUserAnonymousUseCase = get<IsUserAnonymousUseCase>(),
+            reconcileSubscriptionEntitlementsUseCase = get<ReconcileSubscriptionEntitlementsUseCase>(),
+            getReceiptExtractionCapabilityUseCase = get<GetReceiptExtractionCapabilityUseCase>()
+        )
         val subscriptionsUiMapper = get<SubscriptionsUiMapper>()
         val billingService = get<BillingService>()
         val telemetryTracker = get<TelemetryTracker>()
         SubscriptionsViewModel(
-            getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
-            observeProAllowlistAccessUseCase = observeProAllowlistAccessUseCase,
-            updateUserTierUseCase = updateUserTierUseCase,
-            isUserAnonymousUseCase = isUserAnonymousUseCase,
-            reconcileSubscriptionEntitlementsUseCase = reconcileSubscriptionEntitlementsUseCase,
+            subscriptionsUseCases = subscriptionsUseCases,
             subscriptionsUiMapper = subscriptionsUiMapper,
             billingService = billingService,
             telemetryTracker = telemetryTracker,

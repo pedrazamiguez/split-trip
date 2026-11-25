@@ -8,7 +8,7 @@ data class AllowanceQuotaUiModel(
     val type: AllowanceQuotaType,
     val title: UiText,
     val subtitle: UiText,
-    val usageText: UiText,
+    val usageText: UiText?,
     val statusBadge: UiText,
     val status: AllowanceUsageStatus,
     val progressFraction: Float,

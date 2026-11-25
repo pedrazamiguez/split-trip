@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -24,13 +25,16 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.To
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.navigation.KEY_EXPORT_REPORT_REQUESTED
+import es.pedrazamiguez.splittrip.features.balance.presentation.component.export.TripReportSaveEffect
 import es.pedrazamiguez.splittrip.features.balance.presentation.screen.BalancesScreen
+import es.pedrazamiguez.splittrip.features.balance.presentation.util.CreateTripReportDocumentRequest
 import es.pedrazamiguez.splittrip.features.balance.presentation.util.ReportShareLauncher
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.BalancesViewModel
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.action.BalancesUiAction
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.event.BalancesUiEvent
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
@@ -52,8 +56,28 @@ fun BalancesFeature(
     val uiState by balancesViewModel.uiState.collectAsStateWithLifecycle()
     val selectedGroupId by sharedViewModel.selectedGroupId.collectAsStateWithLifecycle()
     var proPreviewPrompt by remember { mutableStateOf<ProFeaturePreviewPrompt?>(null) }
+    var pendingSaveRequest by remember { mutableStateOf<CreateTripReportDocumentRequest?>(null) }
+    val coroutineScope = rememberCoroutineScope()
     val shareChooserTitle = stringResource(R.string.balances_export_share_chooser_title)
     val noShareAppMessage = stringResource(R.string.balances_export_error_no_share_app)
+    val noSaveAppMessage = stringResource(R.string.balances_export_error_no_save_app)
+
+    TripReportSaveEffect(
+        pendingSaveRequest = pendingSaveRequest,
+        onRequestConsumed = { pendingSaveRequest = null },
+        onDestinationSelected = { destinationUri ->
+            balancesViewModel.onEvent(BalancesUiEvent.CompleteSaveExportedReport(destinationUri))
+        },
+        onCancelled = {
+            balancesViewModel.onEvent(BalancesUiEvent.CancelSaveExportedReport)
+        },
+        onLaunchFailed = {
+            balancesViewModel.onEvent(BalancesUiEvent.CancelSaveExportedReport)
+            coroutineScope.launch {
+                pillController.showPill(message = noSaveAppMessage)
+            }
+        }
+    )
 
     LaunchedEffect(selectedGroupId) {
         balancesViewModel.setSelectedGroup(selectedGroupId)
@@ -82,7 +106,8 @@ fun BalancesFeature(
                 pillController = pillController,
                 shareChooserTitle = shareChooserTitle,
                 noShareAppMessage = noShareAppMessage,
-                onShowProPreview = { proPreviewPrompt = it }
+                onShowProPreview = { proPreviewPrompt = it },
+                onLaunchSavePicker = { pendingSaveRequest = it }
             )
         }
     }
@@ -138,7 +163,8 @@ private suspend fun handleBalancesUiAction(
     pillController: TopPillController,
     shareChooserTitle: String,
     noShareAppMessage: String,
-    onShowProPreview: (ProFeaturePreviewPrompt) -> Unit
+    onShowProPreview: (ProFeaturePreviewPrompt) -> Unit,
+    onLaunchSavePicker: (CreateTripReportDocumentRequest) -> Unit
 ) {
     when (action) {
         is BalancesUiAction.ShowLoadError ->
@@ -170,5 +196,14 @@ private suspend fun handleBalancesUiAction(
                 pillController.showPill(message = noShareAppMessage)
             }
         }
+        is BalancesUiAction.LaunchSaveDocumentPicker ->
+            onLaunchSavePicker(
+                CreateTripReportDocumentRequest(
+                    fileName = action.fileName,
+                    mimeType = action.mimeType
+                )
+            )
+        is BalancesUiAction.ShowExportSaveSuccess ->
+            pillController.showPill(message = action.message.asString(context))
     }
 }

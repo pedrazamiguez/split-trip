@@ -10,15 +10,16 @@ class AiReceiptQuotaUiMapper(
     private val resourceProvider: ResourceProvider
 ) {
     fun mapQuotaToUiModel(quota: AiReceiptQuota): AiReceiptQuotaUiModel {
+        val remaining = quota.remainingScans
         val remainingScansLabel = when {
-            !quota.isGatingEnabled -> null
-            quota.isFreeTrialEligible && quota.remainingScans > 0 ->
+            quota.isUnlimited -> null
+            quota.isFreeTrialEligible && remaining != null && remaining > 0 ->
                 resourceProvider.getQuantityString(
                     R.plurals.expense_autofill_free_scans_remaining,
-                    quota.remainingScans,
-                    quota.remainingScans
+                    remaining,
+                    remaining
                 )
-            quota.isFreeTrialEligible && quota.remainingScans == 0 ->
+            quota.isFreeTrialEligible && remaining == 0 ->
                 resourceProvider.getString(R.string.expense_autofill_free_scans_exhausted)
             quota.isProTier && !quota.canScan ->
                 resourceProvider.getString(R.string.expense_autofill_monthly_scans_exhausted)
@@ -32,12 +33,15 @@ class AiReceiptQuotaUiMapper(
         )
     }
 
-    fun mapBlockedMessage(quota: AiReceiptQuota): UiText = when {
-        quota.isFreeTrialEligible && !quota.canScan ->
-            UiText.StringResource(R.string.expense_autofill_monthly_limit_reached, quota.monthlyLimit)
-        quota.isProTier && !quota.canScan ->
-            UiText.StringResource(R.string.expense_autofill_pro_monthly_limit_reached, quota.monthlyLimit)
-        else ->
-            UiText.StringResource(R.string.expense_autofill_pro_required)
+    fun mapBlockedMessage(quota: AiReceiptQuota): UiText {
+        val limit = quota.monthlyLimit
+        return when {
+            quota.isFreeTrialEligible && !quota.canScan && limit != null ->
+                UiText.StringResource(R.string.expense_autofill_monthly_limit_reached, limit)
+            quota.isProTier && !quota.canScan && limit != null ->
+                UiText.StringResource(R.string.expense_autofill_pro_monthly_limit_reached, limit)
+            else ->
+                UiText.StringResource(R.string.expense_autofill_pro_required)
+        }
     }
 }

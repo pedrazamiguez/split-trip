@@ -8,14 +8,20 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.Forma
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.exception.InsufficientCashException
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreview
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
+import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
 import es.pedrazamiguez.splittrip.domain.model.Currency
+import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
+import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
+import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.GroupExpenseConfig
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
@@ -45,6 +51,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUse
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetExpenseByIdUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.GetGroupExpenseConfigUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.PreviewCashExchangeRateUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.SuggestExpenseCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
@@ -67,6 +74,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnExchangeRateDelegate
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.CashRateDelegate
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.CategorySuggestionEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.ConfigEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.CurrencyEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.EntitySplitFlattenDelegate
@@ -87,14 +95,17 @@ import io.mockk.every
 import io.mockk.mockk
 import java.math.BigDecimal
 import java.util.Locale
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -135,6 +146,9 @@ class AddExpenseViewModelTest {
     private lateinit var featureGateService: FeatureGateService
     private lateinit var quotaFlow: MutableStateFlow<AiReceiptQuota>
     private lateinit var aiReceiptQuotaUiMapper: AiReceiptQuotaUiMapper
+    private lateinit var suggestExpenseCategoryUseCase: SuggestExpenseCategoryUseCase
+    private lateinit var extractReceiptFieldsUseCase: ExtractReceiptFieldsUseCase
+    private lateinit var receiptExtractionService: ReceiptExtractionService
 
     private lateinit var configHandler: ConfigEventHandler
     private lateinit var currencyHandler: CurrencyEventHandler
@@ -144,6 +158,7 @@ class AddExpenseViewModelTest {
     private lateinit var submitHandler: SubmitEventHandler
     private lateinit var formHandler: FormEventHandler
     private lateinit var receiptAutoFillEventHandler: ReceiptAutoFillEventHandler
+    private lateinit var categorySuggestionHandler: CategorySuggestionEventHandler
     private lateinit var strategyFactory: ExpenseFlowStrategyFactory
 
     private lateinit var viewModel: AddExpenseViewModel
@@ -300,8 +315,8 @@ class AddExpenseViewModelTest {
             )
         )
 
-        val mockReceiptExtractionService = mockk<ReceiptExtractionService>()
-        every { mockReceiptExtractionService.capability() } returns ExtractionCapability.UNSUPPORTED
+        receiptExtractionService = mockk()
+        every { receiptExtractionService.capability() } returns ExtractionCapability.UNSUPPORTED
 
         aiReceiptQuotaUiMapper = AiReceiptQuotaUiMapper(resourceProvider)
         quotaFlow = MutableStateFlow(
@@ -330,7 +345,7 @@ class AddExpenseViewModelTest {
             addExpenseOptionsMapper = addExpenseOptionsMapper,
             addExpenseSplitMapper = addExpenseSplitMapper,
             addExpenseUiMapper = addExpenseUiMapper,
-            receiptExtractionService = mockReceiptExtractionService,
+            receiptExtractionService = receiptExtractionService,
             featureGateService = featureGateService,
             aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper,
             manualReceiptQuotaUiMapper = manualReceiptQuotaUiMapper
@@ -398,14 +413,22 @@ class AddExpenseViewModelTest {
             telemetryTracker = mockk(relaxed = true)
         )
 
+        extractReceiptFieldsUseCase = mockk(relaxed = true)
         receiptAutoFillEventHandler = ReceiptAutoFillEventHandler(
-            extractReceiptFieldsUseCase = mockk<ExtractReceiptFieldsUseCase>(relaxed = true),
-            receiptExtractionService = mockk<ReceiptExtractionService>(relaxed = true),
+            extractReceiptFieldsUseCase = extractReceiptFieldsUseCase,
+            receiptExtractionService = receiptExtractionService,
             formattingHelper = formattingHelper,
             addExpenseUiMapper = addExpenseUiMapper,
             featureGateService = featureGateService,
             aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper,
             telemetryTracker = mockk(relaxed = true)
+        )
+
+        suggestExpenseCategoryUseCase = mockk()
+        coEvery { suggestExpenseCategoryUseCase(any(), any()) } returns null
+        categorySuggestionHandler = CategorySuggestionEventHandler(
+            suggestExpenseCategoryUseCase = suggestExpenseCategoryUseCase,
+            addExpenseOptionsUiMapper = addExpenseOptionsMapper
         )
 
         val updateExpenseUseCase = mockk<UpdateExpenseUseCase>(relaxed = true)
@@ -439,6 +462,7 @@ class AddExpenseViewModelTest {
             submitEventHandler = submitHandler,
             formEventHandler = formHandler,
             receiptAutoFillEventHandler = receiptAutoFillEventHandler,
+            categorySuggestionEventHandler = categorySuggestionHandler,
             strategyFactory = strategyFactory
         )
     }
@@ -474,6 +498,30 @@ class AddExpenseViewModelTest {
             // Verify payment methods are populated
             assertTrue(state.paymentMethods.isNotEmpty())
             assertNotNull(state.selectedPaymentMethod)
+        }
+
+        @Test
+        fun `defaults selectedPaymentMethod to DEBIT_CARD when no payment method history exists`() = runTest {
+            every { getGroupLastUsedPaymentMethodUseCase(any()) } returns flowOf(emptyList())
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(PaymentMethod.DEBIT_CARD.name, state.selectedPaymentMethod?.id)
+            assertEquals(PaymentMethod.CASH.name, state.paymentMethods.firstOrNull()?.id)
+        }
+
+        @Test
+        fun `defaults selectedPaymentMethod to CASH when CASH is most recently used`() = runTest {
+            every { getGroupLastUsedPaymentMethodUseCase(any()) } returns flowOf(listOf(PaymentMethod.CASH.name))
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            assertEquals(PaymentMethod.CASH.name, viewModel.uiState.value.selectedPaymentMethod?.id)
         }
 
         @Test
@@ -967,9 +1015,7 @@ class AddExpenseViewModelTest {
 
         @BeforeEach
         fun setUpNonCashDefault() {
-            // Set default payment method to CREDIT_CARD so these tests exercise the API rate path.
-            // CASH is the first entry in PaymentMethod.entries, so without this override the
-            // auto-selected default would be CASH, which locks the exchange rate section.
+            // Explicitly pin CREDIT_CARD as the MRU payment method for these exchange-rate tests.
             every { getGroupLastUsedPaymentMethodUseCase(any()) } returns flowOf(listOf("CREDIT_CARD"))
         }
 
@@ -1535,12 +1581,33 @@ class AddExpenseViewModelTest {
             advanceUntilIdle()
 
             assertEquals(
-                ExpenseCategory.entries.map { it.name },
+                ExpenseCategory.forContext(configEur.group.context).map { it.name },
                 viewModel.uiState.value.availableCategories.map { it.id }
             )
             assertEquals(
                 ExpenseCategory.ENTERTAINMENT.name,
                 viewModel.uiState.value.selectedCategory?.id
+            )
+        }
+
+        @Test
+        fun `ToggleShowAllCategories expands availableCategories to all ExpenseCategory entries`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.showAllCategories)
+            assertEquals(
+                ExpenseCategory.forContext(configEur.group.context).map { it.name },
+                viewModel.uiState.value.availableCategories.map { it.id }
+            )
+
+            viewModel.onEvent(AddExpenseUiEvent.ToggleShowAllCategories)
+
+            assertTrue(viewModel.uiState.value.showAllCategories)
+            assertEquals(
+                ExpenseCategory.entries.map { it.name },
+                viewModel.uiState.value.availableCategories.map { it.id }
             )
         }
     }
@@ -2243,6 +2310,7 @@ class AddExpenseViewModelTest {
 
             viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
             advanceUntilIdle()
+            viewModel.onEvent(AddExpenseUiEvent.PaymentMethodSelected(PaymentMethod.CASH.name))
             viewModel.onEvent(AddExpenseUiEvent.TitleChanged("Lunch"))
             viewModel.onEvent(AddExpenseUiEvent.CurrencySelected("USD"))
             viewModel.onEvent(AddExpenseUiEvent.SourceAmountChanged("50.00"))
@@ -2425,5 +2493,223 @@ class AddExpenseViewModelTest {
             assertTrue(emitted.contains(AddExpenseUiAction.OpenReceiptPickerSource))
             job.cancel()
         }
+    }
+
+    @Nested
+    inner class CategoryAutoSuggestion {
+
+        @Test
+        fun `typing title in add mode predicts category and subcategory before CATEGORY or REVIEW`() =
+            runTest {
+                coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+                coEvery {
+                    suggestExpenseCategoryUseCase("dinner at Bahn Mi 25", GroupContext.TRAVEL)
+                } returns CategorySuggestion(
+                    category = ExpenseCategory.FOOD,
+                    subcategory = ExpenseSubcategory.RESTAURANT
+                )
+
+                viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+                advanceUntilIdle()
+
+                viewModel.onEvent(AddExpenseUiEvent.TitleChanged("dinner at Bahn Mi 25"))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(ExpenseCategory.FOOD.name, state.selectedCategory?.id)
+                assertEquals(ExpenseSubcategory.RESTAURANT, state.selectedSubcategory?.subcategory)
+            }
+
+        @Test
+        fun `typing title in edit mode never calls SuggestExpenseCategoryUseCase and preserves existing category`() =
+            runTest {
+                val editViewModel = createViewModel(expenseId = "expense-1")
+                coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+
+                editViewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+                advanceUntilIdle()
+                editViewModel.onEvent(AddExpenseUiEvent.CategorySelected(ExpenseCategory.LODGING.name))
+                advanceUntilIdle()
+
+                editViewModel.onEvent(AddExpenseUiEvent.TitleChanged("dinner at Bahn Mi 25"))
+                advanceUntilIdle()
+
+                coVerify(exactly = 0) { suggestExpenseCategoryUseCase(any(), any()) }
+                assertEquals(ExpenseCategory.LODGING.name, editViewModel.uiState.value.selectedCategory?.id)
+            }
+
+        @Test
+        fun `rapid typing cancels stale prediction so only latest title prediction applies`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+            coEvery { suggestExpenseCategoryUseCase("din", GroupContext.TRAVEL) } coAnswers {
+                delay(500L)
+                CategorySuggestion(ExpenseCategory.OTHER, ExpenseSubcategory.TIPS_GRATUITIES)
+            }
+            coEvery { suggestExpenseCategoryUseCase("3 nights Chengdu hotel", GroupContext.TRAVEL) } returns
+                CategorySuggestion(ExpenseCategory.LODGING, ExpenseSubcategory.HOTEL)
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            viewModel.onEvent(AddExpenseUiEvent.TitleChanged("din"))
+            advanceTimeBy(100L)
+            viewModel.onEvent(AddExpenseUiEvent.TitleChanged("3 nights Chengdu hotel"))
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { suggestExpenseCategoryUseCase("din", any()) }
+            assertEquals(ExpenseCategory.LODGING.name, viewModel.uiState.value.selectedCategory?.id)
+            assertEquals(ExpenseSubcategory.HOTEL, viewModel.uiState.value.selectedSubcategory?.subcategory)
+        }
+
+        @Test
+        fun `manual CategorySelected locks out subsequent title predictions`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+            coEvery { suggestExpenseCategoryUseCase("hotel", GroupContext.TRAVEL) } returns
+                CategorySuggestion(ExpenseCategory.LODGING, ExpenseSubcategory.HOTEL)
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            viewModel.onEvent(AddExpenseUiEvent.CategorySelected(ExpenseCategory.FOOD.name))
+            viewModel.onEvent(AddExpenseUiEvent.TitleChanged("hotel"))
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { suggestExpenseCategoryUseCase("hotel", any()) }
+            assertEquals(ExpenseCategory.FOOD.name, viewModel.uiState.value.selectedCategory?.id)
+        }
+
+        @Test
+        fun `manual SubcategorySelected locks out subsequent title predictions`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+            coEvery { suggestExpenseCategoryUseCase("hotel", GroupContext.TRAVEL) } returns
+                CategorySuggestion(ExpenseCategory.LODGING, ExpenseSubcategory.HOTEL)
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            viewModel.onEvent(AddExpenseUiEvent.SubcategorySelected(ExpenseSubcategory.TIPS_GRATUITIES.name))
+            viewModel.onEvent(AddExpenseUiEvent.TitleChanged("hotel"))
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { suggestExpenseCategoryUseCase("hotel", any()) }
+            assertEquals(ExpenseCategory.OTHER.name, viewModel.uiState.value.selectedCategory?.id)
+            assertEquals(ExpenseSubcategory.TIPS_GRATUITIES, viewModel.uiState.value.selectedSubcategory?.subcategory)
+        }
+
+        @Test
+        fun `receipt AI auto-fill setting category prevents subsequent title edits from overwriting category`() =
+            runTest {
+                every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+                coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+                coEvery { extractReceiptFieldsUseCase(any()) } returns Result.success(
+                    ExtractedReceipt(
+                        amount = BigDecimal("50.00"),
+                        currency = "EUR",
+                        date = null,
+                        time = null,
+                        title = "Hotel Stay",
+                        vendor = "Hotel",
+                        category = ExpenseCategory.LODGING.name,
+                        paymentMethod = null,
+                        notes = null,
+                        source = ExtractionSource.AI_CORE,
+                        confidence = ExtractionConfidence.HIGH
+                    )
+                )
+                coEvery { suggestExpenseCategoryUseCase("dinner", GroupContext.TRAVEL) } returns
+                    CategorySuggestion(ExpenseCategory.FOOD, ExpenseSubcategory.RESTAURANT)
+
+                viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+                advanceUntilIdle()
+
+                viewModel.onEvent(AddExpenseUiEvent.ReceiptImageSelected("content://receipt.jpg"))
+                advanceUntilIdle()
+                assertEquals(ExpenseCategory.LODGING.name, viewModel.uiState.value.selectedCategory?.id)
+
+                viewModel.onEvent(AddExpenseUiEvent.TitleChanged("dinner"))
+                advanceUntilIdle()
+
+                coVerify(exactly = 0) { suggestExpenseCategoryUseCase("dinner", any()) }
+                assertEquals(ExpenseCategory.LODGING.name, viewModel.uiState.value.selectedCategory?.id)
+            }
+
+        @Test
+        fun `navigating to CATEGORY step cancels in-flight prediction and prevents late mutation`() = runTest {
+            val deferred = CompletableDeferred<CategorySuggestion?>()
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+            coEvery { suggestExpenseCategoryUseCase("hotel", GroupContext.TRAVEL) } coAnswers {
+                deferred.await()
+            }
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            viewModel.onEvent(AddExpenseUiEvent.TitleChanged("hotel"))
+            advanceTimeBy(250L)
+            runCurrent()
+
+            val steps = viewModel.uiState.value.applicableSteps
+            while (viewModel.uiState.value.currentStep != AddExpenseStep.CATEGORY &&
+                viewModel.uiState.value.currentStep != steps.last()
+            ) {
+                viewModel.onEvent(AddExpenseUiEvent.NextStep)
+            }
+            assertEquals(AddExpenseStep.CATEGORY, viewModel.uiState.value.currentStep)
+
+            deferred.complete(CategorySuggestion(ExpenseCategory.LODGING, ExpenseSubcategory.HOTEL))
+            advanceUntilIdle()
+
+            assertEquals(ExpenseCategory.OTHER.name, viewModel.uiState.value.selectedCategory?.id)
+            assertNull(viewModel.uiState.value.selectedSubcategory)
+        }
+
+        @Test
+        fun `skipping to REVIEW retains predicted category and subcategory in UiState`() = runTest {
+            coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+            coEvery { suggestExpenseCategoryUseCase("dinner at Bahn Mi 25", GroupContext.TRAVEL) } returns
+                CategorySuggestion(ExpenseCategory.FOOD, ExpenseSubcategory.RESTAURANT)
+
+            viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+            advanceUntilIdle()
+
+            viewModel.onEvent(AddExpenseUiEvent.TitleChanged("dinner at Bahn Mi 25"))
+            advanceUntilIdle()
+
+            viewModel.onEvent(AddExpenseUiEvent.NextStep) // PAYMENT_METHOD
+            viewModel.onEvent(AddExpenseUiEvent.NextStep) // AMOUNT
+            assertEquals(AddExpenseStep.AMOUNT, viewModel.uiState.value.currentStep)
+
+            viewModel.onEvent(AddExpenseUiEvent.SourceAmountChanged("20.00"))
+            advanceUntilIdle()
+
+            viewModel.onEvent(AddExpenseUiEvent.JumpToReview)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(AddExpenseStep.REVIEW, state.currentStep)
+            assertEquals(ExpenseCategory.FOOD.name, state.selectedCategory?.id)
+            assertEquals(ExpenseSubcategory.RESTAURANT, state.selectedSubcategory?.subcategory)
+        }
+
+        @Test
+        fun `cross-context prediction expands showAllCategories so predicted category and subcategory are visible`() =
+            runTest {
+                coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+                coEvery { suggestExpenseCategoryUseCase("cuota gimnasio", GroupContext.TRAVEL) } returns
+                    CategorySuggestion(ExpenseCategory.HEALTH_PERSONAL_CARE, ExpenseSubcategory.GYM_FITNESS)
+
+                viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+                advanceUntilIdle()
+
+                viewModel.onEvent(AddExpenseUiEvent.TitleChanged("cuota gimnasio"))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertTrue(state.showAllCategories)
+                assertEquals(ExpenseCategory.HEALTH_PERSONAL_CARE.name, state.selectedCategory?.id)
+                assertEquals(ExpenseSubcategory.GYM_FITNESS, state.selectedSubcategory?.subcategory)
+                assertTrue(state.availableCategories.any { it.id == ExpenseCategory.HEALTH_PERSONAL_CARE.name })
+                assertTrue(state.availableSubcategories.any { it.subcategory == ExpenseSubcategory.GYM_FITNESS })
+            }
     }
 }

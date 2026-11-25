@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.domain.model
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import java.time.LocalDateTime
@@ -17,5 +18,6 @@ data class Group(
     val syncStatus: SyncStatus = SyncStatus.SYNCED,
     val status: GroupStatus = GroupStatus.ACTIVE,
     val createdBy: String = "",
-    val lastArchiveEventId: String? = null
+    val lastArchiveEventId: String? = null,
+    val context: GroupContext = GroupContext.TRAVEL
 )

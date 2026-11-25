@@ -19,7 +19,8 @@ data class GroupDocument(
     val deletionRequested: Boolean = false,
     val deletedBy: String? = null,
     val deletedAt: Timestamp? = null,
-    val lastArchiveEventId: String? = null
+    val lastArchiveEventId: String? = null,
+    val context: String = "TRAVEL"
 ) {
     companion object {
         const val COLLECTION_PATH = "groups"

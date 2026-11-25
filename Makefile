@@ -109,10 +109,23 @@ doctor: ## Check that required files and tools are present
 		printf "  $(YELLOW)⚠️   Pre-commit hook not installed$(NC) — run 'make hooks'\n"; \
 	fi
 	@# ─── AI Taxonomy ──────────────────────────────────────────────
-	@if [ -f "AGENTS.md" ] && [ -f ".agents/rules/graphify.md" ]; then \
-		printf "  $(GREEN)✅  AGENTS.md and .agents/rules/graphify.md present$(NC)\n"; \
+	@if [ -f "AGENTS.md" ] && [ -f ".agents/rules/graphify.md" ] && [ -f ".agents/rules/github-operations.md" ]; then \
+		printf "  $(GREEN)✅  AGENTS.md, .agents/rules/graphify.md, and .agents/rules/github-operations.md present$(NC)\n"; \
 	else \
-		printf "  $(YELLOW)⚠️   AGENTS.md or .agents/rules/graphify.md missing$(NC)\n"; \
+		printf "  $(YELLOW)⚠️   AGENTS.md or .agents/rules/{graphify,github-operations}.md missing$(NC)\n"; \
+	fi
+	@if [ -f "AGENTS.md" ]; then \
+		AGENTS_BYTES=$$(wc -c < AGENTS.md | tr -d ' '); \
+		if [ "$$AGENTS_BYTES" -le 24000 ]; then \
+			printf "  $(GREEN)✅  AGENTS.md size OK ($$AGENTS_BYTES / 24000 bytes)$(NC)\n"; \
+		else \
+			printf "  $(RED)✗   AGENTS.md exceeds 24000-byte cap ($$AGENTS_BYTES bytes)$(NC)\n"; \
+		fi; \
+	fi
+	@if [ -f ".agents/hooks.json" ] && [ -x ".agents/scripts/github-mcp-guard.py" ]; then \
+		printf "  $(GREEN)✅  .agents/hooks.json and .agents/scripts/github-mcp-guard.py present$(NC)\n"; \
+	else \
+		printf "  $(YELLOW)⚠️   .agents/hooks.json or executable .agents/scripts/github-mcp-guard.py missing$(NC)\n"; \
 	fi
 	@if [ -d ".agents/skills" ]; then \
 		printf "  $(GREEN)✅  .agents/skills/ present$(NC)\n"; \
@@ -211,6 +224,9 @@ doctor: ## Check that required files and tools are present
 
 # ─── Quality gates (mirrors CI) ───────────────────────────────────────────────
 fast-check: andaluz-lenient remoteconfig-validate ## Fast incremental check using Gradle daemon & build cache (for rapid iteration)
+	@printf "$(YELLOW)⏳  Running GitHub MCP guard & AI config tests...$(NC)\n"
+	@python3 -m unittest scripts/test_github_mcp_guard.py -v
+	@python3 -m unittest scripts/test_merge_remote_config.py -v
 	@printf "$(YELLOW)⏳  Running fast incremental quality checks...$(NC)\n"
 	@$(FAST_GRADLEW) ktlintCheck detekt lintDebug :konsist-tests:test --continue
 	@$(FAST_GRADLEW) jacocoMergedReport --continue
@@ -218,6 +234,9 @@ fast-check: andaluz-lenient remoteconfig-validate ## Fast incremental check usin
 	@python3 scripts/check_coverage.py
 
 check: clean andaluz-lenient remoteconfig-validate ## Run all local quality gates from a 100% cold state before pushing (single-pass Gradle execution, mirrors CI)
+	@printf "$(YELLOW)⏳  Running GitHub MCP guard & AI config tests...$(NC)\n"
+	@python3 -m unittest scripts/test_github_mcp_guard.py -v
+	@python3 -m unittest scripts/test_merge_remote_config.py -v
 	@printf "$(YELLOW)⏳  Running full cold quality gates (single-pass Gradle execution)...$(NC)\n"
 	@$(GRADLEW) ktlintFormat ktlintCheck detekt lintDebug :konsist-tests:test --continue
 	@$(GRADLEW) jacocoMergedReport --continue
@@ -270,13 +289,14 @@ build: ## Compile all modules (debug)
 	@$(GRADLEW) compileDebugKotlin --continue
 
 # ─── Utility ──────────────────────────────────────────────────────────────────
-firebase: ## Deploy all configured resources to Firebase (functions, firestore, remoteconfig)
+firebase: ## Deploy all configured resources to Firebase (functions, firestore, storage, remoteconfig)
 	@if [ ! -x "functions/node_modules/.bin/tsc" ]; then \
 		printf "$(YELLOW)⏳  Installing Cloud Functions dependencies...$(NC)\n"; \
 		npm --prefix functions ci; \
 	fi
-	@printf "$(YELLOW)⏳  Deploying to Firebase...$(NC)\n"
-	@npx firebase-tools deploy
+	@printf "$(YELLOW)⏳  Deploying functions, firestore, and storage to Firebase...$(NC)\n"
+	@npx firebase-tools deploy --except remoteconfig
+	@./scripts/deploy-remote-config.sh deploy
 
 remoteconfig-validate: ## Validate consistency between in-app defaults and Remote Config template
 	@printf "$(YELLOW)⏳  Validating Remote Config template consistency...$(NC)\n"
@@ -285,8 +305,12 @@ remoteconfig-validate: ## Validate consistency between in-app defaults and Remot
 remoteconfig-diff: ## Diff local Remote Config template against live cloud configuration
 	@./scripts/deploy-remote-config.sh diff
 
-remoteconfig-deploy: ## Deploy Remote Config template to Firebase
-	@./scripts/deploy-remote-config.sh deploy
+remoteconfig-deploy: ## Deploy Remote Config template to Firebase (additive merge; set OVERWRITE=true to force full overwrite)
+	@if [ "$(OVERWRITE)" = "true" ]; then \
+		./scripts/deploy-remote-config.sh deploy --overwrite; \
+	else \
+		./scripts/deploy-remote-config.sh deploy; \
+	fi
 
 remoteconfig-rollback: ## Roll back Remote Config template to a previous version (usage: make remoteconfig-rollback VERSION=<version>)
 	@./scripts/deploy-remote-config.sh rollback $(VERSION)

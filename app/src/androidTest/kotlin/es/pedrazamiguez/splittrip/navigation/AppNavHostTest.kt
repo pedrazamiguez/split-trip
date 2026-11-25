@@ -15,6 +15,10 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationProvide
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.BRANDED_LOADING_SCREEN_TEST_TAG
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.security.APP_LOCK_GATE_TEST_TAG
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.APP_UPDATE_DOWNLOADING_BANNER_TEST_TAG
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.APP_UPDATE_DOWNLOADING_DETERMINATE_PROGRESS_TEST_TAG
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.APP_UPDATE_DOWNLOADING_INDETERMINATE_PROGRESS_TEST_TAG
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.APP_UPDATE_DOWNLOADING_PERCENT_TEST_TAG
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.APP_UPDATE_GATE_BUTTON_TEST_TAG
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.APP_UPDATE_GATE_TEST_TAG
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update.APP_UPDATE_READY_ACTION_TEST_TAG
@@ -837,5 +841,61 @@ class AppNavHostTest {
         composeRule.waitForIdle()
 
         coVerify(exactly = 1) { coordinator.completeFlexibleUpdate() }
+    }
+
+    @Test
+    fun showsAppUpdateDownloadingBanner_whenCoordinatorEmitsFlexibleUpdateDownloading() {
+        val navController = buildTestNavController()
+        val uiStateFlow = MutableStateFlow<AppUpdateUiState>(
+            AppUpdateUiState.FlexibleUpdateDownloading(
+                bytesDownloaded = 0L,
+                totalBytesToDownload = 0L
+            )
+        )
+        val coordinator = mockk<AppUpdateCoordinator>(relaxed = true).apply {
+            every { uiState } returns uiStateFlow
+            every { actions } returns MutableSharedFlow<AppUpdateCoordinatorAction>()
+            every { registerInstallListener() } returns {}
+        }
+
+        composeRule.setContent {
+            KoinApplication(application = {
+                modules(
+                    createAppNavHostTestModule(
+                        authStateFlow = flowOf(true),
+                        onboardingFlow = flowOf(true),
+                        appUpdateCoordinator = coordinator
+                    ),
+                    createFeatureTestModule()
+                )
+            }) {
+                SplitTripTheme {
+                    AppNavHost(navController = navController)
+                }
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNode(hasTestTag(APP_UPDATE_DOWNLOADING_BANNER_TEST_TAG)).assertIsDisplayed()
+        composeRule.onNode(hasTestTag(APP_UPDATE_DOWNLOADING_INDETERMINATE_PROGRESS_TEST_TAG))
+            .assertIsDisplayed()
+        composeRule.onNode(hasTestTag(APP_UPDATE_DOWNLOADING_PERCENT_TEST_TAG)).assertDoesNotExist()
+
+        uiStateFlow.value = AppUpdateUiState.FlexibleUpdateDownloading(
+            bytesDownloaded = 45L,
+            totalBytesToDownload = 100L
+        )
+        composeRule.waitForIdle()
+
+        composeRule.onNode(hasTestTag(APP_UPDATE_DOWNLOADING_DETERMINATE_PROGRESS_TEST_TAG))
+            .assertIsDisplayed()
+        composeRule.onNode(hasTestTag(APP_UPDATE_DOWNLOADING_PERCENT_TEST_TAG))
+            .assertIsDisplayed()
+
+        uiStateFlow.value = AppUpdateUiState.FlexibleUpdateReadyToInstall
+        composeRule.waitForIdle()
+
+        composeRule.onNode(hasTestTag(APP_UPDATE_READY_BANNER_TEST_TAG)).assertIsDisplayed()
     }
 }

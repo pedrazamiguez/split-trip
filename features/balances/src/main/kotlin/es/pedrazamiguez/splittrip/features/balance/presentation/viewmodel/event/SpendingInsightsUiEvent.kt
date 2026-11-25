@@ -20,4 +20,7 @@ sealed interface SpendingInsightsUiEvent {
     data class SelectExportCustomEndDate(val date: LocalDate) : SpendingInsightsUiEvent
     data class SelectExportFormat(val format: TripReportFormat) : SpendingInsightsUiEvent
     data object ConfirmExportReport : SpendingInsightsUiEvent
+    data object SaveExportReport : SpendingInsightsUiEvent
+    data class CompleteSaveExportedReport(val destinationUri: String) : SpendingInsightsUiEvent
+    data object CancelSaveExportedReport : SpendingInsightsUiEvent
 }

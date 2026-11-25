@@ -82,6 +82,14 @@ class ReceiptAutoFillEventHandlerTest {
         id = "CASH",
         displayText = "Cash"
     )
+    private val debitCardPaymentMethod = PaymentMethodUiModel(
+        id = "DEBIT_CARD",
+        displayText = "Debit Card"
+    )
+    private val creditCardPaymentMethod = PaymentMethodUiModel(
+        id = "CREDIT_CARD",
+        displayText = "Credit Card"
+    )
 
     @BeforeEach
     fun setUp() {
@@ -571,6 +579,36 @@ class ReceiptAutoFillEventHandlerTest {
         }
 
         @Test
+        fun `tryMergeCategory selects valid category outside current availableCategories`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    title = "Electric Bill",
+                    amount = BigDecimal("85.00"),
+                    currency = "EUR",
+                    date = LocalDate.of(2025, 1, 1),
+                    time = null,
+                    vendor = "Iberdrola",
+                    category = "HOME",
+                    paymentMethod = null,
+                    notes = null,
+                    confidence = ExtractionConfidence.HIGH,
+                    source = ExtractionSource.AI_CORE
+                )
+            )
+            every { formattingHelper.formatCentsValue(8500L, 2) } returns "85.00"
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals("HOME", capturedCategorySelections.single())
+            assertTrue(
+                uiState.value.autoFillBanner?.fields?.contains(
+                    UiText.StringResource(R.string.add_expense_category_title)
+                ) == true
+            )
+        }
+
+        @Test
         fun `does not extract fields when AI mode is disabled`() = runTest {
             every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
             uiState.value = uiState.value.copy(isAiModeActive = false)
@@ -767,6 +805,106 @@ class ReceiptAutoFillEventHandlerTest {
 
             assertEquals(AddExpenseStep.TITLE, uiState.value.currentStep)
         }
+
+        @Test
+        fun `overwrites unedited DEBIT_CARD default with extracted method when CASH is first`() =
+            runTest {
+                every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+                coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                    ExtractedReceipt(
+                        title = null,
+                        amount = null,
+                        currency = null,
+                        date = null,
+                        paymentMethod = "CASH",
+                        confidence = ExtractionConfidence.HIGH,
+                        source = ExtractionSource.AI_CORE
+                    )
+                )
+                uiState.value = uiState.value.copy(
+                    paymentMethods = persistentListOf(
+                        cashPaymentMethod,
+                        debitCardPaymentMethod,
+                        creditCardPaymentMethod
+                    ),
+                    selectedPaymentMethod = debitCardPaymentMethod,
+                    initialFormSnapshot = null
+                )
+
+                handler.handleReceiptAttached(attachment)
+
+                assertEquals(listOf("CASH"), capturedPaymentMethodSelections)
+                assertTrue(
+                    uiState.value.autoFillBanner?.fields?.contains(
+                        UiText.StringResource(R.string.expense_field_payment_method)
+                    ) == true
+                )
+            }
+
+        @Test
+        fun `overwrites unedited MRU payment method captured in initialFormSnapshot with extracted payment method`() =
+            runTest {
+                every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+                coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                    ExtractedReceipt(
+                        title = null,
+                        amount = null,
+                        currency = null,
+                        date = null,
+                        paymentMethod = "CASH",
+                        confidence = ExtractionConfidence.HIGH,
+                        source = ExtractionSource.AI_CORE
+                    )
+                )
+                val initialState = uiState.value.copy(
+                    paymentMethods = persistentListOf(
+                        creditCardPaymentMethod,
+                        cashPaymentMethod,
+                        debitCardPaymentMethod
+                    ),
+                    selectedPaymentMethod = creditCardPaymentMethod
+                )
+                uiState.value = initialState.copy(
+                    initialFormSnapshot = initialState.toFormSnapshot()
+                )
+
+                handler.handleReceiptAttached(attachment)
+
+                assertEquals(listOf("CASH"), capturedPaymentMethodSelections)
+            }
+
+        @Test
+        fun `does not overwrite payment method if user changed from DEBIT_CARD initial default to CASH before scan`() =
+            runTest {
+                every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+                coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                    ExtractedReceipt(
+                        title = null,
+                        amount = null,
+                        currency = null,
+                        date = null,
+                        paymentMethod = "DEBIT_CARD",
+                        confidence = ExtractionConfidence.HIGH,
+                        source = ExtractionSource.AI_CORE
+                    )
+                )
+                val initialState = uiState.value.copy(
+                    paymentMethods = persistentListOf(
+                        cashPaymentMethod,
+                        debitCardPaymentMethod,
+                        creditCardPaymentMethod
+                    ),
+                    selectedPaymentMethod = debitCardPaymentMethod
+                )
+                uiState.value = initialState.copy(
+                    initialFormSnapshot = initialState.toFormSnapshot(),
+                    selectedPaymentMethod = cashPaymentMethod
+                )
+
+                handler.handleReceiptAttached(attachment)
+
+                assertTrue(capturedPaymentMethodSelections.isEmpty())
+            }
     }
 
     @Nested

@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.DateRangePreset
 import java.time.LocalDate
@@ -10,6 +12,8 @@ import kotlinx.collections.immutable.persistentListOf
 data class ExpensesFilterUiState(
     val draftCriteria: ExpenseFilterCriteria = ExpenseFilterCriteria(),
     val availableMembers: ImmutableList<MemberOptionUiModel> = persistentListOf(),
+    val availableCategories: ImmutableList<ExpenseCategory> = persistentListOf(),
+    val availableSubcategories: ImmutableList<ExpenseSubcategory> = persistentListOf(),
     val matchingExpensesCount: Int = 0,
     val totalExpensesCount: Int = 0,
     val isLoading: Boolean = false,
@@ -24,4 +28,7 @@ data class ExpensesFilterUiState(
 ) {
     val canReset: Boolean
         get() = draftCriteria.activeFilterCount > 0
+
+    val hasVisibleCategories: Boolean
+        get() = availableCategories.isNotEmpty() || draftCriteria.selectedCategories.isNotEmpty()
 }

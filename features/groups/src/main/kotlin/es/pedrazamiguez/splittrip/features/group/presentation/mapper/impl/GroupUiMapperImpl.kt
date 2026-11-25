@@ -82,7 +82,8 @@ class GroupUiMapperImpl(
                 memberOverflowCount = overflowCount,
                 members = memberUiModels,
                 status = status,
-                createdBy = createdBy
+                createdBy = createdBy,
+                context = context
             )
         }
 

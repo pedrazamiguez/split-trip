@@ -10,6 +10,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toSt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
@@ -26,6 +28,7 @@ import io.mockk.verify
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -656,6 +659,95 @@ class AddExpenseOptionsUiMapperTest {
             assertEquals(PayerType.GROUP, result[0].scope)
             assertEquals(PayerType.USER, result[1].scope)
             assertEquals(PayerType.SUBUNIT, result[2].scope)
+        }
+    }
+
+    @Nested
+    inner class ContextAwareCategoryMapping {
+
+        @Test
+        fun `mapCategoriesForContext filters to TRAVEL categories when showAll is false`() {
+            val result = mapper.mapCategoriesForContext(GroupContext.TRAVEL, showAll = false)
+            assertEquals(ExpenseCategory.forContext(GroupContext.TRAVEL).map { it.name }, result.map { it.id })
+        }
+
+        @Test
+        fun `mapCategoriesForContext filters to EVERYDAY categories when showAll is false`() {
+            val result = mapper.mapCategoriesForContext(GroupContext.EVERYDAY, showAll = false)
+            assertEquals(ExpenseCategory.forContext(GroupContext.EVERYDAY).map { it.name }, result.map { it.id })
+        }
+
+        @Test
+        fun `mapCategoriesForContext returns all categories when showAll is true`() {
+            val result = mapper.mapCategoriesForContext(GroupContext.TRAVEL, showAll = true)
+            assertEquals(ExpenseCategory.entries.map { it.name }, result.map { it.id })
+        }
+
+        @Test
+        fun `mapCategoriesForContext keeps alwaysInclude category visible when showAll is false`() {
+            val result = mapper.mapCategoriesForContext(
+                context = GroupContext.TRAVEL,
+                showAll = false,
+                alwaysInclude = ExpenseCategory.HOME
+            )
+            assertTrue(result.any { it.id == ExpenseCategory.HOME.name })
+            assertEquals(ExpenseCategory.forContext(GroupContext.TRAVEL).size + 1, result.size)
+        }
+
+        @Test
+        fun `mapSubcategories filters by GroupContext when showAll is false and returns all when showAll is true`() {
+            val filtered = mapper.mapSubcategories(
+                category = ExpenseCategory.TRANSPORT,
+                context = GroupContext.EVERYDAY,
+                showAll = false
+            )
+            val all = mapper.mapSubcategories(
+                category = ExpenseCategory.TRANSPORT,
+                context = GroupContext.EVERYDAY,
+                showAll = true
+            )
+
+            assertEquals(
+                ExpenseSubcategory.forCategory(ExpenseCategory.TRANSPORT, GroupContext.EVERYDAY),
+                filtered.map { it.subcategory }
+            )
+            assertEquals(
+                ExpenseSubcategory.forCategory(ExpenseCategory.TRANSPORT),
+                all.map { it.subcategory }
+            )
+        }
+
+        @Test
+        fun `resolveCategorySelectionForEdit enables showAllCategories when outside groupContext`() {
+            val categoryOutside = mapper.resolveCategorySelectionForEdit(
+                category = ExpenseCategory.HOME,
+                subcategory = ExpenseSubcategory.RENT_MORTGAGE,
+                groupContext = GroupContext.TRAVEL
+            )
+            assertTrue(categoryOutside.showAllCategories)
+            assertEquals(ExpenseCategory.HOME.name, categoryOutside.selectedCategory?.id)
+            assertEquals(ExpenseSubcategory.RENT_MORTGAGE, categoryOutside.selectedSubcategory?.subcategory)
+
+            val subcategoryOutside = mapper.resolveCategorySelectionForEdit(
+                category = ExpenseCategory.TRANSPORT,
+                subcategory = ExpenseSubcategory.CAR_REPAIR_MAINTENANCE,
+                groupContext = GroupContext.TRAVEL
+            )
+            assertTrue(subcategoryOutside.showAllCategories)
+            assertEquals(ExpenseCategory.TRANSPORT.name, subcategoryOutside.selectedCategory?.id)
+            assertEquals(ExpenseSubcategory.CAR_REPAIR_MAINTENANCE, subcategoryOutside.selectedSubcategory?.subcategory)
+        }
+
+        @Test
+        fun `resolveCategorySelectionForEdit keeps showAllCategories false when inside groupContext`() {
+            val result = mapper.resolveCategorySelectionForEdit(
+                category = ExpenseCategory.FOOD,
+                subcategory = ExpenseSubcategory.RESTAURANT,
+                groupContext = GroupContext.TRAVEL
+            )
+            assertFalse(result.showAllCategories)
+            assertEquals(ExpenseCategory.FOOD.name, result.selectedCategory?.id)
+            assertEquals(ExpenseSubcategory.RESTAURANT, result.selectedSubcategory?.subcategory)
         }
     }
 }

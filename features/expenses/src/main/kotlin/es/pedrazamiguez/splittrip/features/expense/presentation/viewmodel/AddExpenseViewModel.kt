@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.AddOnEventHandler
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.CategorySuggestionEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.ConfigEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.CurrencyEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.FormEventHandler
@@ -16,6 +17,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handle
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SplitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubmitEventHandler
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler.SubunitSplitEventHandler
+import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.strategy.ExpenseFlowStrategyFactory
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -39,6 +41,7 @@ class AddExpenseViewModel(
     private val submitEventHandler: SubmitEventHandler,
     private val formEventHandler: FormEventHandler,
     private val receiptAutoFillEventHandler: ReceiptAutoFillEventHandler,
+    private val categorySuggestionEventHandler: CategorySuggestionEventHandler,
     private val strategyFactory: ExpenseFlowStrategyFactory
 ) : ViewModel() {
 
@@ -68,6 +71,7 @@ class AddExpenseViewModel(
         submitEventHandler.bind(_uiState, _actions, viewModelScope)
         formEventHandler.bind(_uiState, _actions, viewModelScope)
         receiptAutoFillEventHandler.bind(_uiState, _actions, viewModelScope)
+        categorySuggestionEventHandler.bind(_uiState, _actions, viewModelScope)
         receiptAutoFillEventHandler.startObservingAiQuota()
         formEventHandler.startObservingManualReceiptQuota()
 
@@ -111,6 +115,9 @@ class AddExpenseViewModel(
 
                 is PostConfigAction.ClearEntitySplits ->
                     subunitSplitEventHandler.clearEntitySplits()
+
+                is PostConfigAction.ResetCategorySuggestion ->
+                    categorySuggestionEventHandler.reset()
             }
         }
 
@@ -278,8 +285,10 @@ class AddExpenseViewModel(
             }
 
             // ── Simple form field updates (delegated to FormEventHandler) ──
-            is AddExpenseUiEvent.TitleChanged ->
+            is AddExpenseUiEvent.TitleChanged -> {
                 formEventHandler.handleTitleChanged(event.title)
+                categorySuggestionEventHandler.handleTitleChanged(event.title)
+            }
 
             is AddExpenseUiEvent.SourceAmountChanged ->
                 formEventHandler.handleSourceAmountChanged(event.amount)
@@ -293,11 +302,18 @@ class AddExpenseViewModel(
             is AddExpenseUiEvent.ContributionScopeSelected ->
                 formEventHandler.handleContributionScopeSelected(event.scope, event.subunitId)
 
-            is AddExpenseUiEvent.CategorySelected ->
+            is AddExpenseUiEvent.CategorySelected -> {
                 formEventHandler.handleCategorySelected(event.categoryId)
+                categorySuggestionEventHandler.handleManualCategoryOverride()
+            }
 
-            is AddExpenseUiEvent.SubcategorySelected ->
+            is AddExpenseUiEvent.ToggleShowAllCategories ->
+                formEventHandler.handleToggleShowAllCategories()
+
+            is AddExpenseUiEvent.SubcategorySelected -> {
                 formEventHandler.handleSubcategorySelected(event.subcategoryId)
+                categorySuggestionEventHandler.handleManualCategoryOverride()
+            }
 
             is AddExpenseUiEvent.VendorChanged ->
                 formEventHandler.handleVendorChanged(event.vendor)
@@ -452,10 +468,20 @@ class AddExpenseViewModel(
         currencyEventHandler.fetchCashRate()
     }
 
+    private fun transitionToStep(
+        step: AddExpenseStep,
+        jumpedFromStep: AddExpenseStep? = _uiState.value.jumpedFromStep
+    ) {
+        _uiState.update { it.copy(currentStep = step, jumpedFromStep = jumpedFromStep) }
+        if (step == AddExpenseStep.CATEGORY) {
+            categorySuggestionEventHandler.handleCategoryStepReached()
+        }
+    }
+
     private fun navigateNext() {
         val state = _uiState.value
         val next = wizardNavigator.navigateNext(state.currentStep, state.applicableSteps) ?: return
-        _uiState.update { it.copy(currentStep = next) }
+        transitionToStep(step = next)
     }
 
     /**
@@ -472,7 +498,7 @@ class AddExpenseViewModel(
             applicableSteps = state.applicableSteps,
             allowForwardJumps = state.isEditMode
         ) ?: return
-        _uiState.update { it.copy(currentStep = target, jumpedFromStep = null) }
+        transitionToStep(step = target, jumpedFromStep = null)
     }
 
     /**
@@ -487,7 +513,7 @@ class AddExpenseViewModel(
             applicableSteps = state.applicableSteps,
             allowSkip = state.canSkipToReview
         ) ?: return
-        _uiState.update { it.copy(currentStep = reviewStep, jumpedFromStep = state.currentStep) }
+        transitionToStep(step = reviewStep, jumpedFromStep = state.currentStep)
     }
 
     private fun navigatePrevious() {
@@ -500,7 +526,7 @@ class AddExpenseViewModel(
             )
         ) {
             is WizardNavigator.NavigationResult.WithStep ->
-                _uiState.update { it.copy(currentStep = result.step, jumpedFromStep = null) }
+                transitionToStep(step = result.step, jumpedFromStep = null)
 
             WizardNavigator.NavigationResult.ExitWizard -> {
                 if (_uiState.value.isDirty) {

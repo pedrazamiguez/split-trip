@@ -8,17 +8,14 @@ import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.model.PurchaseStatus
+import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
 import es.pedrazamiguez.splittrip.domain.service.BillingService
-import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.ReconcileSubscriptionEntitlementsUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.SubscriptionsUiMapper
+import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionPlanUiModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.action.SubscriptionsUiAction
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.event.SubscriptionsUiEvent
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.state.SubscriptionsUiState
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,12 +33,7 @@ private const val GOOGLE_PLAY_SUBSCRIPTIONS_URL =
 
 @Suppress("TooManyFunctions")
 class SubscriptionsViewModel(
-    private val getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase,
-    private val observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase,
-    private val observeProAllowlistAccessUseCase: ObserveProAllowlistAccessUseCase,
-    private val updateUserTierUseCase: UpdateUserTierUseCase,
-    private val isUserAnonymousUseCase: IsUserAnonymousUseCase,
-    private val reconcileSubscriptionEntitlementsUseCase: ReconcileSubscriptionEntitlementsUseCase,
+    private val subscriptionsUseCases: SubscriptionsUseCases,
     private val subscriptionsUiMapper: SubscriptionsUiMapper,
     private val billingService: BillingService,
     private val telemetryTracker: TelemetryTracker,
@@ -67,8 +59,8 @@ class SubscriptionsViewModel(
         viewModelScope.launch {
             var wasAllowlistedPro = false
             combine(
-                observeCurrentUserProfileUseCase(),
-                observeProAllowlistAccessUseCase()
+                subscriptionsUseCases.observeCurrentUserProfileUseCase(),
+                subscriptionsUseCases.observeProAllowlistAccessUseCase()
             ) { user, isAllowlistedPro ->
                 user to isAllowlistedPro
             }.collect { (user, isAllowlistedPro) ->
@@ -76,7 +68,7 @@ class SubscriptionsViewModel(
                     val effectiveTier = if (isAllowlistedPro) SubscriptionTier.PRO else user.tier
                     val selectedInterval = _uiState.value.selectedInterval
                     val products = billingService.subscriptionProducts.value
-                    val plans = subscriptionsUiMapper.mapPlans(
+                    val plans = mapPlansForDevice(
                         currentTier = effectiveTier,
                         selectedInterval = selectedInterval,
                         products = products
@@ -92,7 +84,7 @@ class SubscriptionsViewModel(
                 val wasRevoked = wasAllowlistedPro && !isAllowlistedPro
                 wasAllowlistedPro = isAllowlistedPro
                 if (wasRevoked) {
-                    reconcileSubscriptionEntitlementsUseCase()
+                    subscriptionsUseCases.reconcileSubscriptionEntitlementsUseCase()
                         .onFailure { error ->
                             Timber.w(error, "Best-effort entitlement reconciliation failed on allowlist revocation")
                         }
@@ -106,7 +98,7 @@ class SubscriptionsViewModel(
             billingService.subscriptionProducts.collect { products ->
                 val currentTier = _uiState.value.currentTier
                 val selectedInterval = _uiState.value.selectedInterval
-                val plans = subscriptionsUiMapper.mapPlans(
+                val plans = mapPlansForDevice(
                     currentTier = currentTier,
                     selectedInterval = selectedInterval,
                     products = products
@@ -176,9 +168,9 @@ class SubscriptionsViewModel(
         billingInterval: BillingInterval
     ) {
         try {
-            val user = getCurrentUserProfileUseCase()
+            val user = subscriptionsUseCases.getCurrentUserProfileUseCase()
             if (user != null) {
-                updateUserTierUseCase(user.userId, SubscriptionTier.PRO)
+                subscriptionsUseCases.updateUserTierUseCase(user.userId, SubscriptionTier.PRO)
             }
             telemetryTracker.trackEvent(
                 MonetizationTelemetry.Event.PURCHASE_COMPLETED,
@@ -241,7 +233,7 @@ class SubscriptionsViewModel(
 
     private fun loadSubscriptions() {
         viewModelScope.launch {
-            val isAnon = isUserAnonymousUseCase().firstOrNull() ?: false
+            val isAnon = subscriptionsUseCases.isUserAnonymousUseCase().firstOrNull() ?: false
             if (isAnon) {
                 _uiState.update { it.copy(isLoading = false, isAnonymous = true) }
                 _actions.send(SubscriptionsUiAction.NavigateToAccountStatus)
@@ -258,12 +250,12 @@ class SubscriptionsViewModel(
                     val message = subscriptionsUiMapper.formatSubscriptionsUnavailableMessage()
                     _actions.send(SubscriptionsUiAction.ShowTopPill(message))
                 }
-                reconcileSubscriptionEntitlementsUseCase()
+                subscriptionsUseCases.reconcileSubscriptionEntitlementsUseCase()
                     .onFailure { error ->
                         Timber.w(error, "Best-effort entitlement reconciliation failed on subscriptions load")
                     }
-                val currentUser = getCurrentUserProfileUseCase()
-                val isAllowlistedPro = observeProAllowlistAccessUseCase().firstOrNull() ?: false
+                val currentUser = subscriptionsUseCases.getCurrentUserProfileUseCase()
+                val isAllowlistedPro = subscriptionsUseCases.observeProAllowlistAccessUseCase().firstOrNull() ?: false
                 val currentTier = if (isAllowlistedPro) {
                     SubscriptionTier.PRO
                 } else {
@@ -271,7 +263,7 @@ class SubscriptionsViewModel(
                 }
                 val selectedInterval = _uiState.value.selectedInterval
                 val products = billingService.subscriptionProducts.value
-                val plans = subscriptionsUiMapper.mapPlans(
+                val plans = mapPlansForDevice(
                     currentTier = currentTier,
                     selectedInterval = selectedInterval,
                     products = products
@@ -303,7 +295,7 @@ class SubscriptionsViewModel(
         val previousInterval = _uiState.value.selectedInterval
         val currentTier = _uiState.value.currentTier
         val products = billingService.subscriptionProducts.value
-        val updatedPlans = subscriptionsUiMapper.mapPlans(
+        val updatedPlans = mapPlansForDevice(
             currentTier = currentTier,
             selectedInterval = interval,
             products = products
@@ -444,9 +436,9 @@ class SubscriptionsViewModel(
 
     private suspend fun processRestoreSuccess(hasActivePro: Boolean) {
         if (hasActivePro) {
-            val user = getCurrentUserProfileUseCase()
+            val user = subscriptionsUseCases.getCurrentUserProfileUseCase()
             if (user != null) {
-                updateUserTierUseCase(user.userId, SubscriptionTier.PRO)
+                subscriptionsUseCases.updateUserTierUseCase(user.userId, SubscriptionTier.PRO)
             }
             telemetryTracker.trackEvent(
                 MonetizationTelemetry.Event.RESTORE_PURCHASES_SUCCEEDED,
@@ -455,7 +447,7 @@ class SubscriptionsViewModel(
             val message = subscriptionsUiMapper.formatRestorePurchasesSuccessMessage()
             _actions.send(SubscriptionsUiAction.ShowTopPill(message))
         } else {
-            reconcileSubscriptionEntitlementsUseCase()
+            subscriptionsUseCases.reconcileSubscriptionEntitlementsUseCase()
                 .onFailure { error ->
                     Timber.w(error, "Best-effort entitlement reconciliation failed during restore")
                 }
@@ -464,6 +456,17 @@ class SubscriptionsViewModel(
             _actions.send(SubscriptionsUiAction.ShowTopPill(message))
         }
     }
+
+    private fun mapPlansForDevice(
+        currentTier: SubscriptionTier,
+        selectedInterval: BillingInterval,
+        products: List<SubscriptionProduct>
+    ): ImmutableList<SubscriptionPlanUiModel> = subscriptionsUiMapper.mapPlans(
+        currentTier = currentTier,
+        selectedInterval = selectedInterval,
+        products = products,
+        extractionCapability = subscriptionsUseCases.getReceiptExtractionCapabilityUseCase()
+    )
 
     private fun trackPaywallViewedIfNeeded(currentTier: SubscriptionTier) {
         if (hasTrackedPaywallView) return

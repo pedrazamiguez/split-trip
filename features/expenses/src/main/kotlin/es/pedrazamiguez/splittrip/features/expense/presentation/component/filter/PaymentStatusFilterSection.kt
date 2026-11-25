@@ -5,17 +5,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.filterChipLeadingIcon
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.features.expense.presentation.extensions.toStringRes
 
@@ -37,7 +36,10 @@ fun PaymentStatusFilterSection(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
-        CardSectionLabelText(text = stringResource(R.string.expenses_filter_section_payment_status))
+        FilterSectionHeader(
+            title = stringResource(R.string.expenses_filter_section_payment_status),
+            selectedCount = criteria.selectedPaymentStatuses.size
+        )
 
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
@@ -52,12 +54,10 @@ fun PaymentStatusFilterSection(
                     onClick = {
                         onCriteriaChange(togglePaymentStatus(criteria, status))
                     },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = status.toIconVector(),
-                            contentDescription = null
-                        )
-                    }
+                    leadingIcon = filterChipLeadingIcon(
+                        isSelected = isSelected,
+                        unselectedIcon = status.toIconVector()
+                    )
                 )
             }
         }

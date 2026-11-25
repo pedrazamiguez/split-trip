@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -23,5 +24,7 @@ data class GroupEntity(
     val syncStatus: String = "SYNCED",
     val status: String = "ACTIVE",
     val createdBy: String = "",
-    val lastArchiveEventId: String? = null
+    val lastArchiveEventId: String? = null,
+    @ColumnInfo(defaultValue = "TRAVEL")
+    val context: String = "TRAVEL"
 )

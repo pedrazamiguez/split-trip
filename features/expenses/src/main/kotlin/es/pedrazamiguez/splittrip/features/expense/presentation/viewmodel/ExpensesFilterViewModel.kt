@@ -87,6 +87,8 @@ class ExpensesFilterViewModel(
                     persistentListOf()
                 }
 
+                val availableCategories = expensesFilterUiMapper.extractAvailableCategories(expenses)
+                val availableSubcategories = expensesFilterUiMapper.extractAvailableSubcategories(expenses)
                 val dateBounds = expensesFilterUiMapper.extractDateBounds(expenses)
                 val formattedStartDate = expensesFilterUiMapper.formatFilterDate(draft.startDate)
                 val formattedEndDate = expensesFilterUiMapper.formatFilterDate(draft.endDate)
@@ -95,6 +97,8 @@ class ExpensesFilterViewModel(
                 ExpensesFilterUiState(
                     draftCriteria = draft,
                     availableMembers = availableMembers,
+                    availableCategories = availableCategories,
+                    availableSubcategories = availableSubcategories,
                     matchingExpensesCount = matchingExpenses.size,
                     totalExpensesCount = totalExpensesCount,
                     isLoading = false,

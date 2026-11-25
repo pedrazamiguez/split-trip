@@ -17,7 +17,9 @@ import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.InfoCircle
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
+import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionFeatureStatus
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionFeatureUiModel
 
 private val FEATURE_ICON_SIZE = 18.dp
@@ -28,24 +30,32 @@ fun PlanFeatureItem(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val icon = if (feature.isIncluded) TablerIcons.Outline.Check else TablerIcons.Outline.X
-    val iconColor = if (feature.isIncluded) {
-        if (feature.isHighlighted) {
+    val icon = when (feature.status) {
+        SubscriptionFeatureStatus.INCLUDED -> TablerIcons.Outline.Check
+        SubscriptionFeatureStatus.EXCLUDED -> TablerIcons.Outline.X
+        SubscriptionFeatureStatus.UNAVAILABLE_ON_DEVICE -> TablerIcons.Outline.InfoCircle
+    }
+    val iconColor = when (feature.status) {
+        SubscriptionFeatureStatus.INCLUDED -> if (feature.isHighlighted) {
             MaterialTheme.colorScheme.primary
         } else {
             MaterialTheme.colorScheme.secondary
         }
-    } else {
-        MaterialTheme.colorScheme.outline
+        SubscriptionFeatureStatus.EXCLUDED -> MaterialTheme.colorScheme.outline
+        SubscriptionFeatureStatus.UNAVAILABLE_ON_DEVICE -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    val textColor = if (feature.isIncluded) {
-        MaterialTheme.colorScheme.onSurface
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+    val textColor = when (feature.status) {
+        SubscriptionFeatureStatus.INCLUDED -> MaterialTheme.colorScheme.onSurface
+        SubscriptionFeatureStatus.EXCLUDED -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        SubscriptionFeatureStatus.UNAVAILABLE_ON_DEVICE -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    val fontWeight = if (feature.isHighlighted) FontWeight.SemiBold else FontWeight.Normal
+    val fontWeight = if (feature.status == SubscriptionFeatureStatus.INCLUDED && feature.isHighlighted) {
+        FontWeight.SemiBold
+    } else {
+        FontWeight.Normal
+    }
 
     Row(
         modifier = modifier.fillMaxWidth(),

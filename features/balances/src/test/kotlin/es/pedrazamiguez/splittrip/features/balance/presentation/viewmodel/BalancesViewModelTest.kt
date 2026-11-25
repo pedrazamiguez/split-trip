@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
@@ -1065,6 +1066,61 @@ class BalancesViewModelTest {
                 verify { tripReportExportEventHandler.handleConfirmExport(testGroupId) }
                 assertTrue(emittedActions.any { it is BalancesUiAction.ShareExportedReport })
                 collectJob.cancel()
+            }
+
+        @Test
+        fun `SaveExportReport delegates to handler and forwards picker and save success actions`() =
+            runTest(testDispatcher) {
+                viewModel = createViewModel()
+                val emittedActions = mutableListOf<BalancesUiAction>()
+                val collectJob = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                    viewModel.actions.collect { emittedActions.add(it) }
+                }
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                viewModel.onEvent(BalancesUiEvent.SaveExportReport)
+                boundExportActionEmitter?.invoke(
+                    TripReportExportAction.LaunchSaveDocumentPicker(
+                        fileName = "statement.pdf",
+                        mimeType = "application/pdf"
+                    )
+                )
+                boundExportActionEmitter?.invoke(
+                    TripReportExportAction.ShowExportSaveSuccess(UiText.DynamicString("Saved statement.pdf"))
+                )
+                advanceUntilIdle()
+
+                verify { tripReportExportEventHandler.handleSaveExport(testGroupId) }
+                assertTrue(
+                    emittedActions.any {
+                        it == BalancesUiAction.LaunchSaveDocumentPicker(
+                            fileName = "statement.pdf",
+                            mimeType = "application/pdf"
+                        )
+                    }
+                )
+                assertTrue(
+                    emittedActions.any {
+                        it == BalancesUiAction.ShowExportSaveSuccess(UiText.DynamicString("Saved statement.pdf"))
+                    }
+                )
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `CompleteSaveExportedReport and CancelSaveExportedReport delegate to tripReportExportEventHandler`() =
+            runTest(testDispatcher) {
+                viewModel = createViewModel()
+                viewModel.setSelectedGroup(testGroupId)
+                advanceUntilIdle()
+
+                viewModel.onEvent(BalancesUiEvent.CompleteSaveExportedReport("content://documents/saved.pdf"))
+                viewModel.onEvent(BalancesUiEvent.CancelSaveExportedReport)
+                advanceUntilIdle()
+
+                verify { tripReportExportEventHandler.handleCompleteSaveExport("content://documents/saved.pdf") }
+                verify { tripReportExportEventHandler.handleCancelSaveExport() }
             }
     }
 

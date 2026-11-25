@@ -1,12 +1,15 @@
 package es.pedrazamiguez.splittrip
 
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -56,10 +59,20 @@ class MainActivity : AppCompatActivity() {
             val getAppThemeUseCase = remember(koin) { koin.get<GetAppThemeUseCase>() }
             val themeState by getAppThemeUseCase().collectAsStateWithLifecycle(initialValue = AppTheme.SYSTEM.code)
 
-            val darkTheme = when (AppTheme.fromCode(themeState)) {
-                AppTheme.SYSTEM -> isSystemInDarkTheme()
-                AppTheme.LIGHT -> false
-                AppTheme.DARK -> true
+            val darkTheme = resolveDarkTheme(themeState, isSystemInDarkTheme())
+
+            DisposableEffect(darkTheme) {
+                enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.auto(
+                        lightScrim = Color.TRANSPARENT,
+                        darkScrim = Color.TRANSPARENT
+                    ) { darkTheme },
+                    navigationBarStyle = SystemBarStyle.auto(
+                        lightScrim = DefaultLightNavScrim,
+                        darkScrim = DefaultDarkNavScrim
+                    ) { darkTheme }
+                )
+                onDispose {}
             }
 
             SplitTripTheme(darkTheme = darkTheme) {
@@ -110,6 +123,24 @@ class MainActivity : AppCompatActivity() {
             Uri.parse(it)
         }
     }
-}
 
-private const val EXTRA_DEEP_LINK = "deepLink"
+    private companion object {
+        const val EXTRA_DEEP_LINK = "deepLink"
+        const val NAV_SCRIM_LIGHT_ALPHA = 0xE6
+        const val NAV_SCRIM_DARK_ALPHA = 0x80
+        const val NAV_SCRIM_DARK_CHANNEL = 0x1B
+        const val COLOR_CHANNEL_MAX = 0xFF
+        val DefaultLightNavScrim = Color.argb(
+            NAV_SCRIM_LIGHT_ALPHA,
+            COLOR_CHANNEL_MAX,
+            COLOR_CHANNEL_MAX,
+            COLOR_CHANNEL_MAX
+        )
+        val DefaultDarkNavScrim = Color.argb(
+            NAV_SCRIM_DARK_ALPHA,
+            NAV_SCRIM_DARK_CHANNEL,
+            NAV_SCRIM_DARK_CHANNEL,
+            NAV_SCRIM_DARK_CHANNEL
+        )
+    }
+}

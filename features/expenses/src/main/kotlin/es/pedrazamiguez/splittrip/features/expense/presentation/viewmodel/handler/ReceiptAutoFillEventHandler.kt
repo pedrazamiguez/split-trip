@@ -8,6 +8,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyU
 import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBlocked
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
@@ -383,10 +385,12 @@ class ReceiptAutoFillEventHandler(
             !extractedCategory.equals(currentCategory?.id, ignoreCase = true)
 
         if (shouldPreFillCategory) {
-            val matchingCategory = currentState.availableCategories
+            val resolvedCategoryId = currentState.availableCategories
                 .find { it.id.equals(extractedCategory, ignoreCase = true) }
-            if (matchingCategory != null) {
-                onCategorySelected?.invoke(matchingCategory.id)
+                ?.id
+                ?: runCatching { ExpenseCategory.fromString(extractedCategory).name }.getOrNull()
+            if (resolvedCategoryId != null) {
+                onCategorySelected?.invoke(resolvedCategoryId)
                 bannerFields.add(UiText.StringResource(R.string.add_expense_category_title))
             }
         }
@@ -399,7 +403,9 @@ class ReceiptAutoFillEventHandler(
     ) {
         val extractedPaymentMethod = extracted.paymentMethod
         val currentState = _uiState.value
-        val defaultPaymentMethod = currentState.paymentMethods.firstOrNull()
+        val defaultPaymentMethod = currentState.initialFormSnapshot?.selectedPaymentMethod
+            ?: currentState.paymentMethods.find { it.id == PaymentMethod.DEBIT_CARD.name }
+            ?: currentState.paymentMethods.firstOrNull()
         val shouldPreFillPaymentMethod = !extractedPaymentMethod.isNullOrBlank() &&
             currentState.selectedPaymentMethod == preScanPaymentMethod &&
             (

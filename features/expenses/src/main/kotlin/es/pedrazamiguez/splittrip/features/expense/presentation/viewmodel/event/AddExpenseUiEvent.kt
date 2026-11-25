@@ -27,6 +27,7 @@ sealed interface AddExpenseUiEvent {
     data class ExchangeRateChanged(val rate: String) : AddExpenseUiEvent
     data class GroupAmountChanged(val amount: String) : AddExpenseUiEvent
     data class CategorySelected(val categoryId: String) : AddExpenseUiEvent
+    data object ToggleShowAllCategories : AddExpenseUiEvent
     data class SubcategorySelected(val subcategoryId: String?) : AddExpenseUiEvent
     data class VendorChanged(val vendor: String) : AddExpenseUiEvent
     data class NotesChanged(val notes: String) : AddExpenseUiEvent

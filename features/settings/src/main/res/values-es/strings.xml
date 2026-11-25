@@ -362,7 +362,7 @@
     <string name="plan_allowances_quota_owned_groups_title">Grupos propios</string>
     <string name="plan_allowances_quota_owned_groups_subtitle">Grupos creados por ti</string>
     <string name="plan_allowances_usage_fraction">%1$s / %2$s</string>
-    <string name="plan_allowances_usage_unlimited">%1$s usados · Ilimitado</string>
+    <string name="plan_allowances_usage_unlimited">%1$s / ilimitado</string>
     <plurals name="plan_allowances_status_remaining">
         <item quantity="one">Queda %1$s</item>
         <item quantity="other">Quedan %1$s</item>
@@ -377,5 +377,11 @@
     <string name="plan_allowances_perk_status_pro_only">Pro</string>
     <string name="plan_allowances_upgrade_title">¿Necesitas más capacidad?</string>
     <string name="plan_allowances_upgrade_description">Mejora a SplitTrip Pro para tener más grupos, más miembros por grupo, más escaneos IA de recibos, subidas de archivos ilimitadas, subunidades ilimitadas y una experiencia sin anuncios.</string>
+    <string name="subscriptions_tier_pro_description_no_ai">Gestión ilimitada de grupos, exportaciones completas y experiencia sin publicidad</string>
+    <string name="subscriptions_feature_pro_ai_ocr_unsupported">Escaneo de recibos con IA (no compatible con este dispositivo)</string>
+    <string name="subscriptions_ai_unsupported_device_notice">El escaneo de recibos con IA en el dispositivo no es compatible con este dispositivo. El resto de funciones Pro funcionan con normalidad y el escaneo con IA está disponible en dispositivos compatibles.</string>
+    <string name="plan_allowances_quota_ai_scans_subtitle_unsupported">La IA en el dispositivo no es compatible con este dispositivo</string>
+    <string name="plan_allowances_status_not_supported">No compatible</string>
+    <string name="plan_allowances_upgrade_description_no_ai">Mejora a SplitTrip Pro para tener grupos ilimitados, más miembros por grupo, subidas de archivos ilimitadas, exportaciones completas en PDF y CSV, subunidades ilimitadas y una experiencia sin anuncios.</string>
 </resources>
 

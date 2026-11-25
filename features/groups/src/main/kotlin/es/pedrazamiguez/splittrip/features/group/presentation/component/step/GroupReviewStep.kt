@@ -16,6 +16,7 @@ import coil3.request.crossfade
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardReviewRow
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.CreateEditGroupUiState
 
@@ -58,6 +59,10 @@ fun GroupReviewStep(
                     value = uiState.groupDescription
                 )
             }
+            WizardReviewRow(
+                label = stringResource(R.string.group_review_context),
+                value = stringResource(uiState.groupContext.toStringRes())
+            )
             WizardReviewRow(
                 label = stringResource(R.string.group_review_currency),
                 value = uiState.selectedCurrency?.displayText ?: none

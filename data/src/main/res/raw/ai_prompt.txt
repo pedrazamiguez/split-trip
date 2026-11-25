@@ -8,7 +8,7 @@ Fields to extract:
 - Time of the transaction in HH:MM format (time).
 - Merchant or store name (vendor).
 - Brief description of what was purchased, maximum 3-4 words (title).
-- Category (must be one of: TRANSPORT, FOOD, LODGING, ACTIVITIES, INSURANCE, ENTERTAINMENT, SHOPPING, OTHER) (category).
+- Category (must be one of: TRANSPORT, FOOD, LODGING, HOME, HEALTH_PERSONAL_CARE, ACTIVITIES, INSURANCE, ENTERTAINMENT, SHOPPING, OTHER) (category).
 - Payment method (must be one of: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER) (paymentMethod).
 - Any relevant notes or identifiers like travel/event dates, booking code, reservation ID, locator ("localizador") code, ticket ID, seats, flight or train numbers, reference number, etc. (notes).
 

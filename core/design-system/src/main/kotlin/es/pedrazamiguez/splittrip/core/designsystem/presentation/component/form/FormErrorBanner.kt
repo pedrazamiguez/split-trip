@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,6 +12,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.extension.asString
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.isAppInDarkTheme
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 
@@ -41,7 +41,7 @@ fun FormErrorBanner(
     modifier: Modifier = Modifier
 ) {
     error?.let { errorUiText ->
-        val isDarkTheme = isSystemInDarkTheme()
+        val isDarkTheme = isAppInDarkTheme()
         val errorColor = MaterialTheme.colorScheme.error
 
         Surface(

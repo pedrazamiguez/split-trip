@@ -5,19 +5,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Check
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.MemberOptionUiModel
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.filterChipLeadingIcon
 import kotlinx.collections.immutable.ImmutableList
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -34,7 +31,10 @@ fun MemberFilterSection(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
-        CardSectionLabelText(text = stringResource(R.string.expenses_filter_section_members))
+        FilterSectionHeader(
+            title = stringResource(R.string.expenses_filter_section_members),
+            selectedCount = criteria.selectedMemberIds.size
+        )
 
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
@@ -49,11 +49,7 @@ fun MemberFilterSection(
                     onClick = {
                         onCriteriaChange(toggleMember(criteria, member.userId))
                     },
-                    leadingIcon = if (isSelected) {
-                        { Icon(TablerIcons.Outline.Check, contentDescription = null) }
-                    } else {
-                        null
-                    }
+                    leadingIcon = filterChipLeadingIcon(isSelected = isSelected)
                 )
             }
         }

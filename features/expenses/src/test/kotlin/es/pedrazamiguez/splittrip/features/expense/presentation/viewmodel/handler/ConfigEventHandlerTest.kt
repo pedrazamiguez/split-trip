@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.Forma
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.Currency
@@ -236,6 +237,36 @@ class ConfigEventHandlerTest {
             advanceUntilIdle()
 
             coVerify(exactly = 1) { getGroupExpenseConfigUseCase("group-2", false) }
+        }
+
+        @Test
+        fun `emits ResetCategorySuggestion when loading a different group`() = runTest {
+            uiState.value = AddExpenseUiState(
+                loadedGroupId = "group-1",
+                isConfigLoaded = true
+            )
+            coEvery { getGroupExpenseConfigUseCase("group-2", false) } returns Result.success(testConfig)
+            handler.bind(uiState, actions, this)
+
+            handler.loadGroupConfig("group-2")
+            advanceUntilIdle()
+
+            assertTrue(capturedActions.contains(PostConfigAction.ResetCategorySuggestion))
+        }
+
+        @Test
+        fun `does not emit ResetCategorySuggestion on same-group force refresh`() = runTest {
+            uiState.value = AddExpenseUiState(
+                loadedGroupId = "group-1",
+                isConfigLoaded = true
+            )
+            coEvery { getGroupExpenseConfigUseCase("group-1", true) } returns Result.success(testConfig)
+            handler.bind(uiState, actions, this)
+
+            handler.loadGroupConfig("group-1", forceRefresh = true)
+            advanceUntilIdle()
+
+            assertFalse(capturedActions.contains(PostConfigAction.ResetCategorySuggestion))
         }
     }
 
@@ -533,6 +564,34 @@ class ConfigEventHandlerTest {
             // After loading the new group the form should be clean (title was reset on group switch)
             assertEquals("", uiState.value.expenseTitle)
         }
+
+        @Test
+        fun `auto-selects DEBIT_CARD without FetchCashRate for same-currency when no history`() =
+            runTest {
+                every { getGroupLastUsedPaymentMethodUseCase(any()) } returns flowOf(emptyList())
+                handler.bind(uiState, actions, this)
+
+                handler.loadGroupConfig("group-1")
+                advanceUntilIdle()
+
+                assertEquals(PaymentMethod.DEBIT_CARD.name, uiState.value.selectedPaymentMethod?.id)
+                assertTrue(capturedActions.none { it is PostConfigAction.FetchCashRate })
+            }
+
+        @Test
+        fun `emits FetchRate instead of FetchCashRate for foreign currency when no history`() =
+            runTest {
+                every { getGroupLastUsedCurrencyUseCase(any()) } returns flowOf("USD")
+                every { getGroupLastUsedPaymentMethodUseCase(any()) } returns flowOf(emptyList())
+                handler.bind(uiState, actions, this)
+
+                handler.loadGroupConfig("group-1")
+                advanceUntilIdle()
+
+                assertEquals(PaymentMethod.DEBIT_CARD.name, uiState.value.selectedPaymentMethod?.id)
+                assertTrue(capturedActions.any { it is PostConfigAction.FetchRate })
+                assertTrue(capturedActions.none { it is PostConfigAction.FetchCashRate })
+            }
     }
 
     // ── Failure path ─────────────────────────────────────────────────────
@@ -751,7 +810,7 @@ class ConfigEventHandlerTest {
             )
 
             assertEquals(
-                ExpenseCategory.entries.map { it.name },
+                ExpenseCategory.forContext(testConfig.group.context).map { it.name },
                 defaults.mappedCategories.map { it.id }
             )
         }
@@ -770,7 +829,7 @@ class ConfigEventHandlerTest {
 
             assertEquals(ExpenseCategory.SHOPPING.name, defaults.defaultCategory?.id)
             assertEquals(
-                ExpenseSubcategory.forCategory(ExpenseCategory.SHOPPING),
+                ExpenseSubcategory.forCategory(ExpenseCategory.SHOPPING, testConfig.group.context),
                 defaults.availableSubcategories.map { it.subcategory }
             )
         }
@@ -786,7 +845,7 @@ class ConfigEventHandlerTest {
 
             assertEquals(ExpenseCategory.OTHER.name, defaults.defaultCategory?.id)
             assertEquals(
-                ExpenseSubcategory.forCategory(ExpenseCategory.OTHER),
+                ExpenseSubcategory.forCategory(ExpenseCategory.OTHER, testConfig.group.context),
                 defaults.availableSubcategories.map { it.subcategory }
             )
         }
@@ -801,6 +860,68 @@ class ConfigEventHandlerTest {
             )
 
             assertEquals(ExpenseCategory.OTHER.name, defaults.defaultCategory?.id)
+        }
+
+        @Test
+        fun `EVERYDAY group loads everyday categories and ignores travel-only recentCategoryIds`() {
+            val everydayConfig = testConfig.copy(
+                group = testGroup.copy(context = GroupContext.EVERYDAY)
+            )
+            val defaults = handler.resolveDefaultSelections(
+                config = everydayConfig,
+                lastUsedCode = null,
+                recentPaymentMethodIds = emptyList(),
+                recentCategoryIds = listOf(ExpenseCategory.LODGING.name)
+            )
+
+            assertEquals(
+                ExpenseCategory.forContext(GroupContext.EVERYDAY).map { it.name },
+                defaults.mappedCategories.map { it.id }
+            )
+            assertEquals(ExpenseCategory.OTHER.name, defaults.defaultCategory?.id)
+            assertEquals(
+                ExpenseSubcategory.forCategory(ExpenseCategory.OTHER, GroupContext.EVERYDAY),
+                defaults.availableSubcategories.map { it.subcategory }
+            )
+        }
+
+        @Test
+        fun `defaultPaymentMethod selects DEBIT_CARD when empty while keeping canonical order`() {
+            val defaults = handler.resolveDefaultSelections(
+                config = testConfig,
+                lastUsedCode = null,
+                recentPaymentMethodIds = emptyList(),
+                recentCategoryIds = emptyList()
+            )
+
+            assertEquals(PaymentMethod.DEBIT_CARD.name, defaults.defaultPaymentMethod?.id)
+            assertEquals(PaymentMethod.CASH.name, defaults.reorderedPaymentMethods.firstOrNull()?.id)
+            assertTrue("SCHEDULED" in defaults.mappedPaymentStatuses.map { it.id })
+        }
+
+        @Test
+        fun `defaultPaymentMethod selects DEBIT_CARD when recentPaymentMethodIds contains unknown id`() {
+            val defaults = handler.resolveDefaultSelections(
+                config = testConfig,
+                lastUsedCode = null,
+                recentPaymentMethodIds = listOf("UNKNOWN_METHOD"),
+                recentCategoryIds = emptyList()
+            )
+
+            assertEquals(PaymentMethod.DEBIT_CARD.name, defaults.defaultPaymentMethod?.id)
+        }
+
+        @Test
+        fun `defaultPaymentMethod selects CASH when CASH is most recently used`() {
+            val defaults = handler.resolveDefaultSelections(
+                config = testConfig,
+                lastUsedCode = null,
+                recentPaymentMethodIds = listOf(PaymentMethod.CASH.name),
+                recentCategoryIds = emptyList()
+            )
+
+            assertEquals(PaymentMethod.CASH.name, defaults.defaultPaymentMethod?.id)
+            assertEquals(PaymentMethod.CASH.name, defaults.reorderedPaymentMethods.firstOrNull()?.id)
         }
     }
 

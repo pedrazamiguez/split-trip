@@ -1,12 +1,16 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
+import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.MediaUploadQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.PlanAllowances
 import es.pedrazamiguez.splittrip.domain.service.featuregate.ReportExportQuota
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetReceiptExtractionCapabilityUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObservePlanAllowancesUseCase
+import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.PlanAllowancesUiMapperImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowanceUsageStatus
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.action.PlanAllowancesUiAction
@@ -27,6 +31,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -36,6 +41,7 @@ class PlanAllowancesViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var observePlanAllowancesUseCase: ObservePlanAllowancesUseCase
+    private lateinit var getReceiptExtractionCapabilityUseCase: GetReceiptExtractionCapabilityUseCase
     private lateinit var localeProvider: LocaleProvider
     private lateinit var mapper: PlanAllowancesUiMapperImpl
     private lateinit var upstreamFlow: MutableSharedFlow<PlanAllowances>
@@ -44,8 +50,10 @@ class PlanAllowancesViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         observePlanAllowancesUseCase = mockk()
+        getReceiptExtractionCapabilityUseCase = mockk()
         localeProvider = mockk()
         every { localeProvider.getCurrentLocale() } returns Locale.ENGLISH
+        every { getReceiptExtractionCapabilityUseCase() } returns ExtractionCapability.ON_DEVICE_AI
         mapper = PlanAllowancesUiMapperImpl(localeProvider = localeProvider)
         upstreamFlow = MutableSharedFlow(replay = 1)
         every { observePlanAllowancesUseCase() } returns upstreamFlow
@@ -58,6 +66,7 @@ class PlanAllowancesViewModelTest {
 
     private fun createViewModel(): PlanAllowancesViewModel = PlanAllowancesViewModel(
         observePlanAllowancesUseCase = observePlanAllowancesUseCase,
+        getReceiptExtractionCapabilityUseCase = getReceiptExtractionCapabilityUseCase,
         planAllowancesUiMapper = mapper
     )
 
@@ -101,7 +110,7 @@ class PlanAllowancesViewModelTest {
             createPlanAllowances(
                 tier = SubscriptionTier.PRO,
                 usedScans = 12,
-                aiMonthlyLimit = 100,
+                aiMonthlyLimit = null,
                 usedUploads = 18,
                 maxOwnedGroups = null,
                 maxMembersPerGroup = 20,
@@ -114,8 +123,11 @@ class PlanAllowancesViewModelTest {
         val state = viewModel.uiState.value
         assertTrue(state.isProTier)
         assertFalse(state.showUpgradeCta)
+        assertEquals(AllowanceUsageStatus.UNLIMITED, state.quotas[0].status)
+        assertTrue(state.quotas[0].showProgressBar)
         assertEquals(AllowanceUsageStatus.UNLIMITED, state.quotas[1].status)
         assertEquals(AllowanceUsageStatus.UNLIMITED, state.quotas[3].status)
+        assertTrue(state.quotas.all { it.showProgressBar })
 
         collectJob.cancel()
     }
@@ -166,7 +178,7 @@ class PlanAllowancesViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isGatingEnabled)
         assertFalse(state.showUpgradeCta)
-        assertTrue(state.quotas.all { it.status == AllowanceUsageStatus.UNLIMITED && !it.showProgressBar })
+        assertTrue(state.quotas.all { it.status == AllowanceUsageStatus.UNLIMITED && it.showProgressBar })
 
         collectJob.cancel()
     }
@@ -181,12 +193,61 @@ class PlanAllowancesViewModelTest {
         assertEquals(PlanAllowancesUiAction.NavigateToUpgrade, action)
     }
 
+    @Test
+    fun `uiState maps AI_RECEIPT_SCANS as UNSUPPORTED_ON_DEVICE and adapts upgrade description`() =
+        runTest(testDispatcher) {
+            every { getReceiptExtractionCapabilityUseCase() } returns ExtractionCapability.UNSUPPORTED
+            val viewModel = createViewModel()
+            val collectJob = launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+
+            upstreamFlow.emit(createPlanAllowances(tier = SubscriptionTier.FREE))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(AllowanceUsageStatus.UNSUPPORTED_ON_DEVICE, state.quotas[0].status)
+            assertNull(state.quotas[0].usageText)
+            assertFalse(state.quotas[0].showProgressBar)
+            assertEquals(
+                UiText.StringResource(R.string.plan_allowances_upgrade_description_no_ai),
+                state.upgradeDescription
+            )
+
+            collectJob.cancel()
+        }
+
+    @Test
+    fun `uiState maps AI_RECEIPT_SCANS as UNSUPPORTED_ON_DEVICE for Pro tier when device is UNSUPPORTED`() =
+        runTest(testDispatcher) {
+            every { getReceiptExtractionCapabilityUseCase() } returns ExtractionCapability.UNSUPPORTED
+            val viewModel = createViewModel()
+            val collectJob = launch { viewModel.uiState.collect {} }
+            advanceUntilIdle()
+
+            upstreamFlow.emit(
+                createPlanAllowances(
+                    tier = SubscriptionTier.PRO,
+                    usedScans = 0,
+                    aiMonthlyLimit = null,
+                    maxOwnedGroups = null,
+                    maxSubunitsPerGroup = null
+                )
+            )
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(AllowanceUsageStatus.UNSUPPORTED_ON_DEVICE, state.quotas[0].status)
+            assertEquals(AllowanceUsageStatus.UNLIMITED, state.quotas[1].status)
+
+            collectJob.cancel()
+        }
+
     @Suppress("LongParameterList")
     private fun createPlanAllowances(
         tier: SubscriptionTier = SubscriptionTier.FREE,
         isGatingEnabled: Boolean = true,
         usedScans: Int = 1,
-        aiMonthlyLimit: Int = 3,
+        aiMonthlyLimit: Int? = 3,
         usedUploads: Int = 2,
         mediaMonthlyFreeLimit: Int = 5,
         usedExports: Int = 0,

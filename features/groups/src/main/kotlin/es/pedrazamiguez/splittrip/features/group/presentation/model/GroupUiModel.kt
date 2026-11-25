@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.model
 
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import kotlinx.collections.immutable.ImmutableList
@@ -28,7 +29,8 @@ data class GroupUiModel(
     val memberOverflowCount: Int = 0,
     val members: ImmutableList<GroupMemberUiModel> = persistentListOf(),
     val status: GroupStatus = GroupStatus.ACTIVE,
-    val createdBy: String = ""
+    val createdBy: String = "",
+    val context: GroupContext = GroupContext.TRAVEL
 ) {
     companion object {
         /** Maximum number of avatar circles shown in the hero card avatar stack. */

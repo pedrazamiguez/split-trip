@@ -9,15 +9,25 @@ import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state.Cr
 @Composable
 internal fun RememberGroupStepLabels(steps: List<CreateEditGroupStep>): List<String> {
     val infoLabel = stringResource(R.string.group_wizard_step_info)
+    val contextLabel = stringResource(R.string.group_wizard_step_context)
     val currencyLabel = stringResource(R.string.group_wizard_step_currency)
     val membersLabel = stringResource(R.string.group_wizard_step_members)
     val unregisteredNamesLabel = stringResource(R.string.group_wizard_step_unregistered_names)
     val imageLabel = stringResource(R.string.group_wizard_step_image)
     val reviewLabel = stringResource(R.string.group_wizard_step_review)
 
-    val stepLabels = remember(infoLabel, currencyLabel, membersLabel, unregisteredNamesLabel, imageLabel, reviewLabel) {
+    val stepLabels = remember(
+        infoLabel,
+        contextLabel,
+        currencyLabel,
+        membersLabel,
+        unregisteredNamesLabel,
+        imageLabel,
+        reviewLabel
+    ) {
         mapOf(
             CreateEditGroupStep.INFO to infoLabel,
+            CreateEditGroupStep.CONTEXT to contextLabel,
             CreateEditGroupStep.CURRENCY to currencyLabel,
             CreateEditGroupStep.MEMBERS to membersLabel,
             CreateEditGroupStep.UNREGISTERED_NAMES to unregisteredNamesLabel,

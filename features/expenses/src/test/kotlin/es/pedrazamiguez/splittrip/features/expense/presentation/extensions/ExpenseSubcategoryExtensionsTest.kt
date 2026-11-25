@@ -3,8 +3,15 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.extensions
 import es.pedrazamiguez.splittrip.core.common.R as CommonR
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Car
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.DeviceTv
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Key
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Keyframes
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Palette
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Paw
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Scissors
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Smoking
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Theater
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Tool
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
@@ -62,6 +69,38 @@ class ExpenseSubcategoryExtensionsTest {
         }
 
         @Test
+        fun `maps new everyday subcategories to expected string resources`() {
+            assertEquals(
+                CommonR.string.expense_subcategory_car_repair_maintenance,
+                ExpenseSubcategory.CAR_REPAIR_MAINTENANCE.toStringRes()
+            )
+            assertEquals(
+                CommonR.string.expense_subcategory_rent_mortgage,
+                ExpenseSubcategory.RENT_MORTGAGE.toStringRes()
+            )
+            assertEquals(
+                CommonR.string.expense_subcategory_hairdresser_barber,
+                ExpenseSubcategory.HAIRDRESSER_BARBER.toStringRes()
+            )
+            assertEquals(
+                CommonR.string.expense_subcategory_subscriptions_streaming,
+                ExpenseSubcategory.SUBSCRIPTIONS_STREAMING.toStringRes()
+            )
+            assertEquals(
+                CommonR.string.expense_subcategory_pet_care,
+                ExpenseSubcategory.PET_CARE.toStringRes()
+            )
+            assertEquals(
+                CommonR.string.expense_subcategory_tobacco_vaping,
+                ExpenseSubcategory.TOBACCO_VAPING.toStringRes()
+            )
+            assertEquals(
+                CommonR.string.expense_subcategory_hobbies,
+                ExpenseSubcategory.HOBBIES.toStringRes()
+            )
+        }
+
+        @Test
         fun `all subcategories map to distinct string resources`() {
             val resIds = ExpenseSubcategory.entries.map { it.toStringRes() }
             assertEquals(resIds.size, resIds.toSet().size)
@@ -101,6 +140,17 @@ class ExpenseSubcategoryExtensionsTest {
                 TablerIcons.Outline.Theater,
                 ExpenseSubcategory.CINEMA_THEATER.toIconVector()
             )
+        }
+
+        @Test
+        fun `maps new everyday subcategories to expected icon vectors`() {
+            assertSame(TablerIcons.Outline.Tool, ExpenseSubcategory.CAR_REPAIR_MAINTENANCE.toIconVector())
+            assertSame(TablerIcons.Outline.Key, ExpenseSubcategory.RENT_MORTGAGE.toIconVector())
+            assertSame(TablerIcons.Outline.Scissors, ExpenseSubcategory.HAIRDRESSER_BARBER.toIconVector())
+            assertSame(TablerIcons.Outline.DeviceTv, ExpenseSubcategory.SUBSCRIPTIONS_STREAMING.toIconVector())
+            assertSame(TablerIcons.Outline.Paw, ExpenseSubcategory.PET_CARE.toIconVector())
+            assertSame(TablerIcons.Outline.Smoking, ExpenseSubcategory.TOBACCO_VAPING.toIconVector())
+            assertSame(TablerIcons.Outline.Palette, ExpenseSubcategory.HOBBIES.toIconVector())
         }
 
         @Test

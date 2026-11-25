@@ -28,9 +28,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.X
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportChip
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.AppDatePickerDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.R
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.filterChipLeadingIcon
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.DateRangePreset
 import java.time.Instant
 import java.time.LocalDate
@@ -57,7 +57,10 @@ fun DateRangeFilterSection(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
     ) {
-        CardSectionLabelText(text = stringResource(R.string.expenses_filter_section_date_range))
+        FilterSectionHeader(
+            title = stringResource(R.string.expenses_filter_section_date_range),
+            selectedCount = if (criteria.isDateFiltered) 1 else 0
+        )
 
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
@@ -65,10 +68,12 @@ fun DateRangeFilterSection(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
         ) {
             DateRangePreset.entries.forEach { preset ->
+                val isSelected = activePreset == preset
                 PassportChip(
                     label = stringResource(preset.titleRes),
-                    selected = activePreset == preset,
-                    onClick = { onPresetSelected(preset) }
+                    selected = isSelected,
+                    onClick = { onPresetSelected(preset) },
+                    leadingIcon = filterChipLeadingIcon(isSelected = isSelected)
                 )
             }
         }

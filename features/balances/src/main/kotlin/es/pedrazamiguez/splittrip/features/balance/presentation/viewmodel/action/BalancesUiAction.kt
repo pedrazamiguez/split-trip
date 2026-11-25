@@ -18,4 +18,9 @@ sealed interface BalancesUiAction {
         val mimeType: String,
         val fileName: String
     ) : BalancesUiAction
+    data class LaunchSaveDocumentPicker(
+        val fileName: String,
+        val mimeType: String
+    ) : BalancesUiAction
+    data class ShowExportSaveSuccess(val message: UiText) : BalancesUiAction
 }

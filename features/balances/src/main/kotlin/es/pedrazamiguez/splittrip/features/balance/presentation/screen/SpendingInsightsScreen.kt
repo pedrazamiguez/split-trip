@@ -60,6 +60,7 @@ fun SpendingInsightsScreen(
             onSelectCustomEndDate = { onEvent(SpendingInsightsUiEvent.SelectExportCustomEndDate(it)) },
             onSelectFormat = { onEvent(SpendingInsightsUiEvent.SelectExportFormat(it)) },
             onConfirmExport = { onEvent(SpendingInsightsUiEvent.ConfirmExportReport) },
+            onSaveToDevice = { onEvent(SpendingInsightsUiEvent.SaveExportReport) },
             onDismiss = { onEvent(SpendingInsightsUiEvent.DismissExportReportSheet) }
         )
     }

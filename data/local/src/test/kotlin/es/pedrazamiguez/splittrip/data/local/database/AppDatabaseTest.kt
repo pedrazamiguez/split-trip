@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import es.pedrazamiguez.splittrip.data.local.dao.CurrencyDao
 import es.pedrazamiguez.splittrip.data.local.dao.ExchangeRateDao
 import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalCurrencyDataSourceImpl
+import es.pedrazamiguez.splittrip.data.local.entity.GroupEntity
 import es.pedrazamiguez.splittrip.data.local.entity.UserEntity
 import es.pedrazamiguez.splittrip.domain.model.Currency
 import es.pedrazamiguez.splittrip.domain.model.ExchangeRate
@@ -174,5 +175,42 @@ class AppDatabaseTest {
         val tier = cursor.getString(0)
         cursor.close()
         assertEquals("FREE", tier)
+    }
+
+    @Test
+    fun saveAndGetGroupWithContext() = runTest {
+        val groupDao = db.groupDao()
+        val group = GroupEntity(
+            id = "grp-everyday",
+            name = "Home Bills",
+            description = "Shared household",
+            currencyCode = "EUR",
+            extraCurrencies = emptyList(),
+            memberIds = listOf("u1"),
+            mainImagePath = null,
+            createdAtMillis = 1000L,
+            lastUpdatedAtMillis = 1000L,
+            context = "EVERYDAY"
+        )
+        groupDao.insertGroup(group)
+
+        val fetched = groupDao.getGroupById("grp-everyday")
+        assertEquals("EVERYDAY", fetched?.context)
+    }
+
+    @Test
+    fun groupsTable_contextColumn_hasDefaultValueTravel() {
+        val sqliteDb = db.openHelper.writableDatabase
+        sqliteDb.execSQL(
+            """
+            INSERT INTO groups (id, name, currencyCode, extraCurrencies, memberIds, syncStatus, status, createdBy)
+            VALUES ('g1', 'Legacy Trip', 'EUR', '[]', '[]', 'SYNCED', 'ACTIVE', 'u1')
+            """.trimIndent()
+        )
+        val cursor = sqliteDb.query("SELECT context FROM groups WHERE id = 'g1'")
+        assertTrue(cursor.moveToFirst())
+        val context = cursor.getString(0)
+        cursor.close()
+        assertEquals("TRAVEL", context)
     }
 }

@@ -151,7 +151,12 @@
 
     
     <string name="add_expense_category_title">Category</string>
+    <string name="category_show_all_toggle">Show all</string>
     <string name="add_expense_subcategory_title">Subcategory</string>
+    <plurals name="category_filter_selected_count">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
     <string name="add_expense_vendor_label">Company / Vendor (optional)</string>
     <string name="add_expense_vendor_helper">Where did you buy this?</string>
     <string name="add_expense_notes_label">Notes (optional)</string>

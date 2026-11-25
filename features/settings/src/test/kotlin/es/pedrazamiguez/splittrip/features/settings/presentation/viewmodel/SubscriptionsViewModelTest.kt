@@ -6,11 +6,13 @@ import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
 import es.pedrazamiguez.splittrip.domain.enums.BillingInterval
 import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.PurchaseStatus
 import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.BillingService
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.GetReceiptExtractionCapabilityUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveProAllowlistAccessUseCase
@@ -60,6 +62,7 @@ class SubscriptionsViewModelTest {
     private lateinit var updateUserTierUseCase: UpdateUserTierUseCase
     private lateinit var isUserAnonymousUseCase: IsUserAnonymousUseCase
     private lateinit var reconcileSubscriptionEntitlementsUseCase: ReconcileSubscriptionEntitlementsUseCase
+    private lateinit var getReceiptExtractionCapabilityUseCase: GetReceiptExtractionCapabilityUseCase
     private lateinit var subscriptionsUiMapper: SubscriptionsUiMapper
     private lateinit var billingService: BillingService
     private lateinit var telemetryTracker: TelemetryTracker
@@ -129,6 +132,7 @@ class SubscriptionsViewModelTest {
         updateUserTierUseCase = mockk(relaxed = true)
         isUserAnonymousUseCase = mockk()
         reconcileSubscriptionEntitlementsUseCase = mockk()
+        getReceiptExtractionCapabilityUseCase = mockk()
         subscriptionsUiMapper = mockk()
         billingService = mockk(relaxed = true)
         telemetryTracker = mockk(relaxed = true)
@@ -143,6 +147,7 @@ class SubscriptionsViewModelTest {
         every { isUserAnonymousUseCase() } returns flowOf(false)
         coEvery { reconcileSubscriptionEntitlementsUseCase() } returns Result.success(Unit)
         coEvery { updateUserTierUseCase(any(), any()) } returns Result.success(Unit)
+        every { getReceiptExtractionCapabilityUseCase() } returns ExtractionCapability.ON_DEVICE_AI
 
         every { billingService.subscriptionProducts } returns subscriptionProductsFlow
         every { billingService.purchaseUpdates } returns purchaseUpdatesFlow
@@ -153,7 +158,7 @@ class SubscriptionsViewModelTest {
 
     private fun setupUiMapperMocks() {
         every {
-            subscriptionsUiMapper.mapPlans(any(), any(), any())
+            subscriptionsUiMapper.mapPlans(any(), any(), any(), any())
         } returns persistentListOf(mockFreePlan, mockProPlan)
         every { subscriptionsUiMapper.formatUpgradeSuccessMessage(any()) } returns UiText.StringResource(
             R.string.subscriptions_upgrade_success,
@@ -183,12 +188,15 @@ class SubscriptionsViewModelTest {
     }
 
     private fun createViewModel(entrySource: String? = null): SubscriptionsViewModel = SubscriptionsViewModel(
-        getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-        observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
-        observeProAllowlistAccessUseCase = observeProAllowlistAccessUseCase,
-        updateUserTierUseCase = updateUserTierUseCase,
-        isUserAnonymousUseCase = isUserAnonymousUseCase,
-        reconcileSubscriptionEntitlementsUseCase = reconcileSubscriptionEntitlementsUseCase,
+        subscriptionsUseCases = SubscriptionsUseCases(
+            getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
+            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
+            observeProAllowlistAccessUseCase = observeProAllowlistAccessUseCase,
+            updateUserTierUseCase = updateUserTierUseCase,
+            isUserAnonymousUseCase = isUserAnonymousUseCase,
+            reconcileSubscriptionEntitlementsUseCase = reconcileSubscriptionEntitlementsUseCase,
+            getReceiptExtractionCapabilityUseCase = getReceiptExtractionCapabilityUseCase
+        ),
         subscriptionsUiMapper = subscriptionsUiMapper,
         billingService = billingService,
         telemetryTracker = telemetryTracker,
@@ -313,7 +321,8 @@ class SubscriptionsViewModelTest {
                 subscriptionsUiMapper.mapPlans(
                     currentTier = SubscriptionTier.PRO,
                     selectedInterval = BillingInterval.ANNUAL,
-                    products = any()
+                    products = any(),
+                    extractionCapability = ExtractionCapability.ON_DEVICE_AI
                 )
             }
         }
@@ -338,7 +347,8 @@ class SubscriptionsViewModelTest {
                 subscriptionsUiMapper.mapPlans(
                     currentTier = SubscriptionTier.FREE,
                     selectedInterval = BillingInterval.ANNUAL,
-                    products = listOf(product)
+                    products = listOf(product),
+                    extractionCapability = ExtractionCapability.ON_DEVICE_AI
                 )
             }
         }
@@ -372,7 +382,8 @@ class SubscriptionsViewModelTest {
                 subscriptionsUiMapper.mapPlans(
                     currentTier = SubscriptionTier.PRO,
                     selectedInterval = BillingInterval.ANNUAL,
-                    products = any()
+                    products = any(),
+                    extractionCapability = ExtractionCapability.ON_DEVICE_AI
                 )
             }
         }
@@ -396,7 +407,8 @@ class SubscriptionsViewModelTest {
                 subscriptionsUiMapper.mapPlans(
                     currentTier = SubscriptionTier.FREE,
                     selectedInterval = BillingInterval.MONTHLY,
-                    products = any()
+                    products = any(),
+                    extractionCapability = ExtractionCapability.ON_DEVICE_AI
                 )
             }
         }
@@ -769,7 +781,8 @@ class SubscriptionsViewModelTest {
                     subscriptionsUiMapper.mapPlans(
                         currentTier = SubscriptionTier.PRO,
                         selectedInterval = BillingInterval.ANNUAL,
-                        products = any()
+                        products = any(),
+                        extractionCapability = ExtractionCapability.ON_DEVICE_AI
                     )
                 }
             }
@@ -1167,6 +1180,81 @@ class SubscriptionsViewModelTest {
                 telemetryTracker.trackEvent(
                     MonetizationTelemetry.Event.MANAGE_SUBSCRIPTION_OPENED,
                     mapOf(MonetizationTelemetry.Param.CURRENT_TIER to "free")
+                )
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("Device AI capability forwarding")
+    inner class DeviceAiCapability {
+
+        @Test
+        fun `loadSubscriptions forwards UNSUPPORTED extractionCapability to mapper when device lacks on-device AI`() =
+            runTest(testDispatcher) {
+                every { getReceiptExtractionCapabilityUseCase() } returns ExtractionCapability.UNSUPPORTED
+
+                createViewModel()
+                advanceUntilIdle()
+
+                coVerify(atLeast = 1) {
+                    subscriptionsUiMapper.mapPlans(
+                        currentTier = SubscriptionTier.FREE,
+                        selectedInterval = BillingInterval.ANNUAL,
+                        products = any(),
+                        extractionCapability = ExtractionCapability.UNSUPPORTED
+                    )
+                }
+            }
+
+        @Test
+        fun `SelectBillingInterval forwards current device extractionCapability to mapper`() = runTest(
+            testDispatcher
+        ) {
+            every { getReceiptExtractionCapabilityUseCase() } returns ExtractionCapability.UNSUPPORTED
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(SubscriptionsUiEvent.SelectBillingInterval(BillingInterval.MONTHLY))
+            advanceUntilIdle()
+
+            coVerify {
+                subscriptionsUiMapper.mapPlans(
+                    currentTier = SubscriptionTier.FREE,
+                    selectedInterval = BillingInterval.MONTHLY,
+                    products = any(),
+                    extractionCapability = ExtractionCapability.UNSUPPORTED
+                )
+            }
+        }
+
+        @Test
+        fun `user profile and product updates forward current device extractionCapability to mapper`() = runTest(
+            testDispatcher
+        ) {
+            every { getReceiptExtractionCapabilityUseCase() } returns ExtractionCapability.UNSUPPORTED
+            createViewModel()
+            advanceUntilIdle()
+
+            val proUser = testUser.copy(tier = SubscriptionTier.PRO)
+            userProfileFlow.emit(proUser)
+            val product = SubscriptionProduct(
+                productId = BillingConstants.PRODUCT_ID_PRO_MONTHLY,
+                tier = SubscriptionTier.PRO,
+                billingInterval = BillingInterval.MONTHLY,
+                formattedPrice = "$4.99",
+                priceAmountMicros = 4990000L,
+                priceCurrencyCode = "USD"
+            )
+            subscriptionProductsFlow.value = listOf(product)
+            advanceUntilIdle()
+
+            coVerify {
+                subscriptionsUiMapper.mapPlans(
+                    currentTier = SubscriptionTier.PRO,
+                    selectedInterval = BillingInterval.ANNUAL,
+                    products = listOf(product),
+                    extractionCapability = ExtractionCapability.UNSUPPORTED
                 )
             }
         }

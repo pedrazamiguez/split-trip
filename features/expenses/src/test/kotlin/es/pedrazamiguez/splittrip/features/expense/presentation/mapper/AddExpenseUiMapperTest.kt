@@ -514,7 +514,7 @@ class AddExpenseUiMapperTest {
         }
 
         @Test
-        fun `uses CASH when payment method is null`() {
+        fun `uses DEBIT_CARD when payment method is null`() {
             val state = AddExpenseUiState(
                 expenseTitle = "Test",
                 sourceAmount = "10.00",
@@ -529,7 +529,7 @@ class AddExpenseUiMapperTest {
 
             assertTrue(result.isSuccess)
             val expense = result.getOrThrow()
-            assertEquals(PaymentMethod.CASH, expense.paymentMethod)
+            assertEquals(PaymentMethod.DEBIT_CARD, expense.paymentMethod)
         }
 
         @Test

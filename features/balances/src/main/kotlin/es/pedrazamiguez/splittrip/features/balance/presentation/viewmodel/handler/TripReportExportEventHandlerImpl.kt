@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBl
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.model.SpendingInsightsPeriod
+import es.pedrazamiguez.splittrip.domain.model.report.ExportedTripReportFile
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportFormat
 import es.pedrazamiguez.splittrip.domain.service.TripReportExportService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
@@ -16,6 +17,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.balance.RecordReportExportUseCa
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.presentation.mapper.TripReportExportUiMapper
 import es.pedrazamiguez.splittrip.features.balance.presentation.model.SpendingPeriodPreset
+import es.pedrazamiguez.splittrip.features.balance.presentation.model.TripReportExportTarget
 import es.pedrazamiguez.splittrip.features.balance.presentation.viewmodel.state.TripReportExportSheetState
 import java.time.LocalDate
 import kotlin.coroutines.cancellation.CancellationException
@@ -45,6 +47,7 @@ class TripReportExportEventHandlerImpl(
     private var coroutineScope: CoroutineScope? = null
     private var actionEmitter: (suspend (TripReportExportAction) -> Unit)? = null
     private var activeGateEntryPoint: String = MonetizationTelemetry.GateEntryPoint.BALANCES_EXPORT_ACTION
+    private var pendingSaveFile: ExportedTripReportFile? = null
 
     override fun bind(
         scope: CoroutineScope,
@@ -66,6 +69,7 @@ class TripReportExportEventHandlerImpl(
     ) {
         val scope = coroutineScope ?: return
         activeGateEntryPoint = gateEntryPoint
+        pendingSaveFile = null
         scope.launch {
             val quota = featureGateService.observeReportExportQuota().first()
             if (!quota.canExportPdf) {
@@ -100,13 +104,21 @@ class TripReportExportEventHandlerImpl(
                 includesItemisedDetails = quota.includesItemisedDetails,
                 remainingFreeExports = if (quota.isFreeQuotaTracked) quota.remainingExports else null,
                 monthlyFreeExportLimit = if (quota.isFreeQuotaTracked) quota.monthlyFreeLimit else null,
-                isExporting = false
+                isExporting = false,
+                activeExportTarget = null
             )
         }
     }
 
     override fun handleDismissExportSheet() {
-        _exportSheetState.update { it.copy(isVisible = false, isExporting = false) }
+        pendingSaveFile = null
+        _exportSheetState.update {
+            it.copy(
+                isVisible = false,
+                isExporting = false,
+                activeExportTarget = null
+            )
+        }
     }
 
     override fun handleSelectPeriodPreset(preset: SpendingPeriodPreset) {
@@ -162,7 +174,9 @@ class TripReportExportEventHandlerImpl(
     override fun handleSelectFormat(format: TripReportFormat) {
         if (format == TripReportFormat.CSV && _exportSheetState.value.isCsvLocked) {
             val scope = coroutineScope ?: return
-            _exportSheetState.update { it.copy(isVisible = false, isExporting = false) }
+            _exportSheetState.update {
+                it.copy(isVisible = false, isExporting = false, activeExportTarget = null)
+            }
             scope.launch {
                 emitProFeaturePreview(activeGateEntryPoint)
             }
@@ -172,18 +186,131 @@ class TripReportExportEventHandlerImpl(
     }
 
     override fun handleConfirmExport(groupId: String) {
+        launchReportGeneration(
+            groupId = groupId,
+            target = TripReportExportTarget.SHARE
+        ) { exportedFile ->
+            recordReportExportUseCase()
+            _exportSheetState.update {
+                it.copy(isVisible = false, isExporting = false, activeExportTarget = null)
+            }
+            actionEmitter?.invoke(
+                TripReportExportAction.ShareExportedReport(
+                    contentUri = exportedFile.contentUri,
+                    mimeType = exportedFile.mimeType,
+                    fileName = exportedFile.fileName
+                )
+            )
+        }
+    }
+
+    override fun handleSaveExport(groupId: String) {
+        launchReportGeneration(
+            groupId = groupId,
+            target = TripReportExportTarget.SAVE_TO_DEVICE
+        ) { exportedFile ->
+            pendingSaveFile = exportedFile
+            _exportSheetState.update {
+                it.copy(isExporting = false, activeExportTarget = null)
+            }
+            actionEmitter?.invoke(
+                TripReportExportAction.LaunchSaveDocumentPicker(
+                    fileName = exportedFile.fileName,
+                    mimeType = exportedFile.mimeType
+                )
+            )
+        }
+    }
+
+    override fun handleCompleteSaveExport(destinationUri: String) {
+        if (_exportSheetState.value.isExporting) return
+        val scope = coroutineScope ?: return
+        val pendingFile = pendingSaveFile
+        if (pendingFile == null) {
+            _exportSheetState.update {
+                it.copy(isExporting = false, activeExportTarget = null)
+            }
+            scope.launch {
+                actionEmitter?.invoke(
+                    TripReportExportAction.ShowExportError(
+                        UiText.StringResource(R.string.balances_export_save_error_failed)
+                    )
+                )
+            }
+            return
+        }
+
+        _exportSheetState.update {
+            it.copy(
+                isExporting = true,
+                activeExportTarget = TripReportExportTarget.SAVE_TO_DEVICE
+            )
+        }
+        scope.launch {
+            try {
+                tripReportExportService.saveToUri(
+                    sourceContentUri = pendingFile.contentUri,
+                    destinationUri = destinationUri
+                )
+                recordReportExportUseCase()
+                pendingSaveFile = null
+                _exportSheetState.update {
+                    it.copy(
+                        isVisible = false,
+                        isExporting = false,
+                        activeExportTarget = null
+                    )
+                }
+                actionEmitter?.invoke(
+                    TripReportExportAction.ShowExportSaveSuccess(
+                        UiText.StringResource(R.string.balances_export_save_success, pendingFile.fileName)
+                    )
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to save exported group summary ${pendingFile.fileName}")
+                pendingSaveFile = null
+                _exportSheetState.update {
+                    it.copy(isExporting = false, activeExportTarget = null)
+                }
+                actionEmitter?.invoke(
+                    TripReportExportAction.ShowExportError(
+                        UiText.StringResource(R.string.balances_export_save_error_failed)
+                    )
+                )
+            }
+        }
+    }
+
+    override fun handleCancelSaveExport() {
+        pendingSaveFile = null
+        _exportSheetState.update {
+            it.copy(isExporting = false, activeExportTarget = null)
+        }
+    }
+
+    private fun launchReportGeneration(
+        groupId: String,
+        target: TripReportExportTarget,
+        onGenerated: suspend (ExportedTripReportFile) -> Unit
+    ) {
         val currentState = _exportSheetState.value
         if (currentState.isExporting) return
         val scope = coroutineScope ?: return
 
-        _exportSheetState.update { it.copy(isExporting = true) }
+        _exportSheetState.update {
+            it.copy(isExporting = true, activeExportTarget = target)
+        }
         scope.launch {
             try {
                 val quota = featureGateService.observeReportExportQuota().first()
                 val blockedByQuota = !quota.canExportPdf
                 val blockedByFormat = currentState.selectedFormat == TripReportFormat.CSV && !quota.canExportCsv
                 if (blockedByQuota || blockedByFormat) {
-                    _exportSheetState.update { it.copy(isVisible = false, isExporting = false) }
+                    _exportSheetState.update {
+                        it.copy(isVisible = false, isExporting = false, activeExportTarget = null)
+                    }
                     emitProFeaturePreview(activeGateEntryPoint)
                     return@launch
                 }
@@ -204,20 +331,14 @@ class TripReportExportEventHandlerImpl(
                     payload = payload,
                     format = currentState.selectedFormat
                 )
-                recordReportExportUseCase()
-                _exportSheetState.update { it.copy(isVisible = false, isExporting = false) }
-                actionEmitter?.invoke(
-                    TripReportExportAction.ShareExportedReport(
-                        contentUri = exportedFile.contentUri,
-                        mimeType = exportedFile.mimeType,
-                        fileName = exportedFile.fileName
-                    )
-                )
+                onGenerated(exportedFile)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Timber.e(e, "Failed to export group summary for group $groupId")
-                _exportSheetState.update { it.copy(isExporting = false) }
+                _exportSheetState.update {
+                    it.copy(isExporting = false, activeExportTarget = null)
+                }
                 actionEmitter?.invoke(
                     TripReportExportAction.ShowExportError(
                         UiText.StringResource(R.string.balances_export_error_failed)

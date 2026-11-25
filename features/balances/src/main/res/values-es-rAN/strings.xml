@@ -174,8 +174,8 @@
     </plurals>
     <string name="balances_export_action_cd">Êpportâh reçumen der grupo</string>
     <string name="balances_export_sheet_title">Êpportâh reçumen der grupo</string>
-    <string name="balances_export_sheet_subtitle">Comparte un reçumen PDF o una oha CSB con gâttô detayáô, balançê y acuerdô de pago der periodo çelêççionao.</string>
-    <string name="balances_export_sheet_subtitle_free">Comparte un reçumen PDF con lô totalê der grupo, balançê de miembrô y acuerdô de pago der periodo çelêççionao.</string>
+    <string name="balances_export_sheet_subtitle">Comparte o guarda un reçumen PDF o una oha CSB con gâttô detayáô, balançê y acuerdô de pago der periodo çelêççionao.</string>
+    <string name="balances_export_sheet_subtitle_free">Comparte o guarda un reçumen PDF con lô totalê der grupo, balançê de miembrô y acuerdô de pago der periodo çelêççionao.</string>
     <plurals name="balances_export_free_quota_badge">
         <item quantity="one">%1$d de %2$d PDF gratî dîpponible êtte mê</item>
         <item quantity="other">%1$d de %2$d PDF gratî dîpponiblê êtte mê</item>
@@ -187,11 +187,15 @@
     <string name="balances_export_format_csv">Oha CSB</string>
     <string name="balances_export_format_csv_pro">CSB · Pro</string>
     <string name="balances_export_confirm_button">Êpportâh y compartîh</string>
+    <string name="balances_export_save_button">Guardâh en er dîppoçitibo</string>
     <string name="balances_export_cancel_button">Cançelâh</string>
     <string name="balances_export_share_chooser_title">Compartîh reçumen der grupo</string>
+    <string name="balances_export_save_success">Guardao: %1$s</string>
     <string name="balances_export_error_failed">No emô podío êpportâh el reçumen der grupo. Inténtalo de nuebo.</string>
+    <string name="balances_export_save_error_failed">No çe pudo guardâh el reçumen der grupo. Inténtalo de nuebo.</string>
     <string name="balances_export_error_group_not_ready">Lô datô der grupo aún çe êttán cargando. Inténtalo en un momento.</string>
     <string name="balances_export_error_no_share_app">No ay ninguna aplicaçión dîpponible pa compartîh êtte arxibo</string>
+    <string name="balances_export_error_no_save_app">No ay ningún çelêttôh de arxibô dîpponible pa guardâh êtte arxibo</string>
     <string name="balances_export_report_title_pro">Reçumen y rehîttro der grupo</string>
     <string name="balances_export_report_title_free">Reçumen der grupo</string>
     <string name="balances_export_generated_at">Henerao el %1$s</string>

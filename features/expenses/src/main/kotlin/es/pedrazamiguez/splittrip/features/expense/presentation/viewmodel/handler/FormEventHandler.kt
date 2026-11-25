@@ -233,15 +233,82 @@ class FormEventHandler(
     }
 
     fun handleCategorySelected(categoryId: String) {
-        val selectedCategory = _uiState.value.availableCategories
-            .find { it.id == categoryId } ?: return
-        val categoryEnum = runCatching { ExpenseCategory.fromString(categoryId) }.getOrDefault(ExpenseCategory.OTHER)
-        val availableSubcategories = addExpenseOptionsUiMapper.mapSubcategories(categoryEnum)
+        val categoryEnum = runCatching { ExpenseCategory.fromString(categoryId) }.getOrNull() ?: return
+        val currentState = _uiState.value
+        val existingMatch = currentState.availableCategories.find { it.id == categoryId }
+        val nextShowAll = existingMatch == null || currentState.showAllCategories
+        val updatedCategories = addExpenseOptionsUiMapper.mapCategoriesForContext(
+            context = currentState.groupContext,
+            showAll = nextShowAll,
+            alwaysInclude = if (existingMatch == null) null else categoryEnum
+        )
+        val selectedCategory = updatedCategories.find { it.id == categoryEnum.name } ?: return
+        val availableSubcategories = addExpenseOptionsUiMapper.mapSubcategories(
+            category = categoryEnum,
+            context = currentState.groupContext,
+            showAll = nextShowAll
+        )
+
         _uiState.update {
             it.copy(
+                showAllCategories = nextShowAll,
+                availableCategories = updatedCategories,
                 selectedCategory = selectedCategory,
                 selectedSubcategory = null,
                 availableSubcategories = availableSubcategories
+            )
+        }
+    }
+
+    fun handleToggleShowAllCategories() {
+        val currentState = _uiState.value
+        val nextShowAll = !currentState.showAllCategories
+        val currentCategoryEnum = currentState.selectedCategory?.id?.let { catId ->
+            runCatching { ExpenseCategory.fromString(catId) }.getOrNull()
+        }
+        val categoryAppliesToContext = currentCategoryEnum?.appliesTo(currentState.groupContext) ?: true
+        val effectiveCategoryEnum = if (!nextShowAll && !categoryAppliesToContext) {
+            ExpenseCategory.OTHER
+        } else {
+            currentCategoryEnum
+        }
+
+        val updatedCategories = addExpenseOptionsUiMapper.mapCategoriesForContext(
+            context = currentState.groupContext,
+            showAll = nextShowAll,
+            alwaysInclude = effectiveCategoryEnum.takeIf { nextShowAll }
+        )
+        val effectiveSelectedCategory = if (!nextShowAll && !categoryAppliesToContext) {
+            updatedCategories.find { it.id == ExpenseCategory.OTHER.name } ?: updatedCategories.lastOrNull()
+        } else {
+            currentState.selectedCategory
+        }
+
+        val currentSubcategory = currentState.selectedSubcategory
+        val subcategoryAppliesToContext =
+            currentSubcategory?.subcategory?.appliesTo(currentState.groupContext) == true
+        val keepSelectedSubcategory =
+            currentSubcategory != null && (nextShowAll || (categoryAppliesToContext && subcategoryAppliesToContext))
+        val effectiveSelectedSubcategory = currentSubcategory.takeIf { keepSelectedSubcategory }
+
+        val updatedSubcategories = if (effectiveCategoryEnum != null) {
+            addExpenseOptionsUiMapper.mapSubcategories(
+                category = effectiveCategoryEnum,
+                context = currentState.groupContext,
+                showAll = nextShowAll,
+                alwaysInclude = effectiveSelectedSubcategory?.subcategory
+            )
+        } else {
+            currentState.availableSubcategories
+        }
+
+        _uiState.update {
+            it.copy(
+                showAllCategories = nextShowAll,
+                availableCategories = updatedCategories,
+                selectedCategory = effectiveSelectedCategory,
+                selectedSubcategory = effectiveSelectedSubcategory,
+                availableSubcategories = updatedSubcategories
             )
         }
     }

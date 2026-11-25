@@ -30,7 +30,9 @@ class PlayAppUpdateClientImpl(
                     availableVersionCode = info.availableVersionCode().toLong(),
                     isImmediateAllowed = info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE),
                     isFlexibleAllowed = info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE),
-                    installStatus = info.installStatus().toPlayInstallStatus()
+                    installStatus = info.installStatus().toPlayInstallStatus(),
+                    bytesDownloaded = info.bytesDownloaded(),
+                    totalBytesToDownload = info.totalBytesToDownload()
                 )
             )
         } catch (e: CancellationException) {
@@ -75,9 +77,15 @@ class PlayAppUpdateClientImpl(
         }
     }
 
-    override fun registerInstallStatusListener(listener: (PlayInstallStatus) -> Unit): () -> Unit {
+    override fun registerInstallStatusListener(listener: (PlayInstallState) -> Unit): () -> Unit {
         val playListener = InstallStateUpdatedListener { state ->
-            listener(state.installStatus().toPlayInstallStatus())
+            listener(
+                PlayInstallState(
+                    status = state.installStatus().toPlayInstallStatus(),
+                    bytesDownloaded = state.bytesDownloaded(),
+                    totalBytesToDownload = state.totalBytesToDownload()
+                )
+            )
         }
         appUpdateManager.registerListener(playListener)
         return {

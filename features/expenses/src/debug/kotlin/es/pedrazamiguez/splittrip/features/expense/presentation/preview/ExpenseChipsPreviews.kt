@@ -3,16 +3,16 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.preview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
-import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PlaneTilt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewComplete
+import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewNarrowThemes
 import es.pedrazamiguez.splittrip.core.designsystem.preview.PreviewThemeWrapper
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.filter.CategoryFilterSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.CategorySection
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.chips.CategoryChips
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.chips.CondensedChips
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.chips.PaymentMethodChips
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.chips.PaymentStatusChips
@@ -20,19 +20,8 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUi
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
-
-private val PREVIEW_CATEGORY_FOOD = CategoryUiModel(
-    id = "FOOD",
-    displayText = "Food & Drinks",
-    icon = null
-)
-
-private val PREVIEW_CATEGORY_TRANSPORT = CategoryUiModel(
-    id = "TRANSPORT",
-    displayText = "Transport",
-    icon = TablerIcons.Outline.PlaneTilt
-)
 
 private val PREVIEW_PAYMENT_CARD = PaymentMethodUiModel(
     id = "CREDIT_CARD",
@@ -53,18 +42,6 @@ private val PREVIEW_STATUS_SCHEDULED = PaymentStatusUiModel(
     id = "SCHEDULED",
     displayText = "Scheduled"
 )
-
-@PreviewComplete
-@Composable
-private fun CategoryChipsPreview() {
-    PreviewThemeWrapper {
-        CategoryChips(
-            categories = listOf(PREVIEW_CATEGORY_FOOD, PREVIEW_CATEGORY_TRANSPORT),
-            selectedCategory = PREVIEW_CATEGORY_FOOD,
-            onCategorySelected = {}
-        )
-    }
-}
 
 @PreviewComplete
 @Composable
@@ -104,9 +81,8 @@ private fun CondensedChipsPreview() {
     }
 }
 
-@PreviewComplete
 @Composable
-private fun CategorySectionGridPreview() {
+private fun CategorySectionCarouselPreviewContent() {
     val categories = ExpenseCategory.entries.map { category ->
         CategoryUiModel(
             id = category.name,
@@ -131,7 +107,63 @@ private fun CategorySectionGridPreview() {
             selectedSubcategory = subcategories.first {
                 it.subcategory == ExpenseSubcategory.INTERNATIONAL_FLIGHT
             },
-            onSubcategorySelected = {}
+            onSubcategorySelected = {},
+            showAllCategories = false,
+            onToggleShowAllCategories = {}
         )
     }
+}
+
+@PreviewComplete
+@Composable
+private fun CategorySectionCarouselPreview() {
+    CategorySectionCarouselPreviewContent()
+}
+
+@PreviewNarrowThemes
+@Composable
+private fun CategorySectionCarouselNarrowPreview() {
+    CategorySectionCarouselPreviewContent()
+}
+
+@Composable
+private fun CategoryFilterSectionCarouselPreviewContent() {
+    PreviewThemeWrapper {
+        CategoryFilterSection(
+            availableCategories = persistentListOf(
+                ExpenseCategory.TRANSPORT,
+                ExpenseCategory.FOOD,
+                ExpenseCategory.LODGING,
+                ExpenseCategory.SHOPPING
+            ),
+            availableSubcategories = persistentListOf(
+                ExpenseSubcategory.TRAIN,
+                ExpenseSubcategory.TAXI_RIDESHARE,
+                ExpenseSubcategory.RESTAURANT,
+                ExpenseSubcategory.CAFE_BREAKFAST,
+                ExpenseSubcategory.HOTEL
+            ),
+            criteria = ExpenseFilterCriteria(
+                selectedCategories = setOf(ExpenseCategory.TRANSPORT, ExpenseCategory.FOOD),
+                selectedSubcategories = setOf(
+                    ExpenseSubcategory.TAXI_RIDESHARE,
+                    ExpenseSubcategory.TRAIN,
+                    ExpenseSubcategory.RESTAURANT
+                )
+            ),
+            onCriteriaChange = {}
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
+private fun CategoryFilterSectionCarouselPreview() {
+    CategoryFilterSectionCarouselPreviewContent()
+}
+
+@PreviewNarrowThemes
+@Composable
+private fun CategoryFilterSectionCarouselNarrowPreview() {
+    CategoryFilterSectionCarouselPreviewContent()
 }

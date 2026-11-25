@@ -5,11 +5,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -67,15 +71,12 @@ fun WizardNavigationBar(
     hazeState: HazeState? = null,
     applyWindowInsets: Boolean = LocalBottomPadding.current == 0.dp
 ) {
-    val surfaceColor = MaterialTheme.colorScheme.surface
-    val glassModifier = if (hazeState != null) {
-        Modifier.horizonGlassEffect(hazeState = hazeState) {
-            mask(
-                Brush.verticalGradient(
-                    colors = listOf(Color.Transparent, Color.Black, Color.Black)
-                )
-            )
-        }
+    val insetModifier = if (applyWindowInsets) {
+        Modifier.windowInsetsPadding(
+            WindowInsets.navigationBars
+                .union(WindowInsets.displayCutout)
+                .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+        )
     } else {
         Modifier
     }
@@ -84,23 +85,15 @@ fun WizardNavigationBar(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.BottomCenter
     ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .then(glassModifier)
-                .background(
-                    Brush.verticalGradient(
-                        0f to surfaceColor.copy(alpha = 0f),
-                        SCRIM_MID_STOP to surfaceColor.copy(alpha = SCRIM_MID_ALPHA),
-                        1f to surfaceColor
-                    )
-                )
+        WizardNavigationBarScrim(
+            hazeState = hazeState,
+            modifier = Modifier.matchParentSize()
         )
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(if (applyWindowInsets) Modifier.navigationBarsPadding() else Modifier)
+                .then(insetModifier)
                 .padding(
                     horizontal = MaterialTheme.spacing.Large,
                     vertical = MaterialTheme.spacing.Medium
@@ -121,6 +114,37 @@ fun WizardNavigationBar(
             )
         }
     }
+}
+
+@Composable
+private fun WizardNavigationBarScrim(
+    hazeState: HazeState?,
+    modifier: Modifier = Modifier
+) {
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val glassModifier = if (hazeState != null) {
+        Modifier.horizonGlassEffect(hazeState = hazeState) {
+            mask(
+                Brush.verticalGradient(
+                    colors = listOf(Color.Transparent, Color.Black, Color.Black)
+                )
+            )
+        }
+    } else {
+        Modifier
+    }
+
+    Box(
+        modifier = modifier
+            .then(glassModifier)
+            .background(
+                Brush.verticalGradient(
+                    0f to surfaceColor.copy(alpha = 0f),
+                    SCRIM_MID_STOP to surfaceColor.copy(alpha = SCRIM_MID_ALPHA),
+                    1f to surfaceColor
+                )
+            )
+    )
 }
 
 @Composable
@@ -156,7 +180,10 @@ private fun WizardForwardButton(
 @Composable
 fun rememberWizardNavBarPadding(): Dp {
     val navBarInset = if (LocalBottomPadding.current == 0.dp) {
-        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        WindowInsets.navigationBars
+            .union(WindowInsets.displayCutout)
+            .asPaddingValues()
+            .calculateBottomPadding()
     } else {
         0.dp
     }

@@ -37,6 +37,7 @@ internal fun PlanAllowanceQuotaItem(
         AllowanceUsageStatus.APPROACHING_LIMIT -> PassportTagStyle.WARNING
         AllowanceUsageStatus.EXHAUSTED -> PassportTagStyle.ERROR
         AllowanceUsageStatus.UNLIMITED -> PassportTagStyle.INFO
+        AllowanceUsageStatus.UNSUPPORTED_ON_DEVICE -> PassportTagStyle.NEUTRAL
     }
 
     val barColor = when (quota.status) {
@@ -44,6 +45,13 @@ internal fun PlanAllowanceQuotaItem(
         AllowanceUsageStatus.APPROACHING_LIMIT -> MaterialTheme.colorScheme.tertiary
         AllowanceUsageStatus.EXHAUSTED -> MaterialTheme.colorScheme.error
         AllowanceUsageStatus.UNLIMITED -> MaterialTheme.colorScheme.secondary
+        AllowanceUsageStatus.UNSUPPORTED_ON_DEVICE -> MaterialTheme.colorScheme.outline
+    }
+
+    val iconTint = if (quota.status == AllowanceUsageStatus.UNSUPPORTED_ON_DEVICE) {
+        MaterialTheme.colorScheme.outline
+    } else {
+        MaterialTheme.colorScheme.primary
     }
 
     Column(
@@ -58,7 +66,7 @@ internal fun PlanAllowanceQuotaItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = iconTint,
                 modifier = Modifier.size(QUOTA_ICON_SIZE)
             )
             Column(modifier = Modifier.weight(1f)) {
@@ -71,7 +79,9 @@ internal fun PlanAllowanceQuotaItem(
             )
         }
 
-        LabelText(text = quota.usageText.asString())
+        if (quota.usageText != null) {
+            LabelText(text = quota.usageText.asString())
+        }
 
         if (quota.showProgressBar) {
             AnimatedProgressBar(

@@ -7,6 +7,8 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigException
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import es.pedrazamiguez.splittrip.data.firebase.R
+import es.pedrazamiguez.splittrip.data.firebase.config.CategoryClassifierRulesParser
+import es.pedrazamiguez.splittrip.domain.model.CategoryClassifierRuleConfig
 import es.pedrazamiguez.splittrip.domain.model.DeveloperInfo
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import kotlin.coroutines.cancellation.CancellationException
@@ -129,6 +131,10 @@ class FirebaseAppConfigRepository(
     private val _isInitialFetchSettled = MutableStateFlow(false)
     override val isInitialFetchSettled: StateFlow<Boolean> = _isInitialFetchSettled.asStateFlow()
 
+    private val _categoryClassifierRules = MutableStateFlow(CategoryClassifierRuleConfig.EMPTY)
+    override val categoryClassifierRules: StateFlow<CategoryClassifierRuleConfig> =
+        _categoryClassifierRules.asStateFlow()
+
     init {
         remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
         updateFlowsFromConfig()
@@ -176,6 +182,9 @@ class FirebaseAppConfigRepository(
         updateTierLimitFlows()
         updateOcrAndDeveloperFlows()
         updateAppUpdateFlows()
+        _categoryClassifierRules.value = CategoryClassifierRulesParser.parse(
+            remoteConfig.getString(KEY_CATEGORY_CLASSIFIER_RULES_JSON)
+        )
     }
 
     private fun updateGeneralConfigFlows() {
@@ -258,7 +267,11 @@ class FirebaseAppConfigRepository(
         _aiReceiptMonthlyLimitFree.value = if (aiLimitFree >= 0) aiLimitFree else DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_FREE
 
         val aiLimitPro = remoteConfig.getLong("ai_receipt_monthly_limit_pro").toInt()
-        _aiReceiptMonthlyLimitPro.value = if (aiLimitPro > 0) aiLimitPro else DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO
+        _aiReceiptMonthlyLimitPro.value = when {
+            aiLimitPro < 0 -> UNLIMITED_AI_RECEIPT_SCANS
+            aiLimitPro > 0 -> aiLimitPro
+            else -> DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO
+        }
 
         val manualReceiptLimitFree = remoteConfig.getLong("manual_receipt_monthly_limit_free").toInt()
         _manualReceiptMonthlyLimitFree.value =
@@ -367,7 +380,8 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_MAX_MEMBERS_PER_GROUP_FREE = 4
         private const val DEFAULT_MAX_MEMBERS_PER_GROUP_PRO = 20
         private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_FREE = 3
-        private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO = 100
+        private const val UNLIMITED_AI_RECEIPT_SCANS = -1
+        private const val DEFAULT_AI_RECEIPT_MONTHLY_LIMIT_PRO = UNLIMITED_AI_RECEIPT_SCANS
         private const val DEFAULT_MANUAL_RECEIPT_MONTHLY_LIMIT_FREE = 5
         private const val DEFAULT_REPORT_EXPORT_MONTHLY_LIMIT_FREE = 1
         private const val DEFAULT_MAX_SUBUNITS_PER_GROUP_FREE = 1
@@ -396,6 +410,7 @@ class FirebaseAppConfigRepository(
         private const val DEFAULT_AUTO_FORCE_PATCH_UPDATES = true
         private val DEFAULT_OPTIONAL_UPDATE_VERSION_CODES: Set<Long> = emptySet()
         private const val DEFAULT_OPTIONAL_UPDATE_COOLDOWN_HOURS = 24L
+        private const val KEY_CATEGORY_CLASSIFIER_RULES_JSON = "category_classifier_rules_json"
 
         private const val LANG_EN = "en"
         private const val LANG_ES = "es"

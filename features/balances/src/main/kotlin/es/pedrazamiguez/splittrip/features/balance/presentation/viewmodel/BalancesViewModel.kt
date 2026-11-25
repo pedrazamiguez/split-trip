@@ -85,6 +85,13 @@ class BalancesViewModel(
                         mimeType = exportAction.mimeType,
                         fileName = exportAction.fileName
                     )
+                is TripReportExportAction.LaunchSaveDocumentPicker ->
+                    BalancesUiAction.LaunchSaveDocumentPicker(
+                        fileName = exportAction.fileName,
+                        mimeType = exportAction.mimeType
+                    )
+                is TripReportExportAction.ShowExportSaveSuccess ->
+                    BalancesUiAction.ShowExportSaveSuccess(exportAction.message)
                 is TripReportExportAction.ShowExportError ->
                     BalancesUiAction.ShowExportError(exportAction.message)
             }
@@ -289,18 +296,16 @@ class BalancesViewModel(
             is BalancesUiEvent.SelectExportCustomStartDate,
             is BalancesUiEvent.SelectExportCustomEndDate,
             is BalancesUiEvent.SelectExportFormat,
-            BalancesUiEvent.ConfirmExportReport -> handleExportEvent(event)
+            BalancesUiEvent.ConfirmExportReport,
+            BalancesUiEvent.SaveExportReport,
+            is BalancesUiEvent.CompleteSaveExportedReport,
+            BalancesUiEvent.CancelSaveExportedReport -> handleExportEvent(event)
         }
     }
 
     private fun handleExportEvent(event: BalancesUiEvent) {
         when (event) {
-            BalancesUiEvent.RequestExportReport -> {
-                val groupId = _selectedGroupId.value
-                if (groupId == null) {
-                    emitExportGroupNotReadyError()
-                    return
-                }
+            BalancesUiEvent.RequestExportReport -> withSelectedGroupIdOrError { groupId ->
                 tripReportExportEventHandler.handleExportRequested(
                     groupId = groupId,
                     gateEntryPoint = MonetizationTelemetry.GateEntryPoint.BALANCES_EXPORT_ACTION
@@ -316,16 +321,27 @@ class BalancesViewModel(
                 tripReportExportEventHandler.handleSelectCustomEndDate(event.date)
             is BalancesUiEvent.SelectExportFormat ->
                 tripReportExportEventHandler.handleSelectFormat(event.format)
-            BalancesUiEvent.ConfirmExportReport -> {
-                val groupId = _selectedGroupId.value
-                if (groupId == null) {
-                    emitExportGroupNotReadyError()
-                    return
-                }
+            BalancesUiEvent.ConfirmExportReport -> withSelectedGroupIdOrError { groupId ->
                 tripReportExportEventHandler.handleConfirmExport(groupId)
             }
+            BalancesUiEvent.SaveExportReport -> withSelectedGroupIdOrError { groupId ->
+                tripReportExportEventHandler.handleSaveExport(groupId)
+            }
+            is BalancesUiEvent.CompleteSaveExportedReport ->
+                tripReportExportEventHandler.handleCompleteSaveExport(event.destinationUri)
+            BalancesUiEvent.CancelSaveExportedReport ->
+                tripReportExportEventHandler.handleCancelSaveExport()
             else -> Unit
         }
+    }
+
+    private inline fun withSelectedGroupIdOrError(action: (String) -> Unit) {
+        val groupId = _selectedGroupId.value
+        if (groupId == null) {
+            emitExportGroupNotReadyError()
+            return
+        }
+        action(groupId)
     }
 
     private fun emitExportGroupNotReadyError() {

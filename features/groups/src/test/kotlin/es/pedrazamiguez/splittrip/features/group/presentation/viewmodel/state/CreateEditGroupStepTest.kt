@@ -8,6 +8,9 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
+private const val TOTAL_STEP_COUNT = 7
+private const val CONTEXT_INFO_ITEMS_COUNT = 2
+
 class CreateEditGroupStepTest {
 
     @Nested
@@ -23,11 +26,11 @@ class CreateEditGroupStepTest {
         }
 
         @Test
-        fun `all 6 steps have unique infoTitleRes and infoDescriptionRes`() {
+        fun `all 7 steps have unique infoTitleRes and infoDescriptionRes`() {
             val steps = CreateEditGroupStep.entries
-            assertEquals(6, steps.size)
-            assertEquals(6, steps.map { it.infoTitleRes }.toSet().size)
-            assertEquals(6, steps.map { it.infoDescriptionRes }.toSet().size)
+            assertEquals(TOTAL_STEP_COUNT, steps.size)
+            assertEquals(TOTAL_STEP_COUNT, steps.map { it.infoTitleRes }.toSet().size)
+            assertEquals(TOTAL_STEP_COUNT, steps.map { it.infoDescriptionRes }.toSet().size)
         }
 
         @Test
@@ -35,6 +38,9 @@ class CreateEditGroupStepTest {
             val expectedMappings = mapOf(
                 CreateEditGroupStep.INFO to (
                     R.string.group_step_info_info_title to R.string.group_step_info_info_description
+                    ),
+                CreateEditGroupStep.CONTEXT to (
+                    R.string.group_step_info_context_title to R.string.group_step_info_context_description
                     ),
                 CreateEditGroupStep.CURRENCY to (
                     R.string.group_step_info_currency_title to R.string.group_step_info_currency_description
@@ -62,10 +68,19 @@ class CreateEditGroupStepTest {
         }
 
         @Test
-        fun `all steps have empty infoItems`() {
-            CreateEditGroupStep.entries.forEach { step ->
-                assertTrue(step.infoItems.isEmpty(), "infoItems should be empty for $step")
-            }
+        fun `CONTEXT step has Trip and Everyday infoItems and other steps have empty infoItems`() {
+            val contextItems = CreateEditGroupStep.CONTEXT.infoItems
+            assertEquals(CONTEXT_INFO_ITEMS_COUNT, contextItems.size)
+            assertEquals(R.string.group_step_info_context_item_travel_title, contextItems[0].titleRes)
+            assertEquals(R.string.group_step_info_context_item_travel_description, contextItems[0].descriptionRes)
+            assertEquals(R.string.group_step_info_context_item_everyday_title, contextItems[1].titleRes)
+            assertEquals(R.string.group_step_info_context_item_everyday_description, contextItems[1].descriptionRes)
+
+            CreateEditGroupStep.entries
+                .filter { it != CreateEditGroupStep.CONTEXT }
+                .forEach { step ->
+                    assertTrue(step.infoItems.isEmpty(), "infoItems should be empty for $step")
+                }
         }
     }
 }

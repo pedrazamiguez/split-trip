@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.SubunitOptionUiModel
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
@@ -28,6 +29,8 @@ data class AddExpenseUiState(
     val configLoadFailed: Boolean = false,
     val loadedGroupId: String? = null,
     val groupName: String? = null,
+    val groupContext: GroupContext = GroupContext.TRAVEL,
+    val showAllCategories: Boolean = false,
     val currentUserId: String? = null,
     val screenTitleRes: Int = R.string.add_expense_title,
     val submitLabelRes: Int = R.string.add_expense_submit_button,

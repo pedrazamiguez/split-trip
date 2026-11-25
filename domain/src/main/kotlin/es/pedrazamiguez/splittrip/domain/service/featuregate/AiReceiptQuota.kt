@@ -10,21 +10,30 @@ package es.pedrazamiguez.splittrip.domain.service.featuregate
  */
 data class AiReceiptQuota(
     val usedScans: Int,
-    val monthlyLimit: Int,
+    val monthlyLimit: Int?,
     val isProTier: Boolean,
     val isGatingEnabled: Boolean = true
 ) {
-    /** Remaining monthly scans available, clamped at 0. */
-    val remainingScans: Int
-        get() = (monthlyLimit - usedScans).coerceAtLeast(0)
+    /** True when the user has no monthly scan cap (subscription gating disabled or unlimited quota). */
+    val isUnlimited: Boolean
+        get() = !isGatingEnabled || monthlyLimit == null || monthlyLimit < 0
+
+    /** Remaining monthly scans available, clamped at 0. Null when unlimited. */
+    val remainingScans: Int?
+        get() = if (isUnlimited) {
+            null
+        } else {
+            val limit = monthlyLimit ?: 0
+            (limit - usedScans).coerceAtLeast(0)
+        }
 
     /** True when the user is allowed to perform an AI receipt scan right now. */
     val canScan: Boolean
-        get() = !isGatingEnabled || remainingScans > 0
+        get() = isUnlimited || (remainingScans ?: 0) > 0
 
     /** True when gating is enabled, the user is on the Free tier, and a positive trial allocation is configured. */
     val isFreeTrialEligible: Boolean
-        get() = isGatingEnabled && !isProTier && monthlyLimit > 0
+        get() = isGatingEnabled && !isProTier && (monthlyLimit ?: 0) > 0
 
     /** True when gating is enabled, quota is exhausted, and upgrading to Pro lifts the restriction. */
     val requiresUpgrade: Boolean

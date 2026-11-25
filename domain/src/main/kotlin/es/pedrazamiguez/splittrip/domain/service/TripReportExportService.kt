@@ -9,4 +9,9 @@ interface TripReportExportService {
         payload: TripReportExportPayload,
         format: TripReportFormat
     ): ExportedTripReportFile
+
+    suspend fun saveToUri(
+        sourceContentUri: String,
+        destinationUri: String
+    )
 }

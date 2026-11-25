@@ -6,6 +6,8 @@ import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.core.designsystem.preview.MappedPreview
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
@@ -94,6 +96,20 @@ fun ExpenseListPreviewHelper(
 @Composable
 fun ExpensesFilterPreviewHelper(
     draftCriteria: ExpenseFilterCriteria = ExpenseFilterCriteria(),
+    availableCategories: ImmutableList<ExpenseCategory> = persistentListOf(
+        ExpenseCategory.TRANSPORT,
+        ExpenseCategory.FOOD,
+        ExpenseCategory.LODGING,
+        ExpenseCategory.ACTIVITIES,
+        ExpenseCategory.SHOPPING
+    ),
+    availableSubcategories: ImmutableList<ExpenseSubcategory> = persistentListOf(
+        ExpenseSubcategory.TRAIN,
+        ExpenseSubcategory.TAXI_RIDESHARE,
+        ExpenseSubcategory.RESTAURANT,
+        ExpenseSubcategory.CAFE_BREAKFAST,
+        ExpenseSubcategory.HOTEL
+    ),
     matchingExpensesCount: Int = 10,
     totalExpensesCount: Int = 10,
     allUserIds: List<String> = listOf("user-1", "user-2", "user-3"),
@@ -124,6 +140,8 @@ fun ExpensesFilterPreviewHelper(
             ExpensesFilterUiState(
                 draftCriteria = domain,
                 availableMembers = availableMembers,
+                availableCategories = availableCategories,
+                availableSubcategories = availableSubcategories,
                 matchingExpensesCount = matchingExpensesCount,
                 totalExpensesCount = totalExpensesCount,
                 isLoading = false,

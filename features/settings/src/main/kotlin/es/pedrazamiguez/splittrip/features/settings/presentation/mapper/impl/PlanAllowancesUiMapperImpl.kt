@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
+import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.service.featuregate.PlanAllowances
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.PlanAllowancesUiMapper
@@ -19,12 +20,18 @@ import kotlinx.collections.immutable.persistentListOf
 
 private const val FRACTION_SCALE = 4
 private val APPROACHING_LIMIT_THRESHOLD = BigDecimal("0.65")
+private val UNLIMITED_MAX_PROGRESS = BigDecimal("0.60")
+private val UNLIMITED_PROGRESS_PIVOT = BigDecimal("5")
 
 class PlanAllowancesUiMapperImpl(
     private val localeProvider: LocaleProvider
 ) : PlanAllowancesUiMapper {
 
-    override fun map(allowances: PlanAllowances): PlanAllowancesUiState {
+    override fun map(
+        allowances: PlanAllowances,
+        extractionCapability: ExtractionCapability
+    ): PlanAllowancesUiState {
+        val isAiSupported = extractionCapability == ExtractionCapability.ON_DEVICE_AI
         val (tierTitle, tierSubtitle, tierBadge) = resolveTierHeader(allowances)
 
         return PlanAllowancesUiState(
@@ -34,11 +41,20 @@ class PlanAllowancesUiMapperImpl(
             tierTitle = tierTitle,
             tierSubtitle = tierSubtitle,
             tierBadge = tierBadge,
-            quotas = mapQuotas(allowances),
+            quotas = mapQuotas(allowances = allowances, isAiSupported = isAiSupported),
             perks = mapPerks(allowances),
-            showUpgradeCta = allowances.showUpgradeCta
+            showUpgradeCta = allowances.showUpgradeCta,
+            upgradeDescription = resolveUpgradeDescription(isAiSupported)
         )
     }
+
+    private fun resolveUpgradeDescription(isAiSupported: Boolean): UiText = UiText.StringResource(
+        if (isAiSupported) {
+            R.string.plan_allowances_upgrade_description
+        } else {
+            R.string.plan_allowances_upgrade_description_no_ai
+        }
+    )
 
     private data class TierHeaderDisplay(
         val title: UiText,
@@ -64,8 +80,11 @@ class PlanAllowancesUiMapperImpl(
         )
     }
 
-    private fun mapQuotas(allowances: PlanAllowances): ImmutableList<AllowanceQuotaUiModel> =
-        persistentListOf(
+    private fun mapQuotas(
+        allowances: PlanAllowances,
+        isAiSupported: Boolean
+    ): ImmutableList<AllowanceQuotaUiModel> {
+        val aiQuota = if (isAiSupported) {
             mapQuota(
                 type = AllowanceQuotaType.AI_RECEIPT_SCANS,
                 titleRes = R.string.plan_allowances_quota_ai_scans_title,
@@ -73,7 +92,13 @@ class PlanAllowancesUiMapperImpl(
                 used = allowances.aiReceiptQuota.usedScans,
                 limit = allowances.aiReceiptQuota.monthlyLimit,
                 isGatingEnabled = allowances.isGatingEnabled
-            ),
+            )
+        } else {
+            createUnsupportedAiQuota()
+        }
+
+        return persistentListOf(
+            aiQuota,
             mapQuota(
                 type = AllowanceQuotaType.MEDIA_UPLOADS,
                 titleRes = R.string.plan_allowances_quota_media_uploads_title,
@@ -103,6 +128,18 @@ class PlanAllowancesUiMapperImpl(
                 isGatingEnabled = allowances.isGatingEnabled
             )
         )
+    }
+
+    private fun createUnsupportedAiQuota(): AllowanceQuotaUiModel = AllowanceQuotaUiModel(
+        type = AllowanceQuotaType.AI_RECEIPT_SCANS,
+        title = UiText.StringResource(R.string.plan_allowances_quota_ai_scans_title),
+        subtitle = UiText.StringResource(R.string.plan_allowances_quota_ai_scans_subtitle_unsupported),
+        usageText = null,
+        statusBadge = UiText.StringResource(R.string.plan_allowances_status_not_supported),
+        status = AllowanceUsageStatus.UNSUPPORTED_ON_DEVICE,
+        progressFraction = 0f,
+        showProgressBar = false
+    )
 
     private fun mapQuota(
         type: AllowanceQuotaType,
@@ -113,7 +150,7 @@ class PlanAllowancesUiMapperImpl(
         isGatingEnabled: Boolean
     ): AllowanceQuotaUiModel {
         val safeUsed = used.coerceAtLeast(0)
-        if (!isGatingEnabled || limit == null) {
+        if (!isGatingEnabled || limit == null || limit < 0) {
             return AllowanceQuotaUiModel(
                 type = type,
                 title = UiText.StringResource(titleRes),
@@ -121,8 +158,8 @@ class PlanAllowancesUiMapperImpl(
                 usageText = UiText.StringResource(R.string.plan_allowances_usage_unlimited, formatInt(safeUsed)),
                 statusBadge = UiText.StringResource(R.string.plan_allowances_badge_unlimited),
                 status = AllowanceUsageStatus.UNLIMITED,
-                progressFraction = 0f,
-                showProgressBar = false
+                progressFraction = computeUnlimitedProgressFraction(safeUsed),
+                showProgressBar = true
             )
         }
 
@@ -150,6 +187,8 @@ class PlanAllowancesUiMapperImpl(
                 formatInt(remaining)
             )
             AllowanceUsageStatus.UNLIMITED -> UiText.StringResource(R.string.plan_allowances_badge_unlimited)
+            AllowanceUsageStatus.UNSUPPORTED_ON_DEVICE ->
+                UiText.StringResource(R.string.plan_allowances_status_not_supported)
         }
 
         return AllowanceQuotaUiModel(
@@ -224,6 +263,17 @@ class PlanAllowancesUiMapperImpl(
     private fun includedOrProBadge(isIncluded: Boolean): UiText = UiText.StringResource(
         if (isIncluded) R.string.plan_allowances_perk_status_included else R.string.plan_allowances_perk_status_pro_only
     )
+
+    private fun computeUnlimitedProgressFraction(used: Int): Float {
+        if (used <= 0) return 0f
+        val usedDecimal = BigDecimal(used)
+        val denominator = usedDecimal.add(UNLIMITED_PROGRESS_PIVOT)
+        return UNLIMITED_MAX_PROGRESS
+            .multiply(usedDecimal)
+            .divide(denominator, FRACTION_SCALE, RoundingMode.HALF_UP)
+            .coerceIn(BigDecimal.ZERO, UNLIMITED_MAX_PROGRESS)
+            .toFloat()
+    }
 
     private fun formatInt(value: Int): String =
         NumberFormat.getIntegerInstance(localeProvider.getCurrentLocale()).format(value)

@@ -128,6 +128,7 @@ internal fun CreateEditGroupUiState.withInitialEditState(
     groupId = group.id,
     groupName = group.name,
     groupDescription = group.description,
+    groupContext = group.context,
     availableCurrencies = mappedCurrencies,
     selectedCurrency = mappedCurrencies.find { it.code == group.currency },
     extraCurrencies = mappedCurrencies.filter { it.code in group.extraCurrencies }.toImmutableList(),

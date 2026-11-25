@@ -206,6 +206,9 @@ class CreateEditGroupViewModel(
             is CreateEditGroupUiEvent.DescriptionChanged -> _uiState.update { state ->
                 state.copy(groupDescription = event.description)
             }
+            is CreateEditGroupUiEvent.ContextSelected -> _uiState.update { state ->
+                state.copy(groupContext = event.context)
+            }
             is CreateEditGroupUiEvent.CurrencySelected -> handleCurrencySelected(event.code)
             is CreateEditGroupUiEvent.ExtraCurrencyToggled -> handleExtraCurrencyToggled(event.code)
             is CreateEditGroupUiEvent.MemberSearchQueryChanged -> {

@@ -163,6 +163,7 @@ object JacocoExclusions {
         // Implementations ARE unit-tested; the interface contracts are not.
         "**/repository/CashWithdrawalRepository*.*",
         "**/domain/service/ReceiptExtractionService*.*",
+        "**/domain/service/ExpenseCategoryClassifierService*.*",
         // ── Domain service/use-case interfaces extracted in SPLTRP-1196 ──────────
         // These interfaces carry companion-object constants used as default param values.
         // JaCoCo instruments the companion <clinit> as executable lines, but the

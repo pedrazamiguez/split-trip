@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.state
 
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.User
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -41,8 +42,9 @@ class CreateEditGroupUiStateTest {
         }
 
         @Test
-        fun `steps in edit mode include members but exclude unregistered names`() {
+        fun `steps in edit mode include context and members but exclude unregistered names`() {
             val state = CreateEditGroupUiState(isEditMode = true)
+            assertTrue(state.steps.contains(CreateEditGroupStep.CONTEXT))
             assertTrue(state.steps.contains(CreateEditGroupStep.MEMBERS))
             assertFalse(state.steps.contains(CreateEditGroupStep.UNREGISTERED_NAMES))
             assertTrue(state.steps.contains(CreateEditGroupStep.INFO))
@@ -50,27 +52,28 @@ class CreateEditGroupUiStateTest {
         }
 
         @Test
-        fun `create mode without pending members has 5 steps`() {
+        fun `create mode without pending members has 6 steps`() {
             val state = CreateEditGroupUiState(isEditMode = false)
-            assertEquals(5, state.steps.size)
+            assertEquals(6, state.steps.size)
+            assertEquals(CreateEditGroupStep.CONTEXT, state.steps[1])
             assertFalse(state.steps.contains(CreateEditGroupStep.UNREGISTERED_NAMES))
         }
 
         @Test
-        fun `create mode with pending members has all 6 steps`() {
+        fun `create mode with pending members has all 7 steps`() {
             val state = CreateEditGroupUiState(
                 isEditMode = false,
                 selectedMembers = listOf(User(userId = "p1", email = "p@test.com", isPending = true))
                     .toImmutableList()
             )
-            assertEquals(6, state.steps.size)
+            assertEquals(7, state.steps.size)
             assertEquals(CreateEditGroupStep.entries.size, state.steps.size)
         }
 
         @Test
-        fun `edit mode without pending has exactly 5 steps`() {
+        fun `edit mode without pending has exactly 6 steps`() {
             val state = CreateEditGroupUiState(isEditMode = true)
-            assertEquals(5, state.steps.size)
+            assertEquals(6, state.steps.size)
         }
     }
 
@@ -79,11 +82,17 @@ class CreateEditGroupUiStateTest {
 
         @Test
         fun `currentStepIndex returns correct index for current step`() {
-            val state = CreateEditGroupUiState(
+            val contextState = CreateEditGroupUiState(
+                isEditMode = false,
+                currentStep = CreateEditGroupStep.CONTEXT
+            )
+            assertEquals(1, contextState.currentStepIndex)
+
+            val currencyState = CreateEditGroupUiState(
                 isEditMode = false,
                 currentStep = CreateEditGroupStep.CURRENCY
             )
-            assertEquals(1, state.currentStepIndex)
+            assertEquals(2, currencyState.currentStepIndex)
         }
 
         @Test
@@ -190,6 +199,12 @@ class CreateEditGroupUiStateTest {
         }
 
         @Test
+        fun `CONTEXT step is always valid`() {
+            val state = CreateEditGroupUiState(currentStep = CreateEditGroupStep.CONTEXT)
+            assertTrue(state.isCurrentStepValid)
+        }
+
+        @Test
         fun `CURRENCY step valid when currency is selected`() {
             val state = CreateEditGroupUiState(
                 currentStep = CreateEditGroupStep.CURRENCY,
@@ -256,6 +271,23 @@ class CreateEditGroupUiStateTest {
         fun `proPreviewPrompt defaults to null`() {
             val state = CreateEditGroupUiState()
             assertNull(state.proPreviewPrompt)
+        }
+    }
+
+    @Nested
+    inner class IsDirty {
+
+        @Test
+        fun `changing groupContext from initial snapshot marks isDirty true`() {
+            val initialState = CreateEditGroupUiState(
+                groupName = "Shared Flat",
+                groupContext = GroupContext.TRAVEL
+            ).let { it.copy(initialFormSnapshot = it.toFormSnapshot()) }
+
+            assertFalse(initialState.isDirty)
+
+            val updatedState = initialState.copy(groupContext = GroupContext.EVERYDAY)
+            assertTrue(updatedState.isDirty)
         }
     }
 }

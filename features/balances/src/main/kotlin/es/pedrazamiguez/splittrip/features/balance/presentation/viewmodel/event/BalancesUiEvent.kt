@@ -29,4 +29,7 @@ sealed interface BalancesUiEvent {
     data class SelectExportCustomEndDate(val date: LocalDate) : BalancesUiEvent
     data class SelectExportFormat(val format: TripReportFormat) : BalancesUiEvent
     data object ConfirmExportReport : BalancesUiEvent
+    data object SaveExportReport : BalancesUiEvent
+    data class CompleteSaveExportedReport(val destinationUri: String) : BalancesUiEvent
+    data object CancelSaveExportedReport : BalancesUiEvent
 }

@@ -20,6 +20,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.BodyText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CaptionText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.component.GroupExtraCurrencyChip
 import es.pedrazamiguez.splittrip.features.group.presentation.model.GroupCurrencyRateUiModel
@@ -49,6 +51,22 @@ fun GroupDetailInfoSection(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SecondaryBodyText(
+                text = stringResource(R.string.group_detail_context_label),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            PassportTag(
+                text = stringResource(group.context.toStringRes()),
+                icon = group.context.toIconVector(),
+                style = PassportTagStyle.NEUTRAL
+            )
         }
 
         if (group.currency.isNotBlank()) {

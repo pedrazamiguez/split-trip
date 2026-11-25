@@ -22,8 +22,12 @@ This operational guide details the architecture, parameter catalog, verification
 └────────────────────────────────┘    └──────────────────────────┘
 ```
 
-### Declarative Single Source of Truth
-Rather than manually editing key-value pairs in the Firebase Web Console, all parameter schemas, types, default values, documentation descriptions, and group hierarchies are declared in [`firebase/remoteconfig.template.json`](../../firebase/remoteconfig.template.json).
+### Additive Merge Model & Ownership
+SplitTrip uses an **additive, live-preserving merge** model (`scripts/merge_remote_config.py`) when deploying Remote Config to Firebase:
+- **Git (`firebase/remoteconfig.template.json`)** owns the parameter schema (`valueType`, `description`, `parameterGroups` folder placement), initial `defaultValue`s for newly added parameters, new `conditions`, and parity with in-app client fallback defaults ([`remote_config_defaults.xml`](../../data/firebase/src/main/res/xml/remote_config_defaults.xml)).
+- **Firebase Console** owns live runtime `defaultValue`s, `conditionalValues`, and existing `conditions` expressions. Hot-changes made in the Console are preserved across automated CI deployments and `make remoteconfig-deploy` runs.
+- **Live-only parameters** (present in Firebase but absent from git) are preserved so older app versions in production continue working without disruption.
+- **Empty/uninitialized fallback:** If the live cloud template is empty or uninitialized, deployment falls back cleanly to `firebase/remoteconfig.template.json`.
 
 ### Parameter Groups & Console Folders
 In Firebase Remote Config, `parameterGroups` organizes parameters into logical, collapsible folder groups inside the Firebase Console.
@@ -107,6 +111,102 @@ SplitTrip parameters are organized into 5 functional groups:
 | `ad_interstitial_action_frequency` | `NUMBER` | `2` | Number of completed transactional actions before displaying an interstitial ad. |
 | `ad_interstitial_min_interval_seconds` | `NUMBER` | `90` | Minimum cooldown duration in seconds between interstitial ad impressions. |
 
+### Group 7: Expenses
+*Expense classification rules and automated categorization overrides.*
+
+| Parameter Key | Value Type | Default Value | Description |
+|---|---|---|---|
+| `category_classifier_rules_json` | `JSON` | `{"version":1,"merge_mode":"merge","common":[...],"languages":{"en":[...],"es":[...],"fr":[...]},"disabled_terms":{"common":[...],"en":[...],"es":[...],"*":[...]}}` | JSON rules for overriding, adding, or disabling expense auto-categorization keywords by language. |
+
+#### `category_classifier_rules_json` Schema & Semantics
+
+```json
+{
+  "version": 1,
+  "merge_mode": "merge",
+  "common": [
+    {
+      "category": "FOOD",
+      "subcategory": "DELIVERY",
+      "phrases": ["uber eats", "pedidos ya"],
+      "keywords": ["rappi", "wolt"]
+    },
+    {
+      "category": "HOME",
+      "subcategory": "UTILITIES",
+      "phrases": [],
+      "keywords": ["o2"]
+    }
+  ],
+  "languages": {
+    "en": [
+      {
+        "category": "HEALTH_PERSONAL_CARE",
+        "subcategory": "DOCTOR_DENTIST",
+        "phrases": ["dental checkup"],
+        "keywords": ["filling"]
+      },
+      {
+        "category": "FOOD",
+        "subcategory": "GROCERIES_SUPERMARKET",
+        "phrases": ["farmers market"],
+        "keywords": ["costco"]
+      },
+      {
+        "category": "SHOPPING",
+        "subcategory": "TOBACCO_VAPING",
+        "phrases": ["pocket lighter"],
+        "keywords": ["lighter", "lighters"]
+      }
+    ],
+    "es": [
+      {
+        "category": "HEALTH_PERSONAL_CARE",
+        "subcategory": "DOCTOR_DENTIST",
+        "phrases": ["revision dental"],
+        "keywords": ["empaste"]
+      },
+      {
+        "category": "FOOD",
+        "subcategory": "GROCERIES_SUPERMARKET",
+        "phrases": ["cash fresh"],
+        "keywords": ["hipercor"]
+      },
+      {
+        "category": "SHOPPING",
+        "subcategory": "TOBACCO_VAPING",
+        "phrases": ["mechero recargable"],
+        "keywords": ["mechero", "encendedor"]
+      }
+    ],
+    "fr": [
+      {
+        "category": "FOOD",
+        "subcategory": "CAFE_BREAKFAST",
+        "phrases": ["petit dejeuner"],
+        "keywords": ["boulangerie"]
+      },
+      {
+        "category": "SHOPPING",
+        "subcategory": "PHARMACY_HEALTH",
+        "phrases": ["parapharmacie bio"],
+        "keywords": ["pharmacie"]
+      }
+    ]
+  },
+  "disabled_terms": {
+    "common": ["example common term"],
+    "en": ["example en term"],
+    "es": ["example es term"],
+    "*": ["example global term"]
+  }
+}
+```
+
+- **`merge_mode`**: `"merge"` (default) appends Remote Config rules onto bundled `:domain` packs; `"replace"` replaces any pack (`common` or a specific language code) whose Remote Config array is non-empty while falling back to bundled defaults for omitted or empty packs.
+- **`common` & `languages`**: Keys in `languages` are normalized via `AppLanguage.resolveBaseLanguageCode` (e.g., `es-AN` / `es-ES` → `es`, `fr-FR` → `fr`). Unknown categories/subcategories or mismatched `(category, subcategory)` pairs are safely ignored.
+- **`disabled_terms`**: Suppresses bundled false-positive phrases or keywords per pack (`common`, `<lang>`) or across all bundled packs (`*`).
+
 ---
 
 ## 🛠️ 3. Operational CLI & Makefile Tooling
@@ -119,7 +219,7 @@ SplitTrip provides a dedicated CLI tool at [`scripts/deploy-remote-config.sh`](.
 |---|---|
 | `make remoteconfig-validate` | Runs `scripts/validate_remote_config.py` to check parity between XML and template. |
 | `make remoteconfig-diff` | Fetches live cloud configuration, strips metadata, and outputs a colorized diff. |
-| `make remoteconfig-deploy` | Validates consistency and deploys the template via `npx firebase-tools`. |
+| `make remoteconfig-deploy` | Validates consistency, merges git template into live config (preserving live values), and deploys via `npx firebase-tools` (set `OVERWRITE=true` to force full overwrite). |
 | `make remoteconfig-rollback VERSION=<v>` | Rolls back the cloud configuration to the specified version number. |
 | `./scripts/deploy-remote-config.sh versions` | Lists recent published template versions, authors, and timestamps. |
 | `./scripts/deploy-remote-config.sh get [file]` | Fetches the live template JSON to stdout or to a specified file. |
@@ -131,9 +231,16 @@ make remoteconfig-diff
 ```
 
 ### Example: Deploying Remote Config
-To validate and deploy directly from your local terminal:
+To validate and deploy using the default additive, live-preserving merge:
 ```bash
 make remoteconfig-deploy
+```
+
+If you intentionally need to reset all live values to match `firebase/remoteconfig.template.json` (disabling the additive merge):
+```bash
+make remoteconfig-deploy OVERWRITE=true
+# or directly:
+./scripts/deploy-remote-config.sh deploy --overwrite
 ```
 
 ---
@@ -186,10 +293,17 @@ Remote Config deployment is automated via GitHub Actions in [`.github/workflows/
   - `firestore.rules`
   - `firestore.indexes.json`
   - `functions/**`
-- **Execution:** The workflow authenticates using Google Cloud Service Account credentials (`FIREBASE_SERVICE_ACCOUNT_JSON`) and executes:
-  ```bash
-  npx firebase-tools deploy --only functions,firestore,remoteconfig --force
-  ```
+- **Execution:** The workflow authenticates using Google Cloud Service Account credentials (`FIREBASE_SERVICE_ACCOUNT_JSON`) and runs two deployment steps:
+  1. **Deploy Functions, Firestore, and Storage:**
+     ```bash
+     npx firebase-tools deploy --only functions,firestore,storage --force
+     ```
+  2. **Deploy Remote Config (Additive Merge):**
+     ```bash
+     ./scripts/deploy-remote-config.sh deploy
+     ```
+     When triggered manually via `workflow_dispatch` with `force_overwrite_values: true`, it passes `--overwrite` to replace live values from `firebase/remoteconfig.template.json`.
+- **Local Full-Stack Deploy (`make firebase`):** Similarly deploys non-Remote-Config targets with `npx firebase-tools deploy --except remoteconfig` and delegates Remote Config to `./scripts/deploy-remote-config.sh deploy`.
 
 ---
 
@@ -212,9 +326,12 @@ If an erroneous or broken configuration is deployed to production:
    ./scripts/deploy-remote-config.sh rollback 17
    ```
 
-3. **Synchronize Local Template:**
-   After rolling back the cloud instance, fetch the restored template to keep local Git in sync:
+3. **Persist Across Subsequent Deployments:**
+   Because subsequent deployments use the additive merge by default, rolled-back live values in Firebase Console/CLI remain preserved across future releases without requiring an immediate git overwrite.
+
+4. **Optional: Synchronize Local Template:**
+   If you also want to update git's initial defaults to match the restored template:
    ```bash
    ./scripts/deploy-remote-config.sh get firebase/remoteconfig.template.json
    ```
-   Then commit the rollback in Git following the standard PR workflow.
+   Then commit the update in Git following the standard PR workflow.

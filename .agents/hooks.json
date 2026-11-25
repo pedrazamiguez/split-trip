@@ -1,0 +1,17 @@
+{
+  "github-mcp-guard": {
+    "enabled": true,
+    "PreToolUse": [
+      {
+        "matcher": "call_mcp_tool|mcp_github_.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ./scripts/github-mcp-guard.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

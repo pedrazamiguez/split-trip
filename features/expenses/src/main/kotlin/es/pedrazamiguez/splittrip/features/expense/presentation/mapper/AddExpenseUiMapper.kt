@@ -1,10 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.mapper
 
-import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.domain.constant.DomainConstants
@@ -30,7 +27,6 @@ import es.pedrazamiguez.splittrip.domain.service.split.SplitPreviewService
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategorizedExpenseSplits
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
-import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -136,7 +132,7 @@ class AddExpenseUiMapper(
 
         val paymentMethod = state.selectedPaymentMethod?.let {
             PaymentMethod.fromString(it.id)
-        } ?: PaymentMethod.CASH
+        } ?: PaymentMethod.DEBIT_CARD
 
         val category = state.selectedCategory?.let {
             runCatching { ExpenseCategory.fromString(it.id) }.getOrDefault(ExpenseCategory.OTHER)
@@ -291,20 +287,11 @@ class AddExpenseUiMapper(
         val selectedCurrency = currentState.availableCurrencies.find { it.code == expense.sourceCurrency }
         val selectedPaymentMethod = currentState.paymentMethods.find { it.id == expense.paymentMethod.name }
         val selectedFundingSource = currentState.fundingSources.find { it.id == expense.payerType.name }
-        val selectedCategory = currentState.availableCategories.find { it.id == expense.category.name }
-        val availableSubcategories = ExpenseSubcategory.forCategory(expense.category)
-            .map { sub ->
-                SubcategoryUiModel(
-                    subcategory = sub,
-                    name = UiText.StringResource(sub.toStringRes()),
-                    icon = sub.toIconVector()
-                )
-            }.toImmutableList()
-        val selectedSubcategory = if (expense.subcategory != ExpenseSubcategory.UNSPECIFIED) {
-            availableSubcategories.find { it.subcategory == expense.subcategory }
-        } else {
-            null
-        }
+        val categorySelection = addExpenseOptionsUiMapper.resolveCategorySelectionForEdit(
+            category = expense.category,
+            subcategory = expense.subcategory,
+            groupContext = currentState.groupContext
+        )
         val availablePaymentStatuses = addExpenseOptionsUiMapper.mapPaymentStatuses(
             statuses = PaymentStatus.entries,
             paymentMethod = expense.paymentMethod,
@@ -375,9 +362,11 @@ class AddExpenseUiMapper(
             selectedCurrency = selectedCurrency,
             selectedPaymentMethod = selectedPaymentMethod,
             selectedFundingSource = selectedFundingSource,
-            selectedCategory = selectedCategory,
-            selectedSubcategory = selectedSubcategory,
-            availableSubcategories = availableSubcategories,
+            showAllCategories = categorySelection.showAllCategories,
+            availableCategories = categorySelection.availableCategories,
+            selectedCategory = categorySelection.selectedCategory,
+            selectedSubcategory = categorySelection.selectedSubcategory,
+            availableSubcategories = categorySelection.availableSubcategories,
             availablePaymentStatuses = availablePaymentStatuses,
             selectedPaymentStatus = selectedPaymentStatus,
             displayExchangeRate = displayRate,

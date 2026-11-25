@@ -78,6 +78,7 @@ internal fun BalancesScreenOverlays(
             onSelectCustomEndDate = { onEvent(BalancesUiEvent.SelectExportCustomEndDate(it)) },
             onSelectFormat = { onEvent(BalancesUiEvent.SelectExportFormat(it)) },
             onConfirmExport = { onEvent(BalancesUiEvent.ConfirmExportReport) },
+            onSaveToDevice = { onEvent(BalancesUiEvent.SaveExportReport) },
             onDismiss = { onEvent(BalancesUiEvent.DismissExportReportSheet) }
         )
     }

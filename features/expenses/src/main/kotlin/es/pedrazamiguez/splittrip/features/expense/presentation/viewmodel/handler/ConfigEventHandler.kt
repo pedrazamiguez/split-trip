@@ -121,6 +121,7 @@ class ConfigEventHandler(
                     submitLabelRes = current.submitLabelRes
                 )
             }
+            postConfigCallback?.invoke(PostConfigAction.ResetCategorySuggestion)
         } else {
             _uiState.update { it.copy(isLoading = true, configLoadFailed = false) }
         }
@@ -197,6 +198,8 @@ class ConfigEventHandler(
                 manualReceiptRemainingLabel = manualReceiptQuotaUi.remainingAttachmentsLabel,
                 currentStep = if (effectiveAiMode) AddExpenseStep.RECEIPT else AddExpenseStep.TITLE,
                 groupName = config.group.name,
+                groupContext = config.group.context,
+                showAllCategories = false,
                 currentUserId = currentUserId,
                 expenseDateMillis = currentMillis,
                 formattedExpenseDate = formattedDate,
@@ -303,9 +306,14 @@ class ConfigEventHandler(
         val defaultPaymentMethod =
             recentPaymentMethodIds.firstOrNull()?.let { lastId ->
                 reorderedPaymentMethods.find { it.id == lastId }
-            } ?: reorderedPaymentMethods.firstOrNull()
+            } ?: reorderedPaymentMethods.find { it.id == PaymentMethod.DEBIT_CARD.name }
+                ?: reorderedPaymentMethods.firstOrNull()
 
-        val mappedCategories = addExpenseOptionsMapper.mapCategories(ExpenseCategory.entries)
+        val groupContext = config.group.context
+        val mappedCategories = addExpenseOptionsMapper.mapCategoriesForContext(
+            context = groupContext,
+            showAll = false
+        )
         val defaultCategory =
             recentCategoryIds.firstOrNull()?.let { lastId ->
                 mappedCategories.find { it.id == lastId }
@@ -315,7 +323,11 @@ class ConfigEventHandler(
         val defaultCategoryEnum = defaultCategory?.id?.let { catId ->
             runCatching { ExpenseCategory.fromString(catId) }.getOrNull()
         } ?: ExpenseCategory.OTHER
-        val availableSubcategories = addExpenseOptionsMapper.mapSubcategories(defaultCategoryEnum)
+        val availableSubcategories = addExpenseOptionsMapper.mapSubcategories(
+            category = defaultCategoryEnum,
+            context = groupContext,
+            showAll = false
+        )
 
         val defaultPaymentMethodEnum = defaultPaymentMethod?.id?.let {
             runCatching { PaymentMethod.fromString(it) }.getOrNull()

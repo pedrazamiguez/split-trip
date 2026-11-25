@@ -11,6 +11,12 @@ on:
       - 'storage.rules'
       - 'firebase/remoteconfig.template.json'
   workflow_dispatch:
+    inputs:
+      force_overwrite_values:
+        description: 'Overwrite live Firebase Remote Config values from git template (disables additive merge)'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -54,6 +60,14 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
 
-      - name: Deploy to Firebase
-        run: npx firebase-tools deploy --only functions,firestore,storage,remoteconfig --force
+      - name: Deploy Functions, Firestore, and Storage to Firebase
+        run: npx firebase-tools deploy --only functions,firestore,storage --force
+
+      - name: Deploy Remote Config to Firebase
+        run: |
+          if [ "${{ inputs.force_overwrite_values }}" = "true" ]; then
+            ./scripts/deploy-remote-config.sh deploy --overwrite
+          else
+            ./scripts/deploy-remote-config.sh deploy
+          fi
 

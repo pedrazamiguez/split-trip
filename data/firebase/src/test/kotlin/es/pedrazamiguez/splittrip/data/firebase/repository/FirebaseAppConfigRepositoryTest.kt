@@ -6,6 +6,11 @@ import com.google.firebase.remoteconfig.ConfigUpdate
 import com.google.firebase.remoteconfig.ConfigUpdateListener
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.model.CategoryClassifierRuleConfig
+import es.pedrazamiguez.splittrip.domain.model.CategoryKeywordRule
+import es.pedrazamiguez.splittrip.domain.model.CategoryRuleMergeMode
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.every
@@ -74,6 +79,7 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getBoolean("auto_force_patch_updates") } returns false
         every { firebaseRemoteConfig.getString("optional_update_version_codes") } returns "1001000,1002000"
         every { firebaseRemoteConfig.getLong("optional_update_cooldown_hours") } returns 48L
+        every { firebaseRemoteConfig.getString("category_classifier_rules_json") } returns ""
 
         repository = FirebaseAppConfigRepository(firebaseRemoteConfig)
     }
@@ -254,7 +260,7 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(4, fallbackRepo.maxMembersPerGroupFree.value)
         assertEquals(20, fallbackRepo.maxMembersPerGroupPro.value)
         assertEquals(3, fallbackRepo.aiReceiptMonthlyLimitFree.value)
-        assertEquals(100, fallbackRepo.aiReceiptMonthlyLimitPro.value)
+        assertEquals(-1, fallbackRepo.aiReceiptMonthlyLimitPro.value)
         assertEquals(5, fallbackRepo.manualReceiptMonthlyLimitFree.value)
         assertEquals(1, fallbackRepo.maxSubunitsPerGroupFree.value)
         assertEquals(-1, fallbackRepo.maxSubunitsPerGroupPro.value)
@@ -314,6 +320,19 @@ class FirebaseAppConfigRepositoryTest {
 
         val positiveRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
         assertEquals(200, positiveRepo.maxOwnedGroupsPro.value)
+    }
+
+    @Test
+    fun `updateFlowsFromConfig normalizes negative ai_receipt_monthly_limit_pro to -1 and honors positive values`() {
+        every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns -5L
+
+        val negativeRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+        assertEquals(-1, negativeRepo.aiReceiptMonthlyLimitPro.value)
+
+        every { firebaseRemoteConfig.getLong("ai_receipt_monthly_limit_pro") } returns 150L
+
+        val positiveRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+        assertEquals(150, positiveRepo.aiReceiptMonthlyLimitPro.value)
     }
 
     @Test
@@ -578,6 +597,82 @@ class FirebaseAppConfigRepositoryTest {
         assertEquals(1_003_000L, repository.minSupportedVersionCode.value)
     }
 
+    @Test
+    fun `parses valid category_classifier_rules_json from Remote Config on init and fetchConfiguration`() = runTest {
+        every {
+            firebaseRemoteConfig.getString("category_classifier_rules_json")
+        } returns
+            """{"version":1,"merge_mode":"merge","common":[{"category":"FOOD",""" +
+            """"subcategory":"DELIVERY","keywords":["rappi"]}]}"""
+
+        val initializedRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+        assertEquals(
+            listOf(
+                CategoryKeywordRule(
+                    category = ExpenseCategory.FOOD,
+                    subcategory = ExpenseSubcategory.DELIVERY,
+                    keywords = listOf("rappi")
+                )
+            ),
+            initializedRepo.categoryClassifierRules.value.commonRules
+        )
+
+        mockkStatic("kotlinx.coroutines.tasks.TasksKt")
+        val mockTask = mockk<Task<Boolean>>()
+        every { firebaseRemoteConfig.fetchAndActivate() } returns mockTask
+        coEvery { mockTask.await() } returns true
+        setupMockRemoteConfigValues()
+
+        val updated = repository.fetchConfiguration()
+
+        assertTrue(updated)
+        assertEquals(CategoryRuleMergeMode.MERGE, repository.categoryClassifierRules.value.mergeMode)
+        assertEquals(
+            listOf(
+                CategoryKeywordRule(
+                    category = ExpenseCategory.FOOD,
+                    subcategory = ExpenseSubcategory.CAFE_BREAKFAST,
+                    keywords = listOf("boulangerie")
+                )
+            ),
+            repository.categoryClassifierRules.value.languageRules["fr"]
+        )
+    }
+
+    @Test
+    fun `falls back to EMPTY CategoryClassifierRuleConfig when category_classifier_rules_json is malformed or blank`() {
+        every { firebaseRemoteConfig.getString("category_classifier_rules_json") } returns "{malformed"
+        val malformedRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+        assertEquals(CategoryClassifierRuleConfig.EMPTY, malformedRepo.categoryClassifierRules.value)
+
+        every { firebaseRemoteConfig.getString("category_classifier_rules_json") } returns "   "
+        val blankRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+        assertEquals(CategoryClassifierRuleConfig.EMPTY, blankRepo.categoryClassifierRules.value)
+    }
+
+    @Test
+    fun `real-time ConfigUpdateListener updates categoryClassifierRules flow`() {
+        val mockConfigUpdate = mockk<ConfigUpdate>(relaxed = true)
+        val updateListenerSlot = slot<ConfigUpdateListener>()
+        verify(exactly = 1) { firebaseRemoteConfig.addOnConfigUpdateListener(capture(updateListenerSlot)) }
+
+        val mockActivateTask = mockk<Task<Boolean>>()
+        every { firebaseRemoteConfig.activate() } returns mockActivateTask
+        val listenerSlot = slot<OnCompleteListener<Boolean>>()
+        every { mockActivateTask.addOnCompleteListener(capture(listenerSlot)) } returns mockActivateTask
+        every { mockActivateTask.isSuccessful } returns true
+
+        every {
+            firebaseRemoteConfig.getString("category_classifier_rules_json")
+        } returns """{"merge_mode":"replace","disabled_terms":{"es":["bote"]}}"""
+
+        updateListenerSlot.captured.onUpdate(mockConfigUpdate)
+        listenerSlot.captured.onComplete(mockActivateTask)
+
+        assertEquals(CategoryRuleMergeMode.REPLACE, repository.categoryClassifierRules.value.mergeMode)
+        assertEquals(setOf("bote"), repository.categoryClassifierRules.value.disabledTerms["es"])
+    }
+
     private fun setupMockRemoteConfigValues() {
         every { firebaseRemoteConfig.getString("default_currency_code") } returns "GBP"
         every { firebaseRemoteConfig.getLong("balance_computation_debounce_ms") } returns 100L
@@ -614,6 +709,11 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getBoolean("auto_force_patch_updates") } returns true
         every { firebaseRemoteConfig.getString("optional_update_version_codes") } returns "1005000, 1006001"
         every { firebaseRemoteConfig.getLong("optional_update_cooldown_hours") } returns 72L
+        every {
+            firebaseRemoteConfig.getString("category_classifier_rules_json")
+        } returns
+            """{"version":1,"merge_mode":"merge","languages":{"fr":[{"category":"FOOD",""" +
+            """"subcategory":"CAFE_BREAKFAST","keywords":["boulangerie"]}]}}"""
         every {
             firebaseRemoteConfig.getString("developer_info_json")
         } returns """
