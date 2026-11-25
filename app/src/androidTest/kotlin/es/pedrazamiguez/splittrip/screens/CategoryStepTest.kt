@@ -7,11 +7,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -75,8 +79,7 @@ class CategoryStepTest {
         val foodUiModel = categories.first { it.id == ExpenseCategory.FOOD.name }
         val foodSubcategories = buildSubcategories(ExpenseCategory.FOOD)
         val foodLabel = context.getString(ExpenseCategory.FOOD.toStringRes())
-        val trayTitle = context.getString(R.string.category_subcategories_tray_title, foodLabel)
-        val optionalTag = context.getString(R.string.category_subcategory_optional_tag)
+        val restaurantLabel = context.getString(ExpenseSubcategory.RESTAURANT.toStringRes())
 
         val uiState = AddExpenseUiState(
             availableCategories = categories,
@@ -92,9 +95,9 @@ class CategoryStepTest {
         }
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText(foodLabel).assertIsDisplayed().assertIsSelected()
-        composeRule.onNodeWithText(trayTitle).assertIsDisplayed()
-        composeRule.onNodeWithText(optionalTag).assertIsDisplayed()
+        composeRule.onNode(hasText(foodLabel).and(isSelected())).assertIsDisplayed()
+        composeRule.onAllNodesWithText(foodLabel).assertCountEquals(2)
+        composeRule.onNodeWithText(restaurantLabel).assertIsDisplayed()
     }
 
     @Test
@@ -102,7 +105,6 @@ class CategoryStepTest {
         val categories = buildCategories()
         val foodUiModel = categories.first { it.id == ExpenseCategory.FOOD.name }
         val transportLabel = context.getString(ExpenseCategory.TRANSPORT.toStringRes())
-        val expectedTrayTitle = context.getString(R.string.category_subcategories_tray_title, transportLabel)
         val emittedEvents = mutableListOf<AddExpenseUiEvent>()
 
         composeRule.setContent {
@@ -138,7 +140,7 @@ class CategoryStepTest {
         composeRule.waitForIdle()
 
         assertTrue(emittedEvents.contains(AddExpenseUiEvent.CategorySelected(ExpenseCategory.TRANSPORT.name)))
-        composeRule.onNodeWithText(expectedTrayTitle).assertIsDisplayed()
+        composeRule.onAllNodesWithText(transportLabel).assertCountEquals(2)
     }
 
     @Test
@@ -202,6 +204,41 @@ class CategoryStepTest {
     }
 
     @Test
+    fun togglingShowAllCategories_preservesHorizontalScrollPosition() {
+        val travelCategories = buildCategories(ExpenseCategory.forContext(GroupContext.TRAVEL))
+        val allCategories = buildCategories(ExpenseCategory.entries)
+        val showAllLabel = context.getString(R.string.category_show_all_toggle)
+        val otherLabel = context.getString(ExpenseCategory.OTHER.toStringRes())
+
+        composeRule.setContent {
+            var showAll by remember { mutableStateOf(false) }
+            val uiState = AddExpenseUiState(
+                availableCategories = if (showAll) allCategories else travelCategories,
+                selectedCategory = travelCategories.first(),
+                availableSubcategories = buildSubcategories(ExpenseCategory.TRANSPORT),
+                showAllCategories = showAll
+            )
+            SplitTripTheme {
+                CategoryStep(
+                    uiState = uiState,
+                    onEvent = { event ->
+                        if (event is AddExpenseUiEvent.ToggleShowAllCategories) {
+                            showAll = !showAll
+                        }
+                    }
+                )
+            }
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(otherLabel).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithText(showAllLabel).performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(otherLabel).assertIsDisplayed()
+    }
+
+    @Test
     fun rendersCleanlyOnNarrow320dpScreen_withoutClippingOrCrash() {
         val categories = buildCategories(ExpenseCategory.entries)
         val healthCategory = categories.first { it.id == ExpenseCategory.HEALTH_PERSONAL_CARE.name }
@@ -214,7 +251,6 @@ class CategoryStepTest {
         }.toImmutableList()
         val headerTitle = context.getString(R.string.add_expense_category_title)
         val healthLabel = context.getString(ExpenseCategory.HEALTH_PERSONAL_CARE.toStringRes())
-        val trayTitle = context.getString(R.string.category_subcategories_tray_title, healthLabel)
 
         val uiState = AddExpenseUiState(
             availableCategories = categories,
@@ -233,7 +269,6 @@ class CategoryStepTest {
         composeRule.waitForIdle()
 
         composeRule.onNodeWithText(headerTitle).assertIsDisplayed()
-        composeRule.onNodeWithText(healthLabel).assertIsDisplayed()
-        composeRule.onNodeWithText(trayTitle).assertIsDisplayed()
+        composeRule.onAllNodesWithText(healthLabel).assertCountEquals(2)
     }
 }

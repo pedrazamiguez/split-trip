@@ -46,11 +46,8 @@ internal fun SubcategoryStampTray(
             },
             label = "SubcategoryStampTrayTransition"
         ) { state ->
-            val title = if (!state.categoryLabel.isNullOrBlank()) {
-                stringResource(R.string.category_subcategories_tray_title, state.categoryLabel)
-            } else {
-                stringResource(R.string.add_expense_subcategory_title)
-            }
+            val title = state.categoryLabel?.takeIf { it.isNotBlank() }
+                ?: stringResource(R.string.add_expense_subcategory_title)
             SubcategoryStampTrayContent(
                 title = title,
                 items = state.items,

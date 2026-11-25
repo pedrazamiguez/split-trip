@@ -2,36 +2,29 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.component.filte
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTag
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardSectionLabelText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toIconVector
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.extensions.toStringRes
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
-import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.CategoryCarousel
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.CategoryCarouselItem
-import es.pedrazamiguez.splittrip.features.expense.presentation.component.category.ShowAllCategoriesChip
 import kotlinx.collections.immutable.toImmutableList
 
 @Composable
@@ -41,7 +34,8 @@ fun CategoryFilterSection(
     modifier: Modifier = Modifier,
     groupContext: GroupContext = GroupContext.TRAVEL,
     showAllCategories: Boolean = false,
-    onToggleShowAllCategories: () -> Unit = {}
+    onToggleShowAllCategories: () -> Unit = {},
+    carouselEdgePadding: Dp = 0.dp
 ) {
     val visible = remember(groupContext, showAllCategories, criteria.selectedCategories) {
         CategoryFilterLogic.resolveVisibleCategories(groupContext, showAllCategories, criteria.selectedCategories)
@@ -64,27 +58,20 @@ fun CategoryFilterSection(
         )
     }.toImmutableList()
 
+    val count = criteria.selectedCategories.size
+    var retainedCount by remember { mutableIntStateOf(count) }
+    if (count > 0) {
+        retainedCount = count
+    }
+
     Column(modifier = modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)) {
-            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                Row(
-                    Modifier.weight(1f),
-                    Arrangement.spacedBy(MaterialTheme.spacing.Small),
-                    Alignment.CenterVertically
-                ) {
-                    CardSectionLabelText(text = stringResource(R.string.expenses_filter_section_category))
-                    val count = criteria.selectedCategories.size
-                    if (count > 0) {
-                        val desc = pluralStringResource(R.plurals.category_filter_selected_count, count, count)
-                        PassportTag(
-                            text = count.toString(),
-                            modifier = Modifier.semantics { contentDescription = desc },
-                            style = PassportTagStyle.INFO
-                        )
-                    }
-                }
-                ShowAllCategoriesChip(showAllCategories, onToggleShowAllCategories)
-            }
+            CategoryFilterHeader(
+                selectedCount = count,
+                retainedCount = retainedCount,
+                showAllCategories = showAllCategories,
+                onToggleShowAllCategories = onToggleShowAllCategories
+            )
             CategoryCarousel(
                 items = carouselItems,
                 focusedItemId = effectiveFocused?.name,
@@ -94,6 +81,7 @@ fun CategoryFilterSection(
                     focusedCategory = res.nextFocusedCategory
                     if (res.updatedCriteria != criteria) onCriteriaChange(res.updatedCriteria)
                 },
+                edgePadding = carouselEdgePadding,
                 selectionRole = Role.Checkbox
             )
         }

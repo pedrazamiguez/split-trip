@@ -12,6 +12,7 @@ import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -180,8 +181,6 @@ class ExpensesFilterScreenTest {
         val foodLabel = context.getString(ExpenseCategory.FOOD.toStringRes())
         val trainLabel = context.getString(ExpenseSubcategory.TRAIN.toStringRes())
         val taxiLabel = context.getString(ExpenseSubcategory.TAXI_RIDESHARE.toStringRes())
-        val transportTrayTitle = context.getString(R.string.category_subcategories_tray_title, transportLabel)
-        val foodTrayTitle = context.getString(R.string.category_subcategories_tray_title, foodLabel)
 
         composeRule.setContent {
             var uiState by remember { mutableStateOf(ExpensesFilterUiState()) }
@@ -196,7 +195,7 @@ class ExpensesFilterScreenTest {
 
         composeRule.onNodeWithText(transportLabel).performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText(transportTrayTitle).assertIsDisplayed()
+        composeRule.onAllNodesWithText(transportLabel).assertCountEquals(2)
 
         composeRule.onNodeWithText(trainLabel).performScrollTo().performClick()
         composeRule.waitForIdle()
@@ -206,8 +205,8 @@ class ExpensesFilterScreenTest {
         composeRule.onNodeWithText(foodLabel).performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText(foodTrayTitle).assertIsDisplayed()
-        composeRule.onNodeWithText(transportTrayTitle).assertDoesNotExist()
+        composeRule.onAllNodesWithText(foodLabel).assertCountEquals(2)
+        composeRule.onAllNodesWithText(transportLabel).assertCountEquals(1)
         composeRule.onNode(
             hasText(transportLabel).and(hasAnyDescendant(hasText("2")))
         ).assertIsDisplayed().assertIsSelected()
@@ -218,8 +217,6 @@ class ExpensesFilterScreenTest {
     fun tappingSelectedUnfocusedCategory_focusesItsTray_andSecondTapDeselectsAndClearsChildren() {
         val transportLabel = context.getString(ExpenseCategory.TRANSPORT.toStringRes())
         val foodLabel = context.getString(ExpenseCategory.FOOD.toStringRes())
-        val transportTrayTitle = context.getString(R.string.category_subcategories_tray_title, transportLabel)
-        val foodTrayTitle = context.getString(R.string.category_subcategories_tray_title, foodLabel)
 
         var latestCriteria = ExpenseFilterCriteria(
             selectedCategories = setOf(ExpenseCategory.TRANSPORT, ExpenseCategory.FOOD),
@@ -247,11 +244,11 @@ class ExpensesFilterScreenTest {
 
         composeRule.onNodeWithText(foodLabel).performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText(foodTrayTitle).assertIsDisplayed()
+        composeRule.onAllNodesWithText(foodLabel).assertCountEquals(2)
 
-        composeRule.onNodeWithText(transportLabel).performClick()
+        composeRule.onNode(hasText(transportLabel).and(isSelected())).performClick()
         composeRule.waitForIdle()
-        composeRule.onNodeWithText(transportTrayTitle).assertIsDisplayed()
+        composeRule.onAllNodesWithText(transportLabel).assertCountEquals(2)
         assertEquals(setOf(ExpenseCategory.TRANSPORT, ExpenseCategory.FOOD), latestCriteria.selectedCategories)
         assertEquals(
             setOf(ExpenseSubcategory.TRAIN, ExpenseSubcategory.TAXI_RIDESHARE),
@@ -260,12 +257,12 @@ class ExpensesFilterScreenTest {
 
         Thread.sleep(UiConstants.DEFAULT_DEBOUNCE_MS + 100L)
 
-        composeRule.onNodeWithText(transportLabel).performClick()
+        composeRule.onNode(hasText(transportLabel).and(isSelected())).performClick()
         composeRule.waitForIdle()
 
         assertEquals(setOf(ExpenseCategory.FOOD), latestCriteria.selectedCategories)
         assertTrue(latestCriteria.selectedSubcategories.isEmpty())
-        composeRule.onNodeWithText(foodTrayTitle).assertIsDisplayed()
+        composeRule.onAllNodesWithText(foodLabel).assertCountEquals(2)
     }
 
     @Test

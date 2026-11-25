@@ -153,8 +153,6 @@
     <string name="add_expense_category_title">Categoría</string>
     <string name="category_show_all_toggle">Mostrar todas</string>
     <string name="add_expense_subcategory_title">Subcategoría</string>
-    <string name="category_subcategories_tray_title">Subcategorías: %1$s</string>
-    <string name="category_subcategory_optional_tag">Opcional</string>
     <plurals name="category_filter_selected_count">
         <item quantity="one">%1$d seleccionada</item>
         <item quantity="other">%1$d seleccionadas</item>

@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.component.category
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
@@ -47,10 +48,18 @@ internal fun CategoryCarouselCountBadge(
             contentAlignment = Alignment.Center,
             modifier = Modifier.padding(horizontal = BADGE_HORIZONTAL_PADDING)
         ) {
-            CaptionText(
-                text = count.toString(),
-                color = contentColor
-            )
+            AnimatedContent(
+                targetState = count,
+                transitionSpec = {
+                    with(CategorySelectorTransitions) { badgeCountTransform() }
+                },
+                label = "CategoryCarouselCountNumber"
+            ) { animatedCount ->
+                CaptionText(
+                    text = animatedCount.toString(),
+                    color = contentColor
+                )
+            }
         }
     }
 }

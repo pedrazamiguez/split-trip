@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SectionHeadingText
 import es.pedrazamiguez.splittrip.features.expense.R
@@ -36,6 +38,7 @@ internal fun CategorySection(
     onSubcategorySelected: (String?) -> Unit,
     showAllCategories: Boolean = false,
     onToggleShowAllCategories: () -> Unit = {},
+    carouselEdgePadding: Dp = 0.dp,
     modifier: Modifier = Modifier
 ) {
     val focusManager = LocalFocusManager.current
@@ -77,6 +80,7 @@ internal fun CategorySection(
                     onCategorySelected(categoryId)
                     focusManager.clearFocus()
                 },
+                edgePadding = carouselEdgePadding,
                 selectionRole = Role.RadioButton
             )
         }
