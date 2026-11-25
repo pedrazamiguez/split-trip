@@ -821,7 +821,7 @@ class ReceiptAutoFillEventHandlerTest {
                         source = ExtractionSource.AI_CORE
                     )
                 )
-                uiState.value = AddExpenseUiState(
+                uiState.value = uiState.value.copy(
                     paymentMethods = persistentListOf(
                         cashPaymentMethod,
                         debitCardPaymentMethod,
@@ -856,7 +856,7 @@ class ReceiptAutoFillEventHandlerTest {
                         source = ExtractionSource.AI_CORE
                     )
                 )
-                val initialState = AddExpenseUiState(
+                val initialState = uiState.value.copy(
                     paymentMethods = persistentListOf(
                         creditCardPaymentMethod,
                         cashPaymentMethod,
@@ -888,7 +888,7 @@ class ReceiptAutoFillEventHandlerTest {
                         source = ExtractionSource.AI_CORE
                     )
                 )
-                val initialState = AddExpenseUiState(
+                val initialState = uiState.value.copy(
                     paymentMethods = persistentListOf(
                         cashPaymentMethod,
                         debitCardPaymentMethod,
