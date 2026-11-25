@@ -7,6 +7,6 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.state
 interface PlanAllowancesUiMapper {
     fun map(
         allowances: PlanAllowances,
-        extractionCapability: ExtractionCapability = ExtractionCapability.ON_DEVICE_AI
+        extractionCapability: ExtractionCapability
     ): PlanAllowancesUiState
 }

@@ -9,7 +9,6 @@ import es.pedrazamiguez.splittrip.domain.service.featuregate.MediaUploadQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.PlanAllowances
 import es.pedrazamiguez.splittrip.domain.service.featuregate.ReportExportQuota
 import es.pedrazamiguez.splittrip.features.settings.R
-import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.PlanAllowancesUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowancePerkType
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowancePerkUiModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.AllowanceQuotaType
@@ -53,8 +52,7 @@ class PlanAllowancesUiMapperImplTest {
             isAdFreeEnabled = false
         )
 
-        val interfaceMapper: PlanAllowancesUiMapper = mapper
-        val result = interfaceMapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         assertFalse(result.isLoading)
         assertFalse(result.isProTier)
@@ -123,8 +121,7 @@ class PlanAllowancesUiMapperImplTest {
             mediaMonthlyFreeLimit = 5
         )
 
-        val interfaceMapper: PlanAllowancesUiMapper = mapper
-        val result = interfaceMapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         val aiQuota = result.quotas[0]
         assertEquals(AllowanceUsageStatus.APPROACHING_LIMIT, aiQuota.status)
@@ -157,8 +154,7 @@ class PlanAllowancesUiMapperImplTest {
             maxOwnedGroups = 1
         )
 
-        val interfaceMapper: PlanAllowancesUiMapper = mapper
-        val result = interfaceMapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         assertTrue(result.showUpgradeCta)
         result.quotas.forEach { quota ->
@@ -178,8 +174,7 @@ class PlanAllowancesUiMapperImplTest {
             aiMonthlyLimit = 0
         )
 
-        val interfaceMapper: PlanAllowancesUiMapper = mapper
-        val result = interfaceMapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         val aiQuota = result.quotas[0]
         assertEquals(AllowanceUsageStatus.EXHAUSTED, aiQuota.status)
@@ -196,8 +191,7 @@ class PlanAllowancesUiMapperImplTest {
             maxSubunitsPerGroup = 0
         )
 
-        val interfaceMapper: PlanAllowancesUiMapper = mapper
-        val result = interfaceMapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         val subunitsPerk = result.perks.first { it.type == AllowancePerkType.SUBUNITS_PER_GROUP }
         assertFalse(subunitsPerk.isIncluded)
@@ -214,8 +208,7 @@ class PlanAllowancesUiMapperImplTest {
             maxOwnedGroups = 1
         )
 
-        val interfaceMapper: PlanAllowancesUiMapper = mapper
-        val result = interfaceMapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         val mediaQuota = result.quotas[1]
         assertEquals(AllowanceUsageStatus.EXHAUSTED, mediaQuota.status)
@@ -243,8 +236,7 @@ class PlanAllowancesUiMapperImplTest {
             isAdFreeEnabled = true
         )
 
-        val interfaceMapper: PlanAllowancesUiMapper = mapper
-        val result = interfaceMapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         assertTrue(result.isProTier)
         assertFalse(result.showUpgradeCta)
@@ -301,8 +293,7 @@ class PlanAllowancesUiMapperImplTest {
             usedUploads = 0
         )
 
-        val interfaceMapper: PlanAllowancesUiMapper = mapper
-        val result = interfaceMapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         val mediaQuota = result.quotas[1]
         assertEquals(AllowanceUsageStatus.UNLIMITED, mediaQuota.status)
@@ -319,8 +310,7 @@ class PlanAllowancesUiMapperImplTest {
             aiMonthlyLimit = null
         )
 
-        val interfaceMapper: PlanAllowancesUiMapper = mapper
-        val result = interfaceMapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         val aiQuota = result.quotas[0]
         assertEquals(AllowanceUsageStatus.UNLIMITED, aiQuota.status)
@@ -345,8 +335,7 @@ class PlanAllowancesUiMapperImplTest {
             isAdFreeEnabled = true
         )
 
-        val interfaceMapper: PlanAllowancesUiMapper = mapper
-        val result = interfaceMapper.map(allowances)
+        val result = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
 
         assertFalse(result.isGatingEnabled)
         assertFalse(result.showUpgradeCta)
@@ -383,14 +372,14 @@ class PlanAllowancesUiMapperImplTest {
         )
 
         every { localeProvider.getCurrentLocale() } returns Locale.ENGLISH
-        val enResult = mapper.map(allowances)
+        val enResult = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
         assertEquals(
             UiText.StringResource(R.string.plan_allowances_usage_fraction, "1,000", "2,000"),
             enResult.quotas[0].usageText
         )
 
         every { localeProvider.getCurrentLocale() } returns Locale.forLanguageTag("es-ES")
-        val esResult = mapper.map(allowances)
+        val esResult = mapper.map(allowances, ExtractionCapability.ON_DEVICE_AI)
         assertEquals(
             UiText.StringResource(R.string.plan_allowances_usage_fraction, "1.000", "2.000"),
             esResult.quotas[0].usageText

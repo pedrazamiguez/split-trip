@@ -20,7 +20,8 @@ private fun SubscriptionsScreenPreview() {
     val plans = mapper.mapPlans(
         currentTier = SubscriptionTier.FREE,
         selectedInterval = BillingInterval.ANNUAL,
-        products = emptyList()
+        products = emptyList(),
+        extractionCapability = ExtractionCapability.ON_DEVICE_AI
     )
 
     PreviewThemeWrapper {
@@ -45,7 +46,8 @@ private fun SubscriptionsScreenProPlanPreview() {
     val plans = mapper.mapPlans(
         currentTier = SubscriptionTier.PRO,
         selectedInterval = BillingInterval.MONTHLY,
-        products = emptyList()
+        products = emptyList(),
+        extractionCapability = ExtractionCapability.ON_DEVICE_AI
     )
 
     PreviewThemeWrapper {

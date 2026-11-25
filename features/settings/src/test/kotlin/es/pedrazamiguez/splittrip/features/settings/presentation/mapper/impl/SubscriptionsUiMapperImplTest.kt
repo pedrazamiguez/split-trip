@@ -8,7 +8,6 @@ import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.SubscriptionProduct
 import es.pedrazamiguez.splittrip.features.settings.R
-import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.SubscriptionsUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionFeatureStatus
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionFeatureUiModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.SubscriptionPlanUiModel
@@ -179,11 +178,11 @@ class SubscriptionsUiMapperImplTest {
 
         @Test
         fun `mapPlans generates Free and Pro plans with Annual pricing when Annual selected`() {
-            val interfaceMapper: SubscriptionsUiMapper = mapper
-            val plans = interfaceMapper.mapPlans(
+            val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.ANNUAL,
-                products = emptyList()
+                products = emptyList(),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
 
             assertEquals(2, plans.size)
@@ -196,7 +195,8 @@ class SubscriptionsUiMapperImplTest {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.MONTHLY,
-                products = emptyList()
+                products = emptyList(),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
 
             val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
@@ -221,7 +221,8 @@ class SubscriptionsUiMapperImplTest {
             val monthlyPlans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.MONTHLY,
-                products = listOf(monthlyProduct)
+                products = listOf(monthlyProduct),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
             val monthlyPro = monthlyPlans.first { it.tier == SubscriptionTier.PRO }
             val dynamicMonthlyPrice = assertInstanceOf(UiText.DynamicString::class.java, monthlyPro.price)
@@ -245,7 +246,8 @@ class SubscriptionsUiMapperImplTest {
             val annualPlans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.ANNUAL,
-                products = listOf(annualProduct)
+                products = listOf(annualProduct),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
             val annualPro = annualPlans.first { it.tier == SubscriptionTier.PRO }
             val dynamicAnnualPrice = assertInstanceOf(UiText.DynamicString::class.java, annualPro.price)
@@ -263,7 +265,8 @@ class SubscriptionsUiMapperImplTest {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.MONTHLY,
-                products = emptyList()
+                products = emptyList(),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
             val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
             assertNull(proPlan.billingDetail)
@@ -276,7 +279,8 @@ class SubscriptionsUiMapperImplTest {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.PRO,
                 selectedInterval = BillingInterval.ANNUAL,
-                products = emptyList()
+                products = emptyList(),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
 
             val freePlan = plans.first { it.tier == SubscriptionTier.FREE }
@@ -373,7 +377,8 @@ class SubscriptionsUiMapperImplTest {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.ANNUAL,
-                products = emptyList()
+                products = emptyList(),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
             val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
             assertFalse(proPlan.isCtaButtonEnabled)
@@ -392,7 +397,8 @@ class SubscriptionsUiMapperImplTest {
             val plans = mapper.mapPlans(
                 currentTier = SubscriptionTier.FREE,
                 selectedInterval = BillingInterval.ANNUAL,
-                products = listOf(annualProduct)
+                products = listOf(annualProduct),
+                extractionCapability = ExtractionCapability.ON_DEVICE_AI
             )
             val proPlan = plans.first { it.tier == SubscriptionTier.PRO }
             assertTrue(proPlan.isCtaButtonEnabled)

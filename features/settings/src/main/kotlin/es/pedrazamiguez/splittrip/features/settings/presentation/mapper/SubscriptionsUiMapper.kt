@@ -13,7 +13,7 @@ interface SubscriptionsUiMapper {
         currentTier: SubscriptionTier,
         selectedInterval: BillingInterval,
         products: List<SubscriptionProduct>,
-        extractionCapability: ExtractionCapability = ExtractionCapability.ON_DEVICE_AI
+        extractionCapability: ExtractionCapability
     ): ImmutableList<SubscriptionPlanUiModel>
 
     fun formatSavingsBadge(): UiText

@@ -39,7 +39,8 @@ private fun PlanAllowancesFreeHealthyPreview() {
             maxMembersPerGroup = 4,
             maxSubunitsPerGroup = 1,
             isAdFreeEnabled = false
-        )
+        ),
+        extractionCapability = ExtractionCapability.ON_DEVICE_AI
     )
 
     PreviewThemeWrapper {
@@ -73,7 +74,8 @@ private fun PlanAllowancesFreeExhaustedPreview() {
             maxMembersPerGroup = 4,
             maxSubunitsPerGroup = 1,
             isAdFreeEnabled = false
-        )
+        ),
+        extractionCapability = ExtractionCapability.ON_DEVICE_AI
     )
 
     PreviewThemeWrapper {
@@ -107,7 +109,8 @@ private fun PlanAllowancesProPreview() {
             maxMembersPerGroup = 20,
             maxSubunitsPerGroup = null,
             isAdFreeEnabled = true
-        )
+        ),
+        extractionCapability = ExtractionCapability.ON_DEVICE_AI
     )
 
     PreviewThemeWrapper {
@@ -141,7 +144,8 @@ private fun PlanAllowancesUngatedPreview() {
             maxMembersPerGroup = 4,
             maxSubunitsPerGroup = null,
             isAdFreeEnabled = true
-        )
+        ),
+        extractionCapability = ExtractionCapability.ON_DEVICE_AI
     )
 
     PreviewThemeWrapper {
