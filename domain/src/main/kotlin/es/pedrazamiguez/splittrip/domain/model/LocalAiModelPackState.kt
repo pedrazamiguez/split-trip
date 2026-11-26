@@ -12,10 +12,12 @@ data class LocalAiModelPackState(
 ) {
     /**
      * True when the non-intrusive opt-in banner in the expense flow may be shown:
-     * user has Pro entitlement, device is compatible, and the pack is not yet installed.
+     * AICore is unsupported on the device, user has Pro entitlement, device is compatible,
+     * and the pack is not yet installed.
      */
     val isOptInBannerEligible: Boolean
-        get() = isEntitled &&
+        get() = !isAiCoreSupported &&
+            isEntitled &&
             compatibility.isCompatible &&
             status is ModelPackStatus.NotInstalled
 }

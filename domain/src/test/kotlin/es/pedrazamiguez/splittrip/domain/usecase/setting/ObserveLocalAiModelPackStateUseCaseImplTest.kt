@@ -98,4 +98,11 @@ class ObserveLocalAiModelPackStateUseCaseImplTest {
         statusFlow.value = ModelPackStatus.Installed("1.0.0", 500_000_000L)
         assertFalse(useCase().first().isOptInBannerEligible)
     }
+
+    @Test
+    fun `isOptInBannerEligible is false when AICore is supported`() = runTest {
+        every { aiModelResolverService.isAiCoreSupported() } returns true
+
+        assertFalse(useCase().first().isOptInBannerEligible)
+    }
 }

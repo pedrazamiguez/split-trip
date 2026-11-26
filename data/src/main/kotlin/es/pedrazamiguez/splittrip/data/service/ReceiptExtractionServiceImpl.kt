@@ -5,9 +5,11 @@ import es.pedrazamiguez.splittrip.data.R
 import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelNotEntitledException
 import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelUnavailableException
+import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
@@ -236,7 +238,7 @@ internal class ReceiptExtractionServiceImpl(
         val title = jsonObject.optString("title").takeIf { it.isNotEmpty() && it != "null" }
         val vendor = jsonObject.optString("vendor").takeIf { it.isNotEmpty() && it != "null" }
 
-        val category = parseCategory(jsonObject)
+        val parsedCategory = parseCategoryAndSubcategory(jsonObject)
         val paymentMethod = parsePaymentMethod(jsonObject)
         val notes = jsonObject.optString("notes").takeIf { it.isNotEmpty() && it != "null" }
 
@@ -254,7 +256,8 @@ internal class ReceiptExtractionServiceImpl(
             time = time,
             title = title,
             vendor = vendor,
-            category = category,
+            category = parsedCategory.category,
+            subcategory = parsedCategory.subcategory,
             paymentMethod = paymentMethod,
             notes = notes,
             source = source,
@@ -297,17 +300,32 @@ internal class ReceiptExtractionServiceImpl(
             - Merchant or store name (vendor).
             - Brief description of what was purchased, maximum 3-4 words (title).
             - Category (must be one of: TRANSPORT, FOOD, LODGING, HOME, HEALTH_PERSONAL_CARE, ACTIVITIES, INSURANCE, ENTERTAINMENT, SHOPPING, OTHER) (category).
+            - Optional subcategory belonging to the chosen category from the allowed taxonomy below, or null if uncertain (subcategory).
             - Payment method (must be one of: CASH, BIZUM, PIX, CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, PAYPAL, VENMO, ALIPAY, WECHAT_PAY, OTHER) (paymentMethod).
             - Any relevant notes or identifiers like travel/event dates, booking code, reservation ID, locator ("localizador") code, ticket ID, seats, flight or train numbers, reference number, etc. (notes).
+
+            Allowed subcategories per category:
+            TRANSPORT: INTERNATIONAL_FLIGHT,DOMESTIC_FLIGHT,TRAIN,BUS,TAXI_RIDESHARE,PRIVATE_TRANSFER,CAR_RENTAL,MOTORBIKE_RENTAL,FUEL,TOLLS_PARKING,FERRY_BOAT,PUBLIC_TRANSIT,CAR_REPAIR_MAINTENANCE
+            FOOD: RESTAURANT,STREET_FOOD,GROCERIES_SUPERMARKET,CAFE_BREAKFAST,BAR_DRINKS,DELIVERY
+            LODGING: HOTEL,HOSTEL,VACATION_RENTAL,RESORT,CAMPING,HOMESTAY
+            HOME: RENT_MORTGAGE,UTILITIES,HOME_REPAIR,FURNITURE_APPLIANCES,HOME_SUPPLIES
+            HEALTH_PERSONAL_CARE: DOCTOR_DENTIST,HAIRDRESSER_BARBER,GYM_FITNESS,PERSONAL_CARE
+            ACTIVITIES: MUSEUM_CULTURE,TOUR_EXCURSION,NATURE_PARK,WATER_SPORTS,ADVENTURE_SPORTS,SPA_WELLNESS,TICKETS_ATTRACTIONS
+            ENTERTAINMENT: CONCERT_FESTIVAL,NIGHTLIFE_CLUB,CINEMA_THEATER,GAMES_ARCADE,SPORTS_EVENT,SUBSCRIPTIONS_STREAMING
+            SHOPPING: CLOTHING,SOUVENIRS_GIFTS,ELECTRONICS,PHARMACY_HEALTH,CONVENIENCE_STORE,GIFTS,TOBACCO_VAPING,HOBBIES
+            INSURANCE: TRAVEL_INSURANCE,MEDICAL_HEALTH,VEHICLE_INSURANCE,EQUIPMENT_INSURANCE,HOME_INSURANCE
+            OTHER: TIPS_GRATUITIES,SIM_COMMUNICATIONS,LAUNDRY,FEES_SURCHARGES,PET_CARE
+
+            Disambiguation: Use FOOD + GROCERIES_SUPERMARKET for supermarkets and grocery stores (not SHOPPING). If you pick a subcategory, category MUST be its exact parent category from the list above.
 
             Write the "title" in English. Keep it brief and descriptive. For transport, include origin and destination when available, e.g. "Train Seville-Madrid", "Flight to Barcelona". For other purchases, describe what was bought, e.g. "Dinner at restaurant", "Grocery shopping". Do not write full sentences. Max 3-4 words.
 
             Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B
-            Output: {"amounts":["50.00"],"currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Snacks and drinks","category":"FOOD","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
+            Output: {"amounts":["50.00"],"currency":"USD","date":"2025-03-10","time":"13:45","vendor":"Quick Mart","title":"Snacks and drinks","category":"FOOD","subcategory":"GROCERIES_SUPERMARKET","paymentMethod":"CASH","notes":"Book ID: ABC123D, Seats: 14A, 14B"}
             Input: TRAINLINE London to Paris ticket 1: 55.00 EUR ticket 2: 55.00 EUR Purchase Date: 2026-05-25 09:00 Departure: 2026-06-15 14:00 CreditCard Seats: 2A, 2B Booking: TX12345
-            Output: {"amounts":["55.00","55.00"],"currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Train London-Paris","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Departure: 2026-06-15 14:00, Booking: TX12345, Seats: 2A, 2B"}
+            Output: {"amounts":["55.00","55.00"],"currency":"EUR","date":"2026-05-25","time":"09:00","vendor":"Trainline","title":"Train London-Paris","category":"TRANSPORT","subcategory":"TRAIN","paymentMethod":"CREDIT_CARD","notes":"Departure: 2026-06-15 14:00, Booking: TX12345, Seats: 2A, 2B"}
             Input: RENFE Localizador: HXDC8B A.PEDRAZA Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1B AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 € Fecha operacion: 02/10/2026 15:20 RENFE Localizador: HXDC8B A.NARANJO Origen: SEVILLA S JUSTA Destino: MADRID P.ATOCHA 10/10/2026 09:34 Coche: 6 Plaza: 1A AVE 02091 ESTANDAR TOTAL 42,20 € IVA (10%) 3,84 €
-            Output: {"amounts":["42.20","42.20"],"currency":"EUR","date":"2026-10-02","time":"15:20","vendor":"Renfe","title":"Train Seville-Madrid","category":"TRANSPORT","paymentMethod":"CREDIT_CARD","notes":"Departure: 2026-10-10 09:34, Locator: HXDC8B, Seats: 1A, 1B, Train: AVE 02091"}
+            Output: {"amounts":["42.20","42.20"],"currency":"EUR","date":"2026-10-02","time":"15:20","vendor":"Renfe","title":"Train Seville-Madrid","category":"TRANSPORT","subcategory":"TRAIN","paymentMethod":"CREDIT_CARD","notes":"Departure: 2026-10-10 09:34, Locator: HXDC8B, Seats: 1A, 1B, Train: AVE 02091"}
             Input: $OCR_PLACEHOLDER
             Output:
         """.trimIndent()
@@ -335,6 +353,7 @@ private fun getJsonSchema(): String {
                 "vendor": { "type": "string" },
                 "title": { "type": "string" },
                 "category": { "type": "string" },
+                "subcategory": { "type": "string" },
                 "paymentMethod": { "type": "string" },
                 "notes": { "type": "string" }
               },
@@ -421,16 +440,38 @@ private fun parseTime(jsonObject: JSONObject): LocalTime? {
     }
 }
 
-private fun parseCategory(jsonObject: JSONObject): String? {
-    val categoryStr = jsonObject.optString("category").takeIf { it.isNotEmpty() && it != "null" }
-    return categoryStr?.let {
-        try {
-            ExpenseCategory.fromString(it).name
-        } catch (_: Exception) {
-            null
-        }
-    }
+private fun parseCategoryAndSubcategory(jsonObject: JSONObject): ParsedReceiptCategory {
+    val category = parseCategoryEnum(jsonObject) ?: return ParsedReceiptCategory(null, null)
+    val subcategory = parseSubcategoryEnum(jsonObject)
+    val sanitized = CategorySuggestion.sanitized(
+        category = category,
+        subcategory = subcategory
+    )
+    return ParsedReceiptCategory(
+        category = sanitized.category.name,
+        subcategory = sanitized.subcategory?.name
+    )
 }
+
+private fun parseCategoryEnum(jsonObject: JSONObject): ExpenseCategory? {
+    val raw = jsonObject.optString("category").trim()
+    if (raw.isEmpty() || raw.equals("null", ignoreCase = true)) return null
+    return runCatching { ExpenseCategory.fromString(raw) }.getOrNull()
+}
+
+private fun parseSubcategoryEnum(jsonObject: JSONObject): ExpenseSubcategory? {
+    val raw = jsonObject.optString("subcategory").trim()
+    val isMissing = raw.isEmpty() ||
+        raw.equals("null", ignoreCase = true) ||
+        raw.equals(ExpenseSubcategory.UNSPECIFIED.name, ignoreCase = true)
+    if (isMissing) return null
+    return runCatching { ExpenseSubcategory.fromString(raw) }.getOrNull()
+}
+
+private data class ParsedReceiptCategory(
+    val category: String?,
+    val subcategory: String?
+)
 
 private fun parsePaymentMethod(jsonObject: JSONObject): String? {
     val paymentMethodStr = jsonObject.optString("paymentMethod").takeIf { it.isNotEmpty() && it != "null" }
@@ -452,6 +493,7 @@ private fun getNoOpFallbackReceipt(): ExtractedReceipt {
         title = null,
         vendor = null,
         category = null,
+        subcategory = null,
         paymentMethod = null,
         notes = null,
         source = ExtractionSource.NO_OP,

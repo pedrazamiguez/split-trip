@@ -46,9 +46,9 @@ internal class AiModelResolverImpl(
     private fun resolveAutomatic(
         packStatus: ModelPackStatus,
         isEntitled: Boolean
-    ): AiEngineType = if (isEntitled && packStatus is ModelPackStatus.Installed) {
-        AiEngineType.LITE_RT_LM
-    } else {
-        AiEngineType.AI_CORE_GEMMA_4
+    ): AiEngineType = when {
+        aiCoreCapabilityProvider.isSupported() -> AiEngineType.AI_CORE_GEMMA_4
+        isEntitled && packStatus is ModelPackStatus.Installed -> AiEngineType.LITE_RT_LM
+        else -> AiEngineType.AI_CORE_GEMMA_4
     }
 }

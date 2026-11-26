@@ -1,5 +1,7 @@
 package es.pedrazamiguez.splittrip.data.service
 
+import io.mockk.every
+import io.mockk.spyk
 import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -97,5 +99,25 @@ class ModelPackStorageManagerTest {
 
         assertFalse(storageManager.promoteTempToFinal(missingTemp, targetFile))
         assertTrue(storageManager.deleteAllModelFiles())
+    }
+
+    @Test
+    fun `promoteTempToFinal falls back to copyTo when renameTo fails even if temp delete returns false`() {
+        val storageManager = ModelPackStorageManager(tempDir)
+        val realTemp = storageManager.getTempFile("pack-1", "1.0.0")
+        val targetFile = storageManager.getTargetFile("pack-1", "1.0.0")
+        realTemp.parentFile?.mkdirs()
+        realTemp.writeText("fallback-weights")
+
+        val spiedTemp = spyk(realTemp) {
+            every { renameTo(any()) } returns false
+            every { delete() } returns false
+        }
+
+        val promoted = storageManager.promoteTempToFinal(spiedTemp, targetFile)
+
+        assertTrue(promoted)
+        assertTrue(targetFile.exists())
+        assertEquals("fallback-weights", targetFile.readText())
     }
 }

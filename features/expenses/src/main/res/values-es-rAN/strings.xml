@@ -434,8 +434,6 @@
     <string name="add_expense_receipt_monthly_limit_reached">Âh uçao tû %1$d âhhuntô de reçibô mençualê.</string>
     <string name="expense_local_ai_banner_enable_title">Âttibâh êccaneo IA çin conêççión</string>
     <string name="expense_local_ai_banner_enable_description">Dêccarga er paquete de IA locâh pa âttibâh el êccaneo de reçibô çin conêççión en êtte dîppoçitibo.</string>
-    <string name="expense_local_ai_banner_enhance_title">Êttrâççión de reçibô mâh rápida</string>
-    <string name="expense_local_ai_banner_enhance_description">Dêccarga er paquete de IA locâh pa êttraêh reçibô çin conêççión mâh rápido y çuherîh categoríâ.</string>
     <string name="expense_local_ai_banner_action">Hêttionâh paquete de IA locâh</string>
     <string name="expense_local_ai_banner_dismiss_cd">Dêccartâh abiço de paquete de IA locâh</string>
 </resources>

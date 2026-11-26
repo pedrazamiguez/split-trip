@@ -720,6 +720,59 @@ class FormEventHandlerTest {
 
             assertNull(uiState.value.selectedSubcategory)
         }
+
+        @Test
+        fun `handleSubcategorySelected auto-expands showAllCategories when valid subcategory is outside context`() =
+            runTest {
+                val transportCategory = CategoryUiModel(id = "TRANSPORT", displayText = "Transport")
+                val domesticFlightSubcategory = SubcategoryUiModel(
+                    subcategory = ExpenseSubcategory.DOMESTIC_FLIGHT,
+                    name = UiText.DynamicString("Domestic Flight"),
+                    icon = TablerIcons.Outline.ChefHat
+                )
+                uiState.value = uiState.value.copy(
+                    groupContext = GroupContext.EVERYDAY,
+                    showAllCategories = false,
+                    selectedCategory = transportCategory,
+                    availableSubcategories = persistentListOf()
+                )
+                every {
+                    addExpenseOptionsUiMapper.mapCategoriesForContext(
+                        context = GroupContext.EVERYDAY,
+                        showAll = true,
+                        alwaysInclude = ExpenseCategory.TRANSPORT
+                    )
+                } returns persistentListOf(foodCategory, transportCategory)
+                every {
+                    addExpenseOptionsUiMapper.mapSubcategories(
+                        category = ExpenseCategory.TRANSPORT,
+                        context = GroupContext.EVERYDAY,
+                        showAll = true,
+                        alwaysInclude = ExpenseSubcategory.DOMESTIC_FLIGHT
+                    )
+                } returns persistentListOf(domesticFlightSubcategory)
+
+                handler.handleSubcategorySelected("DOMESTIC_FLIGHT")
+
+                assertTrue(uiState.value.showAllCategories)
+                assertEquals(ExpenseSubcategory.DOMESTIC_FLIGHT, uiState.value.selectedSubcategory?.subcategory)
+            }
+
+        @Test
+        fun `handleSubcategorySelected ignores subcategory belonging to a different parent category`() = runTest {
+            uiState.value = uiState.value.copy(
+                groupContext = GroupContext.EVERYDAY,
+                showAllCategories = false,
+                selectedCategory = foodCategory,
+                selectedSubcategory = null,
+                availableSubcategories = persistentListOf()
+            )
+
+            handler.handleSubcategorySelected("TRAIN")
+
+            assertNull(uiState.value.selectedSubcategory)
+            assertFalse(uiState.value.showAllCategories)
+        }
     }
 
     @Nested

@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.data.service
 import java.io.File
 import java.io.FileInputStream
 import java.security.MessageDigest
+import timber.log.Timber
 
 internal class ModelPackStorageManager(baseDir: File) {
 
@@ -43,7 +44,9 @@ internal class ModelPackStorageManager(baseDir: File) {
         if (tempFile.renameTo(targetFile)) return true
         return try {
             tempFile.copyTo(targetFile, overwrite = true)
-            tempFile.delete()
+            if (!tempFile.delete()) {
+                Timber.w("ModelPackStorageManager: failed to delete temp file %s", tempFile.name)
+            }
             true
         } catch (_: Exception) {
             false
@@ -52,8 +55,8 @@ internal class ModelPackStorageManager(baseDir: File) {
 
     fun deleteTempFiles(packId: String, version: String) {
         val tempFile = getTempFile(packId, version)
-        if (tempFile.exists()) {
-            tempFile.delete()
+        if (tempFile.exists() && !tempFile.delete()) {
+            Timber.w("ModelPackStorageManager: failed to delete temp file %s", tempFile.name)
         }
     }
 

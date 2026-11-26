@@ -314,6 +314,9 @@ class ReceiptExtractionServiceImplTest {
         // Verify the Renfe example shows the array extraction
         assertTrue(prompt.contains("\"amounts\":[\"42.20\",\"42.20\"]"))
         assertTrue(prompt.contains("\"title\":\"Train Seville-Madrid\""))
+        assertTrue(prompt.contains("\"subcategory\":\"TRAIN\""))
+        assertTrue(prompt.contains("Allowed subcategories per category:"))
+        assertTrue(prompt.contains("FOOD + GROCERIES_SUPERMARKET"))
         assertTrue(prompt.trimEnd().endsWith("Output:"))
     }
 
@@ -470,5 +473,119 @@ class ReceiptExtractionServiceImplTest {
         val receipt = result.getOrThrow()
         assertEquals(ExtractionSource.LITE_RT_LM, receipt.source)
         assertEquals(BigDecimal("18.00"), receipt.amount)
+    }
+
+    @Test
+    fun `extract parses valid category and compatible subcategory from AI JSON output`() = runTest(testDispatcher) {
+        activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+        advanceUntilIdle()
+
+        val rawJsonResponse = """
+            {
+                "amounts": ["42.20"],
+                "currency": "EUR",
+                "date": "2026-10-02",
+                "title": "Train Seville-Madrid",
+                "category": "TRANSPORT",
+                "subcategory": "TRAIN"
+            }
+        """.trimIndent()
+        coEvery { aiCoreInferenceRepository.generateContent(any()) } returns Result.success(rawJsonResponse)
+
+        val result = service.extract(rawReceiptText)
+
+        assertTrue(result.isSuccess)
+        val receipt = result.getOrThrow()
+        assertEquals("TRANSPORT", receipt.category)
+        assertEquals("TRAIN", receipt.subcategory)
+    }
+
+    @Test
+    fun `extract drops incompatible subcategory while preserving valid category`() = runTest(testDispatcher) {
+        activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+        advanceUntilIdle()
+
+        val rawJsonResponse = """
+            {
+                "amounts": ["25.00"],
+                "currency": "EUR",
+                "date": "2026-10-02",
+                "title": "Dinner",
+                "category": "FOOD",
+                "subcategory": "HOTEL"
+            }
+        """.trimIndent()
+        coEvery { aiCoreInferenceRepository.generateContent(any()) } returns Result.success(rawJsonResponse)
+
+        val result = service.extract(rawReceiptText)
+
+        assertTrue(result.isSuccess)
+        val receipt = result.getOrThrow()
+        assertEquals("FOOD", receipt.category)
+        assertNull(receipt.subcategory)
+    }
+
+    @Test
+    fun `extract drops UNSPECIFIED, null, and unknown subcategory values`() = runTest(testDispatcher) {
+        activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+        advanceUntilIdle()
+
+        listOf("\"UNSPECIFIED\"", "null", "\"SPACESHIP\"").forEach { rawSub ->
+            val rawJsonResponse = """
+                {
+                    "amounts": ["15.00"],
+                    "currency": "EUR",
+                    "date": "2026-10-02",
+                    "title": "Coffee",
+                    "category": "FOOD",
+                    "subcategory": $rawSub
+                }
+            """.trimIndent()
+            coEvery { aiCoreInferenceRepository.generateContent(any()) } returns Result.success(rawJsonResponse)
+
+            val receipt = service.extract(rawReceiptText).getOrThrow()
+            assertEquals("FOOD", receipt.category)
+            assertNull(receipt.subcategory)
+        }
+    }
+
+    @Test
+    fun `extract drops subcategory when category is missing or invalid`() = runTest(testDispatcher) {
+        activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+        advanceUntilIdle()
+
+        val rawJsonResponse = """
+            {
+                "amounts": ["42.20"],
+                "currency": "EUR",
+                "date": "2026-10-02",
+                "title": "Ticket",
+                "subcategory": "TRAIN"
+            }
+        """.trimIndent()
+        coEvery { aiCoreInferenceRepository.generateContent(any()) } returns Result.success(rawJsonResponse)
+
+        val receipt = service.extract(rawReceiptText).getOrThrow()
+        assertNull(receipt.category)
+        assertNull(receipt.subcategory)
+    }
+
+    @Test
+    fun `extract passes JSON schema containing subcategory property to LITE_RT_LM`() = runTest(testDispatcher) {
+        activeEngineFlow.value = AiEngineType.LITE_RT_LM
+        every { localAiModelPackService.isPackInstalled() } returns true
+        advanceUntilIdle()
+
+        val schemaSlot = io.mockk.slot<String>()
+        coEvery { liteRtInferenceRepository.generateStructuredOutput(any(), capture(schemaSlot)) } returns
+            Result.success("""{"amounts":["10.00"],"currency":"EUR","date":"2026-05-20","title":"Lunch"}""")
+
+        service.extract(rawReceiptText)
+
+        assertTrue(schemaSlot.captured.contains("\"subcategory\""))
     }
 }

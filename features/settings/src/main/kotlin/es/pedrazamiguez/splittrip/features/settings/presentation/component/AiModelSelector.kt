@@ -1,12 +1,11 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.component
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +18,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.features.settings.R
 import kotlinx.collections.immutable.ImmutableList
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun AiModelSelector(
     availableModels: ImmutableList<AiEngineType?>,
@@ -40,11 +40,10 @@ internal fun AiModelSelector(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
             ) {
                 availableModels.forEach { model ->
                     val label = when (model) {

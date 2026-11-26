@@ -170,9 +170,15 @@ val expensesDataModule = module {
     }
 
     single<ExpenseCategoryAiClassifierService> {
+        val aiCoreCapabilityProvider = get<AICoreCapabilityProvider>()
+        val aiModelResolverService = get<AiModelResolverService>()
+        val localAiModelPackService = get<LocalAiModelPackService>()
         ExpenseCategoryAiClassifierServiceImpl(
-            aiCoreCapabilityProvider = get<AICoreCapabilityProvider>(),
+            aiCoreCapabilityProvider = aiCoreCapabilityProvider,
             aiCoreInferenceRepository = lazy { get<AiInferenceRepository>(named("ai_core")) },
+            liteRtInferenceRepository = lazy { get<AiInferenceRepository>(named("lite_rt")) },
+            aiModelResolver = aiModelResolverService,
+            localAiModelPackService = localAiModelPackService,
             defaultDispatcher = Dispatchers.Default
         )
     }

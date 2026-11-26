@@ -18,25 +18,9 @@ class LocalAiPackBannerUiMapper(
         if (!packState.isOptInBannerEligible) return null
         val notInstalledStatus = packState.status as? ModelPackStatus.NotInstalled ?: return null
 
-        val isAiCoreUnavailable = !packState.isAiCoreSupported
-        val title = UiText.StringResource(
-            if (isAiCoreUnavailable) {
-                R.string.expense_local_ai_banner_enable_title
-            } else {
-                R.string.expense_local_ai_banner_enhance_title
-            }
-        )
-        val description = UiText.StringResource(
-            if (isAiCoreUnavailable) {
-                R.string.expense_local_ai_banner_enable_description
-            } else {
-                R.string.expense_local_ai_banner_enhance_description
-            }
-        )
-
         return LocalAiPackBannerUiModel(
-            title = title,
-            description = description,
+            title = UiText.StringResource(R.string.expense_local_ai_banner_enable_title),
+            description = UiText.StringResource(R.string.expense_local_ai_banner_enable_description),
             sizeBadge = formatSizeBadge(notInstalledStatus.downloadSizeBytes),
             actionLabel = UiText.StringResource(R.string.expense_local_ai_banner_action)
         )
