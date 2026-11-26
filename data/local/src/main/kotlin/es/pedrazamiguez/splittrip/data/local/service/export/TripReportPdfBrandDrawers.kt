@@ -26,6 +26,10 @@ internal object TripReportPdfBrandDrawers {
     private const val MAX_HERO_DESC_LINES = 2
     private const val MAX_UPSELL_BODY_LINES = 3
     private const val MAX_CTA_SUBTITLE_LINES = 2
+    private const val LINK_HIT_PADDING_PT = 2f
+    private const val RUNNING_FOOTER_PREFIX = "SplitTrip  ·  "
+    private const val HTTPS_SCHEME = "https://"
+    private const val HTTP_SCHEME = "http://"
 
     fun drawBrandHeader(
         canvas: Canvas,
@@ -353,7 +357,8 @@ internal object TripReportPdfBrandDrawers {
         canvas: Canvas,
         brandFooter: TripReportBrandFooter,
         paints: TripReportPdfPaints,
-        topY: Float
+        topY: Float,
+        links: MutableList<PdfLinkAnnotation> = mutableListOf()
     ): Float {
         val cardHeight = TripReportPdfMetrics.BRAND_FOOTER_CARD_HEIGHT_PT
         val cardRect = RectF(
@@ -387,7 +392,8 @@ internal object TripReportPdfBrandDrawers {
             topY = topY,
             cardHeight = cardHeight,
             textMaxWidth = textMaxWidth,
-            paints = paints
+            paints = paints,
+            links = links
         )
 
         TripReportPdfGraphics.drawQrCodeTile(
@@ -410,7 +416,8 @@ internal object TripReportPdfBrandDrawers {
         topY: Float,
         cardHeight: Float,
         textMaxWidth: Float,
-        paints: TripReportPdfPaints
+        paints: TripReportPdfPaints,
+        links: MutableList<PdfLinkAnnotation>
     ) {
         TripReportPdfGraphics.drawBrandLogoVector(
             canvas = canvas,
@@ -440,19 +447,40 @@ internal object TripReportPdfBrandDrawers {
             canvas.drawText(line, leftX, subY, paints.footerCtaSubtitle)
             subY += 12f
         }
+        val urlBaselineY = topY + cardHeight - 11f
+        val fittedWebsite = TripReportPdfTheme.fitText(brandFooter.websiteDisplay, textMaxWidth, paints.footerCtaUrl)
         canvas.drawText(
-            TripReportPdfTheme.fitText(brandFooter.websiteDisplay, textMaxWidth, paints.footerCtaUrl),
+            fittedWebsite,
             leftX,
-            topY + cardHeight - 11f,
+            urlBaselineY,
             paints.footerCtaUrl
         )
+        if (fittedWebsite.isNotEmpty()) {
+            val textWidth = paints.footerCtaUrl.measureText(fittedWebsite)
+            val fm = paints.footerCtaUrl.fontMetrics
+            val rectCanvasPt = RectF(
+                leftX - LINK_HIT_PADDING_PT,
+                urlBaselineY + fm.ascent - LINK_HIT_PADDING_PT,
+                leftX + textWidth + LINK_HIT_PADDING_PT,
+                urlBaselineY + fm.descent + LINK_HIT_PADDING_PT
+            )
+            links.add(
+                PdfLinkAnnotation(
+                    rectCanvasPt = rectCanvasPt,
+                    uri = resolveWebsiteUrl(brandFooter.websiteDisplay, brandFooter.websiteUrl)
+                )
+            )
+        }
     }
 
+    @Suppress("LongParameterList")
     fun drawRunningPageFooter(
         canvas: Canvas,
         websiteDisplay: String,
+        websiteUrl: String,
         pageFooterText: String,
-        paints: TripReportPdfPaints
+        paints: TripReportPdfPaints,
+        links: MutableList<PdfLinkAnnotation> = mutableListOf()
     ) {
         val footerY = TripReportPdfMetrics.A4_HEIGHT_PT - 16f
         val ruleY = footerY - 12f
@@ -463,7 +491,25 @@ internal object TripReportPdfBrandDrawers {
             ruleY,
             paints.ghostStroke
         )
-        canvas.drawText("SplitTrip  ·  $websiteDisplay", TripReportPdfMetrics.MARGIN_X_PT, footerY, paints.footerBrand)
+        val fullFooterBrandText = "$RUNNING_FOOTER_PREFIX$websiteDisplay"
+        canvas.drawText(fullFooterBrandText, TripReportPdfMetrics.MARGIN_X_PT, footerY, paints.footerBrand)
+        if (websiteDisplay.isNotEmpty()) {
+            val prefixWidth = paints.footerBrand.measureText(RUNNING_FOOTER_PREFIX)
+            val totalWidth = paints.footerBrand.measureText(fullFooterBrandText)
+            val fm = paints.footerBrand.fontMetrics
+            val rectCanvasPt = RectF(
+                TripReportPdfMetrics.MARGIN_X_PT + prefixWidth - LINK_HIT_PADDING_PT,
+                footerY + fm.ascent - LINK_HIT_PADDING_PT,
+                TripReportPdfMetrics.MARGIN_X_PT + totalWidth + LINK_HIT_PADDING_PT,
+                footerY + fm.descent + LINK_HIT_PADDING_PT
+            )
+            links.add(
+                PdfLinkAnnotation(
+                    rectCanvasPt = rectCanvasPt,
+                    uri = resolveWebsiteUrl(websiteDisplay, websiteUrl)
+                )
+            )
+        }
         val pageWidth = paints.footerPage.measureText(pageFooterText)
         canvas.drawText(
             pageFooterText,
@@ -471,5 +517,15 @@ internal object TripReportPdfBrandDrawers {
             footerY,
             paints.footerPage
         )
+    }
+
+    internal fun resolveWebsiteUrl(websiteDisplay: String, websiteUrl: String): String {
+        val candidate = websiteUrl.trim().ifBlank { websiteDisplay.trim() }
+        if (candidate.startsWith(HTTPS_SCHEME, ignoreCase = true) ||
+            candidate.startsWith(HTTP_SCHEME, ignoreCase = true)
+        ) {
+            return candidate
+        }
+        return "$HTTPS_SCHEME$candidate"
     }
 }

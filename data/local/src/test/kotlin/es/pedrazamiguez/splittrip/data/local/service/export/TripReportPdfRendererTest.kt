@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.data.local.service.export
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Paint
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportBrandFooter
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportCell
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportCellAlign
@@ -13,6 +14,7 @@ import es.pedrazamiguez.splittrip.domain.model.report.TripReportTone
 import java.io.File
 import java.io.OutputStream
 import java.nio.file.Files
+import java.util.Locale
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -25,7 +27,8 @@ import org.robolectric.RobolectricTestRunner
 class TripReportPdfRendererTest {
 
     private class FakePdfDocumentSession(
-        private val canvas: Canvas
+        private val canvas: Canvas,
+        private val pdfPayloadFactory: (Int) -> ByteArray = { "%PDF-1.4\n".toByteArray() }
     ) : PdfDocumentSession {
         var startedPages: Int = 0
         var finishedPages: Int = 0
@@ -41,7 +44,7 @@ class TripReportPdfRendererTest {
         }
 
         override fun writeTo(outputStream: OutputStream) {
-            outputStream.write("%PDF-1.4\n".toByteArray())
+            outputStream.write(pdfPayloadFactory(startedPages))
         }
 
         override fun close() {
@@ -152,6 +155,159 @@ class TripReportPdfRendererTest {
                 paint.fontFeatureSettings
             )
         }
+    }
+
+    @Test
+    fun `createPaints enables linear subpixel unhinted text flags while keeping ligatures disabled`() {
+        val paints = TripReportPdfTheme.createPaints(context = null)
+        val textPaints = listOf(
+            paints.brandSplit,
+            paints.brandTrip,
+            paints.brandTagline,
+            paints.periodPillText,
+            paints.kicker,
+            paints.heroTitle,
+            paints.heroSubtitle,
+            paints.heroMeta,
+            paints.kpiLabel,
+            paints.kpiValue,
+            paints.sectionTitle,
+            paints.tableHeader,
+            paints.tableCell,
+            paints.badgeText,
+            paints.upsellTitle,
+            paints.upsellBody,
+            paints.footerBrand,
+            paints.footerPage,
+            paints.footerCtaTitle,
+            paints.footerCtaSubtitle,
+            paints.footerCtaUrl,
+            paints.qrCaption
+        )
+
+        assertEquals(22, textPaints.size)
+        textPaints.forEach { paint ->
+            assertTrue((paint.flags and Paint.ANTI_ALIAS_FLAG) != 0)
+            assertTrue((paint.flags and Paint.LINEAR_TEXT_FLAG) != 0)
+            assertTrue((paint.flags and Paint.SUBPIXEL_TEXT_FLAG) != 0)
+            assertEquals(Paint.HINTING_OFF, paint.hinting)
+            assertEquals(
+                TripReportPdfTheme.DISABLED_LIGATURES_FONT_FEATURES,
+                paint.fontFeatureSettings
+            )
+        }
+    }
+
+    @Test
+    fun `render embeds URI link annotations for running footer and brand footer card`() {
+        val bitmap = Bitmap.createBitmap(595, 842, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val multiPageSession = FakePdfDocumentSession(
+            canvas = canvas,
+            pdfPayloadFactory = ::buildMinimalMultiPagePdf
+        )
+        val multiPageRenderer = TripReportPdfRenderer(context = null, sessionFactory = { multiPageSession })
+        val outputFile = File(tempDir, "summary-links.pdf")
+        val payload = createFullPayload(expenseRowsCount = 55)
+
+        multiPageRenderer.render(payload, outputFile)
+
+        val resultText = outputFile.readBytes().toString(Charsets.ISO_8859_1)
+        assertTrue(resultText.contains("/Prev "))
+        assertTrue(resultText.contains("startxref"))
+        val pageCount = multiPageSession.startedPages
+        assertTrue(pageCount >= 2)
+
+        val linkAction = "/Subtype /Link"
+        val uriAction = "/A << /Type /Action /S /URI /URI (https://splittrip.eu) >>"
+        val borderEntry = "/Border [0 0 0]"
+        val totalLinks = Regex(Regex.escape(linkAction)).findAll(resultText).count()
+        // Every page has running footer (pageCount links) + final page has brand footer card (+1 link)
+        assertEquals(pageCount + 1, totalLinks)
+        assertEquals(pageCount + 1, Regex(Regex.escape(uriAction)).findAll(resultText).count())
+        assertEquals(pageCount + 1, Regex(Regex.escape(borderEntry)).findAll(resultText).count())
+
+        val rectMatches = Regex("""/Rect \[(\d+\.\d+) (\d+\.\d+) (\d+\.\d+) (\d+\.\d+)]""").findAll(resultText).toList()
+        assertEquals(pageCount + 1, rectMatches.size)
+        rectMatches.forEach { match ->
+            val llx = match.groupValues[1].toFloat()
+            val lly = match.groupValues[2].toFloat()
+            val urx = match.groupValues[3].toFloat()
+            val ury = match.groupValues[4].toFloat()
+            assertTrue(llx in 0f..595f)
+            assertTrue(urx in 0f..595f)
+            assertTrue(llx < urx)
+            assertTrue(lly in 0f..842f)
+            assertTrue(ury in 0f..842f)
+            assertTrue(lly < ury)
+        }
+    }
+
+    @Test
+    fun `drawBrandFooterCard and drawRunningPageFooter record link bounds anchored to splittrip eu text`() {
+        val bitmap = Bitmap.createBitmap(595, 842, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paints = TripReportPdfTheme.createPaints(context = null)
+        val brandFooter = createSampleBrandFooter()
+
+        val cardLinks = mutableListOf<PdfLinkAnnotation>()
+        TripReportPdfBrandDrawers.drawBrandFooterCard(
+            canvas = canvas,
+            brandFooter = brandFooter,
+            paints = paints,
+            topY = 600f,
+            links = cardLinks
+        )
+        assertEquals(1, cardLinks.size)
+        assertEquals("https://splittrip.eu", cardLinks.single().uri)
+        val expectedCardLeftX = TripReportPdfMetrics.MARGIN_X_PT + 16f
+        assertTrue(cardLinks.single().rectCanvasPt.left < expectedCardLeftX)
+        assertTrue(cardLinks.single().rectCanvasPt.right > expectedCardLeftX)
+
+        val runningLinks = mutableListOf<PdfLinkAnnotation>()
+        TripReportPdfBrandDrawers.drawRunningPageFooter(
+            canvas = canvas,
+            websiteDisplay = brandFooter.websiteDisplay,
+            websiteUrl = brandFooter.websiteUrl,
+            pageFooterText = "Page 1 of 2",
+            paints = paints,
+            links = runningLinks
+        )
+        assertEquals(1, runningLinks.size)
+        assertEquals("https://splittrip.eu", runningLinks.single().uri)
+        val prefixWidth = paints.footerBrand.measureText("SplitTrip  ·  ")
+        assertTrue(runningLinks.single().rectCanvasPt.left >= TripReportPdfMetrics.MARGIN_X_PT + prefixWidth - 3f)
+        assertTrue(runningLinks.single().rectCanvasPt.right > runningLinks.single().rectCanvasPt.left)
+    }
+
+    private fun buildMinimalMultiPagePdf(pageCount: Int): ByteArray {
+        val sb = StringBuilder("%PDF-1.4\n")
+        val offsets = mutableMapOf<Int, Int>()
+        // 1: Catalog, 2: Pages, 3..2+pageCount: Page objects
+        val kidsRefs = (0 until pageCount).joinToString(" ") { "${3 + it} 0 R" }
+
+        offsets[1] = sb.length
+        sb.append("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n")
+
+        offsets[2] = sb.length
+        sb.append("2 0 obj\n<< /Type /Pages /Count $pageCount /Kids [$kidsRefs] >>\nendobj\n")
+
+        for (index in 0 until pageCount) {
+            val objId = 3 + index
+            offsets[objId] = sb.length
+            sb.append("$objId 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] >>\nendobj\n")
+        }
+
+        val totalObjects = 3 + pageCount
+        val xrefOffset = sb.length
+        sb.append("xref\n0 $totalObjects\n")
+        sb.append("0000000000 65535 f \n")
+        for (objId in 1 until totalObjects) {
+            sb.append(String.format(Locale.US, "%010d 00000 n \n", offsets.getValue(objId)))
+        }
+        sb.append("trailer\n<< /Size $totalObjects /Root 1 0 R >>\n")
+        sb.append("startxref\n$xrefOffset\n%%EOF\n")
+        return sb.toString().toByteArray(Charsets.ISO_8859_1)
     }
 
     private fun createFullPayload(expenseRowsCount: Int): TripReportExportPayload {
