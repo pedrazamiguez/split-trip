@@ -39,4 +39,7 @@ sealed interface AddExpenseUiAction {
 
     /** Fired when the user is allowed to open the receipt source picker (camera / gallery / PDF). */
     data object OpenReceiptPickerSource : AddExpenseUiAction
+
+    /** Fired when the user taps the opt-in banner to manage the Local AI Model Pack in Settings. */
+    data object NavigateToLocalAiPackSettings : AddExpenseUiAction
 }

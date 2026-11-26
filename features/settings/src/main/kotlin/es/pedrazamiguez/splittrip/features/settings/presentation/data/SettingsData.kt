@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.HelpCircle
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.InfoCircle
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Language
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.MoonStars
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Shield
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ShieldLock
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.UserPin
@@ -140,6 +141,14 @@ private fun preferencesSection(
                 descriptionContent = {
                     CurrencyDescription(params.currentCurrency)
                 }
+            )
+        )
+        add(
+            SettingsItemModel.Standard(
+                icon = TablerIcons.Outline.PhotoAi,
+                titleRes = R.string.settings_preferences_local_ai_pack_title,
+                descriptionRes = R.string.settings_preferences_local_ai_pack_description,
+                onClick = params.onLocalAiPackClick
             )
         )
     }

@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.feature.Develop
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.DeveloperServicesFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.FaqFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.LanguageFeature
+import es.pedrazamiguez.splittrip.features.settings.presentation.feature.LocalAiModelPackFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.NotificationPreferencesFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.OpenSourceFeature
 import es.pedrazamiguez.splittrip.features.settings.presentation.feature.PlanAllowancesFeature
@@ -72,5 +73,8 @@ fun NavGraphBuilder.settingsGraph() {
     }
     composable(Routes.SETTINGS_DEVELOPER_INFO) {
         DeveloperInfoFeature()
+    }
+    composable(Routes.SETTINGS_LOCAL_AI_PACK) {
+        LocalAiModelPackFeature()
     }
 }

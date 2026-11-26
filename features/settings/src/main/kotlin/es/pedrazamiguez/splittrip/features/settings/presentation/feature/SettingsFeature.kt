@@ -169,6 +169,9 @@ fun SettingsFeature(
                 clipboardManager.setText(AnnotatedString(logs))
                 pillController.showPill(diagnosticsCopiedMsg)
             },
+            onLocalAiPackClick = {
+                navController.navigate(Routes.SETTINGS_LOCAL_AI_PACK)
+            },
             isAnonymous = isAnonymous,
             isDeveloperModeEnabled = isDeveloperModeEnabled
         )

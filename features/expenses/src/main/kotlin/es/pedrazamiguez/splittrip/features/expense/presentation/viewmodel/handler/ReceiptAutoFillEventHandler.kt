@@ -13,15 +13,18 @@ import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
+import es.pedrazamiguez.splittrip.domain.model.ModelPackStatus
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
 import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveLocalAiModelPackStateUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceiptQuotaUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.LocalAiPackBannerUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
@@ -40,7 +43,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LongParameterList")
 class ReceiptAutoFillEventHandler(
     private val extractReceiptFieldsUseCase: ExtractReceiptFieldsUseCase,
     private val receiptExtractionService: ReceiptExtractionService,
@@ -49,12 +52,16 @@ class ReceiptAutoFillEventHandler(
     private val featureGateService: FeatureGateService,
     private val aiReceiptQuotaUiMapper: AiReceiptQuotaUiMapper,
     private val telemetryTracker: TelemetryTracker,
+    private val observeLocalAiModelPackStateUseCase: ObserveLocalAiModelPackStateUseCase,
+    private val localAiPackBannerUiMapper: LocalAiPackBannerUiMapper,
     private val zoneIdProvider: () -> ZoneId = { ZoneId.systemDefault() }
 ) : AddExpenseEventHandler {
 
     private lateinit var _uiState: MutableStateFlow<AddExpenseUiState>
     private lateinit var _actionsFlow: MutableSharedFlow<AddExpenseUiAction>
     private lateinit var scope: CoroutineScope
+
+    private var isLocalAiPackBannerDismissed = false
 
     private var onCurrencySelected: ((String) -> Unit)? = null
     private var onAmountChanged: ((String) -> Unit)? = null
@@ -100,6 +107,37 @@ class ReceiptAutoFillEventHandler(
                 }
             }
         }
+    }
+
+    fun startObservingLocalAiPackState() {
+        scope.launch {
+            observeLocalAiModelPackStateUseCase().collect { packState ->
+                val isAiCapable = receiptExtractionService.capability() == ExtractionCapability.ON_DEVICE_AI ||
+                    (packState.isEntitled && packState.status is ModelPackStatus.Installed)
+                _uiState.update { state ->
+                    val banner = if (!state.isEditMode && !isLocalAiPackBannerDismissed) {
+                        localAiPackBannerUiMapper.map(packState)
+                    } else {
+                        null
+                    }
+                    state.copy(
+                        isAiCapable = isAiCapable,
+                        localAiPackBanner = banner
+                    )
+                }
+            }
+        }
+    }
+
+    fun handleOpenLocalAiPackSettings() {
+        scope.launch {
+            _actionsFlow.emit(AddExpenseUiAction.NavigateToLocalAiPackSettings)
+        }
+    }
+
+    fun handleDismissLocalAiPackBanner() {
+        isLocalAiPackBannerDismissed = true
+        _uiState.update { it.copy(localAiPackBanner = null) }
     }
 
     /**

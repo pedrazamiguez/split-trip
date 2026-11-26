@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.data.service
 
 import android.content.Context
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
+import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelUnavailableException
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
@@ -9,6 +10,7 @@ import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
+import es.pedrazamiguez.splittrip.domain.service.LocalAiModelPackService
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.every
@@ -43,6 +45,7 @@ class ReceiptExtractionServiceImplTest {
     private lateinit var aiCoreInferenceRepository: AiInferenceRepository
     private lateinit var liteRtInferenceRepository: AiInferenceRepository
     private lateinit var aiModelResolver: AiModelResolverService
+    private lateinit var localAiModelPackService: LocalAiModelPackService
     private lateinit var service: ReceiptExtractionServiceImpl
     private val activeEngineFlow = MutableStateFlow(AiEngineType.AI_CORE_GEMMA_4)
 
@@ -63,7 +66,10 @@ class ReceiptExtractionServiceImplTest {
         aiCoreInferenceRepository = mockk()
         liteRtInferenceRepository = mockk()
         aiModelResolver = mockk()
+        localAiModelPackService = mockk()
         appConfigRepository = mockk()
+
+        every { localAiModelPackService.isPackInstalled() } returns false
 
         val blacklistFlow = MutableStateFlow(listOf("razor", "private", "toothbrushes"))
         every { appConfigRepository.ocrSafetyFalsePositivesBlacklist } returns blacklistFlow
@@ -79,6 +85,7 @@ class ReceiptExtractionServiceImplTest {
             aiCoreInferenceRepository = lazy { aiCoreInferenceRepository },
             liteRtInferenceRepository = lazy { liteRtInferenceRepository },
             aiModelResolver = aiModelResolver,
+            localAiModelPackService = localAiModelPackService,
             defaultDispatcher = testDispatcher
         )
     }
@@ -113,6 +120,7 @@ class ReceiptExtractionServiceImplTest {
         testDispatcher
     ) {
         activeEngineFlow.value = AiEngineType.LITE_RT_LM
+        every { localAiModelPackService.isPackInstalled() } returns true
         every { aiCoreCapabilityProvider.isSupported() } returns false
         advanceUntilIdle()
 
@@ -120,6 +128,19 @@ class ReceiptExtractionServiceImplTest {
 
         assertEquals(ExtractionCapability.ON_DEVICE_AI, capability)
     }
+
+    @Test
+    fun `capability returns UNSUPPORTED when LITE_RT_LM active, pack missing, AICore unsupported`() =
+        runTest(testDispatcher) {
+            activeEngineFlow.value = AiEngineType.LITE_RT_LM
+            every { localAiModelPackService.isPackInstalled() } returns false
+            every { aiCoreCapabilityProvider.isSupported() } returns false
+            advanceUntilIdle()
+
+            val capability = service.capability()
+
+            assertEquals(ExtractionCapability.UNSUPPORTED, capability)
+        }
 
     @Test
     fun `extract returns NO_OP fallback immediately when capability is unsupported for AICore`() = runTest(
@@ -174,6 +195,7 @@ class ReceiptExtractionServiceImplTest {
     @Test
     fun `extract delegates to LiteRt repository and parses cleanly`() = runTest(testDispatcher) {
         activeEngineFlow.value = AiEngineType.LITE_RT_LM
+        every { localAiModelPackService.isPackInstalled() } returns true
         advanceUntilIdle()
 
         val cleanJsonResponse = """
@@ -247,6 +269,7 @@ class ReceiptExtractionServiceImplTest {
     ) {
         // Active model resolves to AI_CORE but we pass LITE_RT_LM override
         every { aiModelResolver.getActiveModel() } returns activeEngineFlow
+        every { localAiModelPackService.isPackInstalled() } returns true
 
         val cleanJsonResponse = """
             {
@@ -389,5 +412,63 @@ class ReceiptExtractionServiceImplTest {
 
         assertTrue(result.isSuccess)
         assertEquals("HEALTH_PERSONAL_CARE", result.getOrThrow().category)
+    }
+
+    @Test
+    fun `extract falls back to AI_CORE_GEMMA_4 when LITE_RT_LM pack fails to load and AICore is supported`() =
+        runTest(testDispatcher) {
+            activeEngineFlow.value = AiEngineType.LITE_RT_LM
+            every { localAiModelPackService.isPackInstalled() } returns true
+            every { aiCoreCapabilityProvider.isSupported() } returns true
+            advanceUntilIdle()
+
+            coEvery { liteRtInferenceRepository.generateStructuredOutput(any(), any()) } returns
+                Result.failure(LocalAiModelUnavailableException("Failed to load"))
+            coEvery { aiCoreInferenceRepository.generateContent(any()) } returns
+                Result.success("""{"amounts":["20.00"],"currency":"EUR","date":"2026-05-20","title":"Cafe"}""")
+
+            val result = service.extract(rawReceiptText)
+
+            assertTrue(result.isSuccess)
+            val receipt = result.getOrThrow()
+            assertEquals(ExtractionSource.AI_CORE, receipt.source)
+            assertEquals(BigDecimal("20.00"), receipt.amount)
+        }
+
+    @Test
+    fun `extract returns NO_OP fallback without error when LITE_RT_LM pack is unavailable and AICore is unsupported`() =
+        runTest(testDispatcher) {
+            activeEngineFlow.value = AiEngineType.LITE_RT_LM
+            every { localAiModelPackService.isPackInstalled() } returns true
+            every { aiCoreCapabilityProvider.isSupported() } returns false
+            advanceUntilIdle()
+
+            coEvery { liteRtInferenceRepository.generateStructuredOutput(any(), any()) } returns
+                Result.failure(LocalAiModelUnavailableException("Missing"))
+
+            val result = service.extract(rawReceiptText)
+
+            assertTrue(result.isSuccess)
+            assertEquals(ExtractionSource.NO_OP, result.getOrThrow().source)
+        }
+
+    @Test
+    fun `extract sanitizes markdown-fenced JSON returned by LITE_RT_LM`() = runTest(testDispatcher) {
+        activeEngineFlow.value = AiEngineType.LITE_RT_LM
+        every { localAiModelPackService.isPackInstalled() } returns true
+        advanceUntilIdle()
+
+        val fencedJson = "```json\n" +
+            "{\"amount\":\"18.00\",\"currency\":\"EUR\",\"date\":\"2026-05-20\",\"title\":\"Lunch\"}\n" +
+            "```"
+        coEvery { liteRtInferenceRepository.generateStructuredOutput(any(), any()) } returns
+            Result.success(fencedJson)
+
+        val result = service.extract(rawReceiptText)
+
+        assertTrue(result.isSuccess)
+        val receipt = result.getOrThrow()
+        assertEquals(ExtractionSource.LITE_RT_LM, receipt.source)
+        assertEquals(BigDecimal("18.00"), receipt.amount)
     }
 }

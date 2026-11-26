@@ -6,6 +6,8 @@ import es.pedrazamiguez.splittrip.domain.converter.CurrencyConverter
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelNotEntitledException
+import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelUnavailableException
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
@@ -14,6 +16,7 @@ import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
+import es.pedrazamiguez.splittrip.domain.service.LocalAiModelPackService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -29,6 +32,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import timber.log.Timber
 
+@Suppress("LongParameterList")
 internal class ReceiptExtractionServiceImpl(
     private val context: Context,
     private val appConfigRepository: AppConfigRepository,
@@ -36,6 +40,7 @@ internal class ReceiptExtractionServiceImpl(
     private val aiCoreInferenceRepository: Lazy<AiInferenceRepository>,
     private val liteRtInferenceRepository: Lazy<AiInferenceRepository>,
     private val aiModelResolver: AiModelResolverService,
+    private val localAiModelPackService: LocalAiModelPackService,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ReceiptExtractionService, AutoCloseable {
 
@@ -53,43 +58,40 @@ internal class ReceiptExtractionServiceImpl(
         }
     }
 
+    @Suppress("ReturnCount")
     override suspend fun extract(
         rawText: RawReceiptText,
         engineType: AiEngineType?
     ): Result<ExtractedReceipt> = withContext(defaultDispatcher) {
-        val resolvedEngine = engineType ?: aiModelResolver.getActiveModel().first()
-        val isSupported = isEngineSupported(resolvedEngine)
-
-        Timber.d(
-            "ReceiptExtractionService: resolvedEngine=%s, capability=%s — %s",
-            resolvedEngine,
-            if (isSupported) "SUPPORTED" else "UNSUPPORTED",
-            if (isSupported) "running inference" else "returning NO_OP fallback immediately"
-        )
-
-        if (!isSupported || rawText.fullText.isBlank()) {
+        if (rawText.fullText.isBlank()) {
             return@withContext Result.success(getNoOpFallbackReceipt())
         }
+
+        val resolvedEngine = engineType ?: aiModelResolver.getActiveModel().first()
+        var executionEngine = resolveExecutionEngine(
+            resolvedEngine = resolvedEngine,
+            isAutomaticMode = engineType == null
+        ) ?: return@withContext Result.success(getNoOpFallbackReceipt())
 
         val startMs = System.currentTimeMillis()
         val blacklist = appConfigRepository.ocrSafetyFalsePositivesBlacklist.value
         val sanitizedText = sanitizeOcrText(rawText.fullText, blacklist)
-        val truncatedText = smartTruncate(sanitizedText)
-        val prompt = buildPrompt(truncatedText)
 
-        var inferenceResult = runInference(resolvedEngine, prompt)
+        var inferenceResult = runInferenceWithRetry(executionEngine, sanitizedText, startMs)
 
-        if (inferenceResult.isFailure) {
-            Timber.e(
-                inferenceResult.exceptionOrNull(),
-                "ReceiptExtractionService: Primary inference failed " +
-                    "(elapsed=%dms). Triggering fallback. Offending payload:\n%s",
-                System.currentTimeMillis() - startMs,
-                truncatedText
-            )
-            val aggressiveText = aggressiveTruncate(sanitizedText)
-            val aggressivePrompt = buildPrompt(aggressiveText)
-            inferenceResult = runInference(resolvedEngine, aggressivePrompt)
+        if (inferenceResult.isFailure && engineType == null && executionEngine == AiEngineType.LITE_RT_LM) {
+            val error = inferenceResult.exceptionOrNull()
+            if (aiCoreCapabilityProvider.isSupported()) {
+                Timber.w(
+                    error,
+                    "ReceiptExtractionService: LITE_RT_LM failed in automatic mode — falling back to AI_CORE_GEMMA_4"
+                )
+                executionEngine = AiEngineType.AI_CORE_GEMMA_4
+                inferenceResult = runInferenceWithRetry(executionEngine, sanitizedText, startMs)
+            } else if (error is LocalAiModelUnavailableException || error is LocalAiModelNotEntitledException) {
+                Timber.w(error, "ReceiptExtractionService: LITE_RT_LM unavailable — returning NO_OP fallback")
+                return@withContext Result.success(getNoOpFallbackReceipt())
+            }
         }
 
         val result = inferenceResult.mapCatching { rawOutput ->
@@ -97,7 +99,7 @@ internal class ReceiptExtractionServiceImpl(
                 "ReceiptExtractionService: raw AI output (len=%d)",
                 rawOutput.length
             )
-            parseInferenceResult(rawOutput, resolvedEngine)
+            parseInferenceResult(rawOutput, executionEngine)
         }.onFailure { error ->
             Timber.w(
                 error,
@@ -114,6 +116,51 @@ internal class ReceiptExtractionServiceImpl(
         result
     }
 
+    private fun resolveExecutionEngine(
+        resolvedEngine: AiEngineType,
+        isAutomaticMode: Boolean
+    ): AiEngineType? {
+        val isSupported = isEngineSupported(resolvedEngine)
+        Timber.d(
+            "ReceiptExtractionService: resolvedEngine=%s, capability=%s",
+            resolvedEngine,
+            if (isSupported) "SUPPORTED" else "UNSUPPORTED"
+        )
+        if (isSupported) return resolvedEngine
+        if (isAutomaticMode &&
+            resolvedEngine == AiEngineType.LITE_RT_LM &&
+            aiCoreCapabilityProvider.isSupported()
+        ) {
+            Timber.w("ReceiptExtractionService: LITE_RT_LM pack not installed — falling back to AI_CORE_GEMMA_4")
+            return AiEngineType.AI_CORE_GEMMA_4
+        }
+        return null
+    }
+
+    private suspend fun runInferenceWithRetry(
+        executionEngine: AiEngineType,
+        sanitizedText: String,
+        startMs: Long
+    ): Result<String> {
+        val truncatedText = smartTruncate(sanitizedText)
+        val prompt = buildPrompt(truncatedText)
+        var inferenceResult = runInference(executionEngine, prompt)
+
+        if (inferenceResult.isFailure) {
+            Timber.e(
+                inferenceResult.exceptionOrNull(),
+                "ReceiptExtractionService: Primary inference failed " +
+                    "(elapsed=%dms). Triggering fallback. Offending payload:\n%s",
+                System.currentTimeMillis() - startMs,
+                truncatedText
+            )
+            val aggressiveText = aggressiveTruncate(sanitizedText)
+            val aggressivePrompt = buildPrompt(aggressiveText)
+            inferenceResult = runInference(executionEngine, aggressivePrompt)
+        }
+        return inferenceResult
+    }
+
     private fun sanitizeOcrText(text: String, blacklist: List<String>): String {
         var sanitized = text
         for (word in blacklist) {
@@ -127,7 +174,7 @@ internal class ReceiptExtractionServiceImpl(
     private fun isEngineSupported(activeEngine: AiEngineType): Boolean {
         return when (activeEngine) {
             AiEngineType.AI_CORE_GEMMA_4 -> aiCoreCapabilityProvider.isSupported()
-            AiEngineType.LITE_RT_LM -> true
+            AiEngineType.LITE_RT_LM -> localAiModelPackService.isPackInstalled()
         }
     }
 
@@ -144,11 +191,7 @@ internal class ReceiptExtractionServiceImpl(
     }
 
     private fun parseInferenceResult(rawOutput: String, activeEngine: AiEngineType): ExtractedReceipt {
-        val cleanJson = if (activeEngine == AiEngineType.AI_CORE_GEMMA_4) {
-            JsonSanitizer.sanitize(rawOutput)
-        } else {
-            rawOutput.trim()
-        }
+        val cleanJson = JsonSanitizer.sanitize(rawOutput)
 
         require(cleanJson.startsWith("{")) {
             "Output is not valid JSON (length=${cleanJson.length})"
@@ -157,7 +200,7 @@ internal class ReceiptExtractionServiceImpl(
     }
 
     override fun capability(): ExtractionCapability {
-        return if (activeEngine == AiEngineType.LITE_RT_LM || aiCoreCapabilityProvider.isSupported()) {
+        return if (isEngineSupported(activeEngine) || aiCoreCapabilityProvider.isSupported()) {
             ExtractionCapability.ON_DEVICE_AI
         } else {
             ExtractionCapability.UNSUPPORTED

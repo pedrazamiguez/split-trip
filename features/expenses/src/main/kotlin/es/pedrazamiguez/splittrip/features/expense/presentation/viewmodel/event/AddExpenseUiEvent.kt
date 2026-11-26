@@ -39,6 +39,8 @@ sealed interface AddExpenseUiEvent {
     data object RemoveReceiptImage : AddExpenseUiEvent
     data class SetAiModeActive(val active: Boolean) : AddExpenseUiEvent
     data object DismissAutoFillBanner : AddExpenseUiEvent
+    data object OpenLocalAiPackSettings : AddExpenseUiEvent
+    data object DismissLocalAiPackBanner : AddExpenseUiEvent
 
     /**
      * Signals a request to show the receipt source selection sheet

@@ -31,6 +31,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizar
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.AiRemainingScansBadge
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.AiScanPromptCard
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.LocalAiPackPromptBanner
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.ReceiptSection
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -179,6 +180,15 @@ fun ReceiptStep(
                         remainingScansLabel = uiState.aiRemainingScansLabel,
                         isQuotaExhausted = uiState.isAiGated
                     )
+                }
+                if (!uiState.isEditMode) {
+                    uiState.localAiPackBanner?.let { banner ->
+                        LocalAiPackPromptBanner(
+                            banner = banner,
+                            onManageClick = { onEvent(AddExpenseUiEvent.OpenLocalAiPackSettings) },
+                            onDismissClick = { onEvent(AddExpenseUiEvent.DismissLocalAiPackBanner) }
+                        )
+                    }
                 }
                 ReceiptSection(
                     receiptUri = uiState.receiptUri,
