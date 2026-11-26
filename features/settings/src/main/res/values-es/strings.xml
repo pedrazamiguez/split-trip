@@ -408,6 +408,7 @@
     <string name="local_ai_pack_status_installed_desc">Tu dispositivo está usando el paquete LiteRT-LM descargado para la extracción con IA sin conexión.</string>
     <string name="local_ai_pack_status_update_available_desc">Hay una nueva versión del paquete de IA local disponible para descargar.</string>
     <string name="local_ai_pack_status_incompatible_title">Dispositivo no compatible</string>
+    <string name="local_ai_pack_status_disabled_title">Paquete no disponible</string>
     <string name="local_ai_pack_status_error_title">Error en la descarga</string>
     <string name="local_ai_pack_incompatible_abi">Se requiere procesador ARM de 64 bits</string>
     <string name="local_ai_pack_incompatible_ram">Requiere al menos %1$d MB de RAM</string>
@@ -427,6 +428,8 @@
     <string name="local_ai_pack_wifi_only_subtitle">Evita cargos de datos móviles en descargas grandes</string>
     <string name="local_ai_pack_compatibility_label">Compatibilidad del dispositivo</string>
     <string name="local_ai_pack_compatibility_supported">Compatible</string>
+    <string name="local_ai_pack_compatibility_unsupported">Incompatible</string>
+    <string name="local_ai_pack_compatibility_disabled">No disponible</string>
     <string name="local_ai_pack_active_engine_label">Motor de IA activo</string>
     <string name="local_ai_pack_engine_lite_rt">Paquete IA local (LiteRT)</string>
     <string name="local_ai_pack_engine_ai_core">IA del dispositivo (AICore)</string>

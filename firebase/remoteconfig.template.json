@@ -149,7 +149,7 @@
         },
         "local_ai_model_pack_json": {
           "defaultValue": {
-            "value": "{\"pack_id\":\"gemma-litert-receipt-v1\",\"version\":\"1.0.0\",\"download_url\":\"\",\"sha256_checksum\":\"\",\"size_bytes\":0,\"min_ram_mb\":4096,\"min_free_storage_bytes\":1073741824,\"is_enabled\":false}"
+            "value": "{\"pack_id\":\"qwen2.5-1.5b-litert-v1\",\"version\":\"1.0.0\",\"download_url\":\"https://firebasestorage.googleapis.com/v0/b/expshapp.firebasestorage.app/o/public%2Fai-models%2FQwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm?alt=media&token=b19fcb23-f81e-43c4-8ebc-eaba4b28954e\",\"sha256_checksum\":\"c4a9b7289365ab80fe599b844b77ad253eb3c53fb0e5d963d699146a6f01255e\",\"size_bytes\":1597922856,\"min_ram_mb\":3072,\"min_free_storage_bytes\":3221225472,\"is_enabled\":true}"
           },
           "description": "Configuration and metadata for the optional downloadable local LiteRT-LM AI model pack.",
           "valueType": "JSON"

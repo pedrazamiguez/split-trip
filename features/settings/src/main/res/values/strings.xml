@@ -408,6 +408,7 @@
     <string name="local_ai_pack_status_installed_desc">Your device is using the downloaded LiteRT-LM pack for offline AI extraction.</string>
     <string name="local_ai_pack_status_update_available_desc">A newer version of the local AI pack is available to download.</string>
     <string name="local_ai_pack_status_incompatible_title">Device not compatible</string>
+    <string name="local_ai_pack_status_disabled_title">Pack unavailable</string>
     <string name="local_ai_pack_status_error_title">Download failed</string>
     <string name="local_ai_pack_incompatible_abi">64-bit ARM processor required</string>
     <string name="local_ai_pack_incompatible_ram">Requires at least %1$d MB RAM</string>
@@ -427,6 +428,8 @@
     <string name="local_ai_pack_wifi_only_subtitle">Avoid mobile data charges for large model downloads</string>
     <string name="local_ai_pack_compatibility_label">Device compatibility</string>
     <string name="local_ai_pack_compatibility_supported">Compatible</string>
+    <string name="local_ai_pack_compatibility_unsupported">Incompatible</string>
+    <string name="local_ai_pack_compatibility_disabled">Unavailable</string>
     <string name="local_ai_pack_active_engine_label">Active AI engine</string>
     <string name="local_ai_pack_engine_lite_rt">Local AI Pack (LiteRT)</string>
     <string name="local_ai_pack_engine_ai_core">Device AI (AICore)</string>

@@ -148,16 +148,23 @@ class LocalAiModelPackUiMapperImpl(
     private fun mapIncompatible(
         baseState: LocalAiModelPackUiState,
         status: ModelPackStatus.Incompatible
-    ): LocalAiModelPackUiState = baseState.copy(
-        statusBadge = UiText.StringResource(R.string.local_ai_pack_badge_incompatible),
-        statusTagStyle = PassportTagStyle.WARNING,
-        statusTitle = UiText.StringResource(R.string.local_ai_pack_status_incompatible_title),
-        statusDescription = mapIncompatibilityReason(
-            reason = status.reason,
-            requiredRamMb = status.requiredRamMb,
-            requiredStorageBytes = status.requiredStorageBytes
+    ): LocalAiModelPackUiState {
+        val titleRes = if (status.reason == ModelPackIncompatibilityReason.PACK_DISABLED) {
+            R.string.local_ai_pack_status_disabled_title
+        } else {
+            R.string.local_ai_pack_status_incompatible_title
+        }
+        return baseState.copy(
+            statusBadge = UiText.StringResource(R.string.local_ai_pack_badge_incompatible),
+            statusTagStyle = PassportTagStyle.WARNING,
+            statusTitle = UiText.StringResource(titleRes),
+            statusDescription = mapIncompatibilityReason(
+                reason = status.reason,
+                requiredRamMb = status.requiredRamMb,
+                requiredStorageBytes = status.requiredStorageBytes
+            )
         )
-    )
+    }
 
     private fun mapError(
         baseState: LocalAiModelPackUiState,
@@ -178,14 +185,13 @@ class LocalAiModelPackUiMapperImpl(
     }
 
     private fun mapCompatibilityLabel(compatibility: DeviceCompatibilityResult): UiText =
-        if (compatibility.isCompatible) {
-            UiText.StringResource(R.string.local_ai_pack_compatibility_supported)
-        } else {
-            mapIncompatibilityReason(
-                reason = compatibility.reason ?: ModelPackIncompatibilityReason.PACK_DISABLED,
-                requiredRamMb = compatibility.requiredRamMb,
-                requiredStorageBytes = compatibility.requiredStorageBytes
-            )
+        when {
+            compatibility.isCompatible ->
+                UiText.StringResource(R.string.local_ai_pack_compatibility_supported)
+            compatibility.reason == ModelPackIncompatibilityReason.PACK_DISABLED ->
+                UiText.StringResource(R.string.local_ai_pack_compatibility_disabled)
+            else ->
+                UiText.StringResource(R.string.local_ai_pack_compatibility_unsupported)
         }
 
     private fun mapIncompatibilityReason(

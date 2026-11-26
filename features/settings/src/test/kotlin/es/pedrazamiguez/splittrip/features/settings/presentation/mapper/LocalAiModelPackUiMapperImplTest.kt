@@ -162,17 +162,32 @@ class LocalAiModelPackUiMapperImplTest {
 
         val ramState = mapper.map(
             state = stateWith(
-                ModelPackStatus.Incompatible(
+                status = ModelPackStatus.Incompatible(
                     ModelPackIncompatibilityReason.INSUFFICIENT_RAM,
                     4096,
                     2048L,
                     1_073_741_824L,
                     4_000_000_000L
+                ),
+                compatibility = DeviceCompatibilityResult(
+                    isCompatible = false,
+                    reason = ModelPackIncompatibilityReason.INSUFFICIENT_RAM,
+                    availableRamMb = 2048L,
+                    requiredRamMb = 4096,
+                    availableStorageBytes = 4_000_000_000L,
+                    requiredStorageBytes = 1_073_741_824L,
+                    supportedAbis = listOf("arm64-v8a")
                 )
             ),
             showDeleteConfirmation = false
         )
+        assertFalse(ramState.isCompatible)
+        assertEquals(UiText.StringResource(R.string.local_ai_pack_status_incompatible_title), ramState.statusTitle)
         assertEquals(UiText.StringResource(R.string.local_ai_pack_incompatible_ram, 4096), ramState.statusDescription)
+        assertEquals(
+            UiText.StringResource(R.string.local_ai_pack_compatibility_unsupported),
+            ramState.compatibilityLabel
+        )
     }
 
     @Test
@@ -198,19 +213,36 @@ class LocalAiModelPackUiMapperImplTest {
 
         val disabledState = mapper.map(
             state = stateWith(
-                ModelPackStatus.Incompatible(
+                status = ModelPackStatus.Incompatible(
                     ModelPackIncompatibilityReason.PACK_DISABLED,
                     4096,
                     8192L,
                     1_073_741_824L,
                     4_000_000_000L
+                ),
+                compatibility = DeviceCompatibilityResult(
+                    isCompatible = false,
+                    reason = ModelPackIncompatibilityReason.PACK_DISABLED,
+                    availableRamMb = 8192L,
+                    requiredRamMb = 4096,
+                    availableStorageBytes = 4_000_000_000L,
+                    requiredStorageBytes = 1_073_741_824L,
+                    supportedAbis = listOf("arm64-v8a")
                 )
             ),
             showDeleteConfirmation = false
         )
         assertEquals(
+            UiText.StringResource(R.string.local_ai_pack_status_disabled_title),
+            disabledState.statusTitle
+        )
+        assertEquals(
             UiText.StringResource(R.string.local_ai_pack_incompatible_disabled),
             disabledState.statusDescription
+        )
+        assertEquals(
+            UiText.StringResource(R.string.local_ai_pack_compatibility_disabled),
+            disabledState.compatibilityLabel
         )
     }
 
