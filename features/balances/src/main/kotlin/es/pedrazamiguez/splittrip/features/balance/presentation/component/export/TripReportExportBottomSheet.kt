@@ -3,9 +3,15 @@ package es.pedrazamiguez.splittrip.features.balance.presentation.component.expor
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -64,96 +70,112 @@ fun TripReportExportBottomSheet(
 
     HorizonModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = modalSheetState
+        sheetState = modalSheetState,
+        contentWindowInsets = { WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical) }
     ) {
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(MaterialTheme.spacing.ExtraLarge),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default)
-        ) {
-            SheetTitleText(text = stringResource(R.string.balances_export_sheet_title))
-
-            SecondaryBodyText(
-                text = subtitleText,
-                maxLines = Int.MAX_VALUE
-            )
-
-            resolveFreeQuotaDisplay(sheetState)?.let { quota ->
-                PassportTag(
-                    text = pluralStringResource(
-                        R.plurals.balances_export_free_quota_badge,
-                        quota.remaining,
-                        quota.remaining,
-                        quota.monthlyLimit
-                    ),
-                    style = resolveQuotaTagStyle(quota.remaining)
+                .padding(
+                    horizontal = MaterialTheme.spacing.ExtraLarge,
+                    vertical = MaterialTheme.spacing.ExtraLarge
                 )
-            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Default)
+            ) {
+                SheetTitleText(text = stringResource(R.string.balances_export_sheet_title))
 
-            LabelText(text = stringResource(R.string.balances_export_period_label))
-
-            SpendingInsightsPeriodCard(
-                selectedPreset = sheetState.selectedPreset,
-                periodSummaryLabel = "",
-                customStartDate = sheetState.customStartDate,
-                customEndDate = sheetState.customEndDate,
-                formattedCustomStartDate = sheetState.formattedCustomStartDate,
-                formattedCustomEndDate = sheetState.formattedCustomEndDate,
-                oldestExpenseDate = sheetState.oldestExpenseDate,
-                newestExpenseDate = sheetState.newestExpenseDate,
-                onSelectPreset = onSelectPreset,
-                onSelectCustomStartDate = onSelectCustomStartDate,
-                onSelectCustomEndDate = onSelectCustomEndDate
-            )
-
-            LabelText(text = stringResource(R.string.balances_export_format_label))
-
-            SegmentedPillSelector(
-                options = formats,
-                selectedOption = sheetState.selectedFormat,
-                onOptionSelected = onSelectFormat,
-                optionLabel = { format -> resolveFormatOptionLabel(format, pdfLabel, csvLabel) },
-                isOptionLocked = { format -> format == TripReportFormat.CSV && sheetState.isCsvLocked },
-                enabled = !sheetState.isExporting
-            )
-
-            if (!sheetState.includesItemisedDetails) {
                 SecondaryBodyText(
-                    text = stringResource(R.string.balances_export_free_pro_hint),
+                    text = subtitleText,
                     maxLines = Int.MAX_VALUE
                 )
+
+                resolveFreeQuotaDisplay(sheetState)?.let { quota ->
+                    PassportTag(
+                        text = pluralStringResource(
+                            R.plurals.balances_export_free_quota_badge,
+                            quota.remaining,
+                            quota.remaining,
+                            quota.monthlyLimit
+                        ),
+                        style = resolveQuotaTagStyle(quota.remaining)
+                    )
+                }
+
+                LabelText(text = stringResource(R.string.balances_export_period_label))
+
+                SpendingInsightsPeriodCard(
+                    selectedPreset = sheetState.selectedPreset,
+                    periodSummaryLabel = "",
+                    customStartDate = sheetState.customStartDate,
+                    customEndDate = sheetState.customEndDate,
+                    formattedCustomStartDate = sheetState.formattedCustomStartDate,
+                    formattedCustomEndDate = sheetState.formattedCustomEndDate,
+                    oldestExpenseDate = sheetState.oldestExpenseDate,
+                    newestExpenseDate = sheetState.newestExpenseDate,
+                    onSelectPreset = onSelectPreset,
+                    onSelectCustomStartDate = onSelectCustomStartDate,
+                    onSelectCustomEndDate = onSelectCustomEndDate
+                )
+
+                LabelText(text = stringResource(R.string.balances_export_format_label))
+
+                SegmentedPillSelector(
+                    options = formats,
+                    selectedOption = sheetState.selectedFormat,
+                    onOptionSelected = onSelectFormat,
+                    optionLabel = { format -> resolveFormatOptionLabel(format, pdfLabel, csvLabel) },
+                    isOptionLocked = { format -> format == TripReportFormat.CSV && sheetState.isCsvLocked },
+                    enabled = !sheetState.isExporting
+                )
+
+                if (!sheetState.includesItemisedDetails) {
+                    SecondaryBodyText(
+                        text = stringResource(R.string.balances_export_free_pro_hint),
+                        maxLines = Int.MAX_VALUE
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.ExtraSmall))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.Default))
 
-            GradientButton(
-                text = stringResource(R.string.balances_export_confirm_button),
-                onClick = onConfirmExport,
-                leadingIcon = TablerIcons.Outline.Share,
-                isLoading = sheetState.isExporting && sheetState.activeExportTarget == TripReportExportTarget.SHARE,
-                enabled = !sheetState.isExporting,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            SecondaryButton(
-                text = stringResource(R.string.balances_export_save_button),
-                onClick = onSaveToDevice,
-                leadingIcon = TablerIcons.Outline.Download,
-                isLoading = sheetState.isExporting &&
-                    sheetState.activeExportTarget == TripReportExportTarget.SAVE_TO_DEVICE,
-                enabled = !sheetState.isExporting,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            TextButton(
-                onClick = debounced {
-                    scope.launch { modalSheetState.hide() }.invokeOnCompletion { onDismiss() }
-                },
-                enabled = !sheetState.isExporting,
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
             ) {
-                Text(text = stringResource(R.string.balances_export_cancel_button))
+                GradientButton(
+                    text = stringResource(R.string.balances_export_confirm_button),
+                    onClick = onConfirmExport,
+                    leadingIcon = TablerIcons.Outline.Share,
+                    isLoading = sheetState.isExporting && sheetState.activeExportTarget == TripReportExportTarget.SHARE,
+                    enabled = !sheetState.isExporting,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                SecondaryButton(
+                    text = stringResource(R.string.balances_export_save_button),
+                    onClick = onSaveToDevice,
+                    leadingIcon = TablerIcons.Outline.Download,
+                    isLoading = sheetState.isExporting &&
+                        sheetState.activeExportTarget == TripReportExportTarget.SAVE_TO_DEVICE,
+                    enabled = !sheetState.isExporting,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                TextButton(
+                    onClick = debounced {
+                        scope.launch { modalSheetState.hide() }.invokeOnCompletion { onDismiss() }
+                    },
+                    enabled = !sheetState.isExporting,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = stringResource(R.string.balances_export_cancel_button))
+                }
             }
         }
     }
