@@ -70,7 +70,7 @@ class LocalAiPackBannerUiMapperTest {
     }
 
     @Test
-    fun `returns faster-local-AI copy when AICore is available`() {
+    fun `returns null when AICore is supported`() {
         val state = LocalAiModelPackState(
             status = ModelPackStatus.NotInstalled("1.0.0", 1_610_612_736L),
             compatibility = compatibleResult,
@@ -82,9 +82,6 @@ class LocalAiPackBannerUiMapperTest {
 
         val banner = mapper.map(state)
 
-        assertNotNull(banner)
-        assertEquals(UiText.StringResource(R.string.expense_local_ai_banner_enhance_title), banner?.title)
-        assertEquals(UiText.StringResource(R.string.expense_local_ai_banner_enhance_description), banner?.description)
-        assertEquals("1.5 GB", banner?.sizeBadge)
+        assertNull(banner)
     }
 }

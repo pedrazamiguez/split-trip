@@ -3,6 +3,8 @@ package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handl
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
+import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ChefHat
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
@@ -10,6 +12,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyU
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.model.DeviceCompatibilityResult
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
@@ -29,6 +32,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceipt
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.LocalAiPackBannerUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -83,6 +87,7 @@ class ReceiptAutoFillEventHandlerTest {
     private val capturedCurrencySelections = mutableListOf<String>()
     private val capturedAmountChanges = mutableListOf<String>()
     private val capturedCategorySelections = mutableListOf<String>()
+    private val capturedSubcategorySelections = mutableListOf<String>()
     private val capturedPaymentMethodSelections = mutableListOf<String>()
 
     private val eur = CurrencyUiModel(code = "EUR", displayText = "EUR (€)", decimalDigits = 2)
@@ -109,6 +114,7 @@ class ReceiptAutoFillEventHandlerTest {
         capturedCurrencySelections.clear()
         capturedAmountChanges.clear()
         capturedCategorySelections.clear()
+        capturedSubcategorySelections.clear()
         capturedPaymentMethodSelections.clear()
 
         addExpenseUiMapper = mockk(relaxed = true)
@@ -141,6 +147,7 @@ class ReceiptAutoFillEventHandlerTest {
         handler.setOnCurrencySelected { capturedCurrencySelections.add(it) }
         handler.setOnAmountChanged { capturedAmountChanges.add(it) }
         handler.setOnCategorySelected { capturedCategorySelections.add(it) }
+        handler.setOnSubcategorySelected { capturedSubcategorySelections.add(it) }
         handler.setOnPaymentMethodSelected { capturedPaymentMethodSelections.add(it) }
 
         uiState = MutableStateFlow(
@@ -1017,6 +1024,204 @@ class ReceiptAutoFillEventHandlerTest {
     }
 
     @Nested
+    inner class CategoryAndSubcategoryMerge {
+
+        private val attachment = ReceiptAttachment(
+            localUri = "uri",
+            mimeType = "image/webp",
+            capturedAtMillis = 1000L
+        )
+        private val otherCategory = CategoryUiModel(id = "OTHER", displayText = "Other")
+        private val transportCategory = CategoryUiModel(id = "TRANSPORT", displayText = "Transport")
+
+        @Test
+        fun `merges extracted category and compatible subcategory and adds both to autoFillBanner`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            uiState.value = uiState.value.copy(
+                availableCategories = persistentListOf(otherCategory, foodCategory),
+                selectedCategory = otherCategory,
+                selectedSubcategory = null
+            )
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    amount = null,
+                    currency = null,
+                    date = null,
+                    title = null,
+                    category = "FOOD",
+                    subcategory = "RESTAURANT",
+                    source = ExtractionSource.AI_CORE,
+                    confidence = ExtractionConfidence.MEDIUM
+                )
+            )
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals(listOf("FOOD"), capturedCategorySelections)
+            assertEquals(listOf("RESTAURANT"), capturedSubcategorySelections)
+            val fields = uiState.value.autoFillBanner?.fields.orEmpty()
+            assertTrue(fields.contains(UiText.StringResource(R.string.add_expense_category_title)))
+            assertTrue(fields.contains(UiText.StringResource(R.string.add_expense_subcategory_title)))
+        }
+
+        @Test
+        fun `merges extracted subcategory when extracted category already matches selectedCategory`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            uiState.value = uiState.value.copy(
+                availableCategories = persistentListOf(foodCategory),
+                selectedCategory = foodCategory,
+                selectedSubcategory = null
+            )
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    amount = null,
+                    currency = null,
+                    date = null,
+                    title = null,
+                    category = "FOOD",
+                    subcategory = "CAFE_BREAKFAST",
+                    source = ExtractionSource.AI_CORE,
+                    confidence = ExtractionConfidence.MEDIUM
+                )
+            )
+
+            handler.handleReceiptAttached(attachment)
+
+            assertTrue(capturedCategorySelections.isEmpty())
+            assertEquals(listOf("CAFE_BREAKFAST"), capturedSubcategorySelections)
+            val fields = uiState.value.autoFillBanner?.fields.orEmpty()
+            assertTrue(fields.contains(UiText.StringResource(R.string.add_expense_subcategory_title)))
+        }
+
+        @Test
+        fun `ignores extracted subcategory that does not belong to effective category`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            uiState.value = uiState.value.copy(
+                availableCategories = persistentListOf(otherCategory, foodCategory),
+                selectedCategory = otherCategory,
+                selectedSubcategory = null
+            )
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    amount = null,
+                    currency = null,
+                    date = null,
+                    title = null,
+                    category = "FOOD",
+                    subcategory = "HOTEL",
+                    source = ExtractionSource.AI_CORE,
+                    confidence = ExtractionConfidence.MEDIUM
+                )
+            )
+
+            handler.handleReceiptAttached(attachment)
+
+            assertEquals(listOf("FOOD"), capturedCategorySelections)
+            assertTrue(capturedSubcategorySelections.isEmpty())
+        }
+
+        @Test
+        fun `does not overwrite manually selected subcategory before scan`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            uiState.value = uiState.value.copy(
+                availableCategories = persistentListOf(foodCategory, transportCategory),
+                selectedCategory = foodCategory,
+                selectedSubcategory = SubcategoryUiModel(
+                    subcategory = ExpenseSubcategory.CAFE_BREAKFAST,
+                    name = UiText.DynamicString("Cafe"),
+                    icon = TablerIcons.Outline.ChefHat
+                )
+            )
+            coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                ExtractedReceipt(
+                    amount = null,
+                    currency = null,
+                    date = null,
+                    title = null,
+                    category = "TRANSPORT",
+                    subcategory = "TRAIN",
+                    source = ExtractionSource.AI_CORE,
+                    confidence = ExtractionConfidence.MEDIUM
+                )
+            )
+
+            handler.handleReceiptAttached(attachment)
+
+            assertTrue(capturedCategorySelections.isEmpty())
+            assertTrue(capturedSubcategorySelections.isEmpty())
+        }
+
+        @Test
+        fun `does not overwrite category or subcategory when user changed category before scan`() =
+            runTest {
+                every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+                val initialState = uiState.value.copy(
+                    availableCategories = persistentListOf(otherCategory, foodCategory, transportCategory),
+                    selectedCategory = otherCategory,
+                    selectedSubcategory = null
+                )
+                uiState.value = initialState.copy(
+                    initialFormSnapshot = initialState.toFormSnapshot(),
+                    selectedCategory = foodCategory
+                )
+                coEvery { extractReceiptFieldsUseCase(attachment) } returns Result.success(
+                    ExtractedReceipt(
+                        amount = null,
+                        currency = null,
+                        date = null,
+                        title = null,
+                        category = "TRANSPORT",
+                        subcategory = "TRAIN",
+                        source = ExtractionSource.AI_CORE,
+                        confidence = ExtractionConfidence.MEDIUM
+                    )
+                )
+
+                handler.handleReceiptAttached(attachment)
+
+                assertTrue(capturedCategorySelections.isEmpty())
+                assertTrue(capturedSubcategorySelections.isEmpty())
+            }
+
+        @Test
+        fun `does not overwrite category or subcategory changed while extraction is in-flight`() = runTest {
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+            uiState.value = uiState.value.copy(
+                availableCategories = persistentListOf(otherCategory, foodCategory, transportCategory),
+                selectedCategory = otherCategory,
+                selectedSubcategory = null
+            )
+            coEvery { extractReceiptFieldsUseCase(attachment) } answers {
+                uiState.value = uiState.value.copy(
+                    selectedCategory = foodCategory,
+                    selectedSubcategory = SubcategoryUiModel(
+                        subcategory = ExpenseSubcategory.RESTAURANT,
+                        name = UiText.DynamicString("Restaurant"),
+                        icon = TablerIcons.Outline.ChefHat
+                    )
+                )
+                Result.success(
+                    ExtractedReceipt(
+                        amount = null,
+                        currency = null,
+                        date = null,
+                        title = null,
+                        category = "TRANSPORT",
+                        subcategory = "TRAIN",
+                        source = ExtractionSource.AI_CORE,
+                        confidence = ExtractionConfidence.MEDIUM
+                    )
+                )
+            }
+
+            handler.handleReceiptAttached(attachment)
+
+            assertTrue(capturedCategorySelections.isEmpty())
+            assertTrue(capturedSubcategorySelections.isEmpty())
+        }
+    }
+
+    @Nested
     inner class LocalAiPackBannerTests {
 
         private val eligibleState = LocalAiModelPackState(
@@ -1064,6 +1269,17 @@ class ReceiptAutoFillEventHandlerTest {
                 listOf(AddExpenseUiAction.NavigateToLocalAiPackSettings),
                 actions.replayCache
             )
+        }
+
+        @Test
+        fun `startObservingLocalAiPackState sets localAiPackBanner to null when AICore is supported`() = runTest {
+            val packStateFlow = MutableStateFlow(eligibleState.copy(isAiCoreSupported = true))
+            every { observeLocalAiModelPackStateUseCase() } returns packStateFlow
+            every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+
+            handler.startObservingLocalAiPackState()
+
+            assertNull(uiState.value.localAiPackBanner)
         }
     }
 }

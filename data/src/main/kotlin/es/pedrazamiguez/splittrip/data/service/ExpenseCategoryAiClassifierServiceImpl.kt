@@ -1,54 +1,117 @@
 package es.pedrazamiguez.splittrip.data.service
 
+import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestionSource
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCategoryAiClassifierService
+import es.pedrazamiguez.splittrip.domain.service.LocalAiModelPackService
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONException
 import org.json.JSONObject
 import timber.log.Timber
 
+@Suppress("LongParameterList")
 internal class ExpenseCategoryAiClassifierServiceImpl(
     private val aiCoreCapabilityProvider: AICoreCapabilityProvider,
     private val aiCoreInferenceRepository: Lazy<AiInferenceRepository>,
+    private val liteRtInferenceRepository: Lazy<AiInferenceRepository>,
+    private val aiModelResolver: AiModelResolverService,
+    private val localAiModelPackService: LocalAiModelPackService,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val inferenceTimeoutMs: Long = DEFAULT_INFERENCE_TIMEOUT_MS
 ) : ExpenseCategoryAiClassifierService {
 
+    @Suppress("ReturnCount")
     override suspend fun classify(
         title: String,
         groupContext: GroupContext
     ): CategorySuggestion? {
-        if (!aiCoreCapabilityProvider.isSupported()) return null
         val sanitizedTitle = sanitizeTitleForPrompt(title)
         if (sanitizedTitle.isBlank()) return null
 
+        val resolvedEngine = aiModelResolver.getActiveModel().first()
+        val executionEngine = resolveExecutionEngine(resolvedEngine) ?: return null
+
         return withContext(defaultDispatcher) {
             val prompt = buildPrompt(sanitizedTitle, groupContext)
-            val inferenceResult = withTimeoutOrNull(inferenceTimeoutMs) {
-                aiCoreInferenceRepository.value.generateContent(prompt)
-            } ?: run {
-                Timber.d("ExpenseCategoryAiClassifier: inference timed out after %dms", inferenceTimeoutMs)
-                return@withContext null
-            }
+            executeWithFallback(executionEngine, prompt)
+        }
+    }
 
-            inferenceResult.fold(
-                onSuccess = { rawOutput -> parseSuggestion(rawOutput) },
-                onFailure = { error ->
-                    if (error is CancellationException) throw error
-                    Timber.w(error, "ExpenseCategoryAiClassifier: inference failed")
-                    null
-                }
+    private suspend fun executeWithFallback(
+        executionEngine: AiEngineType,
+        prompt: String
+    ): CategorySuggestion? {
+        var inferenceResult = runTimedInference(executionEngine, prompt) ?: return null
+
+        if (inferenceResult.isFailure) {
+            val error = inferenceResult.exceptionOrNull()
+            if (error is CancellationException) throw error
+            if (executionEngine == AiEngineType.LITE_RT_LM && aiCoreCapabilityProvider.isSupported()) {
+                Timber.w(
+                    error,
+                    "ExpenseCategoryAiClassifier: LITE_RT_LM failed — falling back to AI_CORE_GEMMA_4"
+                )
+                inferenceResult = runTimedInference(AiEngineType.AI_CORE_GEMMA_4, prompt) ?: return null
+            }
+        }
+
+        return inferenceResult.fold(
+            onSuccess = { rawOutput -> parseSuggestion(rawOutput) },
+            onFailure = { error ->
+                if (error is CancellationException) throw error
+                Timber.w(error, "ExpenseCategoryAiClassifier: inference failed")
+                null
+            }
+        )
+    }
+
+    private suspend fun runTimedInference(
+        engine: AiEngineType,
+        prompt: String
+    ): Result<String>? {
+        val result = withTimeoutOrNull(inferenceTimeoutMs) {
+            runInference(engine, prompt)
+        }
+        if (result == null) {
+            Timber.d(
+                "ExpenseCategoryAiClassifier: %s inference timed out after %dms",
+                engine,
+                inferenceTimeoutMs
             )
         }
+        return result
+    }
+
+    private fun resolveExecutionEngine(resolvedEngine: AiEngineType): AiEngineType? {
+        if (isEngineSupported(resolvedEngine)) return resolvedEngine
+        if (resolvedEngine == AiEngineType.LITE_RT_LM && aiCoreCapabilityProvider.isSupported()) {
+            Timber.w("ExpenseCategoryAiClassifier: LITE_RT_LM pack not installed — falling back to AI_CORE_GEMMA_4")
+            return AiEngineType.AI_CORE_GEMMA_4
+        }
+        return null
+    }
+
+    private fun isEngineSupported(engine: AiEngineType): Boolean = when (engine) {
+        AiEngineType.AI_CORE_GEMMA_4 -> aiCoreCapabilityProvider.isSupported()
+        AiEngineType.LITE_RT_LM -> localAiModelPackService.isPackInstalled()
+    }
+
+    private suspend fun runInference(engine: AiEngineType, prompt: String): Result<String> = when (engine) {
+        AiEngineType.AI_CORE_GEMMA_4 ->
+            aiCoreInferenceRepository.value.generateContent(prompt)
+        AiEngineType.LITE_RT_LM ->
+            liteRtInferenceRepository.value.generateStructuredOutput(prompt, CATEGORY_JSON_SCHEMA)
     }
 
     private fun sanitizeTitleForPrompt(title: String): String {
@@ -132,5 +195,16 @@ internal class ExpenseCategoryAiClassifierServiceImpl(
 
         private val CONTROL_AND_QUOTE_REGEX = Regex("[\\r\\n\"`]+")
         private val WHITESPACE_REGEX = Regex("\\s+")
+
+        private val CATEGORY_JSON_SCHEMA = """
+            {
+              "type": "object",
+              "properties": {
+                "category": { "type": "string" },
+                "subcategory": { "type": "string" }
+              },
+              "required": ["category"]
+            }
+        """.trimIndent()
     }
 }

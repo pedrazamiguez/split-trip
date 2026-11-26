@@ -2646,6 +2646,83 @@ class AddExpenseViewModelTest {
             }
 
         @Test
+        fun `receipt AI auto-fill sets category and subcategory and locks title suggestions`() =
+            runTest {
+                every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+                coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)
+                coEvery { extractReceiptFieldsUseCase(any()) } returns Result.success(
+                    ExtractedReceipt(
+                        amount = BigDecimal("85.00"),
+                        currency = "EUR",
+                        date = null,
+                        time = null,
+                        title = "Hotel Stay",
+                        vendor = "Hotel",
+                        category = ExpenseCategory.LODGING.name,
+                        subcategory = ExpenseSubcategory.HOTEL.name,
+                        paymentMethod = null,
+                        notes = null,
+                        source = ExtractionSource.AI_CORE,
+                        confidence = ExtractionConfidence.HIGH
+                    )
+                )
+                coEvery { suggestExpenseCategoryUseCase("dinner", GroupContext.TRAVEL) } returns
+                    CategorySuggestion(ExpenseCategory.FOOD, ExpenseSubcategory.RESTAURANT)
+
+                viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+                advanceUntilIdle()
+
+                viewModel.onEvent(AddExpenseUiEvent.ReceiptImageSelected("content://receipt.jpg"))
+                advanceUntilIdle()
+
+                assertEquals(ExpenseCategory.LODGING.name, viewModel.uiState.value.selectedCategory?.id)
+                assertEquals(ExpenseSubcategory.HOTEL, viewModel.uiState.value.selectedSubcategory?.subcategory)
+
+                viewModel.onEvent(AddExpenseUiEvent.TitleChanged("dinner"))
+                advanceUntilIdle()
+
+                coVerify(exactly = 0) { suggestExpenseCategoryUseCase("dinner", any()) }
+                assertEquals(ExpenseCategory.LODGING.name, viewModel.uiState.value.selectedCategory?.id)
+                assertEquals(ExpenseSubcategory.HOTEL, viewModel.uiState.value.selectedSubcategory?.subcategory)
+            }
+
+        @Test
+        fun `receipt AI auto-fill expands showAllCategories when subcategory is outside EVERYDAY`() =
+            runTest {
+                every { receiptExtractionService.capability() } returns ExtractionCapability.ON_DEVICE_AI
+                coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(
+                    configEur.copy(group = groupEur.copy(context = GroupContext.EVERYDAY))
+                )
+                coEvery { extractReceiptFieldsUseCase(any()) } returns Result.success(
+                    ExtractedReceipt(
+                        amount = BigDecimal("120.00"),
+                        currency = "EUR",
+                        date = null,
+                        time = null,
+                        title = "Flight",
+                        vendor = "Iberia",
+                        category = ExpenseCategory.TRANSPORT.name,
+                        subcategory = ExpenseSubcategory.DOMESTIC_FLIGHT.name,
+                        paymentMethod = null,
+                        notes = null,
+                        source = ExtractionSource.AI_CORE,
+                        confidence = ExtractionConfidence.HIGH
+                    )
+                )
+
+                viewModel.onEvent(AddExpenseUiEvent.LoadGroupConfig("group-eur"))
+                advanceUntilIdle()
+
+                viewModel.onEvent(AddExpenseUiEvent.ReceiptImageSelected("content://receipt.jpg"))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertTrue(state.showAllCategories)
+                assertEquals(ExpenseCategory.TRANSPORT.name, state.selectedCategory?.id)
+                assertEquals(ExpenseSubcategory.DOMESTIC_FLIGHT, state.selectedSubcategory?.subcategory)
+            }
+
+        @Test
         fun `navigating to CATEGORY step cancels in-flight prediction and prevents late mutation`() = runTest {
             val deferred = CompletableDeferred<CategorySuggestion?>()
             coEvery { getGroupExpenseConfigUseCase("group-eur", any()) } returns Result.success(configEur)

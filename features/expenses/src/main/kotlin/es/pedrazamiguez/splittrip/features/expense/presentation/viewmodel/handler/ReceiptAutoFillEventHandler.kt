@@ -9,7 +9,9 @@ import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackFeatureGateBl
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
@@ -25,7 +27,9 @@ import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.LocalAiPackBannerUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.SubcategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseStep
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
@@ -66,6 +70,7 @@ class ReceiptAutoFillEventHandler(
     private var onCurrencySelected: ((String) -> Unit)? = null
     private var onAmountChanged: ((String) -> Unit)? = null
     private var onCategorySelected: ((String) -> Unit)? = null
+    private var onSubcategorySelected: ((String) -> Unit)? = null
     private var onPaymentMethodSelected: ((String) -> Unit)? = null
 
     override fun bind(
@@ -88,6 +93,10 @@ class ReceiptAutoFillEventHandler(
 
     fun setOnCategorySelected(callback: (String) -> Unit) {
         onCategorySelected = callback
+    }
+
+    fun setOnSubcategorySelected(callback: (String) -> Unit) {
+        onSubcategorySelected = callback
     }
 
     fun setOnPaymentMethodSelected(callback: (String) -> Unit) {
@@ -163,6 +172,8 @@ class ReceiptAutoFillEventHandler(
             processReceiptAttachment(
                 attachment = attachment,
                 preScanCurrency = state.selectedCurrency,
+                preScanCategory = state.selectedCategory,
+                preScanSubcategory = state.selectedSubcategory,
                 preScanPaymentMethod = state.selectedPaymentMethod
             )
         }
@@ -171,6 +182,8 @@ class ReceiptAutoFillEventHandler(
     private suspend fun processReceiptAttachment(
         attachment: ReceiptAttachment,
         preScanCurrency: CurrencyUiModel?,
+        preScanCategory: CategoryUiModel?,
+        preScanSubcategory: SubcategoryUiModel?,
         preScanPaymentMethod: PaymentMethodUiModel?
     ) {
         val quota = featureGateService.observeAiReceiptQuota().first()
@@ -194,7 +207,13 @@ class ReceiptAutoFillEventHandler(
 
         result
             .onSuccess { extracted ->
-                mergeExtractedFields(extracted, preScanCurrency, preScanPaymentMethod)
+                mergeExtractedFields(
+                    extracted = extracted,
+                    preScanCurrency = preScanCurrency,
+                    preScanCategory = preScanCategory,
+                    preScanSubcategory = preScanSubcategory,
+                    preScanPaymentMethod = preScanPaymentMethod
+                )
                 _uiState.update {
                     val nextStep = it.applicableSteps.let { steps ->
                         val idx = steps.indexOf(AddExpenseStep.RECEIPT)
@@ -287,6 +306,8 @@ class ReceiptAutoFillEventHandler(
     private suspend fun mergeExtractedFields(
         extracted: ExtractedReceipt,
         preScanCurrency: CurrencyUiModel?,
+        preScanCategory: CategoryUiModel?,
+        preScanSubcategory: SubcategoryUiModel?,
         preScanPaymentMethod: PaymentMethodUiModel?
     ) {
         val bannerFields = mutableListOf<UiText>()
@@ -295,7 +316,7 @@ class ReceiptAutoFillEventHandler(
         tryMergeDate(extracted, bannerFields)
         tryMergeCurrency(extracted, preScanCurrency, bannerFields)
         tryMergeAmount(extracted, bannerFields)
-        tryMergeCategory(extracted, bannerFields)
+        tryMergeCategoryAndSubcategory(extracted, preScanCategory, preScanSubcategory, bannerFields)
         tryMergePaymentMethod(extracted, preScanPaymentMethod, bannerFields)
         tryMergeNotes(extracted, bannerFields)
 
@@ -412,26 +433,78 @@ class ReceiptAutoFillEventHandler(
         }
     }
 
-    private fun tryMergeCategory(
+    private fun tryMergeCategoryAndSubcategory(
         extracted: ExtractedReceipt,
+        preScanCategory: CategoryUiModel?,
+        preScanSubcategory: SubcategoryUiModel?,
         bannerFields: MutableList<UiText>
     ) {
-        val extractedCategory = extracted.category
         val currentState = _uiState.value
-        val currentCategory = currentState.selectedCategory
-        val shouldPreFillCategory = !extractedCategory.isNullOrBlank() &&
-            !extractedCategory.equals(currentCategory?.id, ignoreCase = true)
+        val initialSnapshot = currentState.initialFormSnapshot
+        val isSubcategoryManuallyOverridden = currentState.selectedSubcategory != preScanSubcategory ||
+            currentState.selectedSubcategory != null
+        val isCategoryManuallyOverridden = currentState.selectedCategory != preScanCategory ||
+            isSubcategoryManuallyOverridden ||
+            (initialSnapshot != null && currentState.selectedCategory != initialSnapshot.selectedCategory)
 
-        if (shouldPreFillCategory) {
-            val resolvedCategoryId = currentState.availableCategories
-                .find { it.id.equals(extractedCategory, ignoreCase = true) }
-                ?.id
-                ?: runCatching { ExpenseCategory.fromString(extractedCategory).name }.getOrNull()
-            if (resolvedCategoryId != null) {
-                onCategorySelected?.invoke(resolvedCategoryId)
-                bannerFields.add(UiText.StringResource(R.string.add_expense_category_title))
-            }
+        val effectiveCategoryEnum = resolveEffectiveCategory(
+            extractedCategory = extracted.category,
+            currentState = currentState,
+            isCategoryManuallyOverridden = isCategoryManuallyOverridden,
+            bannerFields = bannerFields
+        )
+
+        if (!isSubcategoryManuallyOverridden && effectiveCategoryEnum != null) {
+            tryMergeSubcategory(
+                extractedSubcategory = extracted.subcategory,
+                effectiveCategory = effectiveCategoryEnum,
+                bannerFields = bannerFields
+            )
         }
+    }
+
+    private fun resolveEffectiveCategory(
+        extractedCategory: String?,
+        currentState: AddExpenseUiState,
+        isCategoryManuallyOverridden: Boolean,
+        bannerFields: MutableList<UiText>
+    ): ExpenseCategory? {
+        val extractedCategoryEnum = extractedCategory?.let {
+            runCatching { ExpenseCategory.fromString(it) }.getOrNull()
+        }
+        val shouldPreFillCategory = !isCategoryManuallyOverridden &&
+            extractedCategoryEnum != null &&
+            !extractedCategoryEnum.name.equals(currentState.selectedCategory?.id, ignoreCase = true)
+
+        if (shouldPreFillCategory && extractedCategoryEnum != null) {
+            val resolvedCategoryId = currentState.availableCategories
+                .find { it.id.equals(extractedCategoryEnum.name, ignoreCase = true) }
+                ?.id
+                ?: extractedCategoryEnum.name
+            onCategorySelected?.invoke(resolvedCategoryId)
+            bannerFields.add(UiText.StringResource(R.string.add_expense_category_title))
+            return extractedCategoryEnum
+        }
+
+        return currentState.selectedCategory?.id?.let {
+            runCatching { ExpenseCategory.fromString(it) }.getOrNull()
+        }
+    }
+
+    private fun tryMergeSubcategory(
+        extractedSubcategory: String?,
+        effectiveCategory: ExpenseCategory,
+        bannerFields: MutableList<UiText>
+    ) {
+        if (extractedSubcategory.isNullOrBlank()) return
+        val rawSubcategory = runCatching { ExpenseSubcategory.fromString(extractedSubcategory) }.getOrNull()
+        val validSubcategory = CategorySuggestion.sanitized(
+            category = effectiveCategory,
+            subcategory = rawSubcategory
+        ).subcategory ?: return
+
+        onSubcategorySelected?.invoke(validSubcategory.name)
+        bannerFields.add(UiText.StringResource(R.string.add_expense_subcategory_title))
     }
 
     private fun tryMergePaymentMethod(

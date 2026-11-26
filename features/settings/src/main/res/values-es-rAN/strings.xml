@@ -91,6 +91,7 @@
     <string name="developer_services_extraction_vendor">Comerçio:</string>
     <string name="developer_services_extraction_payment_method">Método de pago:</string>
     <string name="developer_services_extraction_category">Categoría:</string>
+    <string name="developer_services_extraction_subcategory">Çûccategoría:</string>
     <string name="developer_services_extraction_notes">Notâ:</string>
     <string name="developer_services_extraction_source">Fuente:</string>
     <string name="developer_services_extraction_confidence">Confiança:</string>

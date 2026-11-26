@@ -14,6 +14,7 @@ import java.time.LocalTime
  * @param title A brief description of what was purchased.
  * @param vendor The best-effort merchant/store name.
  * @param category The guessed category name.
+ * @param subcategory The guessed subcategory name belonging to [category].
  * @param paymentMethod The transaction payment method.
  * @param notes Any relevant notes or identifiers like booking code/locator.
  * @param source The strategy source used for extraction.
@@ -27,6 +28,7 @@ data class ExtractedReceipt(
     val title: String?,
     val vendor: String? = null,
     val category: String? = null,
+    val subcategory: String? = null,
     val paymentMethod: String? = null,
     val notes: String? = null,
     val source: ExtractionSource,

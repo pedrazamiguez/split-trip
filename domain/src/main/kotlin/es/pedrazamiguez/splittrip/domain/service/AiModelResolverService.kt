@@ -5,10 +5,10 @@ import kotlinx.coroutines.flow.Flow
 
 interface AiModelResolverService {
     /**
-     * Returns the active model that should be used for receipt extraction.
-     * In automatic mode (no developer override), prefers [AiEngineType.LITE_RT_LM]
-     * when the optional local AI model pack is installed and the user is entitled,
-     * falling back cleanly to [AiEngineType.AI_CORE_GEMMA_4].
+     * Returns the active model that should be used for receipt extraction and AI classification.
+     * In automatic mode (no developer override), prefers [AiEngineType.AI_CORE_GEMMA_4]
+     * whenever AICore is supported on the device, using [AiEngineType.LITE_RT_LM] when
+     * AICore is unsupported and the optional local AI model pack is installed and entitled.
      */
     fun getActiveModel(): Flow<AiEngineType>
 

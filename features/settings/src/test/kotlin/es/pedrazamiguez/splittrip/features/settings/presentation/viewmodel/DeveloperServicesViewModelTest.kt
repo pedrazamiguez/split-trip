@@ -123,6 +123,7 @@ class DeveloperServicesViewModelTest {
         assertNull(state.extractedVendor)
         assertNull(state.extractedPaymentMethod)
         assertNull(state.extractedCategory)
+        assertNull(state.extractedSubcategory)
         assertNull(state.extractedNotes)
         assertEquals(DeveloperServicesTab.Ocr, state.selectedTab)
         assertEquals(AiEngineType.AI_CORE_GEMMA_4, state.activeResolvedModel)
@@ -158,7 +159,56 @@ class DeveloperServicesViewModelTest {
             assertNull(state.extractedVendor)
             assertNull(state.extractedPaymentMethod)
             assertNull(state.extractedCategory)
+            assertNull(state.extractedSubcategory)
             assertNull(state.extractedNotes)
+        }
+
+        @Test
+        fun `clears previously populated extractedSubcategory back to null`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onEvent(
+                DeveloperServicesUiEvent.FileSelected(
+                    uri = "content://media/external/file/123",
+                    name = "receipt.pdf",
+                    mimeType = "application/pdf"
+                )
+            )
+
+            val rawReceiptText = RawReceiptText(
+                fullText = "Total: 50.00 EUR",
+                blocks = persistentListOf(TextBlock(text = "Total: 50.00 EUR", confidence = 1.0f)),
+                recognisedAt = Instant.EPOCH
+            )
+            val extractedReceipt = ExtractedReceipt(
+                amount = BigDecimal("50.00"),
+                currency = "EUR",
+                date = LocalDate.of(2025, 3, 10),
+                time = LocalTime.of(13, 45),
+                title = "Dinner",
+                vendor = "Restaurant",
+                category = "FOOD",
+                subcategory = "RESTAURANT",
+                paymentMethod = "CASH",
+                notes = null,
+                source = ExtractionSource.AI_CORE,
+                confidence = ExtractionConfidence.HIGH
+            )
+            coEvery { receiptOcrService.recogniseText(any()) } returns Result.success(rawReceiptText)
+            coEvery { receiptExtractionService.extract(rawReceiptText) } returns Result.success(extractedReceipt)
+
+            viewModel.onEvent(DeveloperServicesUiEvent.RunOcrAndExtract)
+            advanceUntilIdle()
+            assertEquals("RESTAURANT", viewModel.uiState.value.extractedSubcategory)
+
+            viewModel.onEvent(
+                DeveloperServicesUiEvent.FileSelected(
+                    uri = "content://media/external/file/456",
+                    name = "receipt2.pdf",
+                    mimeType = "application/pdf"
+                )
+            )
+            assertNull(viewModel.uiState.value.extractedSubcategory)
         }
     }
 
@@ -346,6 +396,7 @@ class DeveloperServicesViewModelTest {
                 title = "Dinner",
                 vendor = "Restaurant",
                 category = "FOOD",
+                subcategory = "RESTAURANT",
                 paymentMethod = "CASH",
                 notes = "Nice food",
                 source = ExtractionSource.AI_CORE,
@@ -371,6 +422,7 @@ class DeveloperServicesViewModelTest {
             assertEquals("Restaurant", state.extractedVendor)
             assertEquals("CASH", state.extractedPaymentMethod)
             assertEquals("FOOD", state.extractedCategory)
+            assertEquals("RESTAURANT", state.extractedSubcategory)
             assertEquals("Nice food", state.extractedNotes)
             assertEquals(ExtractionSource.AI_CORE, state.extractionSource)
             assertEquals(ExtractionConfidence.HIGH, state.extractionConfidence)

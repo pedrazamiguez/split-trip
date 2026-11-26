@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.telemetry.trackLimitGateBloc
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
@@ -313,13 +314,50 @@ class FormEventHandler(
         }
     }
 
+    @Suppress("ReturnCount")
     fun handleSubcategorySelected(subcategoryId: String?) {
-        val selectedSubcategory = if (subcategoryId == null) {
-            null
-        } else {
-            _uiState.value.availableSubcategories.find { it.subcategory.name == subcategoryId }
+        if (subcategoryId == null) {
+            _uiState.update { it.copy(selectedSubcategory = null) }
+            return
         }
-        _uiState.update { it.copy(selectedSubcategory = selectedSubcategory) }
+        val currentState = _uiState.value
+        val existingMatch = currentState.availableSubcategories
+            .find { it.subcategory.name.equals(subcategoryId, ignoreCase = true) }
+        if (existingMatch != null) {
+            _uiState.update { it.copy(selectedSubcategory = existingMatch) }
+            return
+        }
+
+        val currentCategoryEnum = currentState.selectedCategory?.id
+            ?.let { runCatching { ExpenseCategory.fromString(it) }.getOrNull() }
+            ?: return
+        val subcategoryEnum = runCatching { ExpenseSubcategory.fromString(subcategoryId) }
+            .getOrNull()
+            ?.takeIf { it != ExpenseSubcategory.UNSPECIFIED && it.parentCategory == currentCategoryEnum }
+            ?: return
+
+        val nextShowAll = currentState.showAllCategories || !subcategoryEnum.appliesTo(currentState.groupContext)
+        val updatedCategories = addExpenseOptionsUiMapper.mapCategoriesForContext(
+            context = currentState.groupContext,
+            showAll = nextShowAll,
+            alwaysInclude = currentCategoryEnum
+        )
+        val updatedSubcategories = addExpenseOptionsUiMapper.mapSubcategories(
+            category = currentCategoryEnum,
+            context = currentState.groupContext,
+            showAll = nextShowAll,
+            alwaysInclude = subcategoryEnum
+        )
+        val selectedSubcategory = updatedSubcategories.find { it.subcategory == subcategoryEnum } ?: return
+
+        _uiState.update {
+            it.copy(
+                showAllCategories = nextShowAll,
+                availableCategories = updatedCategories,
+                availableSubcategories = updatedSubcategories,
+                selectedSubcategory = selectedSubcategory
+            )
+        }
     }
 
     fun handleVendorChanged(vendor: String) {

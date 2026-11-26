@@ -84,14 +84,62 @@ class AiModelResolverImplTest {
     }
 
     @Test
-    fun `getActiveModel automatically selects LITE_RT_LM when pack is Installed and user is entitled`() = runTest {
-        packStatusFlow.value = ModelPackStatus.Installed("1.0.0", 500_000_000L)
-        entitledFlow.value = true
+    fun `getActiveModel selects LITE_RT_LM when AICore unsupported, pack Installed, and entitled`() =
+        runTest {
+            every { aiCoreCapabilityProvider.isSupported() } returns false
+            packStatusFlow.value = ModelPackStatus.Installed("1.0.0", 500_000_000L)
+            entitledFlow.value = true
+
+            val activeModel = resolver.getActiveModel().first()
+
+            assertEquals(AiEngineType.LITE_RT_LM, activeModel)
+        }
+
+    @Test
+    fun `getActiveModel prefers AI_CORE_GEMMA_4 when AICore supported even if pack Installed`() =
+        runTest {
+            every { aiCoreCapabilityProvider.isSupported() } returns true
+            packStatusFlow.value = ModelPackStatus.Installed("1.0.0", 500_000_000L)
+            entitledFlow.value = true
+
+            val activeModel = resolver.getActiveModel().first()
+
+            assertEquals(AiEngineType.AI_CORE_GEMMA_4, activeModel)
+        }
+
+    @Test
+    fun `getActiveModel honors explicit LITE_RT_LM developer override even when AICore is supported`() = runTest {
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+        every { userPreferences.activeAiModel } returns flowOf(AiEngineType.LITE_RT_LM.name)
 
         val activeModel = resolver.getActiveModel().first()
 
         assertEquals(AiEngineType.LITE_RT_LM, activeModel)
     }
+
+    @Test
+    fun `getActiveModel falls back to AI_CORE_GEMMA_4 when AICore is unsupported and pack is NotInstalled`() =
+        runTest {
+            every { aiCoreCapabilityProvider.isSupported() } returns false
+            packStatusFlow.value = ModelPackStatus.NotInstalled("1.0.0", 500_000_000L)
+            entitledFlow.value = true
+
+            val activeModel = resolver.getActiveModel().first()
+
+            assertEquals(AiEngineType.AI_CORE_GEMMA_4, activeModel)
+        }
+
+    @Test
+    fun `getActiveModel falls back to AI_CORE_GEMMA_4 when AICore unsupported and not entitled`() =
+        runTest {
+            every { aiCoreCapabilityProvider.isSupported() } returns false
+            packStatusFlow.value = ModelPackStatus.Installed("1.0.0", 500_000_000L)
+            entitledFlow.value = false
+
+            val activeModel = resolver.getActiveModel().first()
+
+            assertEquals(AiEngineType.AI_CORE_GEMMA_4, activeModel)
+        }
 
     @Test
     fun `getActiveModel falls back to AI_CORE_GEMMA_4 when pack is Installed but user is not entitled`() = runTest {
