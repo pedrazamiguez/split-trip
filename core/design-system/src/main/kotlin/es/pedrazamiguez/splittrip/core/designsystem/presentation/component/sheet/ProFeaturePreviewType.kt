@@ -76,7 +76,8 @@ enum class ProFeaturePreviewType(
         fun fromGatedFeature(feature: GatedFeature): ProFeaturePreviewType = when (feature) {
             GatedFeature.GROUP_COVER_UPLOAD -> GROUP_COVER_PHOTO
             GatedFeature.SUBUNIT_CREATION -> SUBUNIT_CREATION
-            GatedFeature.AI_RECEIPT_SCANNING -> AI_RECEIPT_SCANNING
+            GatedFeature.AI_RECEIPT_SCANNING,
+            GatedFeature.LOCAL_AI_MODEL_PACK -> AI_RECEIPT_SCANNING
             GatedFeature.TRIP_REPORT_EXPORT -> TRIP_REPORT_EXPORT
             GatedFeature.AD_FREE -> UNLIMITED_GROUPS
         }

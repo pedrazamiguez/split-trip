@@ -95,6 +95,9 @@ fun AddExpenseFeature(
 
                 AddExpenseUiAction.OpenReceiptPickerSource -> showReceiptSourceSheet = true
 
+                AddExpenseUiAction.NavigateToLocalAiPackSettings ->
+                    rootNavController.navigate(Routes.SETTINGS_LOCAL_AI_PACK)
+
                 AddExpenseUiAction.None -> Unit
             }
         }

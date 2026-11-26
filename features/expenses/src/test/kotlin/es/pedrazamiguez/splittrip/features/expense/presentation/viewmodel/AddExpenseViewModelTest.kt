@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.FormattingHelper
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.mapper.UserUiMapper
 import es.pedrazamiguez.splittrip.domain.enums.AddOnType
+import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.GroupContext
@@ -18,12 +19,15 @@ import es.pedrazamiguez.splittrip.domain.model.CashRatePreview
 import es.pedrazamiguez.splittrip.domain.model.CashRatePreviewResult
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
 import es.pedrazamiguez.splittrip.domain.model.Currency
+import es.pedrazamiguez.splittrip.domain.model.DeviceCompatibilityResult
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.GroupExpenseConfig
+import es.pedrazamiguez.splittrip.domain.model.LocalAiModelPackState
+import es.pedrazamiguez.splittrip.domain.model.ModelPackStatus
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.result.ExchangeRateWithStaleness
@@ -56,6 +60,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.expense.UpdateExpenseUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedPaymentMethodUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveLocalAiModelPackStateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedPaymentMethodUseCase
@@ -67,6 +72,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpens
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseSplitUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceiptQuotaUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.LocalAiPackBannerUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ManualReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
@@ -149,6 +155,8 @@ class AddExpenseViewModelTest {
     private lateinit var suggestExpenseCategoryUseCase: SuggestExpenseCategoryUseCase
     private lateinit var extractReceiptFieldsUseCase: ExtractReceiptFieldsUseCase
     private lateinit var receiptExtractionService: ReceiptExtractionService
+    private lateinit var observeLocalAiModelPackStateUseCase: ObserveLocalAiModelPackStateUseCase
+    private lateinit var localAiPackBannerUiMapper: LocalAiPackBannerUiMapper
 
     private lateinit var configHandler: ConfigEventHandler
     private lateinit var currencyHandler: CurrencyEventHandler
@@ -414,6 +422,8 @@ class AddExpenseViewModelTest {
         )
 
         extractReceiptFieldsUseCase = mockk(relaxed = true)
+        observeLocalAiModelPackStateUseCase = mockk(relaxed = true)
+        localAiPackBannerUiMapper = LocalAiPackBannerUiMapper(localeProvider)
         receiptAutoFillEventHandler = ReceiptAutoFillEventHandler(
             extractReceiptFieldsUseCase = extractReceiptFieldsUseCase,
             receiptExtractionService = receiptExtractionService,
@@ -421,7 +431,9 @@ class AddExpenseViewModelTest {
             addExpenseUiMapper = addExpenseUiMapper,
             featureGateService = featureGateService,
             aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper,
-            telemetryTracker = mockk(relaxed = true)
+            telemetryTracker = mockk(relaxed = true),
+            observeLocalAiModelPackStateUseCase = observeLocalAiModelPackStateUseCase,
+            localAiPackBannerUiMapper = localAiPackBannerUiMapper
         )
 
         suggestExpenseCategoryUseCase = mockk()
@@ -2711,5 +2723,57 @@ class AddExpenseViewModelTest {
                 assertTrue(state.availableCategories.any { it.id == ExpenseCategory.HEALTH_PERSONAL_CARE.name })
                 assertTrue(state.availableSubcategories.any { it.subcategory == ExpenseSubcategory.GYM_FITNESS })
             }
+    }
+
+    @Nested
+    inner class LocalAiPackBanner {
+
+        @Test
+        fun `routes OpenLocalAiPackSettings and DismissLocalAiPackBanner events`() = runTest {
+            val packState = LocalAiModelPackState(
+                status = ModelPackStatus.NotInstalled("1.0.0", 524_288_000L),
+                compatibility = DeviceCompatibilityResult(
+                    isCompatible = true,
+                    reason = null,
+                    availableRamMb = 8192L,
+                    requiredRamMb = 4096,
+                    availableStorageBytes = 4_000_000_000L,
+                    requiredStorageBytes = 1_073_741_824L,
+                    supportedAbis = listOf("arm64-v8a")
+                ),
+                isEntitled = true,
+                isWifiOnly = true,
+                isAiCoreSupported = false,
+                activeEngine = AiEngineType.AI_CORE_GEMMA_4
+            )
+            every { observeLocalAiModelPackStateUseCase() } returns flowOf(packState)
+            val localViewModel = AddExpenseViewModel(
+                expenseId = null,
+                configEventHandler = configHandler,
+                currencyEventHandler = currencyHandler,
+                splitEventHandler = splitHandler,
+                subunitSplitEventHandler = subunitSplitHandler,
+                addOnEventHandler = addOnHandler,
+                submitEventHandler = submitHandler,
+                formEventHandler = formHandler,
+                receiptAutoFillEventHandler = receiptAutoFillEventHandler,
+                categorySuggestionEventHandler = categorySuggestionHandler,
+                strategyFactory = strategyFactory
+            )
+            advanceUntilIdle()
+            assertNotNull(localViewModel.uiState.value.localAiPackBanner)
+
+            val actions = mutableListOf<AddExpenseUiAction>()
+            val job = launch { localViewModel.actions.collect { actions.add(it) } }
+
+            localViewModel.onEvent(AddExpenseUiEvent.OpenLocalAiPackSettings)
+            advanceUntilIdle()
+            assertTrue(actions.contains(AddExpenseUiAction.NavigateToLocalAiPackSettings))
+
+            localViewModel.onEvent(AddExpenseUiEvent.DismissLocalAiPackBanner)
+            advanceUntilIdle()
+            assertNull(localViewModel.uiState.value.localAiPackBanner)
+            job.cancel()
+        }
     }
 }

@@ -26,6 +26,7 @@ import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalGroupDataSourc
 import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalSettlementDataSourceImpl
 import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalSubunitDataSourceImpl
 import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalUserDataSourceImpl
+import es.pedrazamiguez.splittrip.data.local.datastore.LocalAiModelPackPreferences
 import es.pedrazamiguez.splittrip.data.local.datastore.NotificationUserPreferences
 import es.pedrazamiguez.splittrip.data.local.datastore.SettlementNudgePreferences
 import es.pedrazamiguez.splittrip.data.local.datastore.UserPreferences
@@ -74,6 +75,10 @@ val dataLocalModule = module {
             context = androidContext(),
             authenticationService = get<AuthenticationService>()
         )
+    }
+
+    single {
+        LocalAiModelPackPreferences(context = androidContext())
     }
 
     single<AppDatabase> {

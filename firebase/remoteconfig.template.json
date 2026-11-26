@@ -146,6 +146,13 @@
           },
           "description": "Comma-separated list of blacklisted terms for OCR false-positive filtering.",
           "valueType": "STRING"
+        },
+        "local_ai_model_pack_json": {
+          "defaultValue": {
+            "value": "{\"pack_id\":\"gemma-litert-receipt-v1\",\"version\":\"1.0.0\",\"download_url\":\"\",\"sha256_checksum\":\"\",\"size_bytes\":0,\"min_ram_mb\":4096,\"min_free_storage_bytes\":1073741824,\"is_enabled\":false}"
+          },
+          "description": "Configuration and metadata for the optional downloadable local LiteRT-LM AI model pack.",
+          "valueType": "JSON"
         }
       }
     },

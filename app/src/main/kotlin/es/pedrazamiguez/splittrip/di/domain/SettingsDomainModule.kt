@@ -7,15 +7,20 @@ import es.pedrazamiguez.splittrip.domain.repository.DiagnosticLogRepository
 import es.pedrazamiguez.splittrip.domain.repository.GroupPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.OnboardingPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.BiometricAuthService
+import es.pedrazamiguez.splittrip.domain.service.LocalAiModelPackService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.impl.AppConfigServiceImpl
 import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.GetDiagnosticLogsUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.impl.GetDiagnosticLogsUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.CancelLocalAiModelPackDownloadUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.DeleteLocalAiModelPackUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.DownloadLocalAiModelPackUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetActiveAiEngineUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppThemeUseCase
@@ -34,6 +39,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePi
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.IsOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveLocalAiModelPackStateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObservePlanAllowancesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetActiveAiEngineUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
@@ -43,10 +49,14 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCategor
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedPaymentMethodUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetLastSeenBalanceUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.SetLocalAiModelPackWifiOnlyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetOnboardingCompleteUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetSelectedGroupUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetUserDefaultCurrencyUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.CancelLocalAiModelPackDownloadUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.ConsumeLanguagePillUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.DeleteLocalAiModelPackUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.DownloadLocalAiModelPackUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetActiveAiEngineUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetAppLanguageUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetAppThemeUseCaseImpl
@@ -65,6 +75,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetShouldShowLangu
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.GetUserDefaultCurrencyUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.IsOnboardingCompleteUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.ObserveDeveloperAccessUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.ObserveLocalAiModelPackStateUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.ObservePlanAllowancesUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetActiveAiEngineUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetAppLanguageUseCaseImpl
@@ -74,6 +85,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetGroupLastUsedCa
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetGroupLastUsedCurrencyUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetGroupLastUsedPaymentMethodUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetLastSeenBalanceUseCaseImpl
+import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetLocalAiModelPackWifiOnlyUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetOnboardingCompleteUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetSelectedGroupUseCaseImpl
 import es.pedrazamiguez.splittrip.domain.usecase.setting.impl.SetUserDefaultCurrencyUseCaseImpl
@@ -275,6 +287,45 @@ val settingsDomainModule = module {
         val receiptExtractionService = get<ReceiptExtractionService>()
         GetReceiptExtractionCapabilityUseCaseImpl(
             receiptExtractionService = receiptExtractionService
+        )
+    }
+
+    factory<ObserveLocalAiModelPackStateUseCase> {
+        val localAiModelPackService = get<LocalAiModelPackService>()
+        val featureGateService = get<FeatureGateService>()
+        val aiModelResolverService = get<AiModelResolverService>()
+        ObserveLocalAiModelPackStateUseCaseImpl(
+            localAiModelPackService = localAiModelPackService,
+            featureGateService = featureGateService,
+            aiModelResolverService = aiModelResolverService
+        )
+    }
+
+    factory<DownloadLocalAiModelPackUseCase> {
+        val localAiModelPackService = get<LocalAiModelPackService>()
+        DownloadLocalAiModelPackUseCaseImpl(
+            localAiModelPackService = localAiModelPackService
+        )
+    }
+
+    factory<CancelLocalAiModelPackDownloadUseCase> {
+        val localAiModelPackService = get<LocalAiModelPackService>()
+        CancelLocalAiModelPackDownloadUseCaseImpl(
+            localAiModelPackService = localAiModelPackService
+        )
+    }
+
+    factory<DeleteLocalAiModelPackUseCase> {
+        val localAiModelPackService = get<LocalAiModelPackService>()
+        DeleteLocalAiModelPackUseCaseImpl(
+            localAiModelPackService = localAiModelPackService
+        )
+    }
+
+    factory<SetLocalAiModelPackWifiOnlyUseCase> {
+        val localAiModelPackService = get<LocalAiModelPackService>()
+        SetLocalAiModelPackWifiOnlyUseCaseImpl(
+            localAiModelPackService = localAiModelPackService
         )
     }
 

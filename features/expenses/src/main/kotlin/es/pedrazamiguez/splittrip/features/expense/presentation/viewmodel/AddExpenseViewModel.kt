@@ -73,6 +73,7 @@ class AddExpenseViewModel(
         receiptAutoFillEventHandler.bind(_uiState, _actions, viewModelScope)
         categorySuggestionEventHandler.bind(_uiState, _actions, viewModelScope)
         receiptAutoFillEventHandler.startObservingAiQuota()
+        receiptAutoFillEventHandler.startObservingLocalAiPackState()
         formEventHandler.startObservingManualReceiptQuota()
 
         submitEventHandler.setStrategy(strategy)
@@ -411,6 +412,12 @@ class AddExpenseViewModel(
 
             AddExpenseUiEvent.DismissAutoFillBanner ->
                 receiptAutoFillEventHandler.handleDismissAutoFillBanner()
+
+            AddExpenseUiEvent.OpenLocalAiPackSettings ->
+                receiptAutoFillEventHandler.handleOpenLocalAiPackSettings()
+
+            AddExpenseUiEvent.DismissLocalAiPackBanner ->
+                receiptAutoFillEventHandler.handleDismissLocalAiPackBanner()
 
             // ── Wizard Navigation ────────────────────────────────────────
             AddExpenseUiEvent.NextStep -> navigateNext()

@@ -80,7 +80,8 @@ internal class FeatureGateServiceImpl(
                 val effectiveTier = when (feature) {
                     GatedFeature.AI_RECEIPT_SCANNING,
                     GatedFeature.TRIP_REPORT_EXPORT,
-                    GatedFeature.AD_FREE -> actingTier
+                    GatedFeature.AD_FREE,
+                    GatedFeature.LOCAL_AI_MODEL_PACK -> actingTier
                     GatedFeature.GROUP_COVER_UPLOAD ->
                         resolveGroupCreatorTier(groupId, actingTier, allowlistHashes)
                     GatedFeature.SUBUNIT_CREATION -> if (actingTier == SubscriptionTier.PRO) {

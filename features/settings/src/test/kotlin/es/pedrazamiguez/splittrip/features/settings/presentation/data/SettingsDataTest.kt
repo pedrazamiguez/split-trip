@@ -35,6 +35,7 @@ class SettingsDataTest {
     private var openSourceClickCount = 0
     private var developerInfoClickCount = 0
     private var copyDiagnosticsClickCount = 0
+    private var localAiPackClickCount = 0
     private var servicesTestClickCount = 0
 
     private fun createParams(): SettingsPreferencesParams = SettingsPreferencesParams(
@@ -58,7 +59,8 @@ class SettingsDataTest {
         onPrivacyPolicyClick = { privacyPolicyClickCount++ },
         onOpenSourceClick = { openSourceClickCount++ },
         onDeveloperInfoClick = { developerInfoClickCount++ },
-        onCopyDiagnosticsClick = { copyDiagnosticsClickCount++ }
+        onCopyDiagnosticsClick = { copyDiagnosticsClickCount++ },
+        onLocalAiPackClick = { localAiPackClickCount++ }
     )
 
     @Nested
@@ -388,6 +390,24 @@ class SettingsDataTest {
                 .any { it.titleRes == R.string.settings_preferences_notifications_title }
 
             assertEquals(true, hasNotifItem)
+        }
+
+        @Test
+        fun `local ai pack item click delegates to onLocalAiPackClick callback`() {
+            val params = createParams()
+            val sections = buildSettingsSections(
+                preferencesParams = params,
+                onServicesTestClick = { servicesTestClickCount++ }
+            )
+
+            val preferencesSection = sections.first { it.titleRes == R.string.settings_section_preferences }
+            val localAiPackItem = preferencesSection.items
+                .filterIsInstance<SettingsItemModel.Standard>()
+                .first { it.titleRes == R.string.settings_preferences_local_ai_pack_title }
+
+            assertEquals(0, localAiPackClickCount)
+            localAiPackItem.onClick?.invoke()
+            assertEquals(1, localAiPackClickCount)
         }
     }
 

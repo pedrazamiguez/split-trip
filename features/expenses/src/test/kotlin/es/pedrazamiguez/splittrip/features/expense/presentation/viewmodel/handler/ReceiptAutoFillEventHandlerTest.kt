@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.handler
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.common.provider.ResourceProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
@@ -8,18 +9,24 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.formatter.Forma
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CurrencyUiModel
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
+import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
+import es.pedrazamiguez.splittrip.domain.model.DeviceCompatibilityResult
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionCapability
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
+import es.pedrazamiguez.splittrip.domain.model.LocalAiModelPackState
+import es.pedrazamiguez.splittrip.domain.model.ModelPackStatus
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.AiReceiptQuota
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.usecase.expense.ExtractReceiptFieldsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveLocalAiModelPackStateUseCase
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AddExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceiptQuotaUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.LocalAiPackBannerUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.action.AddExpenseUiAction
@@ -35,6 +42,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.util.Locale
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -67,6 +75,8 @@ class ReceiptAutoFillEventHandlerTest {
     private lateinit var aiReceiptQuotaUiMapper: AiReceiptQuotaUiMapper
     private lateinit var featureGateService: FeatureGateService
     private lateinit var telemetryTracker: TelemetryTracker
+    private lateinit var observeLocalAiModelPackStateUseCase: ObserveLocalAiModelPackStateUseCase
+    private lateinit var localAiPackBannerUiMapper: LocalAiPackBannerUiMapper
     private lateinit var uiState: MutableStateFlow<AddExpenseUiState>
     private lateinit var actions: MutableSharedFlow<AddExpenseUiAction>
 
@@ -110,6 +120,12 @@ class ReceiptAutoFillEventHandlerTest {
             )
         }
         telemetryTracker = mockk(relaxed = true)
+        observeLocalAiModelPackStateUseCase = mockk(relaxed = true)
+        localAiPackBannerUiMapper = LocalAiPackBannerUiMapper(
+            object : LocaleProvider {
+                override fun getCurrentLocale(): Locale = Locale.US
+            }
+        )
         handler = ReceiptAutoFillEventHandler(
             extractReceiptFieldsUseCase = extractReceiptFieldsUseCase,
             receiptExtractionService = receiptExtractionService,
@@ -118,6 +134,8 @@ class ReceiptAutoFillEventHandlerTest {
             featureGateService = featureGateService,
             aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper,
             telemetryTracker = telemetryTracker,
+            observeLocalAiModelPackStateUseCase = observeLocalAiModelPackStateUseCase,
+            localAiPackBannerUiMapper = localAiPackBannerUiMapper,
             zoneIdProvider = { ZoneOffset.UTC }
         )
         handler.setOnCurrencySelected { capturedCurrencySelections.add(it) }
@@ -511,6 +529,8 @@ class ReceiptAutoFillEventHandlerTest {
                 featureGateService = featureGateService,
                 aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper,
                 telemetryTracker = telemetryTracker,
+                observeLocalAiModelPackStateUseCase = observeLocalAiModelPackStateUseCase,
+                localAiPackBannerUiMapper = localAiPackBannerUiMapper,
                 zoneIdProvider = { ZoneId.of("Asia/Shanghai") }
             )
             shanghaiHandler.bind(uiState, actions, TestScope(UnconfinedTestDispatcher()))
@@ -993,6 +1013,57 @@ class ReceiptAutoFillEventHandlerTest {
             handler.handleReceiptAttached(attachment)
 
             assertFalse(uiState.value.isAnalyzingReceipt)
+        }
+    }
+
+    @Nested
+    inner class LocalAiPackBannerTests {
+
+        private val eligibleState = LocalAiModelPackState(
+            status = ModelPackStatus.NotInstalled("1.0.0", 524_288_000L),
+            compatibility = DeviceCompatibilityResult(
+                isCompatible = true,
+                reason = null,
+                availableRamMb = 8192L,
+                requiredRamMb = 4096,
+                availableStorageBytes = 4_000_000_000L,
+                requiredStorageBytes = 1_073_741_824L,
+                supportedAbis = listOf("arm64-v8a")
+            ),
+            isEntitled = true,
+            isWifiOnly = true,
+            isAiCoreSupported = false,
+            activeEngine = AiEngineType.AI_CORE_GEMMA_4
+        )
+
+        @Test
+        fun `startObservingLocalAiPackState sets banner when eligible and hides on DismissLocalAiPackBanner`() =
+            runTest {
+                val packStateFlow = MutableStateFlow(eligibleState)
+                every { observeLocalAiModelPackStateUseCase() } returns packStateFlow
+                every { receiptExtractionService.capability() } returns ExtractionCapability.UNSUPPORTED
+
+                handler.startObservingLocalAiPackState()
+
+                assertNotNull(uiState.value.localAiPackBanner)
+                assertEquals("500 MB", uiState.value.localAiPackBanner?.sizeBadge)
+
+                handler.handleDismissLocalAiPackBanner()
+                assertNull(uiState.value.localAiPackBanner)
+
+                // Re-emission keeps banner dismissed
+                packStateFlow.value = eligibleState.copy(isWifiOnly = false)
+                assertNull(uiState.value.localAiPackBanner)
+            }
+
+        @Test
+        fun `handleOpenLocalAiPackSettings emits NavigateToLocalAiPackSettings`() = runTest {
+            handler.handleOpenLocalAiPackSettings()
+
+            assertEquals(
+                listOf(AddExpenseUiAction.NavigateToLocalAiPackSettings),
+                actions.replayCache
+            )
         }
     }
 }

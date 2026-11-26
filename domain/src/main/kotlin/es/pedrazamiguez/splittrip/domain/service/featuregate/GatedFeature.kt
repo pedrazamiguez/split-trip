@@ -8,5 +8,6 @@ enum class GatedFeature {
     SUBUNIT_CREATION,
     AI_RECEIPT_SCANNING,
     TRIP_REPORT_EXPORT,
-    AD_FREE
+    AD_FREE,
+    LOCAL_AI_MODEL_PACK
 }

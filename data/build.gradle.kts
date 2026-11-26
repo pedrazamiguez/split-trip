@@ -43,6 +43,7 @@ dependencies {
     implementation(libs.play.billing.ktx)
     implementation(libs.play.services.mlkit.text.recognition)
     implementation(libs.google.ai.edge.aicore)
+    implementation(libs.google.ai.edge.litertlm)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.work.runtime.ktx)
