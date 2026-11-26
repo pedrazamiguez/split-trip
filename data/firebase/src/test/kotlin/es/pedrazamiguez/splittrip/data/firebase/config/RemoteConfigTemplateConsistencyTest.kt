@@ -1,8 +1,10 @@
 package es.pedrazamiguez.splittrip.data.firebase.config
 
+import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import es.pedrazamiguez.splittrip.data.firebase.repository.FirebaseAppConfigRepository
+import es.pedrazamiguez.splittrip.data.firebase.repository.FirebaseModelPackConfigParser
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.GroupContext
@@ -358,6 +360,43 @@ class RemoteConfigTemplateConsistencyTest {
         val classifier = ExpenseCategoryClassifierServiceImpl(appConfigService = appConfigService)
         assertNewDefaultClassifications(classifier)
         assertBundledClassificationsRemainActive(classifier)
+    }
+
+    @Test
+    fun `local_ai_model_pack_json points to zero-egress R2 custom domain with valid metadata and checksum`() {
+        val param = templateParameters["local_ai_model_pack_json"]
+        assertTrue(param != null, "Parameter 'local_ai_model_pack_json' should exist in template")
+        assertEquals("JSON", param?.valueType)
+
+        val rawValue = param?.defaultValue.orEmpty()
+        val xmlRawValue = xmlDefaults["local_ai_model_pack_json"].orEmpty()
+        assertEquals(JsonParser.parseString(rawValue), JsonParser.parseString(xmlRawValue))
+
+        val parsed = FirebaseModelPackConfigParser.parse(
+            gson = Gson(),
+            jsonStr = rawValue,
+            defaultConfig = FirebaseAppConfigRepository.DEFAULT_MODEL_PACK_CONFIG
+        )
+
+        val expectedUrl =
+            "https://models.splittrip.eu/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm"
+        val expectedSha256 = "c4a9b7289365ab80fe599b844b77ad253eb3c53fb0e5d963d699146a6f01255e"
+
+        assertEquals("qwen2.5-1.5b-litert-v1", parsed.packId)
+        assertEquals("1.0.0", parsed.version)
+        assertEquals(expectedUrl, parsed.downloadUrl)
+        assertEquals(expectedSha256, parsed.sha256Checksum)
+        assertEquals(1_597_922_856L, parsed.sizeBytes)
+        assertEquals(3072, parsed.minRamMb)
+        assertEquals(3_221_225_472L, parsed.minFreeStorageBytes)
+        assertTrue(parsed.isEnabled)
+
+        assertTrue(parsed.downloadUrl.startsWith("https://models.splittrip.eu/"))
+        assertTrue(parsed.downloadUrl.endsWith(".litertlm"))
+        assertFalse(parsed.downloadUrl.contains("firebasestorage", ignoreCase = true))
+        assertFalse(parsed.downloadUrl.contains("r2.dev", ignoreCase = true))
+        assertTrue(Regex("^[0-9a-f]{64}$").matches(parsed.sha256Checksum))
+        assertTrue(parsed.minFreeStorageBytes > parsed.sizeBytes)
     }
 
     private fun assertDefaultCategoryClassifierJsonStructure(rawValue: String) {

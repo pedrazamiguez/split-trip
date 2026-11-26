@@ -4,6 +4,7 @@ import com.google.gson.JsonParser
 import java.io.File
 import java.nio.charset.StandardCharsets
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -62,6 +63,25 @@ class FirebaseStorageConfigConsistencyTest {
         assertTrue(
             content.contains("allow read, write: if request.auth != null;"),
             "storage.rules must require authentication for all other paths"
+        )
+    }
+
+    @Test
+    fun `storage rules does not expose public ai-models path and restricts public read to avatars only`() {
+        val rootDir = resolveProjectRoot()
+        val storageRulesFile = File(rootDir, "storage.rules")
+        assertTrue(storageRulesFile.exists(), "storage.rules not found: ${storageRulesFile.absolutePath}")
+
+        val content = storageRulesFile.readText(StandardCharsets.UTF_8)
+
+        assertFalse(
+            content.contains("public/ai-models"),
+            "storage.rules must not expose /public/ai-models; model packs are hosted on Cloudflare R2"
+        )
+        assertEquals(
+            1,
+            Regex("""allow\s+read:\s*if\s+true\s*;""").findAll(content).count(),
+            "storage.rules must restrict public unauthenticated read access solely to /public/avatars/{imageId}"
         )
     }
 
