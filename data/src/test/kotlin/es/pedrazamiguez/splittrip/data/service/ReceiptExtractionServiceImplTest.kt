@@ -316,6 +316,7 @@ class ReceiptExtractionServiceImplTest {
         assertTrue(prompt.contains("\"title\":\"Train Seville-Madrid\""))
         assertTrue(prompt.contains("\"subcategory\":\"TRAIN\""))
         assertTrue(prompt.contains("Allowed subcategories per category:"))
+        assertTrue(prompt.contains("FOOD + GROCERIES_SUPERMARKET"))
         assertTrue(prompt.trimEnd().endsWith("Output:"))
     }
 

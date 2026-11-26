@@ -316,6 +316,8 @@ internal class ReceiptExtractionServiceImpl(
             INSURANCE: TRAVEL_INSURANCE,MEDICAL_HEALTH,VEHICLE_INSURANCE,EQUIPMENT_INSURANCE,HOME_INSURANCE
             OTHER: TIPS_GRATUITIES,SIM_COMMUNICATIONS,LAUNDRY,FEES_SURCHARGES,PET_CARE
 
+            Disambiguation: Use FOOD + GROCERIES_SUPERMARKET for supermarkets and grocery stores (not SHOPPING). If you pick a subcategory, category MUST be its exact parent category from the list above.
+
             Write the "title" in English. Keep it brief and descriptive. For transport, include origin and destination when available, e.g. "Train Seville-Madrid", "Flight to Barcelona". For other purchases, describe what was bought, e.g. "Dinner at restaurant", "Grocery shopping". Do not write full sentences. Max 3-4 words.
 
             Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B

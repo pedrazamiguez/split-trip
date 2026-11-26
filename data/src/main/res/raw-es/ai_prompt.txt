@@ -25,6 +25,8 @@ SHOPPING: CLOTHING,SOUVENIRS_GIFTS,ELECTRONICS,PHARMACY_HEALTH,CONVENIENCE_STORE
 INSURANCE: TRAVEL_INSURANCE,MEDICAL_HEALTH,VEHICLE_INSURANCE,EQUIPMENT_INSURANCE,HOME_INSURANCE
 OTHER: TIPS_GRATUITIES,SIM_COMMUNICATIONS,LAUNDRY,FEES_SURCHARGES,PET_CARE
 
+Desambiguación: Usa FOOD + GROCERIES_SUPERMARKET para supermercados y tiendas de alimentación (no SHOPPING). Si eliges una subcategoría, category DEBE ser exactamente su categoría padre de la lista anterior.
+
 Escribe el "title" en español. Que sea breve y descriptivo. Para transporte, incluye origen y destino cuando estén disponibles (ej. "Tren Sevilla-Madrid", "Vuelo a Barcelona"). Para otras compras, describe lo adquirido (ej. "Cena en restaurante", "Compra de supermercado"). No escribas frases completas. Máximo 3-4 palabras.
 
 Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45 Cash BOOKID: ABC123D Seats: 14A, 14B
