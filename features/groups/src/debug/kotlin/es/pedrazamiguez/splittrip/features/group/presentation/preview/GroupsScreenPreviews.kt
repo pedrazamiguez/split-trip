@@ -18,6 +18,19 @@ private fun GroupsScreenLoadingPreview() {
 
 @PreviewComplete
 @Composable
+private fun GroupsScreenAnonymousLoadingPreview() {
+    PreviewThemeWrapper {
+        GroupsScreen(
+            uiState = GroupsUiState(
+                isLoading = true,
+                isAnonymous = true
+            )
+        )
+    }
+}
+
+@PreviewComplete
+@Composable
 private fun GroupsScreenEmptyPreview() {
     PreviewThemeWrapper {
         GroupsScreen(

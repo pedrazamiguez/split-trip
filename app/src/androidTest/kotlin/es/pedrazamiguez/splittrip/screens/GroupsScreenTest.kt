@@ -1,14 +1,22 @@
 package es.pedrazamiguez.splittrip.screens
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignR
+import es.pedrazamiguez.splittrip.core.designsystem.constant.UiConstants
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTopPadding
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.features.group.R
 import es.pedrazamiguez.splittrip.features.group.presentation.component.GroupItem
@@ -213,5 +221,65 @@ class GroupsScreenTest {
 
         composeRule.onNodeWithText(activeBadgeText).assertDoesNotExist()
         composeRule.onAllNodesWithText(archivedLabel).assertCountEquals(2)
+    }
+
+    @Test
+    fun rendersLoadingShimmer_withTopAndBottomPadding_whenSignedIn() {
+        val bannerText = context.getString(R.string.groups_anonymous_warning)
+
+        composeRule.setContent {
+            SplitTripTheme {
+                CompositionLocalProvider(
+                    LocalTopPadding provides 64.dp,
+                    LocalBottomPadding provides 80.dp
+                ) {
+                    GroupsScreen(
+                        uiState = GroupsUiState(
+                            isLoading = true,
+                            isAnonymous = false
+                        )
+                    )
+                }
+            }
+        }
+
+        composeRule.mainClock.advanceTimeBy(UiConstants.LOADING_SHOW_DELAY_MS + 50L)
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(bannerText).assertDoesNotExist()
+        composeRule.onNode(hasScrollAction()).assertIsDisplayed()
+        composeRule.onNode(hasScrollAction()).assertTopPositionInRootIsEqualTo(64.dp)
+    }
+
+    @Test
+    fun rendersAnonymousBannerAndLoadingShimmer_withoutDoubleTopPadding_whenAnonymous() {
+        val bannerText = context.getString(R.string.groups_anonymous_warning)
+
+        composeRule.setContent {
+            SplitTripTheme {
+                CompositionLocalProvider(
+                    LocalTopPadding provides 64.dp,
+                    LocalBottomPadding provides 80.dp
+                ) {
+                    GroupsScreen(
+                        uiState = GroupsUiState(
+                            isLoading = true,
+                            isAnonymous = true
+                        )
+                    )
+                }
+            }
+        }
+
+        composeRule.mainClock.advanceTimeBy(UiConstants.LOADING_SHOW_DELAY_MS + 50L)
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(bannerText).assertIsDisplayed()
+        composeRule.onNode(hasScrollAction()).assertIsDisplayed()
+
+        val bannerBottom = composeRule.onNodeWithText(bannerText)
+            .getUnclippedBoundsInRoot()
+            .bottom
+        composeRule.onNode(hasScrollAction()).assertTopPositionInRootIsEqualTo(bannerBottom + 8.dp)
     }
 }
