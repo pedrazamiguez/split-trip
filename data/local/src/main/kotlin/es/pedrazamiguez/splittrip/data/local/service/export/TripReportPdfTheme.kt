@@ -311,10 +311,15 @@ internal object TripReportPdfTheme {
     }
 
     private fun textPaint(colorInt: Int, sizePt: Float, tf: Typeface): Paint =
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        Paint(
+            Paint.ANTI_ALIAS_FLAG or
+                Paint.LINEAR_TEXT_FLAG or
+                Paint.SUBPIXEL_TEXT_FLAG
+        ).apply {
             color = colorInt
             textSize = sizePt
             typeface = tf
+            hinting = Paint.HINTING_OFF
             fontFeatureSettings = DISABLED_LIGATURES_FONT_FEATURES
         }
 }

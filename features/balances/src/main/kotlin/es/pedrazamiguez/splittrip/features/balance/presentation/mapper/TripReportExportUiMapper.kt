@@ -96,7 +96,8 @@ class TripReportExportUiMapper(
         ctaSubtitle = resourceProvider.getString(R.string.balances_export_brand_cta_subtitle),
         websiteDisplay = SPLITTRIP_WEBSITE_DISPLAY,
         qrUrl = SPLITTRIP_WEBSITE_URL,
-        qrCaption = resourceProvider.getString(R.string.balances_export_brand_qr_caption)
+        qrCaption = resourceProvider.getString(R.string.balances_export_brand_qr_caption),
+        websiteUrl = SPLITTRIP_WEBSITE_URL
     )
 
     private fun resolvePeriodLabel(report: GroupTripReport, referenceYear: Int): String =

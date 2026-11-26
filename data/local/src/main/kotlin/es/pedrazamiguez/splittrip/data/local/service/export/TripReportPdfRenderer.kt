@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.domain.model.report.TripReportMetricCard
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportProUpsellCallout
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportTableSection
 import es.pedrazamiguez.splittrip.domain.model.report.TripReportTone
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -128,6 +129,7 @@ class TripReportPdfRenderer internal constructor(
         val session = sessionFactory()
 
         try {
+            val linksByPage = mutableMapOf<Int, List<PdfLinkAnnotation>>()
             pagePlans.forEachIndexed { index, blocks ->
                 val pageNumber = index + 1
                 val canvas = session.startPage(
@@ -135,18 +137,30 @@ class TripReportPdfRenderer internal constructor(
                     TripReportPdfMetrics.A4_HEIGHT_PT,
                     pageNumber
                 )
-                renderPage(
+                val pageLinks = renderPage(
                     canvas = canvas,
                     blocks = blocks,
                     paints = paints,
-                    websiteDisplay = payload.brandFooter.websiteDisplay,
+                    brandFooter = payload.brandFooter,
                     footerText = formatFooter(payload.pageFooterTemplate, pageNumber, totalPages)
                 )
+                if (pageLinks.isNotEmpty()) {
+                    linksByPage[index] = pageLinks
+                }
                 session.finishCurrentPage()
             }
+            val rawPdfBytes = ByteArrayOutputStream().use { buffer ->
+                session.writeTo(buffer)
+                buffer.toByteArray()
+            }
+            val annotatedPdfBytes = TripReportPdfLinkAnnotator.appendLinkAnnotations(
+                pdfBytes = rawPdfBytes,
+                linksByPage = linksByPage,
+                pageHeightPt = TripReportPdfMetrics.A4_HEIGHT_PT.toFloat()
+            )
             outputFile.parentFile?.mkdirs()
             FileOutputStream(outputFile).use { out ->
-                session.writeTo(out)
+                out.write(annotatedPdfBytes)
             }
         } finally {
             session.close()
@@ -250,9 +264,9 @@ class TripReportPdfRenderer internal constructor(
         canvas: Canvas,
         blocks: List<PdfBlock>,
         paints: TripReportPdfPaints,
-        websiteDisplay: String,
+        brandFooter: TripReportBrandFooter,
         footerText: String
-    ) {
+    ): List<PdfLinkAnnotation> {
         canvas.drawRect(
             0f,
             0f,
@@ -261,30 +275,35 @@ class TripReportPdfRenderer internal constructor(
             paints.pageBg
         )
 
+        val links = mutableListOf<PdfLinkAnnotation>()
         var cursorY = TripReportPdfMetrics.MARGIN_TOP_PT
         blocks.forEach { block ->
-            cursorY = drawBlock(canvas, block, paints, cursorY)
+            cursorY = drawBlock(canvas, block, paints, cursorY, links)
         }
 
         TripReportPdfBrandDrawers.drawRunningPageFooter(
             canvas = canvas,
-            websiteDisplay = websiteDisplay,
+            websiteDisplay = brandFooter.websiteDisplay,
+            websiteUrl = brandFooter.websiteUrl,
             pageFooterText = footerText,
-            paints = paints
+            paints = paints,
+            links = links
         )
+        return links
     }
 
     private fun drawBlock(
         canvas: Canvas,
         block: PdfBlock,
         paints: TripReportPdfPaints,
-        cursorY: Float
+        cursorY: Float,
+        links: MutableList<PdfLinkAnnotation>
     ): Float = when (block) {
         is PdfBlock.BrandHeader,
         is PdfBlock.HeroGroupCard,
         is PdfBlock.SummaryMetricsGrid,
         is PdfBlock.ProUpsellCard,
-        is PdfBlock.BrandFooterCard -> drawEditorialBlock(canvas, block, paints, cursorY)
+        is PdfBlock.BrandFooterCard -> drawEditorialBlock(canvas, block, paints, cursorY, links)
         is PdfBlock.SectionHeading,
         is PdfBlock.TableHeader,
         is PdfBlock.TableRow,
@@ -296,7 +315,8 @@ class TripReportPdfRenderer internal constructor(
         canvas: Canvas,
         block: PdfBlock,
         paints: TripReportPdfPaints,
-        cursorY: Float
+        cursorY: Float,
+        links: MutableList<PdfLinkAnnotation>
     ): Float = when (block) {
         is PdfBlock.BrandHeader -> TripReportPdfBrandDrawers.drawBrandHeader(
             canvas,
@@ -330,7 +350,8 @@ class TripReportPdfRenderer internal constructor(
             canvas,
             block.brandFooter,
             paints,
-            cursorY
+            cursorY,
+            links
         )
         else -> cursorY
     }
