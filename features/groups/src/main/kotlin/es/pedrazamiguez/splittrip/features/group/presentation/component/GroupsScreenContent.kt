@@ -58,7 +58,14 @@ internal fun GroupsScreenContent(
         Box(modifier = Modifier.weight(1f)) {
             DeferredLoadingContainer(
                 isLoading = uiState.isLoading,
-                loadingContent = { ShimmerLoadingList() }
+                loadingContent = {
+                    ShimmerLoadingList(
+                        modifier = Modifier.padding(
+                            top = contentTopPadding,
+                            bottom = bottomPadding
+                        )
+                    )
+                }
             ) {
                 if (uiState.groups.isEmpty()) {
                     EmptyStateView(

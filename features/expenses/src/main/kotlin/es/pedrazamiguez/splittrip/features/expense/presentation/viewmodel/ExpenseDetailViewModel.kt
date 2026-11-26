@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentStatus
 import es.pedrazamiguez.splittrip.domain.exception.TerminalDownloadException
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
+import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -31,19 +32,25 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -70,8 +77,22 @@ class ExpenseDetailViewModel(
     private val expenseDetailUiMapper: ExpenseDetailUiMapper,
     private val getGroupByIdLocalUseCase: GetGroupByIdLocalUseCase,
     private val exchangeRateCalculationService: ExchangeRateCalculationService,
-    private val remainderDistributionService: RemainderDistributionService
+    private val remainderDistributionService: RemainderDistributionService,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
+
+    companion object {
+        internal const val SYNC_WAIT_TIMEOUT_MS = 5_000L
+    }
+
+    private class ExpenseMetadataCache {
+        var cachedUserIds: Set<String> = emptySet()
+        var cachedProfiles: Map<String, User> = emptyMap()
+        var cachedWithdrawalIds: Set<String> = emptySet()
+        var cachedWithdrawals: Map<String, CashWithdrawal> = emptyMap()
+        var cachedSubunitGroupId: String = ""
+        var cachedSubunits: Map<String, String> = emptyMap()
+    }
 
     private val downloadJobs = ConcurrentHashMap<String, Job>()
     private val failedDownloads = ConcurrentHashMap.newKeySet<String>()
@@ -84,105 +105,7 @@ class ExpenseDetailViewModel(
     val uiState: StateFlow<ExpenseDetailUiState> = _expenseId
         .filter { it.isNotBlank() }
         .flatMapLatest { expenseId ->
-            var cachedUserIds = emptySet<String>()
-            var cachedProfiles = emptyMap<String, User>()
-            var cachedWithdrawalIds = emptySet<String>()
-            var cachedWithdrawals = emptyMap<String, CashWithdrawal>()
-            var cachedSubunitGroupId = ""
-            var cachedSubunits = emptyMap<String, String>()
-
-            getExpenseByIdFlowUseCase(expenseId)
-                .map { expense ->
-                    if (expense == null) {
-                        return@map ExpenseDetailUiState(isLoading = false, hasError = true)
-                    }
-
-                    val attachment = expense.receiptAttachment
-                    if (shouldDownloadPdf(attachment) && !failedDownloads.contains(expense.id)) {
-                        triggerReceiptDownload(expense.id, attachment?.remoteUrl.orEmpty())
-                    }
-
-                    val allUserIds = buildSet {
-                        add(expense.createdBy)
-                        expense.payerId?.let { add(it) }
-                        expense.splits.forEach { add(it.userId) }
-                    }
-
-                    if (allUserIds != cachedUserIds) {
-                        cachedUserIds = allUserIds
-                        cachedProfiles = try {
-                            getMemberProfilesUseCase(allUserIds.toList())
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: Exception) {
-                            Timber.w(e, "Failed to fetch member profiles for expense $expenseId")
-                            emptyMap()
-                        }
-                    }
-
-                    val currentUserId = authenticationService.currentUserId()
-
-                    val withdrawalIds = expense.cashTranches.map { it.withdrawalId }.toSet()
-                    if (withdrawalIds.isNotEmpty() && withdrawalIds != cachedWithdrawalIds) {
-                        cachedWithdrawalIds = withdrawalIds
-                        cachedWithdrawals = try {
-                            getCashWithdrawalsByIdsUseCase(withdrawalIds.toList())
-                                .associateBy { it.id }
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: Exception) {
-                            Timber.w(e, "Failed to fetch withdrawals for expense $expenseId")
-                            emptyMap()
-                        }
-                    } else if (withdrawalIds.isEmpty()) {
-                        cachedWithdrawalIds = emptySet()
-                        cachedWithdrawals = emptyMap()
-                    }
-
-                    val needsSubunits = cachedWithdrawals.values.any {
-                        it.withdrawalScope == PayerType.SUBUNIT && !it.subunitId.isNullOrBlank()
-                    } ||
-                        expense.splits.any { !it.subunitId.isNullOrBlank() }
-
-                    if (needsSubunits && cachedSubunitGroupId != expense.groupId) {
-                        cachedSubunitGroupId = expense.groupId
-                        cachedSubunits = try {
-                            getGroupSubunitsUseCase(expense.groupId)
-                                .associate { it.id to it.name }
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: Exception) {
-                            Timber.w(e, "Failed to fetch subunits for expense $expenseId")
-                            emptyMap()
-                        }
-                    } else if (!needsSubunits) {
-                        cachedSubunitGroupId = ""
-                        cachedSubunits = emptyMap()
-                    }
-
-                    val group = try {
-                        getGroupByIdLocalUseCase(expense.groupId)
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        Timber.w(e, "Failed to fetch group locally for expense $expenseId")
-                        null
-                    }
-                    val groupMemberIds = group?.members ?: emptyList()
-                    val uiModel = expenseDetailUiMapper.map(
-                        expense = expense,
-                        memberProfiles = cachedProfiles,
-                        currentUserId = currentUserId,
-                        withdrawalLookup = cachedWithdrawals,
-                        subunitNameLookup = cachedSubunits,
-                        groupMemberIds = groupMemberIds
-                    )
-                    ExpenseDetailUiState(
-                        expense = uiModel,
-                        isLoading = false,
-                        isGroupArchived = group?.status == GroupStatus.ARCHIVED
-                    )
-                }
+            observeExpenseState(expenseId)
         }
         .catch { e ->
             Timber.e(e, "Fatal error in ExpenseDetailViewModel flow")
@@ -193,6 +116,7 @@ class ExpenseDetailViewModel(
             )
             emit(ExpenseDetailUiState(isLoading = false, hasError = true))
         }
+        .flowOn(defaultDispatcher)
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(
@@ -201,6 +125,145 @@ class ExpenseDetailViewModel(
             ),
             initialValue = ExpenseDetailUiState()
         )
+
+    private fun observeExpenseState(expenseId: String): Flow<ExpenseDetailUiState> {
+        var hasLoadedExpense = false
+        val cache = ExpenseMetadataCache()
+
+        return getExpenseByIdFlowUseCase(expenseId)
+            // Ignore consecutive null emissions from unrelated Room table invalidations
+            // so the sync wait window is not reset while waiting for the notified expense.
+            .distinctUntilChanged { old, new -> old == null && new == null }
+            .transformLatest { expense ->
+                if (expense == null) {
+                    if (!hasLoadedExpense) {
+                        emit(ExpenseDetailUiState(isLoading = true))
+                        delay(SYNC_WAIT_TIMEOUT_MS)
+                    }
+                    emit(ExpenseDetailUiState(isLoading = false, hasError = true))
+                    return@transformLatest
+                }
+
+                hasLoadedExpense = true
+                emit(buildLoadedUiState(expenseId = expenseId, expense = expense, cache = cache))
+            }
+    }
+
+    private suspend fun buildLoadedUiState(
+        expenseId: String,
+        expense: Expense,
+        cache: ExpenseMetadataCache
+    ): ExpenseDetailUiState {
+        val attachment = expense.receiptAttachment
+        if (shouldDownloadPdf(attachment) && !failedDownloads.contains(expense.id)) {
+            triggerReceiptDownload(expense.id, attachment?.remoteUrl.orEmpty())
+        }
+
+        resolveMemberProfiles(expenseId = expenseId, expense = expense, cache = cache)
+        val currentUserId = authenticationService.currentUserId()
+        resolveWithdrawals(expenseId = expenseId, expense = expense, cache = cache)
+        resolveSubunits(expenseId = expenseId, expense = expense, cache = cache)
+
+        val group = try {
+            getGroupByIdLocalUseCase(expense.groupId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to fetch group locally for expense $expenseId")
+            null
+        }
+        val groupMemberIds = group?.members ?: emptyList()
+        val uiModel = expenseDetailUiMapper.map(
+            expense = expense,
+            memberProfiles = cache.cachedProfiles,
+            currentUserId = currentUserId,
+            withdrawalLookup = cache.cachedWithdrawals,
+            subunitNameLookup = cache.cachedSubunits,
+            groupMemberIds = groupMemberIds
+        )
+        return ExpenseDetailUiState(
+            expense = uiModel,
+            isLoading = false,
+            isGroupArchived = group?.status == GroupStatus.ARCHIVED
+        )
+    }
+
+    private suspend fun resolveMemberProfiles(
+        expenseId: String,
+        expense: Expense,
+        cache: ExpenseMetadataCache
+    ) {
+        val allUserIds = buildSet {
+            add(expense.createdBy)
+            expense.payerId?.let { add(it) }
+            expense.splits.forEach { add(it.userId) }
+        }
+        if (allUserIds == cache.cachedUserIds) return
+
+        cache.cachedUserIds = allUserIds
+        cache.cachedProfiles = try {
+            getMemberProfilesUseCase(allUserIds.toList())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to fetch member profiles for expense $expenseId")
+            emptyMap()
+        }
+    }
+
+    private suspend fun resolveWithdrawals(
+        expenseId: String,
+        expense: Expense,
+        cache: ExpenseMetadataCache
+    ) {
+        val withdrawalIds = expense.cashTranches.map { it.withdrawalId }.toSet()
+        if (withdrawalIds.isEmpty()) {
+            cache.cachedWithdrawalIds = emptySet()
+            cache.cachedWithdrawals = emptyMap()
+            return
+        }
+        if (withdrawalIds == cache.cachedWithdrawalIds) return
+
+        cache.cachedWithdrawalIds = withdrawalIds
+        cache.cachedWithdrawals = try {
+            getCashWithdrawalsByIdsUseCase(withdrawalIds.toList())
+                .associateBy { it.id }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to fetch withdrawals for expense $expenseId")
+            emptyMap()
+        }
+    }
+
+    private suspend fun resolveSubunits(
+        expenseId: String,
+        expense: Expense,
+        cache: ExpenseMetadataCache
+    ) {
+        val needsSubunits = cache.cachedWithdrawals.values.any {
+            it.withdrawalScope == PayerType.SUBUNIT && !it.subunitId.isNullOrBlank()
+        } ||
+            expense.splits.any { !it.subunitId.isNullOrBlank() }
+
+        if (!needsSubunits) {
+            cache.cachedSubunitGroupId = ""
+            cache.cachedSubunits = emptyMap()
+            return
+        }
+        if (cache.cachedSubunitGroupId == expense.groupId) return
+
+        cache.cachedSubunitGroupId = expense.groupId
+        cache.cachedSubunits = try {
+            getGroupSubunitsUseCase(expense.groupId)
+                .associate { it.id to it.name }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to fetch subunits for expense $expenseId")
+            emptyMap()
+        }
+    }
 
     fun setExpenseId(expenseId: String) {
         if (expenseId != _expenseId.value) {

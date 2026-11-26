@@ -43,7 +43,8 @@ data class TripReportBrandFooter(
     val ctaSubtitle: String,
     val websiteDisplay: String,
     val qrUrl: String,
-    val qrCaption: String
+    val qrCaption: String,
+    val websiteUrl: String = qrUrl
 )
 
 data class TripReportExportPayload(

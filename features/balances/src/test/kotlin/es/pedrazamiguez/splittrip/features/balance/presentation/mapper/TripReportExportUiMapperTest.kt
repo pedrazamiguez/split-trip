@@ -122,6 +122,8 @@ class TripReportExportUiMapperTest {
         assertTrue(pdfRow[5].text.contains("130,00"))
         assertEquals(TripReportTone.NEGATIVE, pdfRow[5].tone)
         assertEquals("https://splittrip.eu", payload.brandFooter.qrUrl)
+        assertEquals("splittrip.eu", payload.brandFooter.websiteDisplay)
+        assertEquals("https://splittrip.eu", payload.brandFooter.websiteUrl)
         assertNull(payload.proUpsellCallout)
 
         val expensesCsv = payload.csvSections.first { it.title == "Itemised expenses" }
