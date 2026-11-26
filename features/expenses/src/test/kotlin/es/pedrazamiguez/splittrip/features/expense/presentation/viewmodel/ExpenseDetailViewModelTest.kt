@@ -38,12 +38,15 @@ import java.math.BigDecimal
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
@@ -355,6 +358,176 @@ class ExpenseDetailViewModelTest {
             // Then — each id was loaded once
             verify(exactly = 1) { getExpenseByIdFlowUseCase(testExpenseId) }
             verify(exactly = 1) { getExpenseByIdFlowUseCase(otherId) }
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `initial null emission keeps loading state while within sync timeout`() = runTest(testDispatcher) {
+            // Given
+            val flow = MutableSharedFlow<Expense?>()
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flow
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            // When
+            viewModel.setExpenseId(testExpenseId)
+            runCurrent()
+            flow.emit(null)
+            runCurrent()
+            advanceTimeBy(ExpenseDetailViewModel.SYNC_WAIT_TIMEOUT_MS - 1)
+            runCurrent()
+
+            // Then
+            val state = viewModel.uiState.value
+            assertTrue(state.isLoading)
+            assertFalse(state.hasError)
+            assertNull(state.expense)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `transitions from loading to content when expense arrives within sync timeout`() = runTest(testDispatcher) {
+            // Given
+            val flow = MutableSharedFlow<Expense?>()
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flow
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            // When
+            viewModel.setExpenseId(testExpenseId)
+            runCurrent()
+            flow.emit(null)
+            runCurrent()
+            advanceTimeBy(1_500L)
+            runCurrent()
+            assertTrue(viewModel.uiState.value.isLoading)
+
+            flow.emit(testExpense)
+            runCurrent()
+
+            // Then — immediately transitions to loaded content
+            val state = viewModel.uiState.value
+            assertFalse(state.isLoading)
+            assertFalse(state.hasError)
+            assertEquals(testExpenseId, state.expense?.id)
+
+            // Advancing past the original timeout does not revert to error
+            advanceTimeBy(ExpenseDetailViewModel.SYNC_WAIT_TIMEOUT_MS)
+            runCurrent()
+            assertFalse(viewModel.uiState.value.hasError)
+            assertNotNull(viewModel.uiState.value.expense)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `consecutive null emissions do not reset sync timeout`() = runTest(testDispatcher) {
+            // Given
+            val flow = MutableSharedFlow<Expense?>()
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flow
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            // When
+            viewModel.setExpenseId(testExpenseId)
+            runCurrent()
+            flow.emit(null)
+            runCurrent()
+            advanceTimeBy(3_000L)
+            runCurrent()
+            flow.emit(null)
+            advanceTimeBy(2_000L)
+            runCurrent()
+
+            // Then — total 5_000L elapsed, not reset to 8_000L
+            val state = viewModel.uiState.value
+            assertFalse(state.isLoading)
+            assertTrue(state.hasError)
+            assertNull(state.expense)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `transitions to error state after sync timeout when expense never arrives`() = runTest(testDispatcher) {
+            // Given
+            val flow = MutableSharedFlow<Expense?>()
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns flow
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            // When
+            viewModel.setExpenseId(testExpenseId)
+            runCurrent()
+            flow.emit(null)
+            runCurrent()
+            advanceTimeBy(ExpenseDetailViewModel.SYNC_WAIT_TIMEOUT_MS - 1)
+            runCurrent()
+            assertTrue(viewModel.uiState.value.isLoading)
+
+            advanceTimeBy(1L)
+            runCurrent()
+
+            // Then
+            val state = viewModel.uiState.value
+            assertFalse(state.isLoading)
+            assertTrue(state.hasError)
+            assertNull(state.expense)
+
+            collectJob.cancel()
+        }
+
+        @Test
+        fun `transitions to error state immediately when already-loaded expense becomes null`() =
+            runTest(testDispatcher) {
+                // Given
+                val flow = MutableSharedFlow<Expense?>()
+                every { getExpenseByIdFlowUseCase(testExpenseId) } returns flow
+                val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+                viewModel.setExpenseId(testExpenseId)
+                runCurrent()
+                flow.emit(testExpense)
+                runCurrent()
+                assertNotNull(viewModel.uiState.value.expense)
+
+                // When — deleted while viewing
+                flow.emit(null)
+                runCurrent()
+
+                // Then — immediate error state with zero delay
+                val state = viewModel.uiState.value
+                assertFalse(state.isLoading)
+                assertTrue(state.hasError)
+                assertNull(state.expense)
+
+                collectJob.cancel()
+            }
+
+        @Test
+        fun `switching expenseId resets sync wait state`() = runTest(testDispatcher) {
+            // Given
+            val otherId = "expense-999"
+            val firstFlow = MutableSharedFlow<Expense?>()
+            val secondFlow = MutableSharedFlow<Expense?>()
+            every { getExpenseByIdFlowUseCase(testExpenseId) } returns firstFlow
+            every { getExpenseByIdFlowUseCase(otherId) } returns secondFlow
+            val collectJob = backgroundScope.launch { viewModel.uiState.collect {} }
+
+            // Load first expense, then switch to second expense
+            viewModel.setExpenseId(testExpenseId)
+            runCurrent()
+            firstFlow.emit(testExpense)
+            runCurrent()
+            assertNotNull(viewModel.uiState.value.expense)
+
+            // When — switch to otherId which emits null initially
+            viewModel.setExpenseId(otherId)
+            runCurrent()
+            secondFlow.emit(null)
+            runCurrent()
+
+            // Then — fresh sync wait window starts (isLoading = true, not immediate error)
+            assertTrue(viewModel.uiState.value.isLoading)
+            assertFalse(viewModel.uiState.value.hasError)
 
             collectJob.cancel()
         }
@@ -951,6 +1124,7 @@ class ExpenseDetailViewModelTest {
         expenseDetailUiMapper = expenseDetailUiMapper,
         getGroupByIdLocalUseCase = getGroupByIdLocalUseCase,
         exchangeRateCalculationService = exchangeRateCalculationService,
-        remainderDistributionService = remainderDistributionService
+        remainderDistributionService = remainderDistributionService,
+        defaultDispatcher = testDispatcher
     )
 }
