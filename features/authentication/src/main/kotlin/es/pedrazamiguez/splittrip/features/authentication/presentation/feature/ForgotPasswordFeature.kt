@@ -7,6 +7,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.features.authentication.R
 import es.pedrazamiguez.splittrip.features.authentication.presentation.model.ForgotPasswordUiAction
 import es.pedrazamiguez.splittrip.features.authentication.presentation.screen.ForgotPasswordScreen
@@ -36,7 +37,10 @@ fun ForgotPasswordFeature(
 
     LaunchedEffect(key1 = uiState.isSuccess) {
         if (uiState.isSuccess) {
-            pillController.showPill(successMessage)
+            pillController.showPill(
+                message = successMessage,
+                style = TopPillStyle.SUCCESS
+            )
             navController.popBackStack()
         }
     }

@@ -14,6 +14,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavContro
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.features.settlement.presentation.screen.DisputeSettlementScreen
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.DisputeSettlementViewModel
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.action.DisputeSettlementUiAction
@@ -42,14 +43,20 @@ fun DisputeSettlementFeature(
         disputeSettlementViewModel.actions.collect { action ->
             when (action) {
                 is DisputeSettlementUiAction.ShowError -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.ERROR
+                    )
                 }
                 is DisputeSettlementUiAction.ShowSuccess -> {
                     val activity = context as? Activity
                     if (activity != null) {
                         interstitialAdManager.onActionCompleted(activity) {}
                     }
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.SUCCESS
+                    )
                 }
                 DisputeSettlementUiAction.NavigateBack -> {
                     navController.popBackStack()

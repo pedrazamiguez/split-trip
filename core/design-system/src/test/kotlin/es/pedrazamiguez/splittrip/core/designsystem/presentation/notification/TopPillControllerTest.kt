@@ -76,6 +76,36 @@ class TopPillControllerTest {
 
             assertEquals("New message", controller.pillState.value?.message)
         }
+
+        @Test
+        fun `defaults style to NEUTRAL when style is omitted`() = testScope.runTest {
+            controller.showPill("Saved")
+            advanceUntilIdle()
+
+            assertEquals(TopPillStyle.NEUTRAL, controller.pillState.value?.style)
+        }
+
+        @Test
+        fun `sets pill state with the given semantic style`() = testScope.runTest {
+            TopPillStyle.entries.forEach { style ->
+                controller.showPill("Message", style = style)
+                advanceUntilIdle()
+
+                assertEquals(style, controller.pillState.value?.style)
+            }
+        }
+
+        @Test
+        fun `replaces previous pill style when called again with a different style`() = testScope.runTest {
+            controller.showPill("Failed", style = TopPillStyle.ERROR)
+            advanceUntilIdle()
+
+            controller.showPill("Recovered", style = TopPillStyle.SUCCESS)
+            advanceUntilIdle()
+
+            assertEquals("Recovered", controller.pillState.value?.message)
+            assertEquals(TopPillStyle.SUCCESS, controller.pillState.value?.style)
+        }
     }
 
     @Nested

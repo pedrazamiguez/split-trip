@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.NotificationPreferencesScreen
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.NotificationPreferencesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.action.NotificationPreferencesUiAction
@@ -25,7 +26,10 @@ fun NotificationPreferencesFeature(viewModel: NotificationPreferencesViewModel =
         viewModel.actions.collectLatest { action ->
             when (action) {
                 is NotificationPreferencesUiAction.ShowTopPill -> {
-                    pillController.showPill(action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.ERROR
+                    )
                 }
             }
         }

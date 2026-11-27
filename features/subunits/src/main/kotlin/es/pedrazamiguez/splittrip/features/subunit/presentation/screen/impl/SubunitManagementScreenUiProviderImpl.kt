@@ -18,6 +18,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicTopAppBar
@@ -100,7 +101,12 @@ class SubunitManagementScreenUiProviderImpl(
                         limitReachedMessage = limitReachedMessage,
                         navigateToCreate = { targetRoute -> navController.navigate(targetRoute) },
                         showProPreview = { showProPreviewSheet = true },
-                        showNotification = { message -> pillController.showPill(message) }
+                        showNotification = { message ->
+                            pillController.showPill(
+                                message = message,
+                                style = TopPillStyle.WARNING
+                            )
+                        }
                     )
                 },
                 sharedTransitionKey = if (isSubunitCreationEnabled) CREATE_EDIT_SUBUNIT_SHARED_ELEMENT_KEY else null,

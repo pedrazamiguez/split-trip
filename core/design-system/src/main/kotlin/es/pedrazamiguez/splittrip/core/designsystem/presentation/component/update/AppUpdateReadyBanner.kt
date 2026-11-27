@@ -1,24 +1,15 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.update
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,23 +20,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.dp
 import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.extension.debouncedClickable
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Refresh
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardTitleText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopNotificationContainer
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillColors
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillDefaults
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 
 const val APP_UPDATE_READY_BANNER_TEST_TAG = "app_update_ready_banner"
 const val APP_UPDATE_READY_ACTION_TEST_TAG = "app_update_ready_action"
 
-private val BANNER_ELEVATION = 6.dp
-private val BANNER_ICON_SIZE = 20.dp
-private val BANNER_ACTION_MIN_HEIGHT = 36.dp
+private const val DESCRIPTION_MAX_LINES = 2
 
 /**
  * Non-blocking top banner prompting the user to restart and complete a downloaded update.
@@ -58,8 +49,8 @@ fun AppUpdateReadyBanner(
 ) {
     AnimatedVisibility(
         visible = visible,
-        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+        enter = TopPillDefaults.EnterTransition,
+        exit = TopPillDefaults.ExitTransition,
         modifier = modifier
     ) {
         AppUpdateReadyBannerContent(onRestartClick = onRestartClick)
@@ -70,47 +61,35 @@ fun AppUpdateReadyBanner(
 private fun AppUpdateReadyBannerContent(
     onRestartClick: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .windowInsetsPadding(
-                WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
-            )
-            .padding(
-                horizontal = MaterialTheme.spacing.Default,
-                vertical = MaterialTheme.spacing.Small
-            ),
-        contentAlignment = Alignment.TopCenter
+    val colors = TopPillDefaults.colors(TopPillStyle.INFO)
+
+    TopNotificationContainer(
+        style = TopPillStyle.INFO,
+        surfaceModifier = Modifier.testTag(APP_UPDATE_READY_BANNER_TEST_TAG)
     ) {
-        FlatCard(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag(APP_UPDATE_READY_BANNER_TEST_TAG),
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            elevation = BANNER_ELEVATION
+                .padding(
+                    horizontal = MaterialTheme.spacing.Default,
+                    vertical = MaterialTheme.spacing.Medium
+                ),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = MaterialTheme.spacing.Default,
-                        vertical = MaterialTheme.spacing.Medium
-                    ),
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
-            ) {
-                AppUpdateReadyHeaderRow()
-                AppUpdateReadyActionPill(
-                    onRestartClick = onRestartClick,
-                    modifier = Modifier.align(Alignment.End)
-                )
-            }
+            AppUpdateReadyHeaderRow(colors = colors)
+            AppUpdateReadyActionPill(
+                colors = colors,
+                onRestartClick = onRestartClick,
+                modifier = Modifier.align(Alignment.End)
+            )
         }
     }
 }
 
 @Composable
-private fun AppUpdateReadyHeaderRow() {
+private fun AppUpdateReadyHeaderRow(
+    colors: TopPillColors
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
@@ -118,18 +97,18 @@ private fun AppUpdateReadyHeaderRow() {
         Icon(
             imageVector = TablerIcons.Outline.Refresh,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-            modifier = Modifier.size(BANNER_ICON_SIZE)
+            tint = colors.iconColor,
+            modifier = Modifier.size(TopPillDefaults.LeadingIconSize)
         )
         Column(modifier = Modifier.weight(1f)) {
             CardTitleText(
                 text = stringResource(R.string.app_update_ready_title),
-                color = MaterialTheme.colorScheme.onSecondaryContainer
+                color = colors.contentColor
             )
             SecondaryBodyText(
                 text = stringResource(R.string.app_update_ready_description),
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                maxLines = 2
+                color = colors.secondaryContentColor,
+                maxLines = DESCRIPTION_MAX_LINES
             )
         }
     }
@@ -137,14 +116,15 @@ private fun AppUpdateReadyHeaderRow() {
 
 @Composable
 private fun AppUpdateReadyActionPill(
+    colors: TopPillColors,
     onRestartClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
-            .heightIn(min = BANNER_ACTION_MIN_HEIGHT)
+            .heightIn(min = TopPillDefaults.ActionMinHeight)
             .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.secondary, CircleShape)
+            .background(colors.actionContainerColor, CircleShape)
             .debouncedClickable(role = Role.Button, onClick = onRestartClick)
             .padding(
                 horizontal = MaterialTheme.spacing.Default,
@@ -155,7 +135,7 @@ private fun AppUpdateReadyActionPill(
     ) {
         LabelText(
             text = stringResource(R.string.app_update_ready_button),
-            color = MaterialTheme.colorScheme.onSecondary
+            color = colors.actionContentColor
         )
     }
 }

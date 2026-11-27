@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelNotEntitledException
 import es.pedrazamiguez.splittrip.domain.model.DeviceCompatibilityResult
@@ -136,7 +137,8 @@ class LocalAiModelPackViewModelTest {
             assertEquals(
                 listOf(
                     LocalAiModelPackUiAction.ShowTopPill(
-                        UiText.StringResource(R.string.local_ai_pack_pill_download_failed)
+                        message = UiText.StringResource(R.string.local_ai_pack_pill_download_failed),
+                        style = TopPillStyle.ERROR
                     )
                 ),
                 actions
@@ -154,7 +156,8 @@ class LocalAiModelPackViewModelTest {
             coVerify(exactly = 1) { downloadLocalAiModelPackUseCase("qwen3-0.6b-litert-v1") }
             assertEquals(
                 LocalAiModelPackUiAction.ShowTopPill(
-                    UiText.StringResource(R.string.local_ai_pack_pill_download_started)
+                    message = UiText.StringResource(R.string.local_ai_pack_pill_download_started),
+                    style = TopPillStyle.INFO
                 ),
                 viewModel.actions.first()
             )
@@ -207,7 +210,8 @@ class LocalAiModelPackViewModelTest {
         coVerify(exactly = 1) { cancelLocalAiModelPackDownloadUseCase(null) }
         assertEquals(
             LocalAiModelPackUiAction.ShowTopPill(
-                UiText.StringResource(R.string.local_ai_pack_pill_download_cancelled)
+                message = UiText.StringResource(R.string.local_ai_pack_pill_download_cancelled),
+                style = TopPillStyle.INFO
             ),
             viewModel.actions.first()
         )
@@ -252,7 +256,10 @@ class LocalAiModelPackViewModelTest {
             coVerify(exactly = 1) { deleteLocalAiModelPackUseCase() }
             assertFalse(viewModel.uiState.value.showDeleteConfirmation)
             assertEquals(
-                LocalAiModelPackUiAction.ShowTopPill(UiText.StringResource(R.string.local_ai_pack_pill_deleted)),
+                LocalAiModelPackUiAction.ShowTopPill(
+                    message = UiText.StringResource(R.string.local_ai_pack_pill_deleted),
+                    style = TopPillStyle.SUCCESS
+                ),
                 viewModel.actions.first()
             )
         }

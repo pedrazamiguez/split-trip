@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.features.contribution.presentation.screen.AddContributionScreen
 import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.AddContributionViewModel
@@ -58,11 +59,17 @@ fun AddContributionFeature(
         addContributionViewModel.actions.collectLatest { action ->
             when (action) {
                 is AddContributionUiAction.ShowSuccess -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.SUCCESS
+                    )
                 }
 
                 is AddContributionUiAction.ShowError -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.ERROR
+                    )
                 }
 
                 AddContributionUiAction.NavigateBack -> {

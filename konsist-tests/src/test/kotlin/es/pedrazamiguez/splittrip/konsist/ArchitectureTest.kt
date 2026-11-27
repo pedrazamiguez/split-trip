@@ -682,5 +682,30 @@ class ArchitectureTest {
                     !file.text.contains("PassportTagStyle.SECONDARY")
                 }
         }
+
+        @Test
+        @DisplayName("Top notification pills and update banners must not use inverseSurface or interactive cyan tokens")
+        fun `top notification pills and update banners must not use inverseSurface or interactive cyan tokens`() {
+            val forbiddenTokens = listOf(
+                "inverseSurface",
+                "inverseOnSurface",
+                "secondaryContainer",
+                "secondaryFixed",
+                "secondaryFixedDim"
+            )
+            projectProductionScope
+                .files
+                .filter { file ->
+                    file.name.startsWith("TopPill") ||
+                        file.name.startsWith("TopNotification") ||
+                        (file.name.startsWith("AppUpdate") && file.name.endsWith("Banner"))
+                }
+                .assertTrue(
+                    additionalMessage = "Top notification pills and update banners must use TopPillDefaults " +
+                        "semantic Horizon styles instead of inverseSurface or interactive cyan tokens."
+                ) { file ->
+                    forbiddenTokens.none { token -> file.text.contains(token) }
+                }
+        }
     }
 }

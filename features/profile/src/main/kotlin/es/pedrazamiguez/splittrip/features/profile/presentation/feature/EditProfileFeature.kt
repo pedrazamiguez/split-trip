@@ -41,7 +41,7 @@ fun EditProfileFeature(
         viewModel.actions.collectLatest { action ->
             when (action) {
                 is EditProfileUiAction.ShowNotification -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(action.message.asString(context), action.style)
                 }
                 EditProfileUiAction.NavigateBack -> {
                     rootNavController.popBackStack()

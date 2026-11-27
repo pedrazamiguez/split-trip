@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelNotEntitledException
 import es.pedrazamiguez.splittrip.domain.usecase.setting.CancelLocalAiModelPackDownloadUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.DeleteLocalAiModelPackUseCase
@@ -84,7 +85,8 @@ class LocalAiModelPackViewModel(
                 .onSuccess {
                     _actions.send(
                         LocalAiModelPackUiAction.ShowTopPill(
-                            UiText.StringResource(R.string.local_ai_pack_pill_download_started)
+                            message = UiText.StringResource(R.string.local_ai_pack_pill_download_started),
+                            style = TopPillStyle.INFO
                         )
                     )
                 }
@@ -94,7 +96,8 @@ class LocalAiModelPackViewModel(
                     } else {
                         _actions.send(
                             LocalAiModelPackUiAction.ShowTopPill(
-                                UiText.StringResource(R.string.local_ai_pack_pill_download_failed)
+                                message = UiText.StringResource(R.string.local_ai_pack_pill_download_failed),
+                                style = TopPillStyle.ERROR
                             )
                         )
                     }
@@ -108,14 +111,16 @@ class LocalAiModelPackViewModel(
                 .onSuccess {
                     _actions.send(
                         LocalAiModelPackUiAction.ShowTopPill(
-                            UiText.StringResource(R.string.local_ai_pack_pill_download_cancelled)
+                            message = UiText.StringResource(R.string.local_ai_pack_pill_download_cancelled),
+                            style = TopPillStyle.INFO
                         )
                     )
                 }
                 .onFailure {
                     _actions.send(
                         LocalAiModelPackUiAction.ShowTopPill(
-                            UiText.StringResource(R.string.local_ai_pack_pill_action_failed)
+                            message = UiText.StringResource(R.string.local_ai_pack_pill_action_failed),
+                            style = TopPillStyle.ERROR
                         )
                     )
                 }
@@ -129,14 +134,16 @@ class LocalAiModelPackViewModel(
                 .onSuccess {
                     _actions.send(
                         LocalAiModelPackUiAction.ShowTopPill(
-                            UiText.StringResource(R.string.local_ai_pack_pill_deleted)
+                            message = UiText.StringResource(R.string.local_ai_pack_pill_deleted),
+                            style = TopPillStyle.SUCCESS
                         )
                     )
                 }
                 .onFailure {
                     _actions.send(
                         LocalAiModelPackUiAction.ShowTopPill(
-                            UiText.StringResource(R.string.local_ai_pack_pill_action_failed)
+                            message = UiText.StringResource(R.string.local_ai_pack_pill_action_failed),
+                            style = TopPillStyle.ERROR
                         )
                     )
                 }

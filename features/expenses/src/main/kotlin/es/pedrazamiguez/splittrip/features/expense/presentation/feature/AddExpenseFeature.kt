@@ -29,6 +29,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.AddExpenseScreen
@@ -75,10 +76,16 @@ fun AddExpenseFeature(
         addExpenseViewModel.actions.collectLatest { action ->
             when (action) {
                 is AddExpenseUiAction.ShowError ->
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.ERROR
+                    )
 
                 is AddExpenseUiAction.ShowPill ->
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.WARNING
+                    )
 
                 is AddExpenseUiAction.ShowCashConflictResolution -> {
                     // Refresh the tranche preview with the latest Room data immediately,

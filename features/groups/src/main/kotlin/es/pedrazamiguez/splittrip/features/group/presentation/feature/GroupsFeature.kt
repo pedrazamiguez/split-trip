@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavContr
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.features.group.presentation.screen.GroupsScreen
 import es.pedrazamiguez.splittrip.features.group.presentation.viewmodel.GroupsViewModel
@@ -50,10 +51,21 @@ fun GroupsFeature(
     // Collect and handle UiActions
     LaunchedEffect(Unit) {
         groupsViewModel.actions.collectLatest { action ->
-            if (action is GroupsUiAction.NavigateToYourBalance) {
-                navController.navigate(Routes.YOUR_BALANCE)
-            } else {
-                pillController.showPill(message = action.message.asString(context))
+            when (action) {
+                is GroupsUiAction.ShowDeleteSuccess,
+                is GroupsUiAction.ShowArchiveSuccess,
+                is GroupsUiAction.ShowLeaveSuccess -> pillController.showPill(
+                    message = action.message.asString(context),
+                    style = TopPillStyle.SUCCESS
+                )
+                is GroupsUiAction.ShowLoadError,
+                is GroupsUiAction.ShowDeleteError,
+                is GroupsUiAction.ShowArchiveError,
+                is GroupsUiAction.ShowLeaveError -> pillController.showPill(
+                    message = action.message.asString(context),
+                    style = TopPillStyle.ERROR
+                )
+                GroupsUiAction.NavigateToYourBalance -> navController.navigate(Routes.YOUR_BALANCE)
             }
         }
     }

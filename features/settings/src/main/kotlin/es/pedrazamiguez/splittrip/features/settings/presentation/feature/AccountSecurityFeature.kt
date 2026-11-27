@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.feature
 
+import android.content.Context
 import androidx.biometric.BiometricPrompt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -8,6 +9,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.biometric.BiometricPromptConfig
@@ -16,6 +18,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavContr
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.AccountSecurityUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.AccountSecurityScreen
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.AccountSecurityViewModel
@@ -43,45 +47,21 @@ fun AccountSecurityFeature(
 
     LaunchedEffect(confirmTitle, confirmSubtitle, confirmNegative, genericError) {
         viewModel.actions.collectLatest { action ->
-            when (action) {
-                is AccountSecurityUiAction.ShowTopPill -> {
-                    pillController.showPill(message = action.message.asString(context))
+            handleAccountSecurityAction(
+                action = action,
+                context = context,
+                pillController = pillController,
+                navController = navController,
+                biometricConfig = BiometricPromptConfig(
+                    title = confirmTitle,
+                    subtitle = confirmSubtitle,
+                    negativeButtonText = confirmNegative
+                ),
+                genericError = genericError,
+                onBiometricSuccess = {
+                    viewModel.onEvent(AccountSecurityUiEvent.BiometricConfirmationSuccess)
                 }
-                is AccountSecurityUiAction.NavigateToRoute -> {
-                    navController.navigate(action.route)
-                }
-                AccountSecurityUiAction.NavigateBack -> {
-                    navController.popBackStack()
-                }
-                AccountSecurityUiAction.RequestBiometricConfirmation -> {
-                    val activity = context as? FragmentActivity
-                    if (activity != null) {
-                        BiometricPromptHelper.authenticate(
-                            activity = activity,
-                            config = BiometricPromptConfig(
-                                title = confirmTitle,
-                                subtitle = confirmSubtitle,
-                                negativeButtonText = confirmNegative
-                            ),
-                            onSuccess = {
-                                viewModel.onEvent(AccountSecurityUiEvent.BiometricConfirmationSuccess)
-                            },
-                            onError = { errorCode, _ ->
-                                when (errorCode) {
-                                    BiometricPrompt.ERROR_USER_CANCELED,
-                                    BiometricPrompt.ERROR_NEGATIVE_BUTTON,
-                                    BiometricPrompt.ERROR_CANCELED -> {
-                                        // Standard user cancellations — do not show error pill
-                                    }
-                                    else -> {
-                                        pillController.showPill(genericError)
-                                    }
-                                }
-                            }
-                        )
-                    }
-                }
-            }
+            )
         }
     }
 
@@ -91,5 +71,44 @@ fun AccountSecurityFeature(
             uiMapper = accountSecurityUiMapper,
             onEvent = viewModel::onEvent
         )
+    }
+}
+
+@Suppress("LongParameterList")
+private fun handleAccountSecurityAction(
+    action: AccountSecurityUiAction,
+    context: Context,
+    pillController: TopPillController,
+    navController: NavController,
+    biometricConfig: BiometricPromptConfig,
+    genericError: String,
+    onBiometricSuccess: () -> Unit
+) {
+    when (action) {
+        is AccountSecurityUiAction.ShowTopPill -> {
+            pillController.showPill(action.message.asString(context), action.style)
+        }
+        is AccountSecurityUiAction.NavigateToRoute -> {
+            navController.navigate(action.route)
+        }
+        AccountSecurityUiAction.NavigateBack -> {
+            navController.popBackStack()
+        }
+        AccountSecurityUiAction.RequestBiometricConfirmation -> {
+            val activity = context as? FragmentActivity ?: return
+            BiometricPromptHelper.authenticate(
+                activity = activity,
+                config = biometricConfig,
+                onSuccess = onBiometricSuccess,
+                onError = { errorCode, _ ->
+                    val isUserCancel = errorCode == BiometricPrompt.ERROR_USER_CANCELED ||
+                        errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON ||
+                        errorCode == BiometricPrompt.ERROR_CANCELED
+                    if (!isUserCancel) {
+                        pillController.showPill(genericError, TopPillStyle.ERROR)
+                    }
+                }
+            )
+        }
     }
 }

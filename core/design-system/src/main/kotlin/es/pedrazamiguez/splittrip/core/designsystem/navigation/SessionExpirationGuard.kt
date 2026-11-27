@@ -10,6 +10,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
@@ -45,7 +46,10 @@ fun SessionExpirationGuard(
             withContext(NonCancellable) {
                 onHandleSessionExpired()
             }
-            pillController.showPill(sessionExpiredMessage)
+            pillController.showPill(
+                message = sessionExpiredMessage,
+                style = TopPillStyle.WARNING
+            )
             if (stableStartDestination != Routes.LOGIN) {
                 pendingSessionExpiredRedirect = true
             }

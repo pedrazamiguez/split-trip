@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
@@ -280,6 +281,7 @@ class SubscriptionsViewModelTest {
                 assertTrue(topPillAction != null)
                 val stringRes = assertInstanceOf(UiText.StringResource::class.java, topPillAction!!.message)
                 assertEquals(R.string.subscriptions_service_unavailable, stringRes.resId)
+                assertEquals(TopPillStyle.ERROR, topPillAction.style)
 
                 job.cancel()
             }
@@ -301,6 +303,7 @@ class SubscriptionsViewModelTest {
                 assertTrue(topPillAction != null)
                 val stringRes = assertInstanceOf(UiText.StringResource::class.java, topPillAction!!.message)
                 assertEquals(R.string.subscriptions_service_unavailable, stringRes.resId)
+                assertEquals(TopPillStyle.ERROR, topPillAction.style)
 
                 job.cancel()
             }
@@ -478,6 +481,7 @@ class SubscriptionsViewModelTest {
                 val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
                 val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
                 assertEquals(R.string.subscriptions_service_unavailable, message.resId)
+                assertEquals(TopPillStyle.ERROR, action.style)
 
                 job.cancel()
             }
@@ -544,7 +548,8 @@ class SubscriptionsViewModelTest {
                 advanceUntilIdle()
 
                 assertEquals(1, actions.size)
-                assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+                val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
+                assertEquals(TopPillStyle.ERROR, action.style)
                 job.cancel()
             }
     }
@@ -573,6 +578,7 @@ class SubscriptionsViewModelTest {
             val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
             val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
             assertEquals(R.string.subscriptions_upgrade_success, message.resId)
+            assertEquals(TopPillStyle.SUCCESS, action.style)
 
             job.cancel()
         }
@@ -592,6 +598,7 @@ class SubscriptionsViewModelTest {
             val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
             val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
             assertEquals(R.string.subscriptions_purchase_pending, message.resId)
+            assertEquals(TopPillStyle.INFO, action.style)
 
             job.cancel()
         }
@@ -614,6 +621,7 @@ class SubscriptionsViewModelTest {
             val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
             val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
             assertEquals(R.string.subscriptions_purchase_already_owned, message.resId)
+            assertEquals(TopPillStyle.SUCCESS, action.style)
 
             job.cancel()
         }
@@ -648,6 +656,7 @@ class SubscriptionsViewModelTest {
             val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
             val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
             assertEquals(R.string.subscriptions_billing_error, message.resId)
+            assertEquals(TopPillStyle.ERROR, action.style)
 
             job.cancel()
         }
@@ -678,6 +687,7 @@ class SubscriptionsViewModelTest {
             val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
             val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
             assertEquals(R.string.subscriptions_restore_success, message.resId)
+            assertEquals(TopPillStyle.SUCCESS, action.style)
 
             job.cancel()
         }
@@ -705,6 +715,7 @@ class SubscriptionsViewModelTest {
             val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
             val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
             assertEquals(R.string.subscriptions_restore_none_found, message.resId)
+            assertEquals(TopPillStyle.INFO, action.style)
 
             job.cancel()
         }
@@ -733,6 +744,7 @@ class SubscriptionsViewModelTest {
             val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
             val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
             assertEquals(R.string.subscriptions_billing_error, message.resId)
+            assertEquals(TopPillStyle.ERROR, action.style)
 
             job.cancel()
         }
@@ -831,6 +843,7 @@ class SubscriptionsViewModelTest {
                 val action = assertInstanceOf(SubscriptionsUiAction.ShowTopPill::class.java, actions.first())
                 val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
                 assertEquals(R.string.subscriptions_complimentary_pro_manage_info, message.resId)
+                assertEquals(TopPillStyle.INFO, action.style)
 
                 job.cancel()
             }

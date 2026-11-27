@@ -43,7 +43,10 @@ fun SubscriptionsFeature(
         viewModel.actions.collectLatest { action ->
             when (action) {
                 is SubscriptionsUiAction.ShowTopPill -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = action.style
+                    )
                 }
                 is SubscriptionsUiAction.LaunchBillingFlow -> {
                     val activity = context.findActivity()
