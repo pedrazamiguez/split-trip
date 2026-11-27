@@ -23,6 +23,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.logging.recordDiagnosticException
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.AccountStatusScreen
@@ -65,10 +66,16 @@ fun AccountStatusFeature(
         viewModel.actions.collectLatest { action ->
             when (action) {
                 is AccountStatusUiAction.ShowError -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.ERROR
+                    )
                 }
                 is AccountStatusUiAction.ShowSuccess -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.SUCCESS
+                    )
                 }
                 AccountStatusUiAction.NavigateBack -> {
                     navController.popBackStack()
@@ -97,7 +104,10 @@ fun AccountStatusFeature(
                             "credential_stage" to "web_client_id_resolution"
                         )
                     )
-                    pillController.showPill(message = googleLinkingFailedMsg)
+                    pillController.showPill(
+                        message = googleLinkingFailedMsg,
+                        style = TopPillStyle.ERROR
+                    )
                     return@AccountStatusScreen
                 }
                 linkGoogleAccount(
@@ -159,7 +169,10 @@ private fun linkGoogleAccount(
                     "credential_stage" to "link_google_credential"
                 )
             )
-            pillController.showPill(message = googleLinkingFailedMsg)
+            pillController.showPill(
+                message = googleLinkingFailedMsg,
+                style = TopPillStyle.ERROR
+            )
         } catch (e: Exception) {
             Timber.e(e, "Google account linking failed: type=${e.javaClass.simpleName}, message=${e.message}")
             recordDiagnosticException(
@@ -169,7 +182,10 @@ private fun linkGoogleAccount(
                     "credential_stage" to "link_google_credential"
                 )
             )
-            pillController.showPill(message = googleLinkingFailedMsg)
+            pillController.showPill(
+                message = googleLinkingFailedMsg,
+                style = TopPillStyle.ERROR
+            )
         }
     }
 }

@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavContro
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.contribution.presentation.screen.ContributionDetailScreen
 import es.pedrazamiguez.splittrip.features.contribution.presentation.viewmodel.ContributionDetailViewModel
@@ -38,10 +39,16 @@ fun ContributionDetailFeature(
         contributionDetailViewModel.actions.collectLatest { action ->
             when (action) {
                 is ContributionDetailUiAction.ShowError -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.ERROR
+                    )
                 }
                 is ContributionDetailUiAction.DeleteSuccess -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.SUCCESS
+                    )
                     navController.popBackStack()
                 }
                 is ContributionDetailUiAction.NavigateToExpenseDetail -> {

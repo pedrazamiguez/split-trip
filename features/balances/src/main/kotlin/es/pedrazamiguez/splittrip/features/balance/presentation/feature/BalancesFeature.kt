@@ -22,6 +22,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.features.balance.R
 import es.pedrazamiguez.splittrip.features.balance.navigation.KEY_EXPORT_REPORT_REQUESTED
@@ -74,7 +75,7 @@ fun BalancesFeature(
         onLaunchFailed = {
             balancesViewModel.onEvent(BalancesUiEvent.CancelSaveExportedReport)
             coroutineScope.launch {
-                pillController.showPill(message = noSaveAppMessage)
+                pillController.showPill(message = noSaveAppMessage, style = TopPillStyle.WARNING)
             }
         }
     )
@@ -168,21 +169,21 @@ private suspend fun handleBalancesUiAction(
 ) {
     when (action) {
         is BalancesUiAction.ShowLoadError ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.ERROR)
         is BalancesUiAction.ShowContributionSuccess ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.SUCCESS)
         is BalancesUiAction.ShowContributionError ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.ERROR)
         is BalancesUiAction.ShowDeleteContributionSuccess ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.SUCCESS)
         is BalancesUiAction.ShowDeleteContributionError ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.ERROR)
         is BalancesUiAction.ShowDeleteWithdrawalSuccess ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.SUCCESS)
         is BalancesUiAction.ShowDeleteWithdrawalError ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.ERROR)
         is BalancesUiAction.ShowExportError ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.ERROR)
         is BalancesUiAction.ShowProFeaturePreview ->
             onShowProPreview(action.prompt)
         is BalancesUiAction.ShareExportedReport -> {
@@ -193,7 +194,7 @@ private suspend fun handleBalancesUiAction(
                 chooserTitle = shareChooserTitle
             )
             if (!launched) {
-                pillController.showPill(message = noShareAppMessage)
+                pillController.showPill(message = noShareAppMessage, style = TopPillStyle.WARNING)
             }
         }
         is BalancesUiAction.LaunchSaveDocumentPicker ->
@@ -204,6 +205,6 @@ private suspend fun handleBalancesUiAction(
                 )
             )
         is BalancesUiAction.ShowExportSaveSuccess ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.SUCCESS)
     }
 }

@@ -38,7 +38,10 @@ fun LocalAiModelPackFeature(
         viewModel.actions.collectLatest { action ->
             when (action) {
                 is LocalAiModelPackUiAction.ShowTopPill -> {
-                    pillController.showPill(action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = action.style
+                    )
                 }
 
                 LocalAiModelPackUiAction.RequestUpgrade -> {

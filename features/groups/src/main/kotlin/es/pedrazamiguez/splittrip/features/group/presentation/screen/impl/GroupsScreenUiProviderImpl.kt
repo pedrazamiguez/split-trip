@@ -20,6 +20,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewType
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.MainAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.topbar.DynamicTopAppBar
@@ -109,7 +110,12 @@ class GroupsScreenUiProviderImpl(
                         limitReachedMessage = limitReachedMessage,
                         navigateToCreateGroup = { tabNavController.navigate(Routes.CREATE_GROUP) },
                         showProPreview = { showProPreviewSheet = true },
-                        showNotification = { message -> pillController.showPill(message.asString(context)) }
+                        showNotification = { message ->
+                            pillController.showPill(
+                                message = message.asString(context),
+                                style = TopPillStyle.WARNING
+                            )
+                        }
                     )
                 },
                 sharedTransitionKey = if (isAllowed) CREATE_EDIT_GROUP_SHARED_ELEMENT_KEY else null,

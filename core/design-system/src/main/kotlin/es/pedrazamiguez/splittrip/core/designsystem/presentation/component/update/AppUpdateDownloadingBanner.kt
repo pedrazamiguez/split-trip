@@ -2,23 +2,13 @@ package es.pedrazamiguez.splittrip.core.designsystem.presentation.component.upda
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -39,10 +29,13 @@ import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Refresh
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.CardTitleText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.LabelText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.text.SecondaryBodyText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopNotificationContainer
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillColors
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillDefaults
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 
 const val APP_UPDATE_DOWNLOADING_BANNER_TEST_TAG = "app_update_downloading_banner"
 const val APP_UPDATE_DOWNLOADING_PERCENT_TEST_TAG = "app_update_downloading_percent"
@@ -51,9 +44,8 @@ const val APP_UPDATE_DOWNLOADING_DETERMINATE_PROGRESS_TEST_TAG =
 const val APP_UPDATE_DOWNLOADING_INDETERMINATE_PROGRESS_TEST_TAG =
     "app_update_downloading_indeterminate_progress"
 
-private val BANNER_ELEVATION = 6.dp
-private val BANNER_ICON_SIZE = 20.dp
 private val PROGRESS_BAR_HEIGHT = 6.dp
+private const val PROGRESS_TRACK_ALPHA = 0.14f
 private const val MIN_PROGRESS_FRACTION = 0f
 private const val MAX_PROGRESS_FRACTION = 1f
 private const val DESCRIPTION_MAX_LINES = 2
@@ -78,8 +70,8 @@ fun AppUpdateDownloadingBanner(
 
     AnimatedVisibility(
         visible = visible,
-        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+        enter = TopPillDefaults.EnterTransition,
+        exit = TopPillDefaults.ExitTransition,
         modifier = modifier
     ) {
         AppUpdateDownloadingBannerContent(
@@ -94,46 +86,37 @@ private fun AppUpdateDownloadingBannerContent(
     progressFraction: Float?,
     progressPercent: Int?
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .windowInsetsPadding(
-                WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
-            )
-            .padding(
-                horizontal = MaterialTheme.spacing.Default,
-                vertical = MaterialTheme.spacing.Small
-            ),
-        contentAlignment = Alignment.TopCenter
+    val colors = TopPillDefaults.colors(TopPillStyle.NEUTRAL)
+
+    TopNotificationContainer(
+        style = TopPillStyle.NEUTRAL,
+        surfaceModifier = Modifier.testTag(APP_UPDATE_DOWNLOADING_BANNER_TEST_TAG)
     ) {
-        FlatCard(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag(APP_UPDATE_DOWNLOADING_BANNER_TEST_TAG),
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            ghostBorder = true,
-            elevation = BANNER_ELEVATION
+                .padding(
+                    horizontal = MaterialTheme.spacing.Default,
+                    vertical = MaterialTheme.spacing.Medium
+                ),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = MaterialTheme.spacing.Default,
-                        vertical = MaterialTheme.spacing.Medium
-                    ),
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
-            ) {
-                AppUpdateDownloadingHeaderRow(progressPercent = progressPercent)
-                AppUpdateDownloadingProgressBar(progressFraction = progressFraction)
-            }
+            AppUpdateDownloadingHeaderRow(
+                progressPercent = progressPercent,
+                colors = colors
+            )
+            AppUpdateDownloadingProgressBar(
+                progressFraction = progressFraction,
+                colors = colors
+            )
         }
     }
 }
 
 @Composable
 private fun AppUpdateDownloadingHeaderRow(
-    progressPercent: Int?
+    progressPercent: Int?,
+    colors: TopPillColors
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -142,24 +125,24 @@ private fun AppUpdateDownloadingHeaderRow(
         Icon(
             imageVector = TablerIcons.Outline.Refresh,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(BANNER_ICON_SIZE)
+            tint = colors.iconColor,
+            modifier = Modifier.size(TopPillDefaults.LeadingIconSize)
         )
         Column(modifier = Modifier.weight(1f)) {
             CardTitleText(
                 text = stringResource(R.string.app_update_downloading_title),
-                color = MaterialTheme.colorScheme.onSurface
+                color = colors.contentColor
             )
             SecondaryBodyText(
                 text = stringResource(R.string.app_update_downloading_description),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = colors.secondaryContentColor,
                 maxLines = DESCRIPTION_MAX_LINES
             )
         }
         if (progressPercent != null) {
             LabelText(
                 text = stringResource(R.string.app_update_downloading_percent, progressPercent),
-                color = MaterialTheme.colorScheme.primary,
+                color = colors.iconColor,
                 modifier = Modifier.testTag(APP_UPDATE_DOWNLOADING_PERCENT_TEST_TAG)
             )
         }
@@ -168,12 +151,14 @@ private fun AppUpdateDownloadingHeaderRow(
 
 @Composable
 private fun AppUpdateDownloadingProgressBar(
-    progressFraction: Float?
+    progressFraction: Float?,
+    colors: TopPillColors
 ) {
     val baseModifier = Modifier
         .fillMaxWidth()
         .height(PROGRESS_BAR_HEIGHT)
         .clip(CircleShape)
+    val trackColor = colors.contentColor.copy(alpha = PROGRESS_TRACK_ALPHA)
 
     if (progressFraction != null) {
         val animatedProgress by animateFloatAsState(
@@ -183,8 +168,8 @@ private fun AppUpdateDownloadingProgressBar(
         LinearProgressIndicator(
             progress = { animatedProgress },
             modifier = baseModifier.testTag(APP_UPDATE_DOWNLOADING_DETERMINATE_PROGRESS_TEST_TAG),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            color = colors.iconColor,
+            trackColor = trackColor,
             strokeCap = StrokeCap.Round,
             gapSize = 0.dp,
             drawStopIndicator = {}
@@ -192,8 +177,8 @@ private fun AppUpdateDownloadingProgressBar(
     } else {
         LinearProgressIndicator(
             modifier = baseModifier.testTag(APP_UPDATE_DOWNLOADING_INDETERMINATE_PROGRESS_TEST_TAG),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            color = colors.iconColor,
+            trackColor = trackColor,
             strokeCap = StrokeCap.Round,
             gapSize = 0.dp
         )

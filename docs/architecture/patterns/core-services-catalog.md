@@ -199,8 +199,11 @@ All components are `@Composable` functions following Material 3 design. They acc
 
 | Component | File | Purpose |
 |---|---|---|
-| `TopPillController` | `notification/TopPillNotification.kt` | Controller class with `showPill(message)` that uses MainScreen's `CoroutineScope` — survives feature navigation. Exposed via `LocalTopPillController`. **Use for:** Showing transient feedback from `UiAction` side effects in the Feature layer. Auto-dismisses after 3 seconds. |
-| `TopPillNotification` | `notification/TopPillNotification.kt` | Animated pill composable that drops from the top of the screen with `slideInVertically` + `fadeIn`. Placed as an overlay in `MainScreen`. |
+| `TopPillStyle` | `notification/TopPillStyle.kt` | Semantic style enum (`NEUTRAL`, `INFO`, `SUCCESS`, `WARNING`, `ERROR`) mapped to Horizon semantic container/content colors and leading outline icons. |
+| `TopPillDefaults` | `notification/TopPillDefaults.kt` | Shared geometry (`Elevation`, `LeadingIconSize`, `DismissIconSize`, `ActionMinHeight`, `shape()`), enter/exit transitions (`EnterTransition`, `ExitTransition`), semantic color resolver (`colors(style)` returning `TopPillColors`), and leading icon resolver (`icon(style)`). |
+| `TopNotificationContainer` | `notification/TopNotificationContainer.kt` | Shared top-overlay container (`Box` with `WindowInsets.safeDrawing` top+horizontal insets + `Default`/`Small` margins wrapping `FlatCard` with `shapes.medium`, light-mode ambient shadow, and `ghostBorder` on `NEUTRAL`). Used by `TopPillNotification`, `AppUpdateDownloadingBanner`, and `AppUpdateReadyBanner`. |
+| `TopPillController` | `notification/TopPillNotification.kt` | Controller class with `showPill(message, style = TopPillStyle.NEUTRAL)` that uses MainScreen's `CoroutineScope` — survives feature navigation. Exposed via `LocalTopPillController`. **Use for:** Showing transient semantic feedback from `UiAction` side effects in the Feature layer. Auto-dismisses after 3 seconds. |
+| `TopPillNotification` | `notification/TopPillNotification.kt` | Animated pill composable that drops from the top of the screen with `TopPillDefaults.EnterTransition` / `ExitTransition`. Placed as an overlay in `MainScreen`. |
 | `rememberTopPillController` | `notification/TopPillNotification.kt` | Creates and remembers a `TopPillController`. Called at the MainScreen level. |
 
 ### B.5 Extensions

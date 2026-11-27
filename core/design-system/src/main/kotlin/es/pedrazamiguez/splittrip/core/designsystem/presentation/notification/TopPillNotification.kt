@@ -1,26 +1,14 @@
 package es.pedrazamiguez.splittrip.core.designsystem.presentation.notification
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -34,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.designsystem.R
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
@@ -49,10 +36,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 private const val PILL_AUTO_DISMISS_MS = 3000L
-private val PILL_SHADOW_ELEVATION = 6.dp
-private val DISMISS_ICON_SIZE = 16.dp
 
 const val TOP_PILL_NOTIFICATION_TEST_TAG = "top_pill_notification"
+const val TOP_PILL_LEADING_ICON_TEST_TAG = "top_pill_leading_icon"
 const val TOP_PILL_MESSAGE_TEST_TAG = "top_pill_message"
 const val TOP_PILL_DISMISS_BUTTON_TEST_TAG = "top_pill_dismiss_button"
 
@@ -61,6 +47,7 @@ const val TOP_PILL_DISMISS_BUTTON_TEST_TAG = "top_pill_dismiss_button"
  */
 data class PillState(
     val message: String,
+    val style: TopPillStyle = TopPillStyle.NEUTRAL,
     val id: Long = System.nanoTime()
 )
 
@@ -80,9 +67,12 @@ class TopPillController(private val scope: CoroutineScope) {
      * Shows a pill notification that auto-dismisses after [PILL_AUTO_DISMISS_MS].
      * This method returns immediately and doesn't suspend.
      */
-    fun showPill(message: String) {
+    fun showPill(
+        message: String,
+        style: TopPillStyle = TopPillStyle.NEUTRAL
+    ) {
         scope.launch {
-            _pillState.value = PillState(message = message)
+            _pillState.value = PillState(message = message, style = style)
         }
     }
 
@@ -107,7 +97,7 @@ fun rememberTopPillController(): TopPillController {
  * Usage in Feature:
  * ```
  * val pillController = LocalTopPillController.current
- * pillController.showPill(message = action.message.asString(context))
+ * pillController.showPill(message = action.message.asString(context), style = TopPillStyle.SUCCESS)
  * ```
  */
 val LocalTopPillController = compositionLocalOf<TopPillController> {
@@ -127,9 +117,13 @@ val LocalTopPillController = compositionLocalOf<TopPillController> {
 fun TopPillNotification(controller: TopPillController) {
     val pillState by controller.pillState.collectAsStateWithLifecycle(initialValue = null)
 
-    // Cache the last non-null message so exit animations keep text visible until faded/slid out.
+    // Cache the last non-null message and style so exit animations stay consistent until faded out.
     var displayedMessage by remember { mutableStateOf("") }
-    pillState?.let { displayedMessage = it.message }
+    var displayedStyle by remember { mutableStateOf(TopPillStyle.NEUTRAL) }
+    pillState?.let {
+        displayedMessage = it.message
+        displayedStyle = it.style
+    }
 
     // Auto-dismiss timer
     LaunchedEffect(pillState?.id) {
@@ -141,12 +135,13 @@ fun TopPillNotification(controller: TopPillController) {
 
     AnimatedVisibility(
         visible = pillState != null,
-        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
+        enter = TopPillDefaults.EnterTransition,
+        exit = TopPillDefaults.ExitTransition
     ) {
         TopPillNotificationContent(
             message = displayedMessage,
-            onDismiss = { controller.dismiss() }
+            onDismiss = { controller.dismiss() },
+            style = displayedStyle
         )
     }
 }
@@ -155,52 +150,56 @@ fun TopPillNotification(controller: TopPillController) {
 internal fun TopPillNotificationContent(
     message: String,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    style: TopPillStyle = TopPillStyle.NEUTRAL
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .windowInsetsPadding(
-                WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
-            )
-            .padding(horizontal = MaterialTheme.spacing.ExtraLarge, vertical = MaterialTheme.spacing.Small),
-        contentAlignment = Alignment.TopCenter
+    val colors = TopPillDefaults.colors(style)
+    val leadingIcon = TopPillDefaults.icon(style)
+
+    TopNotificationContainer(
+        style = style,
+        modifier = modifier,
+        surfaceModifier = Modifier.testTag(TOP_PILL_NOTIFICATION_TEST_TAG)
     ) {
-        Surface(
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.inverseSurface,
-            shadowElevation = PILL_SHADOW_ELEVATION,
-            modifier = Modifier.testTag(TOP_PILL_NOTIFICATION_TEST_TAG)
+        Row(
+            modifier = Modifier.padding(
+                start = MaterialTheme.spacing.Default,
+                top = MaterialTheme.spacing.Small,
+                end = MaterialTheme.spacing.ExtraSmall,
+                bottom = MaterialTheme.spacing.Small
+            ),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.padding(
-                    start = MaterialTheme.spacing.Large,
-                    top = MaterialTheme.spacing.Small,
-                    end = MaterialTheme.spacing.ExtraSmall,
-                    bottom = MaterialTheme.spacing.Small
-                ),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                BodyText(
-                    text = message,
-                    color = MaterialTheme.colorScheme.inverseOnSurface,
+            if (leadingIcon != null) {
+                Icon(
+                    imageVector = leadingIcon,
+                    contentDescription = null,
+                    tint = colors.iconColor,
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(vertical = MaterialTheme.spacing.ExtraSmall)
-                        .testTag(TOP_PILL_MESSAGE_TEST_TAG)
+                        .size(TopPillDefaults.LeadingIconSize)
+                        .testTag(TOP_PILL_LEADING_ICON_TEST_TAG)
                 )
-                Spacer(modifier = Modifier.width(MaterialTheme.spacing.ExtraSmall))
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.testTag(TOP_PILL_DISMISS_BUTTON_TEST_TAG)
-                ) {
-                    Icon(
-                        imageVector = TablerIcons.Outline.X,
-                        contentDescription = stringResource(R.string.content_description_dismiss),
-                        tint = MaterialTheme.colorScheme.inverseOnSurface,
-                        modifier = Modifier.size(DISMISS_ICON_SIZE)
-                    )
-                }
+                Spacer(modifier = Modifier.width(MaterialTheme.spacing.Medium))
+            }
+            BodyText(
+                text = message,
+                color = colors.contentColor,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = MaterialTheme.spacing.ExtraSmall)
+                    .testTag(TOP_PILL_MESSAGE_TEST_TAG)
+            )
+            Spacer(modifier = Modifier.width(MaterialTheme.spacing.ExtraSmall))
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier.testTag(TOP_PILL_DISMISS_BUTTON_TEST_TAG)
+            ) {
+                Icon(
+                    imageVector = TablerIcons.Outline.X,
+                    contentDescription = stringResource(R.string.content_description_dismiss),
+                    tint = colors.contentColor,
+                    modifier = Modifier.size(TopPillDefaults.DismissIconSize)
+                )
             }
         }
     }

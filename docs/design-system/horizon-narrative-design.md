@@ -455,6 +455,21 @@ Powered by the `dev.chrisbanes.haze` library (`dev.chrisbanes.haze:haze` and `de
 
 > **Implementation:** `GlassmorphismDefaults.kt`, `LocalHazeState.kt` in `core/design-system/.../foundation/` and `DynamicTopAppBar.kt` in `core/design-system/.../presentation/topbar/`
 
+### 5.6 Top Notification Pills & In-App Update Banners
+
+All top-overlay notifications (`TopPillNotification`) and flexible in-app update banners (`AppUpdateDownloadingBanner`, `AppUpdateReadyBanner`) share a unified Horizon container and semantic style system in `:core:design-system`:
+
+- **Shared Container (`TopNotificationContainer`):** Wraps content in `FlatCard` (`MaterialTheme.shapes.medium`, `TopPillDefaults.Elevation = 6.dp` ambient shadow in light mode and suppressed in dark mode, `WindowInsets.safeDrawing` `Top + Horizontal`, `MaterialTheme.spacing.Default` horizontal and `MaterialTheme.spacing.Small` vertical outer padding) with unified enter/exit transitions (`TopPillDefaults.EnterTransition` / `TopPillDefaults.ExitTransition`).
+- **Semantic Styles (`TopPillStyle` & `TopPillDefaults`):**
+  - `NEUTRAL`: `surfaceContainerLowest` / `onSurface` in light mode, `surfaceContainerHighest` / `onSurface` in dark mode, `ghostBorder = true`, no leading icon on `TopPillNotification`, `primary` icon/progress accent (`secondaryContentColor = onSurfaceVariant`). Used for generic notices and `AppUpdateDownloadingBanner`.
+  - `INFO`: `HorizonInfoContainer` (`#D6E6FA`) / `HorizonOnInfoContainer` in light mode; `HorizonInfoContainerDark` (`#00478D`) / `HorizonOnInfoContainerDark` in dark mode, `ghostBorder = false`, `TablerIcons.Outline.InfoCircle`, `primary` / `onPrimary` action pill. Used for informational notices and `AppUpdateReadyBanner`.
+  - `SUCCESS`: `HorizonSuccessContainer` / `HorizonOnSuccessContainer` in light mode; `HorizonSuccessContainerDark` / `HorizonOnSuccessContainerDark` in dark mode, `ghostBorder = false`, `TablerIcons.Outline.CircleCheck`.
+  - `WARNING`: `tertiaryContainer` / `onTertiaryContainer`, `ghostBorder = false`, `TablerIcons.Outline.AlertTriangle`.
+  - `ERROR`: `errorContainer` / `onErrorContainer`, `ghostBorder = false`, `TablerIcons.Outline.AlertTriangle`.
+- **Prohibitions:** Top notification pills and update banners must **never** use `inverseSurface` / `inverseOnSurface` (which invert light mode to dark) or bright cyan interactive chip tokens (`secondaryContainer`, `secondaryFixed`, `secondaryFixedDim`). Enforced by Konsist (`DesignSystemConstraints`).
+
+> **Implementation:** `TopPillStyle.kt`, `TopPillDefaults.kt`, `TopNotificationContainer.kt`, `TopPillNotification.kt` in `core/design-system/.../notification/` and `AppUpdateDownloadingBanner.kt`, `AppUpdateReadyBanner.kt` in `core/design-system/.../component/update/`
+
 ---
 
 ## 6. Spacing & Whitespace
@@ -588,6 +603,12 @@ The Horizon Narrative was implemented across 7 focused sub-issues:
 | `SegmentedPillSelector.kt` | `core/design-system/.../component/input/` | Animated pill segmented control with tonal layering |
 | `StyledOutlinedTextField.kt` | `core/design-system/.../component/input/` | Soft Field text input with `softFieldColors()` |
 | `TextComponents.kt` | `core/design-system/.../component/text/` | Semantic text wrappers (§3.3) |
+| `TopPillStyle.kt` | `core/design-system/.../notification/` | Semantic top-notification style enum (`NEUTRAL`, `INFO`, `SUCCESS`, `WARNING`, `ERROR`) |
+| `TopPillDefaults.kt` | `core/design-system/.../notification/` | Top-notification colors, geometry, transitions, and semantic icons (§5.6) |
+| `TopNotificationContainer.kt` | `core/design-system/.../notification/` | Shared Horizon top-overlay `FlatCard` container with safe-drawing insets |
+| `TopPillNotification.kt` | `core/design-system/.../notification/` | Animated semantic top pill notification and `TopPillController` |
+| `AppUpdateDownloadingBanner.kt` | `core/design-system/.../component/update/` | Flexible update download progress banner (`TopPillStyle.NEUTRAL`) |
+| `AppUpdateReadyBanner.kt` | `core/design-system/.../component/update/` | Flexible update restart banner (`TopPillStyle.INFO`) |
 
 ---
 
@@ -604,6 +625,9 @@ All Horizon Narrative components include `@PreviewThemes` previews (light + dark
 | `PassportChipPreviews.kt` | Selected/unselected, removable, overflow variants |
 | `SegmentedPillSelectorPreviews.kt` | Standalone, nested in `FlatCard`, binary/unselected/disabled, locales, and narrow `320dp` variants |
 | `TextComponentsPreviews.kt` | All semantic text wrappers (gallery + per-wrapper light/dark + locale variants) |
+| `TopPillNotificationPreviews.kt` | All 5 semantic styles gallery, single-line, multi-line, narrow `320dp`, and 1.5x font scale |
+| `AppUpdateDownloadingBannerPreviews.kt` | Indeterminate and determinate progress banners in light/dark and EN/ES |
+| `AppUpdateReadyBannerPreviews.kt` | Unified `INFO` update-ready banner with `primary` action pill in light/dark and EN/ES |
 
 ---
 

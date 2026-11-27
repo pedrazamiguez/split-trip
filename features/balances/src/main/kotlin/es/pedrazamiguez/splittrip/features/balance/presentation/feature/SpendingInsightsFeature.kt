@@ -19,6 +19,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.UpgradeNavigator
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewBottomSheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.ProFeaturePreviewPrompt
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.balance.R
@@ -75,7 +76,7 @@ fun SpendingInsightsFeature(
         onLaunchFailed = {
             spendingInsightsViewModel.onEvent(SpendingInsightsUiEvent.CancelSaveExportedReport)
             coroutineScope.launch {
-                pillController.showPill(message = noSaveAppMessage)
+                pillController.showPill(message = noSaveAppMessage, style = TopPillStyle.WARNING)
             }
         }
     )
@@ -108,10 +109,16 @@ fun SpendingInsightsFeature(
             when (action) {
                 SpendingInsightsUiAction.NavigateBack -> tabNavController.navigateUp()
                 is SpendingInsightsUiAction.ShowLoadError -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.ERROR
+                    )
                 }
                 is SpendingInsightsUiAction.ShowExportError -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.ERROR
+                    )
                 }
                 is SpendingInsightsUiAction.ShowProFeaturePreview -> {
                     proPreviewPrompt = action.prompt
@@ -124,7 +131,7 @@ fun SpendingInsightsFeature(
                         chooserTitle = shareChooserTitle
                     )
                     if (!launched) {
-                        pillController.showPill(message = noShareAppMessage)
+                        pillController.showPill(message = noShareAppMessage, style = TopPillStyle.WARNING)
                     }
                 }
                 is SpendingInsightsUiAction.LaunchSaveDocumentPicker -> {
@@ -134,7 +141,10 @@ fun SpendingInsightsFeature(
                     )
                 }
                 is SpendingInsightsUiAction.ShowExportSaveSuccess -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.SUCCESS
+                    )
                 }
             }
         }

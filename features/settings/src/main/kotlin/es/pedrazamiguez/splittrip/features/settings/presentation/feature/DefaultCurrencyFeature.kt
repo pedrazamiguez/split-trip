@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavContr
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.DefaultCurrencyScreen
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DefaultCurrencyViewModel
@@ -41,7 +42,8 @@ fun DefaultCurrencyFeature(viewModel: DefaultCurrencyViewModel = koinViewModel()
                 val currencyName = currencyNames[newCurrencyCode] ?: newCurrencyCode
 
                 pillController.showPill(
-                    currencyChangedFormat.format("$currencyName ($newCurrencyCode)")
+                    message = currencyChangedFormat.format("$currencyName ($newCurrencyCode)"),
+                    style = TopPillStyle.SUCCESS
                 )
 
                 scope.launch {

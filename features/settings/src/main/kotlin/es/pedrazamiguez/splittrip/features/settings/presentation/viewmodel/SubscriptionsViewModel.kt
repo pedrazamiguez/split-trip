@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.core.logging.TelemetryTracker
 import es.pedrazamiguez.splittrip.domain.constant.BillingConstants
@@ -118,18 +119,7 @@ class SubscriptionsViewModel(
                         val interval = resolveBillingInterval(status.productId)
                         handlePurchaseSuccess(isAlreadyOwned = false, billingInterval = interval)
                     }
-                    is PurchaseStatus.Pending -> {
-                        telemetryTracker.trackEvent(
-                            MonetizationTelemetry.Event.PURCHASE_PENDING,
-                            mapOf(
-                                MonetizationTelemetry.Param.TARGET_TIER to SubscriptionTier.PRO.name.lowercase(),
-                                MonetizationTelemetry.Param.BILLING_INTERVAL to
-                                    _uiState.value.selectedInterval.name.lowercase()
-                            )
-                        )
-                        val message = subscriptionsUiMapper.formatPurchasePendingMessage()
-                        _actions.send(SubscriptionsUiAction.ShowTopPill(message))
-                    }
+                    is PurchaseStatus.Pending -> handlePurchasePending()
                     is PurchaseStatus.AlreadyOwned -> {
                         handlePurchaseSuccess(
                             isAlreadyOwned = true,
@@ -146,21 +136,36 @@ class SubscriptionsViewModel(
                             )
                         )
                     }
-                    is PurchaseStatus.Error -> {
-                        val errorException = IllegalStateException(
-                            "Billing purchase update error: ${status.message ?: "Unknown billing error"}"
-                        )
-                        Timber.e(errorException, "Billing purchase update error: %s", status.message)
-                        trackPurchaseFailed(
-                            billingInterval = _uiState.value.selectedInterval,
-                            failureStage = MonetizationTelemetry.FailureStage.PURCHASE_UPDATE
-                        )
-                        val message = subscriptionsUiMapper.formatBillingError()
-                        _actions.send(SubscriptionsUiAction.ShowTopPill(message))
-                    }
+                    is PurchaseStatus.Error -> handlePurchaseError(status)
                 }
             }
         }
+    }
+
+    private suspend fun handlePurchasePending() {
+        telemetryTracker.trackEvent(
+            MonetizationTelemetry.Event.PURCHASE_PENDING,
+            mapOf(
+                MonetizationTelemetry.Param.TARGET_TIER to SubscriptionTier.PRO.name.lowercase(),
+                MonetizationTelemetry.Param.BILLING_INTERVAL to
+                    _uiState.value.selectedInterval.name.lowercase()
+            )
+        )
+        val message = subscriptionsUiMapper.formatPurchasePendingMessage()
+        _actions.send(SubscriptionsUiAction.ShowTopPill(message = message, style = TopPillStyle.INFO))
+    }
+
+    private suspend fun handlePurchaseError(status: PurchaseStatus.Error) {
+        val errorException = IllegalStateException(
+            "Billing purchase update error: ${status.message ?: "Unknown billing error"}"
+        )
+        Timber.e(errorException, "Billing purchase update error: %s", status.message)
+        trackPurchaseFailed(
+            billingInterval = _uiState.value.selectedInterval,
+            failureStage = MonetizationTelemetry.FailureStage.PURCHASE_UPDATE
+        )
+        val message = subscriptionsUiMapper.formatBillingError()
+        _actions.send(SubscriptionsUiAction.ShowTopPill(message = message, style = TopPillStyle.ERROR))
     }
 
     private suspend fun handlePurchaseSuccess(
@@ -186,7 +191,12 @@ class SubscriptionsViewModel(
             } else {
                 subscriptionsUiMapper.formatUpgradeSuccessMessage(SubscriptionTier.PRO)
             }
-            _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+            _actions.send(
+                SubscriptionsUiAction.ShowTopPill(
+                    message = message,
+                    style = TopPillStyle.SUCCESS
+                )
+            )
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -196,7 +206,12 @@ class SubscriptionsViewModel(
                 failureStage = MonetizationTelemetry.FailureStage.TIER_PERSISTENCE
             )
             val message = subscriptionsUiMapper.formatBillingError()
-            _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+            _actions.send(
+                SubscriptionsUiAction.ShowTopPill(
+                    message = message,
+                    style = TopPillStyle.ERROR
+                )
+            )
         }
     }
 
@@ -226,7 +241,12 @@ class SubscriptionsViewModel(
             )
             viewModelScope.launch {
                 val message = subscriptionsUiMapper.formatBillingError()
-                _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+                _actions.send(
+                    SubscriptionsUiAction.ShowTopPill(
+                        message = message,
+                        style = TopPillStyle.ERROR
+                    )
+                )
             }
         }
     }
@@ -240,54 +260,57 @@ class SubscriptionsViewModel(
                 return@launch
             }
             _uiState.update { it.copy(isLoading = true) }
-            try {
-                val queryResult = billingService.querySubscriptionProducts()
-                if (queryResult.isFailure) {
-                    Timber.w(
-                        queryResult.exceptionOrNull(),
-                        "Failed to query subscription products from billing service"
-                    )
-                    val message = subscriptionsUiMapper.formatSubscriptionsUnavailableMessage()
-                    _actions.send(SubscriptionsUiAction.ShowTopPill(message))
-                }
-                subscriptionsUseCases.reconcileSubscriptionEntitlementsUseCase()
-                    .onFailure { error ->
-                        Timber.w(error, "Best-effort entitlement reconciliation failed on subscriptions load")
-                    }
-                val currentUser = subscriptionsUseCases.getCurrentUserProfileUseCase()
-                val isAllowlistedPro = subscriptionsUseCases.observeProAllowlistAccessUseCase().firstOrNull() ?: false
-                val currentTier = if (isAllowlistedPro) {
-                    SubscriptionTier.PRO
-                } else {
-                    currentUser?.tier ?: SubscriptionTier.FREE
-                }
-                val selectedInterval = _uiState.value.selectedInterval
-                val products = billingService.subscriptionProducts.value
-                val plans = mapPlansForDevice(
-                    currentTier = currentTier,
-                    selectedInterval = selectedInterval,
-                    products = products
-                )
+            loadAuthenticatedSubscriptions()
+        }
+    }
 
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        isAnonymous = isAnon,
-                        currentTier = currentTier,
-                        isAllowlistedPro = isAllowlistedPro,
-                        plans = plans
-                    )
-                }
-                trackPaywallViewedIfNeeded(currentTier = currentTier)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to load subscriptions")
-                _uiState.update { it.copy(isLoading = false) }
-                trackPaywallViewedIfNeeded(currentTier = _uiState.value.currentTier)
+    private suspend fun loadAuthenticatedSubscriptions() {
+        try {
+            val queryResult = billingService.querySubscriptionProducts()
+            if (queryResult.isFailure) {
+                Timber.w(
+                    queryResult.exceptionOrNull(),
+                    "Failed to query subscription products from billing service"
+                )
                 val message = subscriptionsUiMapper.formatSubscriptionsUnavailableMessage()
-                _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+                _actions.send(SubscriptionsUiAction.ShowTopPill(message = message, style = TopPillStyle.ERROR))
             }
+            subscriptionsUseCases.reconcileSubscriptionEntitlementsUseCase()
+                .onFailure { error ->
+                    Timber.w(error, "Best-effort entitlement reconciliation failed on subscriptions load")
+                }
+            val currentUser = subscriptionsUseCases.getCurrentUserProfileUseCase()
+            val isAllowlistedPro = subscriptionsUseCases.observeProAllowlistAccessUseCase().firstOrNull() ?: false
+            val currentTier = if (isAllowlistedPro) {
+                SubscriptionTier.PRO
+            } else {
+                currentUser?.tier ?: SubscriptionTier.FREE
+            }
+            val selectedInterval = _uiState.value.selectedInterval
+            val products = billingService.subscriptionProducts.value
+            val plans = mapPlansForDevice(
+                currentTier = currentTier,
+                selectedInterval = selectedInterval,
+                products = products
+            )
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    isAnonymous = false,
+                    currentTier = currentTier,
+                    isAllowlistedPro = isAllowlistedPro,
+                    plans = plans
+                )
+            }
+            trackPaywallViewedIfNeeded(currentTier = currentTier)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to load subscriptions")
+            _uiState.update { it.copy(isLoading = false) }
+            trackPaywallViewedIfNeeded(currentTier = _uiState.value.currentTier)
+            val message = subscriptionsUiMapper.formatSubscriptionsUnavailableMessage()
+            _actions.send(SubscriptionsUiAction.ShowTopPill(message = message, style = TopPillStyle.ERROR))
         }
     }
 
@@ -338,7 +361,12 @@ class SubscriptionsViewModel(
                 _uiState.update { it.copy(showManageSubscriptionDialog = true) }
             } else {
                 val message = subscriptionsUiMapper.formatComplimentaryProMessage()
-                _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+                _actions.send(
+                    SubscriptionsUiAction.ShowTopPill(
+                        message = message,
+                        style = TopPillStyle.INFO
+                    )
+                )
             }
         }
     }
@@ -353,7 +381,12 @@ class SubscriptionsViewModel(
         if (_uiState.value.isAllowlistedPro) {
             viewModelScope.launch {
                 val message = subscriptionsUiMapper.formatComplimentaryProMessage()
-                _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+                _actions.send(
+                    SubscriptionsUiAction.ShowTopPill(
+                        message = message,
+                        style = TopPillStyle.INFO
+                    )
+                )
             }
             return
         }
@@ -366,7 +399,12 @@ class SubscriptionsViewModel(
             )
             viewModelScope.launch {
                 val message = subscriptionsUiMapper.formatSubscriptionsUnavailableMessage()
-                _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+                _actions.send(
+                    SubscriptionsUiAction.ShowTopPill(
+                        message = message,
+                        style = TopPillStyle.ERROR
+                    )
+                )
             }
             return
         }
@@ -419,7 +457,12 @@ class SubscriptionsViewModel(
                     Timber.e(restoreResult.exceptionOrNull(), "Failed to restore purchases")
                     telemetryTracker.trackEvent(MonetizationTelemetry.Event.RESTORE_PURCHASES_FAILED)
                     val message = subscriptionsUiMapper.formatBillingError()
-                    _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+                    _actions.send(
+                        SubscriptionsUiAction.ShowTopPill(
+                            message = message,
+                            style = TopPillStyle.ERROR
+                        )
+                    )
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -427,7 +470,12 @@ class SubscriptionsViewModel(
                 Timber.e(e, "Failed to handle restore purchases")
                 telemetryTracker.trackEvent(MonetizationTelemetry.Event.RESTORE_PURCHASES_FAILED)
                 val message = subscriptionsUiMapper.formatBillingError()
-                _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+                _actions.send(
+                    SubscriptionsUiAction.ShowTopPill(
+                        message = message,
+                        style = TopPillStyle.ERROR
+                    )
+                )
             } finally {
                 _uiState.update { it.copy(isProcessingAction = false) }
             }
@@ -445,7 +493,12 @@ class SubscriptionsViewModel(
                 mapOf(MonetizationTelemetry.Param.TARGET_TIER to SubscriptionTier.PRO.name.lowercase())
             )
             val message = subscriptionsUiMapper.formatRestorePurchasesSuccessMessage()
-            _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+            _actions.send(
+                SubscriptionsUiAction.ShowTopPill(
+                    message = message,
+                    style = TopPillStyle.SUCCESS
+                )
+            )
         } else {
             subscriptionsUseCases.reconcileSubscriptionEntitlementsUseCase()
                 .onFailure { error ->
@@ -453,7 +506,12 @@ class SubscriptionsViewModel(
                 }
             telemetryTracker.trackEvent(MonetizationTelemetry.Event.RESTORE_PURCHASES_EMPTY)
             val message = subscriptionsUiMapper.formatNoPurchasesToRestoreMessage()
-            _actions.send(SubscriptionsUiAction.ShowTopPill(message))
+            _actions.send(
+                SubscriptionsUiAction.ShowTopPill(
+                    message = message,
+                    style = TopPillStyle.INFO
+                )
+            )
         }
     }
 
