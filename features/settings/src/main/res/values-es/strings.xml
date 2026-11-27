@@ -478,5 +478,9 @@
     <string name="local_ai_pack_status_installed_named_desc">Modelo activo: %1$s. Ejecutándose sin conexión mediante LiteRT-LM.</string>
     <string name="local_ai_pack_status_downloading_named_title">Descargando %1$s…</string>
     <string name="local_ai_pack_status_verifying_named_title">Verificando %1$s…</string>
+    <string name="local_ai_pack_badge_installing_runtime">Preparando motor</string>
+    <string name="local_ai_pack_status_installing_runtime_title">Instalando motor de IA…</string>
+    <string name="local_ai_pack_status_installing_runtime_desc">Descargando el módulo LiteRT-LM desde Google Play antes de descargar el paquete del modelo.</string>
+    <string name="local_ai_pack_error_runtime_unavailable">No se pudo instalar el motor LiteRT-LM desde Google Play. Asegúrate de que Google Play esté disponible e inténtalo de nuevo.</string>
 </resources>
 

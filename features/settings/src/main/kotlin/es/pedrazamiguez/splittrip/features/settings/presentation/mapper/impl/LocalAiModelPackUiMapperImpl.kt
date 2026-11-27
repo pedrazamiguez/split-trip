@@ -60,6 +60,7 @@ class LocalAiModelPackUiMapperImpl(
 
         val mapped = when (val status = state.status) {
             is ModelPackStatus.NotInstalled -> mapNotInstalled(baseState, status, state.isEntitled)
+            is ModelPackStatus.InstallingRuntime -> mapInstallingRuntime(baseState, status)
             is ModelPackStatus.Downloading -> mapDownloading(baseState, status, activePackDisplayName)
             is ModelPackStatus.Verifying -> mapVerifying(baseState, status, activePackDisplayName)
             is ModelPackStatus.Installed -> mapInstalled(baseState, status, state.isEntitled, activePackDisplayName)
@@ -76,6 +77,7 @@ class LocalAiModelPackUiMapperImpl(
     }
 
     private fun resolveActiveTargetPackId(state: LocalAiModelPackState): String? = when (val status = state.status) {
+        is ModelPackStatus.InstallingRuntime -> status.packId.takeIf { it.isNotBlank() } ?: state.recommendedPackId
         is ModelPackStatus.Downloading -> status.packId.takeIf { it.isNotBlank() } ?: state.recommendedPackId
         is ModelPackStatus.Verifying -> status.packId.takeIf { it.isNotBlank() } ?: state.recommendedPackId
         is ModelPackStatus.Error -> status.packId.takeIf { it.isNotBlank() } ?: state.recommendedPackId
@@ -97,6 +99,7 @@ class LocalAiModelPackUiMapperImpl(
     private fun mapCatalogTiers(state: LocalAiModelPackState): ImmutableList<LocalAiModelPackTierUiModel> {
         if (state.catalogEntries.isEmpty()) return persistentListOf()
         val hasAnyActiveDownload = state.catalogEntries.any { it.isActiveDownload } ||
+            state.status is ModelPackStatus.InstallingRuntime ||
             state.status is ModelPackStatus.Downloading ||
             state.status is ModelPackStatus.Verifying
         val hasAnyInstalled = state.catalogEntries.any { it.isInstalled } ||
@@ -157,6 +160,7 @@ class LocalAiModelPackUiMapperImpl(
         )
 
         return when (val status = entry.status) {
+            is ModelPackStatus.InstallingRuntime -> mapInstallingRuntimeTier(baseTier, status)
             is ModelPackStatus.Downloading -> mapDownloadingTier(baseTier, status)
             is ModelPackStatus.Verifying -> baseTier.copy(
                 statusBadge = UiText.StringResource(R.string.local_ai_pack_badge_verifying),
@@ -174,6 +178,23 @@ class LocalAiModelPackUiMapperImpl(
                 hasAnyInstalled = hasAnyInstalled
             )
         }
+    }
+
+    private fun mapInstallingRuntimeTier(
+        baseTier: LocalAiModelPackTierUiModel,
+        status: ModelPackStatus.InstallingRuntime
+    ): LocalAiModelPackTierUiModel {
+        val progress = status.progressPercent
+        return baseTier.copy(
+            statusBadge = UiText.StringResource(R.string.local_ai_pack_badge_installing_runtime),
+            statusTagStyle = PassportTagStyle.INFO,
+            isDownloading = progress != null,
+            isVerifying = progress == null,
+            progressFraction = progress?.let(::computeProgressFraction) ?: 0f,
+            action = LocalAiModelPackTierAction.CANCEL,
+            actionLabel = UiText.StringResource(R.string.local_ai_pack_action_cancel),
+            isActionEnabled = true
+        )
     }
 
     private fun mapDownloadingTier(
@@ -304,6 +325,23 @@ class LocalAiModelPackUiMapperImpl(
                 showDownloadButton = true
             )
         }
+    }
+
+    private fun mapInstallingRuntime(
+        baseState: LocalAiModelPackUiState,
+        status: ModelPackStatus.InstallingRuntime
+    ): LocalAiModelPackUiState {
+        val progress = status.progressPercent
+        return baseState.copy(
+            statusBadge = UiText.StringResource(R.string.local_ai_pack_badge_installing_runtime),
+            statusTagStyle = PassportTagStyle.INFO,
+            statusTitle = UiText.StringResource(R.string.local_ai_pack_status_installing_runtime_title),
+            statusDescription = UiText.StringResource(R.string.local_ai_pack_status_installing_runtime_desc),
+            isDownloading = progress != null,
+            isVerifying = progress == null,
+            progressFraction = progress?.let(::computeProgressFraction) ?: 0f,
+            showCancelButton = true
+        )
     }
 
     private fun mapDownloading(
@@ -472,6 +510,8 @@ class LocalAiModelPackUiMapperImpl(
             UiText.StringResource(R.string.local_ai_pack_error_io)
         ModelPackErrorReason.CANCELLED ->
             UiText.StringResource(R.string.local_ai_pack_error_cancelled)
+        ModelPackErrorReason.RUNTIME_UNAVAILABLE ->
+            UiText.StringResource(R.string.local_ai_pack_error_runtime_unavailable)
         ModelPackErrorReason.UNKNOWN ->
             UiText.StringResource(R.string.local_ai_pack_error_unknown)
     }

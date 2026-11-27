@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.data.repository.impl
+package es.pedrazamiguez.splittrip.dynamic.litertlm
 
 import android.content.Context
 import com.google.ai.edge.litertlm.Backend
@@ -13,6 +13,9 @@ import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.MessageCallback
 import com.google.ai.edge.litertlm.SamplerConfig
 import com.google.ai.edge.litertlm.ThinkingConfig
+import com.google.android.play.core.splitinstall.SplitInstallHelper
+import es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClient
+import es.pedrazamiguez.splittrip.data.litert.LiteRtRuntimeConfig
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -29,6 +32,9 @@ internal class LiteRtLmEngineClientImpl(
     private val engineStateLock = Any()
     private var cachedEngine: Engine? = null
     private var cachedModelPath: String? = null
+
+    @Volatile
+    private var nativeLibrariesPreloaded = false
 
     override suspend fun generate(
         modelPath: String,
@@ -122,6 +128,7 @@ internal class LiteRtLmEngineClientImpl(
             cachedEngine = null
             cachedModelPath = null
 
+            ensureNativeLibrariesLoaded()
             Engine.setNativeMinLogSeverity(LogSeverity.WARNING)
             val engineSpec = LiteRtRuntimeConfig.buildEngineSpec(
                 modelPath = modelPath,
@@ -138,6 +145,16 @@ internal class LiteRtLmEngineClientImpl(
             )
             engine
         }
+    }
+
+    // Load split native .so libraries immediately after on-demand install so JNI succeeds without process restart.
+    private fun ensureNativeLibrariesLoaded() {
+        if (nativeLibrariesPreloaded) return
+        runCatching { SplitInstallHelper.loadLibrary(context, NATIVE_LIB_LITERT) }
+            .onFailure { Timber.d(it, "SplitInstallHelper preload skipped for %s", NATIVE_LIB_LITERT) }
+        runCatching { SplitInstallHelper.loadLibrary(context, NATIVE_LIB_LITERT_LM_JNI) }
+            .onFailure { Timber.w(it, "SplitInstallHelper preload failed for %s", NATIVE_LIB_LITERT_LM_JNI) }
+        nativeLibrariesPreloaded = true
     }
 
     private fun LiteRtRuntimeConfig.EngineSpec.toEngineConfig(): EngineConfig = EngineConfig(
@@ -165,4 +182,9 @@ internal class LiteRtLmEngineClientImpl(
         maxOutputToken = maxOutputTokens,
         thinkingConfig = thinkingSpec.toThinkingConfig()
     )
+
+    private companion object {
+        private const val NATIVE_LIB_LITERT = "LiteRt"
+        private const val NATIVE_LIB_LITERT_LM_JNI = "litertlm_jni"
+    }
 }

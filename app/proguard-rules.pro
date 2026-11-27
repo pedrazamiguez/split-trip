@@ -65,3 +65,11 @@
 -keep class com.google.ai.edge.litertlm.** { *; }
 -keep class * implements com.google.ai.edge.litertlm.LiteRtLmJni$JniMessageCallback { *; }
 -keep class * implements com.google.ai.edge.litertlm.LiteRtLmJni$JniInferenceCallback { *; }
+
+# Dynamic feature SPI boundary (:data -> :dynamic_litertlm via ServiceLoader)
+-keep interface es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClient { *; }
+-keep interface es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClientFactory { *; }
+-keep class * implements es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClientFactory {
+    public <init>();
+    *;
+}

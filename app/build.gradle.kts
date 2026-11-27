@@ -37,6 +37,7 @@ val appVersionCode = vMajor * 1000000 + vMinor * 1000 + vPatch
 
 android {
     namespace = "es.pedrazamiguez.splittrip"
+    dynamicFeatures += setOf(":dynamic_litertlm")
 
     defaultConfig {
         applicationId = "es.pedrazamiguez.splittrip"
@@ -159,6 +160,7 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.play.app.update.ktx)
     implementation(libs.play.billing.ktx)
+    implementation(libs.play.feature.delivery.ktx)
     testImplementation(libs.junit4)
     testImplementation(libs.mockk)
     testImplementation(platform(libs.junit.bom))
