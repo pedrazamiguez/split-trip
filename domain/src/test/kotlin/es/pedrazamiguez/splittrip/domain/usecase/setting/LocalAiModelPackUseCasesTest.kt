@@ -13,6 +13,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -34,7 +35,10 @@ class LocalAiModelPackUseCasesTest {
 
     @Test
     fun `DownloadLocalAiModelPackUseCase forwards optional packId to requestDownload`() = runTest {
-        coEvery { service.requestDownload("qwen3-0.6b-litert-v1") } returns Result.success(Unit)
+        coEvery { service.requestDownload("qwen3-0.6b-litert-v1") } coAnswers {
+            yield()
+            Result.success(Unit)
+        }
         val useCase = DownloadLocalAiModelPackUseCaseImpl(service)
 
         val result = useCase("qwen3-0.6b-litert-v1")
@@ -56,7 +60,10 @@ class LocalAiModelPackUseCasesTest {
 
     @Test
     fun `CancelLocalAiModelPackDownloadUseCase forwards optional packId to cancelDownload`() = runTest {
-        coEvery { service.cancelDownload("gemma4-e2b-litert-v1") } returns Result.success(Unit)
+        coEvery { service.cancelDownload("gemma4-e2b-litert-v1") } coAnswers {
+            yield()
+            Result.success(Unit)
+        }
         val useCase = CancelLocalAiModelPackDownloadUseCaseImpl(service)
 
         val result = useCase("gemma4-e2b-litert-v1")
