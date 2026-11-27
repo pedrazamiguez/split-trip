@@ -139,6 +139,8 @@
     <string name="developer_services_category_no_match_title">Çin categoría coinçidente</string>
     <string name="developer_services_category_no_match_description">Ni lâ reglâ localê ni la IA en er dîppoçitibo encontraron una categoría pa êtte título.</string>
     <string name="developer_services_category_error_fallback">Errôh en la predîççión de categoría</string>
+    <string name="developer_services_category_ai_unavailable">Lâ reglâ localê no coinçidieron y la IA en er dîppoçitibo no êttá dîpponible.</string>
+    <string name="developer_services_category_ai_timeout">La inferençia de IA en er dîppoçitibo çuperó er límite de %1$d s.</string>
     <string name="settings_preferences_language_dialog_title">Çelêççionâh idioma</string>
     <string name="settings_preferences_language_en">Inglêh</string>
     <string name="settings_preferences_language_es">Êppañôh</string>

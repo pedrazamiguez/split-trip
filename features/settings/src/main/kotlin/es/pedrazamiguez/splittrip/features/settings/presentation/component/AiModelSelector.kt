@@ -3,7 +3,6 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -18,7 +17,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.filled.CaretDownFilled
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input.StyledOutlinedTextField
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.FlatCard
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.extensions.formatLiteRtDisplayLabel
@@ -48,31 +46,29 @@ internal fun AiModelSelector(
         )
     }
 
-    FlatCard(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(MaterialTheme.spacing.Medium),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
-        ) {
-            StyledOutlinedTextField(
-                value = selectedLabel,
-                onValueChange = {},
-                readOnly = true,
-                focusable = false,
-                singleLine = true,
-                label = stringResource(R.string.developer_services_ai_model_selection),
-                trailingIcon = { Icon(TablerIcons.Filled.CaretDownFilled, contentDescription = null) },
-                onClick = {
-                    focusManager.clearFocus()
-                    isSheetOpen = true
-                },
-                modifier = Modifier.fillMaxWidth()
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Small)
+    ) {
+        StyledOutlinedTextField(
+            value = selectedLabel,
+            onValueChange = {},
+            readOnly = true,
+            focusable = false,
+            singleLine = true,
+            label = stringResource(R.string.developer_services_ai_model_selection),
+            trailingIcon = { Icon(TablerIcons.Filled.CaretDownFilled, contentDescription = null) },
+            onClick = {
+                focusManager.clearFocus()
+                isSheetOpen = true
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+        resolvedModel?.let { resolved ->
+            AiResolvedEngineRow(
+                resolvedModel = resolved,
+                installedLocalAiPack = installedLocalAiPack
             )
-            resolvedModel?.let { resolved ->
-                AiResolvedEngineRow(
-                    resolvedModel = resolved,
-                    installedLocalAiPack = installedLocalAiPack
-                )
-            }
         }
     }
 

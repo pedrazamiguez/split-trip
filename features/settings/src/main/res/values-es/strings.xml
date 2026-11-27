@@ -161,6 +161,8 @@
     <string name="developer_services_category_no_match_title">Sin categoría coincidente</string>
     <string name="developer_services_category_no_match_description">Ni las reglas locales ni la IA en el dispositivo encontraron una categoría para este título.</string>
     <string name="developer_services_category_error_fallback">Error en la predicción de categoría</string>
+    <string name="developer_services_category_ai_unavailable">Las reglas locales no coincidieron y la IA en el dispositivo no está disponible.</string>
+    <string name="developer_services_category_ai_timeout">La inferencia de IA en el dispositivo superó el límite de %1$d s.</string>
 
     <!-- Language Selection -->
     <string name="settings_preferences_language_dialog_title">Seleccionar idioma</string>

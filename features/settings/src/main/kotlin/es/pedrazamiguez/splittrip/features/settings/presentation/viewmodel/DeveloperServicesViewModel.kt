@@ -7,6 +7,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.GroupContext
+import es.pedrazamiguez.splittrip.domain.model.CategoryPredictionOutcome
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestionSource
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
@@ -236,8 +237,8 @@ class DeveloperServicesViewModel(
     }
 
     private suspend fun executeCategorySuggestion(trimmed: String, context: GroupContext) {
-        val suggestion = try {
-            suggestExpenseCategoryUseCase(title = trimmed, groupContext = context)
+        val outcome = try {
+            suggestExpenseCategoryUseCase.diagnose(title = trimmed, groupContext = context)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -253,25 +254,56 @@ class DeveloperServicesViewModel(
 
         if (!isCurrentSuggestionRequest(trimmed, context)) return
 
-        _uiState.update {
-            if (suggestion != null) {
-                it.copy(
-                    categorySuggestionStatus = CategorySuggestionStatus.Matched,
-                    suggestedCategory = suggestion.category,
-                    suggestedSubcategory = suggestion.subcategory,
-                    suggestedCategorySource = suggestion.source,
-                    categorySuggestionErrorMessage = null
-                )
-            } else {
-                it.copy(
-                    categorySuggestionStatus = CategorySuggestionStatus.NoMatch,
-                    suggestedCategory = null,
-                    suggestedSubcategory = null,
-                    suggestedCategorySource = null,
-                    categorySuggestionErrorMessage = null
-                )
-            }
-        }
+        _uiState.update { state -> applyPredictionOutcome(state, outcome) }
+    }
+
+    private fun applyPredictionOutcome(
+        state: DeveloperServicesUiState,
+        outcome: CategoryPredictionOutcome
+    ): DeveloperServicesUiState = when (outcome) {
+        is CategoryPredictionOutcome.Matched -> state.copy(
+            categorySuggestionStatus = CategorySuggestionStatus.Matched,
+            suggestedCategory = outcome.suggestion.category,
+            suggestedSubcategory = outcome.suggestion.subcategory,
+            suggestedCategorySource = outcome.suggestion.source,
+            categorySuggestionErrorMessage = null
+        )
+        is CategoryPredictionOutcome.NoMatch -> state.copy(
+            categorySuggestionStatus = CategorySuggestionStatus.NoMatch,
+            suggestedCategory = null,
+            suggestedSubcategory = null,
+            suggestedCategorySource = null,
+            categorySuggestionErrorMessage = null
+        )
+        is CategoryPredictionOutcome.AiUnavailable -> state.copy(
+            categorySuggestionStatus = CategorySuggestionStatus.Error,
+            suggestedCategory = null,
+            suggestedSubcategory = null,
+            suggestedCategorySource = null,
+            categorySuggestionErrorMessage = UiText.StringResource(
+                R.string.developer_services_category_ai_unavailable
+            )
+        )
+        is CategoryPredictionOutcome.AiTimeout -> state.copy(
+            categorySuggestionStatus = CategorySuggestionStatus.Error,
+            suggestedCategory = null,
+            suggestedSubcategory = null,
+            suggestedCategorySource = null,
+            categorySuggestionErrorMessage = UiText.StringResource(
+                R.string.developer_services_category_ai_timeout,
+                (outcome.timeoutMs / MILLIS_PER_SECOND).coerceAtLeast(1L)
+            )
+        )
+        is CategoryPredictionOutcome.AiFailure -> state.copy(
+            categorySuggestionStatus = CategorySuggestionStatus.Error,
+            suggestedCategory = null,
+            suggestedSubcategory = null,
+            suggestedCategorySource = null,
+            categorySuggestionErrorMessage = outcome.message
+                ?.takeIf { it.isNotBlank() }
+                ?.let(UiText::DynamicString)
+                ?: UiText.StringResource(R.string.developer_services_category_error_fallback)
+        )
     }
 
     private fun isCurrentSuggestionRequest(trimmed: String, context: GroupContext): Boolean {
@@ -455,5 +487,6 @@ class DeveloperServicesViewModel(
     companion object {
         const val CATEGORY_SUGGESTION_DEBOUNCE_MS = 250L
         private const val MIN_CATEGORY_TITLE_LENGTH = 2
+        private const val MILLIS_PER_SECOND = 1_000L
     }
 }

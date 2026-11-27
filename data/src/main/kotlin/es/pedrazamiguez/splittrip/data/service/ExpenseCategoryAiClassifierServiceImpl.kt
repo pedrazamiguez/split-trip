@@ -4,6 +4,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.GroupContext
+import es.pedrazamiguez.splittrip.domain.model.CategoryPredictionOutcome
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestionSource
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
@@ -31,16 +32,23 @@ internal class ExpenseCategoryAiClassifierServiceImpl(
     private val inferenceTimeoutMs: Long = DEFAULT_INFERENCE_TIMEOUT_MS
 ) : ExpenseCategoryAiClassifierService {
 
-    @Suppress("ReturnCount")
     override suspend fun classify(
         title: String,
         groupContext: GroupContext
-    ): CategorySuggestion? {
+    ): CategorySuggestion? =
+        (classifyDetailed(title, groupContext) as? CategoryPredictionOutcome.Matched)?.suggestion
+
+    @Suppress("ReturnCount")
+    override suspend fun classifyDetailed(
+        title: String,
+        groupContext: GroupContext
+    ): CategoryPredictionOutcome {
         val sanitizedTitle = sanitizeTitleForPrompt(title)
-        if (sanitizedTitle.isBlank()) return null
+        if (sanitizedTitle.isBlank()) return CategoryPredictionOutcome.NoMatch
 
         val resolvedEngine = aiModelResolver.getActiveModel().first()
-        val executionEngine = resolveExecutionEngine(resolvedEngine) ?: return null
+        val executionEngine = resolveExecutionEngine(resolvedEngine)
+            ?: return CategoryPredictionOutcome.AiUnavailable
 
         return withContext(defaultDispatcher) {
             val prompt = buildPrompt(sanitizedTitle, groupContext)
@@ -48,11 +56,13 @@ internal class ExpenseCategoryAiClassifierServiceImpl(
         }
     }
 
+    @Suppress("ReturnCount")
     private suspend fun executeWithFallback(
         executionEngine: AiEngineType,
         prompt: String
-    ): CategorySuggestion? {
-        var inferenceResult = runTimedInference(executionEngine, prompt) ?: return null
+    ): CategoryPredictionOutcome {
+        var inferenceResult = runTimedInference(executionEngine, prompt)
+            ?: return CategoryPredictionOutcome.AiTimeout(inferenceTimeoutMs)
 
         if (inferenceResult.isFailure) {
             val error = inferenceResult.exceptionOrNull()
@@ -62,16 +72,17 @@ internal class ExpenseCategoryAiClassifierServiceImpl(
                     error,
                     "ExpenseCategoryAiClassifier: LITE_RT_LM failed — falling back to AI_CORE_GEMMA_4"
                 )
-                inferenceResult = runTimedInference(AiEngineType.AI_CORE_GEMMA_4, prompt) ?: return null
+                inferenceResult = runTimedInference(AiEngineType.AI_CORE_GEMMA_4, prompt)
+                    ?: return CategoryPredictionOutcome.AiTimeout(inferenceTimeoutMs)
             }
         }
 
         return inferenceResult.fold(
-            onSuccess = { rawOutput -> parseSuggestion(rawOutput) },
+            onSuccess = { rawOutput -> parseOutcome(rawOutput) },
             onFailure = { error ->
                 if (error is CancellationException) throw error
                 Timber.w(error, "ExpenseCategoryAiClassifier: inference failed")
-                null
+                CategoryPredictionOutcome.AiFailure(error.localizedMessage ?: error::class.simpleName)
             }
         )
     }
@@ -132,28 +143,63 @@ internal class ExpenseCategoryAiClassifierServiceImpl(
             "${category.name}: $subcategories"
         }
 
-        return """
-            Classify the expense title into one category and optional subcategory.
-            Return ONLY JSON: {"category":"...","subcategory":"..." or null}
-            If uncertain, return {"category":"OTHER","subcategory":null}.
-            Allowed taxonomy:
-            $taxonomyLines
-            Title: $sanitizedTitle
-        """.trimIndent()
+        return when (groupContext) {
+            GroupContext.EVERYDAY -> buildEverydayPrompt(taxonomyLines, sanitizedTitle)
+            GroupContext.TRAVEL -> buildTravelPrompt(taxonomyLines, sanitizedTitle)
+        }
     }
 
-    private fun parseSuggestion(rawOutput: String): CategorySuggestion? {
+    private fun buildEverydayPrompt(taxonomyLines: String, sanitizedTitle: String): String = """
+        Classify the everyday expense title into the closest category and subcategory from the taxonomy below.
+        Return ONLY raw JSON: {"category":"...","subcategory":"..." or null}
+        Guidance:
+        - HOME:HOME_SUPPLIES covers household goods, bath/bed linens, cleaning products, and home consumables.
+        - HEALTH_PERSONAL_CARE:PERSONAL_CARE covers toiletries, cosmetics, skincare, and personal hygiene.
+        - Pick the best fitting category and subcategory; only use OTHER if no category fits.
+        Allowed taxonomy:
+        $taxonomyLines
+        Examples:
+        Title: Endesa monthly bill
+        Output: {"category":"HOME","subcategory":"UTILITIES"}
+        Title: Bed sheets and dish soap
+        Output: {"category":"HOME","subcategory":"HOME_SUPPLIES"}
+        Title: Dentist checkup
+        Output: {"category":"HEALTH_PERSONAL_CARE","subcategory":"DOCTOR_DENTIST"}
+        Title: $sanitizedTitle
+        Output:
+    """.trimIndent()
+
+    private fun buildTravelPrompt(taxonomyLines: String, sanitizedTitle: String): String = """
+        Classify the travel expense title into the closest category and subcategory from the taxonomy below.
+        Return ONLY raw JSON: {"category":"...","subcategory":"..." or null}
+        Guidance:
+        - Pick the best fitting category and subcategory; only use OTHER if no category fits.
+        Allowed taxonomy:
+        $taxonomyLines
+        Examples:
+        Title: Louvre museum entry
+        Output: {"category":"ACTIVITIES","subcategory":"MUSEUM_CULTURE"}
+        Title: Night at Marriott
+        Output: {"category":"LODGING","subcategory":"HOTEL"}
+        Title: Shinkansen Tokyo-Kyoto
+        Output: {"category":"TRANSPORT","subcategory":"TRAIN"}
+        Title: $sanitizedTitle
+        Output:
+    """.trimIndent()
+
+    @Suppress("ReturnCount")
+    private fun parseOutcome(rawOutput: String): CategoryPredictionOutcome {
         val cleanJson = JsonSanitizer.sanitize(rawOutput)
-        if (!cleanJson.startsWith("{")) return null
+        if (!cleanJson.startsWith("{")) return CategoryPredictionOutcome.NoMatch
 
         val jsonObject = try {
             JSONObject(cleanJson)
         } catch (e: JSONException) {
             Timber.d(e, "ExpenseCategoryAiClassifier: malformed JSON output")
-            return null
+            return CategoryPredictionOutcome.NoMatch
         }
 
-        val category = parseCategory(jsonObject) ?: return null
+        val category = parseCategory(jsonObject) ?: return CategoryPredictionOutcome.NoMatch
         val subcategory = parseSubcategory(jsonObject)
         val suggestion = CategorySuggestion.sanitized(
             category = category,
@@ -162,9 +208,9 @@ internal class ExpenseCategoryAiClassifierServiceImpl(
         )
 
         return if (suggestion.category == ExpenseCategory.OTHER && suggestion.subcategory == null) {
-            null
+            CategoryPredictionOutcome.NoMatch
         } else {
-            suggestion
+            CategoryPredictionOutcome.Matched(suggestion)
         }
     }
 
@@ -187,7 +233,7 @@ internal class ExpenseCategoryAiClassifierServiceImpl(
     }
 
     companion object {
-        const val DEFAULT_INFERENCE_TIMEOUT_MS = 5_000L
+        const val DEFAULT_INFERENCE_TIMEOUT_MS = 15_000L
         private const val MAX_PROMPT_TITLE_CHARS = 120
         private const val KEY_CATEGORY = "category"
         private const val KEY_SUBCATEGORY = "subcategory"

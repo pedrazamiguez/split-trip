@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesUiEvent
@@ -31,11 +33,16 @@ internal fun OcrTabContent(
     onEvent: (DeveloperServicesUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val spacing = MaterialTheme.spacing
     LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(MaterialTheme.spacing.ExtraLarge),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraLarge)
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = spacing.ExtraLarge,
+            top = spacing.ExtraLarge,
+            end = spacing.ExtraLarge,
+            bottom = spacing.ExtraLarge + LocalBottomPadding.current
+        ),
+        verticalArrangement = Arrangement.spacedBy(spacing.ExtraLarge)
     ) {
         item {
             SelectedAttachmentCard(

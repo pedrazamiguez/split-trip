@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
@@ -37,11 +38,17 @@ internal fun AiExtractionTabContent(
     onEvent: (DeveloperServicesUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val spacing = MaterialTheme.spacing
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(MaterialTheme.spacing.ExtraLarge),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraLarge)
+            .padding(
+                start = spacing.ExtraLarge,
+                top = spacing.ExtraLarge,
+                end = spacing.ExtraLarge,
+                bottom = spacing.ExtraLarge + LocalBottomPadding.current
+            ),
+        verticalArrangement = Arrangement.spacedBy(spacing.ExtraLarge)
     ) {
         AiModelSelector(
             availableModels = uiState.availableModels,

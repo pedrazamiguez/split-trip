@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.GroupContext
+import es.pedrazamiguez.splittrip.domain.model.CategoryPredictionOutcome
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestionSource
 import es.pedrazamiguez.splittrip.domain.model.DeviceCompatibilityResult
@@ -24,6 +25,7 @@ import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
 import es.pedrazamiguez.splittrip.domain.usecase.expense.SuggestExpenseCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveLocalAiModelPackStateUseCase
+import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.InstalledLocalAiPackInfo
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.action.DeveloperServicesUiAction
 import io.mockk.clearAllMocks
@@ -91,6 +93,7 @@ class DeveloperServicesViewModelTest {
         every { observeLocalAiModelPackStateUseCase() } returns localAiModelPackStateFlow
         every { observeDeveloperAccessUseCase() } returns developerAccessFlow
         coEvery { suggestExpenseCategoryUseCase(any(), any()) } returns null
+        coEvery { suggestExpenseCategoryUseCase.diagnose(any(), any()) } returns CategoryPredictionOutcome.NoMatch
         coEvery { aiModelResolver.setDeveloperOverrideModel(any()) } coAnswers {
             overrideEngineFlow.value = firstArg()
         }
@@ -390,10 +393,14 @@ class DeveloperServicesViewModelTest {
                     catalogEntries = listOf(entry),
                     installedPackId = entry.config.packId
                 )
-                coEvery { suggestExpenseCategoryUseCase("Dinner", GroupContext.TRAVEL) } returns CategorySuggestion(
-                    category = ExpenseCategory.FOOD,
-                    subcategory = ExpenseSubcategory.RESTAURANT,
-                    source = CategorySuggestionSource.LOCAL_RULES
+                coEvery {
+                    suggestExpenseCategoryUseCase.diagnose("Dinner", GroupContext.TRAVEL)
+                } returns CategoryPredictionOutcome.Matched(
+                    CategorySuggestion(
+                        category = ExpenseCategory.FOOD,
+                        subcategory = ExpenseSubcategory.RESTAURANT,
+                        source = CategorySuggestionSource.LOCAL_RULES
+                    )
                 )
 
                 val viewModel = createViewModel()
@@ -745,13 +752,13 @@ class DeveloperServicesViewModelTest {
                 runCurrent()
 
                 assertEquals(CategorySuggestionStatus.Loading, viewModel.uiState.value.categorySuggestionStatus)
-                coVerify(exactly = 0) { suggestExpenseCategoryUseCase(any(), any()) }
+                coVerify(exactly = 0) { suggestExpenseCategoryUseCase.diagnose(any(), any()) }
 
                 advanceTimeBy(DeveloperServicesViewModel.CATEGORY_SUGGESTION_DEBOUNCE_MS)
                 runCurrent()
 
                 coVerify(exactly = 1) {
-                    suggestExpenseCategoryUseCase("Uber airport", GroupContext.TRAVEL)
+                    suggestExpenseCategoryUseCase.diagnose("Uber airport", GroupContext.TRAVEL)
                 }
             }
 
@@ -759,11 +766,13 @@ class DeveloperServicesViewModelTest {
         fun `LOCAL_RULES match updates state to Matched with category, subcategory, and LOCAL_RULES source`() =
             runTest(testDispatcher) {
                 coEvery {
-                    suggestExpenseCategoryUseCase("Uber", GroupContext.TRAVEL)
-                } returns CategorySuggestion(
-                    category = ExpenseCategory.TRANSPORT,
-                    subcategory = ExpenseSubcategory.TAXI_RIDESHARE,
-                    source = CategorySuggestionSource.LOCAL_RULES
+                    suggestExpenseCategoryUseCase.diagnose("Uber", GroupContext.TRAVEL)
+                } returns CategoryPredictionOutcome.Matched(
+                    CategorySuggestion(
+                        category = ExpenseCategory.TRANSPORT,
+                        subcategory = ExpenseSubcategory.TAXI_RIDESHARE,
+                        source = CategorySuggestionSource.LOCAL_RULES
+                    )
                 )
 
                 val viewModel = createViewModel()
@@ -783,11 +792,13 @@ class DeveloperServicesViewModelTest {
         fun `ON_DEVICE_AI match updates state to Matched with nullable subcategory and ON_DEVICE_AI source`() =
             runTest(testDispatcher) {
                 coEvery {
-                    suggestExpenseCategoryUseCase("Museum visit", GroupContext.TRAVEL)
-                } returns CategorySuggestion(
-                    category = ExpenseCategory.ACTIVITIES,
-                    subcategory = null,
-                    source = CategorySuggestionSource.ON_DEVICE_AI
+                    suggestExpenseCategoryUseCase.diagnose("Museum visit", GroupContext.TRAVEL)
+                } returns CategoryPredictionOutcome.Matched(
+                    CategorySuggestion(
+                        category = ExpenseCategory.ACTIVITIES,
+                        subcategory = null,
+                        source = CategorySuggestionSource.ON_DEVICE_AI
+                    )
                 )
 
                 val viewModel = createViewModel()
@@ -804,17 +815,19 @@ class DeveloperServicesViewModelTest {
             }
 
         @Test
-        fun `null suggestion updates state to NoMatch and clears prior matched result`() = runTest(testDispatcher) {
+        fun `NoMatch outcome updates state to NoMatch and clears prior matched result`() = runTest(testDispatcher) {
             coEvery {
-                suggestExpenseCategoryUseCase("Dinner", GroupContext.TRAVEL)
-            } returns CategorySuggestion(
-                category = ExpenseCategory.FOOD,
-                subcategory = ExpenseSubcategory.RESTAURANT,
-                source = CategorySuggestionSource.LOCAL_RULES
+                suggestExpenseCategoryUseCase.diagnose("Dinner", GroupContext.TRAVEL)
+            } returns CategoryPredictionOutcome.Matched(
+                CategorySuggestion(
+                    category = ExpenseCategory.FOOD,
+                    subcategory = ExpenseSubcategory.RESTAURANT,
+                    source = CategorySuggestionSource.LOCAL_RULES
+                )
             )
             coEvery {
-                suggestExpenseCategoryUseCase("Unknown xyz", GroupContext.TRAVEL)
-            } returns null
+                suggestExpenseCategoryUseCase.diagnose("Unknown xyz", GroupContext.TRAVEL)
+            } returns CategoryPredictionOutcome.NoMatch
 
             val viewModel = createViewModel()
             advanceUntilIdle()
@@ -834,9 +847,70 @@ class DeveloperServicesViewModelTest {
         }
 
         @Test
+        fun `AiUnavailable outcome updates state to Error with unavailable string resource`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    suggestExpenseCategoryUseCase.diagnose("Towels", GroupContext.EVERYDAY)
+                } returns CategoryPredictionOutcome.AiUnavailable
+
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryContextChanged(GroupContext.EVERYDAY))
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Towels"))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(CategorySuggestionStatus.Error, state.categorySuggestionStatus)
+                assertEquals(
+                    UiText.StringResource(R.string.developer_services_category_ai_unavailable),
+                    state.categorySuggestionErrorMessage
+                )
+            }
+
+        @Test
+        fun `AiTimeout outcome updates state to Error with timeout seconds`() = runTest(testDispatcher) {
+            coEvery {
+                suggestExpenseCategoryUseCase.diagnose("Towels", GroupContext.EVERYDAY)
+            } returns CategoryPredictionOutcome.AiTimeout(15_000L)
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(DeveloperServicesUiEvent.CategoryContextChanged(GroupContext.EVERYDAY))
+            viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Towels"))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(CategorySuggestionStatus.Error, state.categorySuggestionStatus)
+            assertEquals(
+                UiText.StringResource(R.string.developer_services_category_ai_timeout, 15L),
+                state.categorySuggestionErrorMessage
+            )
+        }
+
+        @Test
+        fun `AiFailure outcome updates state to Error with failure message`() = runTest(testDispatcher) {
+            coEvery {
+                suggestExpenseCategoryUseCase.diagnose("Towels", GroupContext.EVERYDAY)
+            } returns CategoryPredictionOutcome.AiFailure("AICore busy")
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(DeveloperServicesUiEvent.CategoryContextChanged(GroupContext.EVERYDAY))
+            viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Towels"))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(CategorySuggestionStatus.Error, state.categorySuggestionStatus)
+            assertEquals(UiText.DynamicString("AICore busy"), state.categorySuggestionErrorMessage)
+        }
+
+        @Test
         fun `exception from use case updates state to Error with error message`() = runTest(testDispatcher) {
             coEvery {
-                suggestExpenseCategoryUseCase("Coffee", GroupContext.TRAVEL)
+                suggestExpenseCategoryUseCase.diagnose("Coffee", GroupContext.TRAVEL)
             } throws IllegalStateException("Inference error")
 
             val viewModel = createViewModel()
@@ -863,7 +937,7 @@ class DeveloperServicesViewModelTest {
                 advanceUntilIdle()
 
                 coVerify(exactly = 1) {
-                    suggestExpenseCategoryUseCase("Coffee", GroupContext.EVERYDAY)
+                    suggestExpenseCategoryUseCase.diagnose("Coffee", GroupContext.EVERYDAY)
                 }
             }
 

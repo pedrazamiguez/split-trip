@@ -4,10 +4,20 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import es.pedrazamiguez.splittrip.core.designsystem.foundation.LocalHazeState
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation.FloatingNavigationBar
 import es.pedrazamiguez.splittrip.features.settings.navigation.SERVICE_TABS
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.AiExtractionTabContent
@@ -36,29 +46,34 @@ fun DeveloperServicesScreen(
     onSelectReceiptForAiClick: () -> Unit,
     onEvent: (DeveloperServicesUiEvent) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        AnimatedContent(
-            targetState = uiState.selectedTab,
-            modifier = Modifier.weight(1f),
-            transitionSpec = { fadeIn() togetherWith fadeOut() },
-            label = "tab_content"
-        ) { tab ->
-            when (tab) {
-                DeveloperServicesTab.Ocr -> OcrTabContent(
-                    uiState = uiState,
-                    onSelectOcrFileClick = onSelectOcrFileClick,
-                    onEvent = onEvent
-                )
-                DeveloperServicesTab.AiExtraction -> AiExtractionTabContent(
-                    uiState = uiState,
-                    onSelectReceiptForAiClick = onSelectReceiptForAiClick,
-                    onEvent = onEvent
-                )
-                DeveloperServicesTab.CategorySuggestion -> CategorySuggestionTabContent(
-                    uiState = uiState,
-                    onEvent = onEvent,
-                    modifier = Modifier.fillMaxSize()
-                )
+    var navBarHeightPx by remember { mutableIntStateOf(0) }
+    val bottomBarPadding = with(LocalDensity.current) { navBarHeightPx.toDp() }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        CompositionLocalProvider(LocalBottomPadding provides bottomBarPadding) {
+            AnimatedContent(
+                targetState = uiState.selectedTab,
+                modifier = Modifier.fillMaxSize(),
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                label = "tab_content"
+            ) { tab ->
+                when (tab) {
+                    DeveloperServicesTab.Ocr -> OcrTabContent(
+                        uiState = uiState,
+                        onSelectOcrFileClick = onSelectOcrFileClick,
+                        onEvent = onEvent
+                    )
+                    DeveloperServicesTab.AiExtraction -> AiExtractionTabContent(
+                        uiState = uiState,
+                        onSelectReceiptForAiClick = onSelectReceiptForAiClick,
+                        onEvent = onEvent
+                    )
+                    DeveloperServicesTab.CategorySuggestion -> CategorySuggestionTabContent(
+                        uiState = uiState,
+                        onEvent = onEvent,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
 
@@ -68,7 +83,11 @@ fun DeveloperServicesScreen(
                 onEvent(DeveloperServicesUiEvent.SwitchTab(id.toDeveloperServicesTab()))
             },
             items = SERVICE_TABS,
-            applyWindowInsets = false
+            hazeState = LocalHazeState.current,
+            applyWindowInsets = false,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .onSizeChanged { size -> navBarHeightPx = size.height }
         )
     }
 }

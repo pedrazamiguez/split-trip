@@ -162,6 +162,8 @@
     <string name="developer_services_category_no_match_title">No matching category</string>
     <string name="developer_services_category_no_match_description">Neither local rules nor on-device AI matched a category for this title.</string>
     <string name="developer_services_category_error_fallback">Category prediction failed</string>
+    <string name="developer_services_category_ai_unavailable">Local rules did not match, and on-device AI is unavailable on this device.</string>
+    <string name="developer_services_category_ai_timeout">On-device AI timed out after %1$ds.</string>
 
     <!-- Language Selection -->
     <string name="settings_preferences_language_dialog_title">Select Language</string>

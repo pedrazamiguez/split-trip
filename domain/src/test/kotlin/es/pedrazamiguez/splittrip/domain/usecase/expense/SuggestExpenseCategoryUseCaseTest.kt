@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.expense
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.GroupContext
+import es.pedrazamiguez.splittrip.domain.model.CategoryPredictionOutcome
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestionSource
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
@@ -137,5 +138,33 @@ class SuggestExpenseCategoryUseCaseTest {
         } finally {
             Locale.setDefault(originalLocale)
         }
+    }
+
+    @Test
+    fun `diagnose returns Matched from Tier 1 without calling Tier 2`() = runTest {
+        val localResult = CategorySuggestion(
+            category = ExpenseCategory.FOOD,
+            subcategory = ExpenseSubcategory.RESTAURANT,
+            source = CategorySuggestionSource.LOCAL_RULES
+        )
+        every { localClassifierService.classify("Dinner", GroupContext.TRAVEL, "es") } returns localResult
+
+        val actual = useCase.diagnose("Dinner", GroupContext.TRAVEL)
+
+        assertEquals(CategoryPredictionOutcome.Matched(localResult), actual)
+        coVerify(exactly = 0) { aiClassifierService.classifyDetailed(any(), any()) }
+    }
+
+    @Test
+    fun `diagnose delegates to Tier 2 classifyDetailed and preserves diagnostic failure outcomes`() = runTest {
+        every { localClassifierService.classify("Towels", GroupContext.EVERYDAY, "es") } returns null
+        coEvery {
+            aiClassifierService.classifyDetailed("Towels", GroupContext.EVERYDAY)
+        } returns CategoryPredictionOutcome.AiTimeout(15_000L)
+
+        val actual = useCase.diagnose("Towels", GroupContext.EVERYDAY)
+
+        assertEquals(CategoryPredictionOutcome.AiTimeout(15_000L), actual)
+        coVerify(exactly = 1) { aiClassifierService.classifyDetailed("Towels", GroupContext.EVERYDAY) }
     }
 }
