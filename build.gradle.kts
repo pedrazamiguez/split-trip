@@ -4,6 +4,7 @@ import nl.littlerobots.vcu.plugin.versionSelector
 // Top-level build file where you can add configuration options common to all subprojects/modules.
 plugins {
     alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.dynamic.feature) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.kotlin.jvm) apply false
@@ -116,7 +117,8 @@ subprojects {
         val jvmClasses = layout.buildDirectory.dir("classes/kotlin/main").get().asFile
         when {
             plugins.hasPlugin("com.android.library") ||
-                plugins.hasPlugin("com.android.application") ->
+                plugins.hasPlugin("com.android.application") ||
+                plugins.hasPlugin("com.android.dynamic-feature") ->
                 sonarBinaries.add(androidClasses.absolutePath)
 
             plugins.hasPlugin("org.jetbrains.kotlin.jvm") ->
@@ -243,6 +245,9 @@ sonarqube {
                 "**/domain/usecase/user/impl/UpdateUserReminderPreferencesUseCaseImpl.kt",
                 "**/data/datasource/GroupDashboardDataSourceImpl*.kt",
                 "**/designsystem/ad/AdConsentManager*.kt",
+                "**/data/litert/LiteRtEngineClient.kt",
+                "**/data/litert/AndroidPlaySplitInstallClient.kt",
+                "**/dynamic/litertlm/AndroidLiteRtNativeEngineFactory.kt",
             ).joinToString(","),
         )
 

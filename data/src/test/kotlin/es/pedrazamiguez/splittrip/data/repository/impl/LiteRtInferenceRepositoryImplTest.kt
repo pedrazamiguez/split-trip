@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
+import es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClient
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelNotEntitledException
 import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelUnavailableException
@@ -136,6 +137,22 @@ class LiteRtInferenceRepositoryImplTest {
             assertTrue(result.exceptionOrNull() is LocalAiModelUnavailableException)
             assertTrue(result.exceptionOrNull()?.cause is UnsatisfiedLinkError)
             verify(exactly = 1) { engineClient.invalidate("/data/ai_models/model.litertlm") }
+        }
+
+    @Test
+    fun `generateContent preserves LocalAiModelUnavailableException when runtime is missing`() =
+        runTest(testDispatcher) {
+            val missingRuntimeException = LocalAiModelUnavailableException(
+                "LiteRT-LM dynamic runtime module is not installed"
+            )
+            coEvery {
+                engineClient.generate(any(), any(), any())
+            } throws missingRuntimeException
+
+            val result = repository.generateContent("Receipt text")
+
+            assertTrue(result.isFailure)
+            assertEquals(missingRuntimeException, result.exceptionOrNull())
         }
 
     @Test

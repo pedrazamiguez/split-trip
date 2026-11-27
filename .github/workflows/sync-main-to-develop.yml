@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
         run: |
@@ -25,7 +25,7 @@ jobs:
 
       - name: Prepare Backmerge Branch
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           # Create a unique branch for the sync
           SYNC_BRANCH="sync/main-to-develop-${{ github.sha }}"
@@ -129,7 +129,7 @@ jobs:
 
               # Commit the bump
               git add version.properties
-              git commit -m "chore: bump version to next minor snapshot [skip ci]" || echo "Nothing to commit"
+              git commit -m "chore: bump version to next minor snapshot" || echo "Nothing to commit"
             else
               echo "ℹ️ Main was already a snapshot or logic skipped. No bump needed."
             fi

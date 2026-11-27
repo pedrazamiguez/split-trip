@@ -7,6 +7,11 @@ sealed interface ModelPackStatus {
         val packId: String = ""
     ) : ModelPackStatus
 
+    data class InstallingRuntime(
+        val progressPercent: Int? = null,
+        val packId: String = ""
+    ) : ModelPackStatus
+
     data class Downloading(
         val progressPercent: Int,
         val downloadedBytes: Long,

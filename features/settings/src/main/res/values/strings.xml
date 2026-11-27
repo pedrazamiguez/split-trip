@@ -478,5 +478,9 @@
     <string name="local_ai_pack_status_installed_named_desc">Active model: %1$s. Running offline via LiteRT-LM.</string>
     <string name="local_ai_pack_status_downloading_named_title">Downloading %1$s…</string>
     <string name="local_ai_pack_status_verifying_named_title">Verifying %1$s…</string>
+    <string name="local_ai_pack_badge_installing_runtime">Preparing Runtime</string>
+    <string name="local_ai_pack_status_installing_runtime_title">Installing AI runtime…</string>
+    <string name="local_ai_pack_status_installing_runtime_desc">Downloading the LiteRT-LM runtime module from Google Play before fetching the model pack.</string>
+    <string name="local_ai_pack_error_runtime_unavailable">The LiteRT-LM AI runtime could not be installed from Google Play. Make sure Google Play is available and try again.</string>
 </resources>
 

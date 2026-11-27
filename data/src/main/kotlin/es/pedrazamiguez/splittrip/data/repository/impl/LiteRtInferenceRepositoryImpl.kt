@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
+import es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClient
 import es.pedrazamiguez.splittrip.data.service.JsonSanitizer
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelNotEntitledException
@@ -75,6 +76,9 @@ internal class LiteRtInferenceRepositoryImpl(
         throwable: Throwable,
         invalidateEngine: Boolean
     ): Result<String> {
+        if (throwable is LocalAiModelUnavailableException) {
+            return Result.failure(throwable)
+        }
         if (invalidateEngine) {
             runCatching { engineClient.invalidate(modelPath) }
         }

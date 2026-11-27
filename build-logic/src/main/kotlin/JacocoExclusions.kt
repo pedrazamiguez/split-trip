@@ -131,13 +131,18 @@ object JacocoExclusions {
         "**/data/service/PdfPageRendererImpl\$*.*",
         "**/data/service/MLKitOcrEngine.*",
         "**/data/service/MLKitOcrEngine\$*.*",
-        // LiteRtLmEngineClientImpl wraps LiteRT-LM native JNI engine (Engine/Conversation)
-        // which loads liblitertlm_jni.so and cannot run in pure JVM unit tests.
         // LiteRtEngineClient interface only carries a default parameter value (`= null`).
-        // Tested via LiteRtEngineClient abstraction in LiteRtInferenceRepositoryImplTest.
-        "**/data/repository/impl/LiteRtEngineClient*.*",
-        "**/data/repository/impl/LiteRtLmEngineClientImpl.*",
-        "**/data/repository/impl/LiteRtLmEngineClientImpl\$*.*",
+        "**/data/litert/LiteRtEngineClient.*",
+        "**/data/litert/LiteRtEngineClient\$DefaultImpls.*",
+        // AndroidPlaySplitInstallClient wraps Play Core SplitInstallManager & SplitCompat Android APIs.
+        // Business state machine is unit-tested in LiteRtDynamicRuntimeManagerImplTest.
+        "**/data/litert/AndroidPlaySplitInstallClient.*",
+        "**/data/litert/AndroidPlaySplitInstallClient\$*.*",
+        // AndroidLiteRtNativeEngineFactory wraps LiteRT-LM native JNI engine (Engine/Conversation)
+        // and SplitInstallHelper inside :dynamic_litertlm; LiteRtLmEngineClientImpl lifecycle
+        // orchestration is unit-tested in LiteRtLmEngineClientImplTest.
+        "**/dynamic/litertlm/AndroidLiteRtNativeEngineFactory.*",
+        "**/dynamic/litertlm/AndroidLiteRtNativeEngineFactory\$*.*",
         // ── Database migrations — raw DDL SQL strings; no meaningful unit-test path
         // and triggers Sonar string-duplication false positives (table names repeated).
         // Covers both the aggregated file AND individual Migration*To* files.

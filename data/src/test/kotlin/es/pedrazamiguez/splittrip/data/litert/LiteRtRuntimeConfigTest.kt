@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.data.repository.impl
+package es.pedrazamiguez.splittrip.data.litert
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull

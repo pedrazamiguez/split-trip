@@ -25,6 +25,7 @@ jobs:
         with:
           ref: ${{ github.head_ref }} # Check out the release/hotfix branch
           fetch-depth: 0 # Full history to compare with base branch
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Update Version based on Labels
         id: update
@@ -68,13 +69,23 @@ jobs:
 
           if [ "$IS_MAJOR" == "true" ]; then
             echo "🔥 Major release detected!"
-            NEW_MAJOR=$((MAJOR + 1))
-            NEW_MINOR=0
-            NEW_PATCH=0
+            BASE_MAJOR=$(git show origin/main:version.properties | grep '^versionMajor=' | cut -d'=' -f2)
+            if [ -z "$BASE_MAJOR" ] || ! [[ "$BASE_MAJOR" =~ ^[0-9]+$ ]]; then
+              echo "❌ Error: Could not read valid versionMajor from origin/main:version.properties (BASE_MAJOR='$BASE_MAJOR')."
+              exit 1
+            fi
 
-            sed -i "s/^versionMajor=.*/versionMajor=$NEW_MAJOR/" version.properties
-            sed -i "s/^versionMinor=.*/versionMinor=$NEW_MINOR/" version.properties
-            sed -i "s/^versionPatch=.*/versionPatch=$NEW_PATCH/" version.properties
+            if [ "$MAJOR" -gt "$BASE_MAJOR" ]; then
+              echo "ℹ️ Major version already bumped ($MAJOR.$MINOR.$PATCH > base $BASE_MAJOR.x.x). Skipping increment."
+            else
+              NEW_MAJOR=$((BASE_MAJOR + 1))
+              NEW_MINOR=0
+              NEW_PATCH=0
+
+              sed -i "s/^versionMajor=.*/versionMajor=$NEW_MAJOR/" version.properties
+              sed -i "s/^versionMinor=.*/versionMinor=$NEW_MINOR/" version.properties
+              sed -i "s/^versionPatch=.*/versionPatch=$NEW_PATCH/" version.properties
+            fi
 
           elif [ "$IS_HOTFIX" == "true" ]; then
             echo "🚑 Hotfix branch detected."
@@ -131,5 +142,5 @@ jobs:
       - name: Commit and Push changes
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          commit_message: "chore: prepare release version [skip ci]"
+          commit_message: "chore: prepare release version"
           file_pattern: version.properties

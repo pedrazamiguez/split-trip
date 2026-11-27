@@ -8,12 +8,14 @@ import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCategoryAiClassifierService
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCategoryClassifierService
 import es.pedrazamiguez.splittrip.domain.usecase.expense.SuggestExpenseCategoryUseCase
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 
 class SuggestExpenseCategoryUseCaseImpl(
     private val expenseCategoryClassifierService: ExpenseCategoryClassifierService,
     private val expenseCategoryAiClassifierService: ExpenseCategoryAiClassifierService,
-    private val userPreferenceRepository: UserPreferenceRepository
+    private val userPreferenceRepository: UserPreferenceRepository,
+    private val tierTwoDebounceMs: Long = DEFAULT_TIER_TWO_DEBOUNCE_MS
 ) : SuggestExpenseCategoryUseCase {
 
     override suspend operator fun invoke(
@@ -23,11 +25,13 @@ class SuggestExpenseCategoryUseCaseImpl(
         val trimmedTitle = title.trim()
         if (trimmedTitle.length < MIN_TITLE_LENGTH) return null
 
-        return classifyTierOne(trimmedTitle, groupContext)
-            ?: expenseCategoryAiClassifierService.classify(
-                title = trimmedTitle,
-                groupContext = groupContext
-            )
+        classifyTierOne(trimmedTitle, groupContext)?.let { return it }
+
+        awaitTierTwoQuietWindow()
+        return expenseCategoryAiClassifierService.classify(
+            title = trimmedTitle,
+            groupContext = groupContext
+        )
     }
 
     override suspend fun diagnose(
@@ -42,10 +46,17 @@ class SuggestExpenseCategoryUseCaseImpl(
             return CategoryPredictionOutcome.Matched(localSuggestion)
         }
 
+        awaitTierTwoQuietWindow()
         return expenseCategoryAiClassifierService.classifyDetailed(
             title = trimmedTitle,
             groupContext = groupContext
         )
+    }
+
+    private suspend fun awaitTierTwoQuietWindow() {
+        if (tierTwoDebounceMs > 0L) {
+            delay(tierTwoDebounceMs)
+        }
     }
 
     private suspend fun classifyTierOne(
@@ -62,7 +73,8 @@ class SuggestExpenseCategoryUseCaseImpl(
         )
     }
 
-    private companion object {
+    companion object {
+        const val DEFAULT_TIER_TWO_DEBOUNCE_MS = 750L
         private const val MIN_TITLE_LENGTH = 2
     }
 }
