@@ -17,19 +17,29 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.features.settings.R
+import es.pedrazamiguez.splittrip.features.settings.presentation.extensions.formatLiteRtDisplayLabel
+import es.pedrazamiguez.splittrip.features.settings.presentation.extensions.toLabelRes
+import es.pedrazamiguez.splittrip.features.settings.presentation.model.InstalledLocalAiPackInfo
 
 private val FIELD_ICON_SIZE = 18.dp
 
 @Composable
 internal fun ExtractionSourceRow(
     source: ExtractionSource?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    installedLocalAiPack: InstalledLocalAiPackInfo? = null
 ) {
-    val (label, isOnDeviceAi) = when (source) {
-        ExtractionSource.AI_CORE -> stringResource(R.string.developer_services_extraction_source_ai_core) to true
-        ExtractionSource.LITE_RT_LM -> stringResource(R.string.developer_services_extraction_source_lite_rt) to true
-        else -> stringResource(R.string.developer_services_extraction_source_no_op) to false
+    val localizedTierLabel = installedLocalAiPack?.tier?.let { stringResource(it.toLabelRes()) }
+    val label = when (source) {
+        ExtractionSource.AI_CORE -> stringResource(R.string.developer_services_extraction_source_ai_core)
+        ExtractionSource.LITE_RT_LM -> formatLiteRtDisplayLabel(
+            baseLabel = stringResource(R.string.developer_services_extraction_source_lite_rt),
+            installedPack = installedLocalAiPack,
+            localizedTierLabel = localizedTierLabel
+        )
+        else -> stringResource(R.string.developer_services_extraction_source_no_op)
     }
+    val isOnDeviceAi = source == ExtractionSource.AI_CORE || source == ExtractionSource.LITE_RT_LM
 
     Row(
         modifier = modifier.fillMaxWidth(),

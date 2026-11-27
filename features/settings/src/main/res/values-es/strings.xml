@@ -30,7 +30,7 @@
     <string name="settings_preferences_notifications_description">Recordatorios y alertas</string>
     <string name="settings_preferences_currency_title">Moneda por defecto</string>
     <string name="settings_preferences_local_ai_pack_title">Paquete de IA local</string>
-    <string name="settings_preferences_local_ai_pack_description">Gestionar descarga del modelo de IA sin conexión</string>
+    <string name="settings_preferences_local_ai_pack_description">Modelos de IA sin conexión</string>
 
     <!-- Developer Options Section -->
     <string name="settings_section_developer">Opciones de Desarrollador</string>
@@ -117,7 +117,12 @@
     <string name="developer_services_ai_model_automatic">Automático (Por defecto)</string>
     <string name="developer_services_ai_model_ai_core">AICore (Gemma 4)</string>
     <string name="developer_services_ai_model_lite_rt">LiteRT-LM</string>
-    <string name="developer_services_ai_model_resolved_label">Motor Activo Resuelto: %1$s</string>
+    <string name="developer_services_ai_model_resolved_prefix">Motor activo:</string>
+    <string name="developer_services_ai_model_picker_title">Seleccionar motor de IA</string>
+    <string name="developer_services_ai_model_automatic_subtitle">Usa AICore si es compatible; si no, el paquete LiteRT-LM instalado</string>
+    <string name="developer_services_ai_model_ai_core_subtitle">Gemini Nano / Gemma gestionado por el sistema</string>
+    <string name="developer_services_ai_model_lite_rt_installed_subtitle">Nivel: %1$s · %2$s</string>
+    <string name="developer_services_ai_model_lite_rt_not_installed_subtitle">No hay ningún paquete de IA local instalado</string>
     <string name="developer_services_extraction_confidence_high">Alta</string>
     <string name="developer_services_extraction_confidence_medium">Media</string>
     <string name="developer_services_extraction_confidence_low">Baja</string>
@@ -128,25 +133,36 @@
     <!-- Developer services navigation tabs -->
     <string name="developer_services_tab_ocr">OCR</string>
     <string name="developer_services_tab_ai_extraction">Extracción</string>
-    <string name="developer_services_tab_billing">Suscripción</string>
+    <string name="developer_services_tab_category_suggestion">Categorías</string>
 
     <!-- AI Extraction tab -->
     <string name="developer_services_ai_no_receipt">Selecciona una foto de recibo o PDF para extraer datos con IA en el dispositivo</string>
     <string name="developer_services_ai_select_receipt">Seleccionar recibo</string>
+    <string name="developer_services_ai_extracting_title">Extrayendo datos del recibo…</string>
+    <string name="developer_services_ai_extracting_subtitle">Ejecutando OCR e inferencia de IA en el dispositivo</string>
 
     <!-- AI Engines -->
     <string name="developer_services_ai_engine_ai_core">AICore (Gemma 4)</string>
     <string name="developer_services_ai_engine_lite_rt">LiteRT-LM (CD)</string>
     <string name="developer_services_extraction_source_lite_rt">LiteRT-LM</string>
 
-    <!-- Billing tab -->
-    <string name="developer_services_billing_section_title">Nivel de Suscripción</string>
-    <string name="developer_services_billing_current_tier">Nivel actual:</string>
-    <string name="developer_services_billing_reset_free">Restablecer nivel a FREE</string>
-    <string name="developer_services_billing_set_pro">Establecer nivel a PRO</string>
-    <string name="developer_services_billing_tier_updated">Nivel de suscripción actualizado a %1$s.</string>
-    <string name="developer_services_billing_update_error">Error al actualizar el nivel de suscripción.</string>
-    <string name="developer_services_billing_no_user_error">No hay ningún usuario conectado para actualizar el nivel.</string>
+    <!-- Category Suggestion tab -->
+    <string name="developer_services_category_input_title">Predicción de Categoría</string>
+    <string name="developer_services_category_input_label">Título del gasto</string>
+    <string name="developer_services_category_input_placeholder">ej., Cena en La Tapería, Uber al aeropuerto</string>
+    <string name="developer_services_category_loading">Clasificando título del gasto…</string>
+    <string name="developer_services_category_result_title">Resultado de Predicción</string>
+    <string name="developer_services_category_source_label">Modo de resolución</string>
+    <string name="developer_services_category_source_local_rules">Reglas locales</string>
+    <string name="developer_services_category_source_on_device_ai">IA en dispositivo</string>
+    <string name="developer_services_category_engine_label">Modelo activo:</string>
+    <string name="developer_services_category_idle_title">Probar Predicción de Categoría</string>
+    <string name="developer_services_category_idle_description">Escribe un título de gasto (al menos 2 caracteres) para inspeccionar las reglas locales y la IA en el dispositivo.</string>
+    <string name="developer_services_category_no_match_title">Sin categoría coincidente</string>
+    <string name="developer_services_category_no_match_description">Ni las reglas locales ni la IA en el dispositivo encontraron una categoría para este título.</string>
+    <string name="developer_services_category_error_fallback">Error en la predicción de categoría</string>
+    <string name="developer_services_category_ai_unavailable">Las reglas locales no coincidieron y la IA en el dispositivo no está disponible.</string>
+    <string name="developer_services_category_ai_timeout">La inferencia de IA en el dispositivo superó el límite de %1$d s.</string>
 
     <!-- Language Selection -->
     <string name="settings_preferences_language_dialog_title">Seleccionar idioma</string>

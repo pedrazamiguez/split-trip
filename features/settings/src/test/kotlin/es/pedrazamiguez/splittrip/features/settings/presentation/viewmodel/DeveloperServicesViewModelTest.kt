@@ -2,21 +2,31 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
-import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
+import es.pedrazamiguez.splittrip.domain.model.CategoryPredictionOutcome
+import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
+import es.pedrazamiguez.splittrip.domain.model.CategorySuggestionSource
+import es.pedrazamiguez.splittrip.domain.model.DeviceCompatibilityResult
 import es.pedrazamiguez.splittrip.domain.model.ExtractedReceipt
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
+import es.pedrazamiguez.splittrip.domain.model.LocalAiModelPackState
+import es.pedrazamiguez.splittrip.domain.model.ModelPackCatalogEntry
+import es.pedrazamiguez.splittrip.domain.model.ModelPackConfig
+import es.pedrazamiguez.splittrip.domain.model.ModelPackStatus
+import es.pedrazamiguez.splittrip.domain.model.ModelPackTier
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.TextBlock
-import es.pedrazamiguez.splittrip.domain.model.User
 import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
+import es.pedrazamiguez.splittrip.domain.usecase.expense.SuggestExpenseCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveLocalAiModelPackStateUseCase
 import es.pedrazamiguez.splittrip.features.settings.R
+import es.pedrazamiguez.splittrip.features.settings.presentation.model.InstalledLocalAiPackInfo
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.action.DeveloperServicesUiAction
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
@@ -34,14 +44,15 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -57,13 +68,12 @@ class DeveloperServicesViewModelTest {
     private lateinit var receiptOcrService: ReceiptOcrService
     private lateinit var receiptExtractionService: ReceiptExtractionService
     private lateinit var aiModelResolver: AiModelResolverService
-    private lateinit var observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase
-    private lateinit var getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase
-    private lateinit var updateUserTierUseCase: UpdateUserTierUseCase
+    private lateinit var observeLocalAiModelPackStateUseCase: ObserveLocalAiModelPackStateUseCase
+    private lateinit var suggestExpenseCategoryUseCase: SuggestExpenseCategoryUseCase
     private lateinit var observeDeveloperAccessUseCase: ObserveDeveloperAccessUseCase
     private val activeEngineFlow = MutableStateFlow(AiEngineType.AI_CORE_GEMMA_4)
     private val overrideEngineFlow = MutableStateFlow<AiEngineType?>(null)
-    private val userProfileFlow = MutableStateFlow<User?>(null)
+    private val localAiModelPackStateFlow = MutableStateFlow(createLocalAiModelPackState())
     private val developerAccessFlow = MutableStateFlow(true)
 
     @BeforeEach
@@ -72,18 +82,19 @@ class DeveloperServicesViewModelTest {
         receiptOcrService = mockk()
         receiptExtractionService = mockk()
         aiModelResolver = mockk(relaxed = true)
-        observeCurrentUserProfileUseCase = mockk()
-        getCurrentUserProfileUseCase = mockk()
-        updateUserTierUseCase = mockk()
+        observeLocalAiModelPackStateUseCase = mockk()
+        suggestExpenseCategoryUseCase = mockk()
         observeDeveloperAccessUseCase = mockk()
-        userProfileFlow.value = null
+        activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+        overrideEngineFlow.value = null
+        localAiModelPackStateFlow.value = createLocalAiModelPackState()
         developerAccessFlow.value = true
         every { aiModelResolver.getActiveModel() } returns activeEngineFlow
         every { aiModelResolver.getDeveloperOverrideModel() } returns overrideEngineFlow
-        every { observeCurrentUserProfileUseCase() } returns userProfileFlow
+        every { observeLocalAiModelPackStateUseCase() } returns localAiModelPackStateFlow
         every { observeDeveloperAccessUseCase() } returns developerAccessFlow
-        coEvery { getCurrentUserProfileUseCase() } returns null
-        coEvery { updateUserTierUseCase(any(), any()) } returns Result.success(Unit)
+        coEvery { suggestExpenseCategoryUseCase(any(), any()) } returns null
+        coEvery { suggestExpenseCategoryUseCase.diagnose(any(), any()) } returns CategoryPredictionOutcome.NoMatch
         coEvery { aiModelResolver.setDeveloperOverrideModel(any()) } coAnswers {
             overrideEngineFlow.value = firstArg()
         }
@@ -100,11 +111,82 @@ class DeveloperServicesViewModelTest {
         receiptOcrService = receiptOcrService,
         receiptExtractionService = receiptExtractionService,
         aiModelResolver = aiModelResolver,
-        observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
-        getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-        updateUserTierUseCase = updateUserTierUseCase,
+        observeLocalAiModelPackStateUseCase = observeLocalAiModelPackStateUseCase,
+        suggestExpenseCategoryUseCase = suggestExpenseCategoryUseCase,
         observeDeveloperAccessUseCase = observeDeveloperAccessUseCase
     )
+
+    private fun createCompatibilityResult() = DeviceCompatibilityResult(
+        isCompatible = true,
+        reason = null,
+        availableRamMb = 8192L,
+        requiredRamMb = 4096,
+        availableStorageBytes = 10_000_000_000L,
+        requiredStorageBytes = 2_000_000_000L,
+        supportedAbis = listOf("arm64-v8a")
+    )
+
+    private fun createLocalAiModelPackState(
+        status: ModelPackStatus = ModelPackStatus.NotInstalled(
+            availableVersion = "1.0.0",
+            downloadSizeBytes = 100L
+        ),
+        catalogEntries: List<ModelPackCatalogEntry> = emptyList(),
+        installedPackId: String? = null,
+        isAiCoreSupported: Boolean = false
+    ) = LocalAiModelPackState(
+        status = status,
+        compatibility = createCompatibilityResult(),
+        isEntitled = true,
+        isWifiOnly = true,
+        isAiCoreSupported = isAiCoreSupported,
+        activeEngine = AiEngineType.LITE_RT_LM,
+        catalogEntries = catalogEntries,
+        recommendedPackId = null,
+        installedPackId = installedPackId
+    )
+
+    private fun createCatalogEntry(
+        packId: String,
+        displayName: String,
+        tier: ModelPackTier,
+        isInstalled: Boolean = true
+    ): ModelPackCatalogEntry {
+        val status = if (isInstalled) {
+            ModelPackStatus.Installed(
+                version = "1.0.0",
+                sizeBytes = 100L,
+                isUpdateAvailable = false,
+                packId = packId
+            )
+        } else {
+            ModelPackStatus.NotInstalled(
+                availableVersion = "1.0.0",
+                downloadSizeBytes = 100L,
+                packId = packId
+            )
+        }
+        return ModelPackCatalogEntry(
+            config = ModelPackConfig(
+                packId = packId,
+                displayName = displayName,
+                tier = tier,
+                priority = tier.rank,
+                version = "1.0.0",
+                downloadUrl = "https://example.test/$packId.litertlm",
+                sha256Checksum = "abc123",
+                sizeBytes = 100L,
+                minRamMb = 4096,
+                minFreeStorageBytes = 2_000_000_000L,
+                isEnabled = true
+            ),
+            compatibility = createCompatibilityResult(),
+            status = status,
+            isRecommended = false,
+            isInstalled = isInstalled,
+            isActiveDownload = false
+        )
+    }
 
     @Test
     fun `initial state is idle and empty`() = runTest(testDispatcher) {
@@ -126,8 +208,16 @@ class DeveloperServicesViewModelTest {
         assertNull(state.extractedSubcategory)
         assertNull(state.extractedNotes)
         assertEquals(DeveloperServicesTab.Ocr, state.selectedTab)
-        assertEquals(AiEngineType.AI_CORE_GEMMA_4, state.activeResolvedModel)
+        assertNull(state.activeResolvedModel)
+        assertFalse(state.isAiCoreSupported)
         assertNull(state.developerOverrideModel)
+        assertNull(state.installedLocalAiPack)
+        assertEquals("", state.categorySuggestionInput)
+        assertEquals(GroupContext.TRAVEL, state.categorySuggestionContext)
+        assertEquals(CategorySuggestionStatus.Idle, state.categorySuggestionStatus)
+        assertNull(state.suggestedCategory)
+        assertNull(state.suggestedSubcategory)
+        assertNull(state.suggestedCategorySource)
     }
 
     @Nested
@@ -250,7 +340,6 @@ class DeveloperServicesViewModelTest {
 
             viewModel.onEvent(DeveloperServicesUiEvent.RunOcr)
 
-            // Verify status is Loading immediately after event trigger
             assertEquals(OcrStatus.Loading, viewModel.uiState.value.ocrStatus)
 
             advanceUntilIdle()
@@ -280,7 +369,6 @@ class DeveloperServicesViewModelTest {
 
             viewModel.onEvent(DeveloperServicesUiEvent.RunOcr)
 
-            // Verify status is Loading immediately
             assertEquals(OcrStatus.Loading, viewModel.uiState.value.ocrStatus)
 
             advanceUntilIdle()
@@ -296,43 +384,66 @@ class DeveloperServicesViewModelTest {
     inner class ResetEvent {
 
         @Test
-        fun `clears all state but preserves selected tab and AI engine`() = runTest(testDispatcher) {
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-            viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.AiExtraction))
-            viewModel.onEvent(DeveloperServicesUiEvent.SelectModel(AiEngineType.LITE_RT_LM))
-            advanceUntilIdle()
-            viewModel.onEvent(
-                DeveloperServicesUiEvent.FileSelected(
-                    uri = "content://media/external/file/123",
-                    name = "receipt.pdf",
-                    mimeType = "application/pdf"
+        fun `clears all state but preserves selected tab, AI engine, pack info, and category state`() =
+            runTest(testDispatcher) {
+                val entry = createCatalogEntry(
+                    "qwen2.5-1.5b-litert-v1",
+                    "Balanced (Qwen 2.5 1.5B)",
+                    ModelPackTier.BALANCED
                 )
-            )
+                localAiModelPackStateFlow.value = createLocalAiModelPackState(
+                    status = entry.status,
+                    catalogEntries = listOf(entry),
+                    installedPackId = entry.config.packId
+                )
+                coEvery {
+                    suggestExpenseCategoryUseCase.diagnose("Dinner", GroupContext.TRAVEL)
+                } returns CategoryPredictionOutcome.Matched(
+                    CategorySuggestion(
+                        category = ExpenseCategory.FOOD,
+                        subcategory = ExpenseSubcategory.RESTAURANT,
+                        source = CategorySuggestionSource.LOCAL_RULES
+                    )
+                )
 
-            val rawReceiptText = RawReceiptText(
-                fullText = "Total amount: 50.00",
-                blocks = persistentListOf(TextBlock(text = "Total amount: 50.00", confidence = 1.0f)),
-                recognisedAt = Instant.EPOCH
-            )
-            coEvery { receiptOcrService.recogniseText(any()) } returns Result.success(rawReceiptText)
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+                viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.AiExtraction))
+                viewModel.onEvent(DeveloperServicesUiEvent.SelectModel(AiEngineType.LITE_RT_LM))
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Dinner"))
+                advanceUntilIdle()
+                viewModel.onEvent(
+                    DeveloperServicesUiEvent.FileSelected(
+                        uri = "content://media/external/file/123",
+                        name = "receipt.pdf",
+                        mimeType = "application/pdf"
+                    )
+                )
+                val rawReceiptText = RawReceiptText(
+                    fullText = "Total amount: 50.00",
+                    blocks = persistentListOf(TextBlock(text = "Total amount: 50.00", confidence = 1.0f)),
+                    recognisedAt = Instant.EPOCH
+                )
+                coEvery { receiptOcrService.recogniseText(any()) } returns Result.success(rawReceiptText)
+                viewModel.onEvent(DeveloperServicesUiEvent.RunOcr)
+                advanceUntilIdle()
 
-            viewModel.onEvent(DeveloperServicesUiEvent.RunOcr)
-            advanceUntilIdle()
+                viewModel.onEvent(DeveloperServicesUiEvent.Reset)
 
-            viewModel.onEvent(DeveloperServicesUiEvent.Reset)
-
-            val state = viewModel.uiState.value
-            assertNull(state.selectedFileUri)
-            assertEquals("", state.selectedFileName)
-            assertEquals("", state.selectedFileMimeType)
-            assertEquals(OcrStatus.Idle, state.ocrStatus)
-            assertEquals("", state.extractedText)
-            assertTrue(state.textBlocks.isEmpty())
-            assertNull(state.errorMessage)
-            assertEquals(DeveloperServicesTab.AiExtraction, state.selectedTab)
-            assertEquals(AiEngineType.LITE_RT_LM, state.developerOverrideModel)
-        }
+                val state = viewModel.uiState.value
+                assertNull(state.selectedFileUri)
+                assertEquals("", state.selectedFileName)
+                assertEquals("", state.selectedFileMimeType)
+                assertEquals(OcrStatus.Idle, state.ocrStatus)
+                assertEquals("", state.extractedText)
+                assertTrue(state.textBlocks.isEmpty())
+                assertNull(state.errorMessage)
+                assertEquals(DeveloperServicesTab.AiExtraction, state.selectedTab)
+                assertEquals(AiEngineType.LITE_RT_LM, state.developerOverrideModel)
+                assertEquals("qwen2.5-1.5b-litert-v1", state.installedLocalAiPack?.packId)
+                assertEquals("Dinner", state.categorySuggestionInput)
+                assertEquals(ExpenseCategory.FOOD, state.suggestedCategory)
+            }
     }
 
     @Nested
@@ -347,8 +458,8 @@ class DeveloperServicesViewModelTest {
             viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.AiExtraction))
             assertEquals(DeveloperServicesTab.AiExtraction, viewModel.uiState.value.selectedTab)
 
-            viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.Billing))
-            assertEquals(DeveloperServicesTab.Billing, viewModel.uiState.value.selectedTab)
+            viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.CategorySuggestion))
+            assertEquals(DeveloperServicesTab.CategorySuggestion, viewModel.uiState.value.selectedTab)
 
             viewModel.onEvent(DeveloperServicesUiEvent.SwitchTab(DeveloperServicesTab.Ocr))
             assertEquals(DeveloperServicesTab.Ocr, viewModel.uiState.value.selectedTab)
@@ -502,171 +613,433 @@ class DeveloperServicesViewModelTest {
 
             coVerify { aiModelResolver.setDeveloperOverrideModel(AiEngineType.LITE_RT_LM) }
         }
+
+        @Test
+        fun `Automatic mode exposes AI_CORE_GEMMA_4 when AICore is supported`() = runTest(testDispatcher) {
+            localAiModelPackStateFlow.value = createLocalAiModelPackState(isAiCoreSupported = true)
+            activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+            overrideEngineFlow.value = null
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(AiEngineType.AI_CORE_GEMMA_4, viewModel.uiState.value.activeResolvedModel)
+            assertTrue(viewModel.uiState.value.isAiCoreSupported)
+        }
+
+        @Test
+        fun `Automatic mode clears activeResolvedModel when AICore unsupported and no pack installed`() =
+            runTest(testDispatcher) {
+                localAiModelPackStateFlow.value = createLocalAiModelPackState(isAiCoreSupported = false)
+                activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+                overrideEngineFlow.value = null
+
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                assertNull(viewModel.uiState.value.activeResolvedModel)
+                assertFalse(viewModel.uiState.value.isAiCoreSupported)
+            }
+
+        @Test
+        fun `Explicit AI_CORE_GEMMA_4 override retains model with isAiCoreSupported false`() =
+            runTest(testDispatcher) {
+                localAiModelPackStateFlow.value = createLocalAiModelPackState(isAiCoreSupported = false)
+                activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+                overrideEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                assertEquals(AiEngineType.AI_CORE_GEMMA_4, viewModel.uiState.value.activeResolvedModel)
+                assertFalse(viewModel.uiState.value.isAiCoreSupported)
+            }
+
+        @Test
+        fun `Automatic mode exposes LITE_RT_LM when pack is installed and entitled`() = runTest(testDispatcher) {
+            val entry = createCatalogEntry(
+                packId = "qwen3-0.6b-litert-v1",
+                displayName = "Compact (Qwen 3 0.6B)",
+                tier = ModelPackTier.COMPACT
+            )
+            localAiModelPackStateFlow.value = createLocalAiModelPackState(
+                status = entry.status,
+                catalogEntries = listOf(entry),
+                installedPackId = entry.config.packId,
+                isAiCoreSupported = false
+            )
+            activeEngineFlow.value = AiEngineType.LITE_RT_LM
+            overrideEngineFlow.value = null
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(AiEngineType.LITE_RT_LM, viewModel.uiState.value.activeResolvedModel)
+        }
     }
 
     @Nested
-    @DisplayName("BillingTab")
-    inner class BillingTab {
-
-        private fun createUser(tier: SubscriptionTier = SubscriptionTier.FREE) = User(
-            userId = "user_1",
-            email = "dev@splittrip.test",
-            displayName = "Dev User",
-            tier = tier
-        )
+    @DisplayName("LocalAiModelPackObservation")
+    inner class LocalAiModelPackObservation {
 
         @Test
-        fun `initial state observes current user tier as PRO when user is PRO`() = runTest(testDispatcher) {
-            userProfileFlow.value = createUser(SubscriptionTier.PRO)
-
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            assertEquals(SubscriptionTier.PRO, viewModel.uiState.value.currentTier)
-            assertTrue(viewModel.uiState.value.hasSignedInUser)
-            assertNull(viewModel.uiState.value.billingErrorMessage)
-        }
-
-        @Test
-        fun `initial state observes current user tier as FREE when user is FREE`() = runTest(testDispatcher) {
-            userProfileFlow.value = createUser(SubscriptionTier.FREE)
-
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            assertEquals(SubscriptionTier.FREE, viewModel.uiState.value.currentTier)
-            assertTrue(viewModel.uiState.value.hasSignedInUser)
-            assertNull(viewModel.uiState.value.billingErrorMessage)
-        }
-
-        @Test
-        fun `SetSubscriptionTier FREE invokes updateUserTierUseCase with FREE, updates state, and emits ShowTopPill`() =
-            runTest(testDispatcher) {
-                userProfileFlow.value = createUser(SubscriptionTier.PRO)
-                val viewModel = createViewModel()
-                advanceUntilIdle()
-
-                val actions = mutableListOf<DeveloperServicesUiAction>()
-                val job = launch { viewModel.actions.collect { actions.add(it) } }
-
-                viewModel.onEvent(DeveloperServicesUiEvent.SetSubscriptionTier(SubscriptionTier.FREE))
-                advanceUntilIdle()
-
-                coVerify(exactly = 1) { updateUserTierUseCase("user_1", SubscriptionTier.FREE) }
-                assertEquals(SubscriptionTier.FREE, viewModel.uiState.value.currentTier)
-                assertFalse(viewModel.uiState.value.isUpdatingTier)
-                assertNull(viewModel.uiState.value.pendingTargetTier)
-                assertNull(viewModel.uiState.value.billingErrorMessage)
-                assertEquals(1, actions.size)
-                val action = assertInstanceOf(DeveloperServicesUiAction.ShowTopPill::class.java, actions.first())
-                val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
-                assertEquals(R.string.developer_services_billing_tier_updated, message.resId)
-                assertEquals(listOf("FREE"), message.args.toList())
-
-                job.cancel()
-            }
-
-        @Test
-        fun `SetSubscriptionTier PRO invokes updateUserTierUseCase with PRO, updates state, and emits ShowTopPill`() =
-            runTest(testDispatcher) {
-                userProfileFlow.value = createUser(SubscriptionTier.FREE)
-                val viewModel = createViewModel()
-                advanceUntilIdle()
-
-                val actions = mutableListOf<DeveloperServicesUiAction>()
-                val job = launch { viewModel.actions.collect { actions.add(it) } }
-
-                viewModel.onEvent(DeveloperServicesUiEvent.SetSubscriptionTier(SubscriptionTier.PRO))
-                advanceUntilIdle()
-
-                coVerify(exactly = 1) { updateUserTierUseCase("user_1", SubscriptionTier.PRO) }
-                assertEquals(SubscriptionTier.PRO, viewModel.uiState.value.currentTier)
-                assertFalse(viewModel.uiState.value.isUpdatingTier)
-                assertNull(viewModel.uiState.value.pendingTargetTier)
-                assertNull(viewModel.uiState.value.billingErrorMessage)
-                assertEquals(1, actions.size)
-                val action = assertInstanceOf(DeveloperServicesUiAction.ShowTopPill::class.java, actions.first())
-                val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
-                assertEquals(R.string.developer_services_billing_tier_updated, message.resId)
-                assertEquals(listOf("PRO"), message.args.toList())
-
-                job.cancel()
-            }
-
-        @Test
-        fun `SetSubscriptionTier falls back to getCurrentUserProfileUseCase if stream has not emitted userId yet`() =
-            runTest(testDispatcher) {
-                coEvery { getCurrentUserProfileUseCase() } returns createUser(SubscriptionTier.FREE)
-                val viewModel = createViewModel()
-                advanceUntilIdle()
-
-                viewModel.onEvent(DeveloperServicesUiEvent.SetSubscriptionTier(SubscriptionTier.PRO))
-                advanceUntilIdle()
-
-                coVerify(exactly = 1) { getCurrentUserProfileUseCase() }
-                coVerify(exactly = 1) { updateUserTierUseCase("user_1", SubscriptionTier.PRO) }
-                assertEquals(SubscriptionTier.PRO, viewModel.uiState.value.currentTier)
-            }
-
-        @Test
-        fun `SetSubscriptionTier emits ShowTopPill and sets billingErrorMessage when no user is signed in`() =
-            runTest(testDispatcher) {
-                val viewModel = createViewModel()
-                advanceUntilIdle()
-
-                val actions = mutableListOf<DeveloperServicesUiAction>()
-                val job = launch { viewModel.actions.collect { actions.add(it) } }
-
-                viewModel.onEvent(DeveloperServicesUiEvent.SetSubscriptionTier(SubscriptionTier.PRO))
-                advanceUntilIdle()
-
-                coVerify(exactly = 0) { updateUserTierUseCase(any(), any()) }
-                assertFalse(viewModel.uiState.value.isUpdatingTier)
-                assertNull(viewModel.uiState.value.pendingTargetTier)
-                val error = assertInstanceOf(
-                    UiText.StringResource::class.java,
-                    viewModel.uiState.value.billingErrorMessage
-                )
-                assertEquals(R.string.developer_services_billing_no_user_error, error.resId)
-                assertEquals(1, actions.size)
-                val action = assertInstanceOf(DeveloperServicesUiAction.ShowTopPill::class.java, actions.first())
-                assertEquals(error, action.message)
-
-                job.cancel()
-            }
-
-        @Test
-        fun `SetSubscriptionTier emits ShowTopPill and sets error when updateUserTierUseCase fails`() = runTest(
-            testDispatcher
-        ) {
-            userProfileFlow.value = createUser(SubscriptionTier.PRO)
-            coEvery {
-                updateUserTierUseCase("user_1", SubscriptionTier.FREE)
-            } returns Result.failure(IllegalStateException("Firestore unavailable"))
-
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            val actions = mutableListOf<DeveloperServicesUiAction>()
-            val job = launch { viewModel.actions.collect { actions.add(it) } }
-
-            viewModel.onEvent(DeveloperServicesUiEvent.SetSubscriptionTier(SubscriptionTier.FREE))
-            advanceUntilIdle()
-
-            assertFalse(viewModel.uiState.value.isUpdatingTier)
-            assertNull(viewModel.uiState.value.pendingTargetTier)
-            assertEquals(SubscriptionTier.PRO, viewModel.uiState.value.currentTier)
-            val error = assertInstanceOf(
-                UiText.DynamicString::class.java,
-                viewModel.uiState.value.billingErrorMessage
+        fun `observes installed catalog entry displayName and tier`() = runTest(testDispatcher) {
+            val entry = createCatalogEntry(
+                packId = "qwen2.5-1.5b-litert-v1",
+                displayName = "Balanced (Qwen 2.5 1.5B)",
+                tier = ModelPackTier.BALANCED
             )
-            assertEquals("Firestore unavailable", error.value)
-            assertEquals(1, actions.size)
-            val action = assertInstanceOf(DeveloperServicesUiAction.ShowTopPill::class.java, actions.first())
-            assertEquals(error, action.message)
+            localAiModelPackStateFlow.value = createLocalAiModelPackState(
+                status = entry.status,
+                catalogEntries = listOf(entry),
+                installedPackId = entry.config.packId
+            )
 
-            job.cancel()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(
+                InstalledLocalAiPackInfo(
+                    packId = "qwen2.5-1.5b-litert-v1",
+                    displayName = "Balanced (Qwen 2.5 1.5B)",
+                    tier = ModelPackTier.BALANCED
+                ),
+                viewModel.uiState.value.installedLocalAiPack
+            )
         }
+
+        @Test
+        fun `falls back to packId when installed catalog entry has blank displayName`() = runTest(testDispatcher) {
+            val entry = createCatalogEntry(
+                packId = "qwen3-0.6b-litert-v1",
+                displayName = "",
+                tier = ModelPackTier.COMPACT
+            )
+            localAiModelPackStateFlow.value = createLocalAiModelPackState(
+                status = entry.status,
+                catalogEntries = listOf(entry),
+                installedPackId = entry.config.packId
+            )
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val packInfo = viewModel.uiState.value.installedLocalAiPack
+            assertEquals("qwen3-0.6b-litert-v1", packInfo?.displayName)
+            assertEquals(ModelPackTier.COMPACT, packInfo?.tier)
+        }
+
+        @Test
+        fun `falls back to ModelPackStatus Installed packId with null tier when catalog is empty`() =
+            runTest(testDispatcher) {
+                localAiModelPackStateFlow.value = createLocalAiModelPackState(
+                    status = ModelPackStatus.Installed(
+                        version = "1.0.0",
+                        sizeBytes = 100L,
+                        isUpdateAvailable = false,
+                        packId = "qwen3-0.6b-litert-v1"
+                    ),
+                    catalogEntries = emptyList()
+                )
+
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                assertEquals(
+                    InstalledLocalAiPackInfo(
+                        packId = "qwen3-0.6b-litert-v1",
+                        displayName = "qwen3-0.6b-litert-v1",
+                        tier = null
+                    ),
+                    viewModel.uiState.value.installedLocalAiPack
+                )
+            }
+
+        @Test
+        fun `clears installedLocalAiPack to null when pack is deleted`() = runTest(testDispatcher) {
+            val entry = createCatalogEntry(
+                packId = "qwen2.5-1.5b-litert-v1",
+                displayName = "Balanced (Qwen 2.5 1.5B)",
+                tier = ModelPackTier.BALANCED
+            )
+            localAiModelPackStateFlow.value = createLocalAiModelPackState(
+                status = entry.status,
+                catalogEntries = listOf(entry),
+                installedPackId = entry.config.packId
+            )
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            assertEquals("qwen2.5-1.5b-litert-v1", viewModel.uiState.value.installedLocalAiPack?.packId)
+
+            localAiModelPackStateFlow.value = createLocalAiModelPackState(
+                status = ModelPackStatus.NotInstalled(
+                    availableVersion = "1.0.0",
+                    downloadSizeBytes = 100L
+                ),
+                catalogEntries = emptyList(),
+                installedPackId = null
+            )
+            advanceUntilIdle()
+
+            assertNull(viewModel.uiState.value.installedLocalAiPack)
+        }
+    }
+
+    @Nested
+    @DisplayName("CategorySuggestion")
+    inner class CategorySuggestionTests {
+
+        @Test
+        fun `blank or single-character title resets to Idle without invoking use case`() = runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged(""))
+            viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("a"))
+            advanceUntilIdle()
+
+            assertEquals(CategorySuggestionStatus.Idle, viewModel.uiState.value.categorySuggestionStatus)
+            coVerify(exactly = 0) { suggestExpenseCategoryUseCase(any(), any()) }
+        }
+
+        @Test
+        fun `debounces rapid title updates and invokes use case only once with final trimmed title`() =
+            runTest(testDispatcher) {
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Ub"))
+                advanceTimeBy(100)
+                runCurrent()
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Uber"))
+                advanceTimeBy(100)
+                runCurrent()
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("  Uber airport  "))
+                runCurrent()
+
+                assertEquals(CategorySuggestionStatus.Loading, viewModel.uiState.value.categorySuggestionStatus)
+                coVerify(exactly = 0) { suggestExpenseCategoryUseCase.diagnose(any(), any()) }
+
+                advanceTimeBy(DeveloperServicesViewModel.CATEGORY_SUGGESTION_DEBOUNCE_MS)
+                runCurrent()
+
+                coVerify(exactly = 1) {
+                    suggestExpenseCategoryUseCase.diagnose("Uber airport", GroupContext.TRAVEL)
+                }
+            }
+
+        @Test
+        fun `LOCAL_RULES match updates state to Matched with category, subcategory, and LOCAL_RULES source`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    suggestExpenseCategoryUseCase.diagnose("Uber", GroupContext.TRAVEL)
+                } returns CategoryPredictionOutcome.Matched(
+                    CategorySuggestion(
+                        category = ExpenseCategory.TRANSPORT,
+                        subcategory = ExpenseSubcategory.TAXI_RIDESHARE,
+                        source = CategorySuggestionSource.LOCAL_RULES
+                    )
+                )
+
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Uber"))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(CategorySuggestionStatus.Matched, state.categorySuggestionStatus)
+                assertEquals(ExpenseCategory.TRANSPORT, state.suggestedCategory)
+                assertEquals(ExpenseSubcategory.TAXI_RIDESHARE, state.suggestedSubcategory)
+                assertEquals(CategorySuggestionSource.LOCAL_RULES, state.suggestedCategorySource)
+            }
+
+        @Test
+        fun `ON_DEVICE_AI match updates state to Matched with nullable subcategory and ON_DEVICE_AI source`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    suggestExpenseCategoryUseCase.diagnose("Museum visit", GroupContext.TRAVEL)
+                } returns CategoryPredictionOutcome.Matched(
+                    CategorySuggestion(
+                        category = ExpenseCategory.ACTIVITIES,
+                        subcategory = null,
+                        source = CategorySuggestionSource.ON_DEVICE_AI
+                    )
+                )
+
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Museum visit"))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(CategorySuggestionStatus.Matched, state.categorySuggestionStatus)
+                assertEquals(ExpenseCategory.ACTIVITIES, state.suggestedCategory)
+                assertNull(state.suggestedSubcategory)
+                assertEquals(CategorySuggestionSource.ON_DEVICE_AI, state.suggestedCategorySource)
+            }
+
+        @Test
+        fun `NoMatch outcome updates state to NoMatch and clears prior matched result`() = runTest(testDispatcher) {
+            coEvery {
+                suggestExpenseCategoryUseCase.diagnose("Dinner", GroupContext.TRAVEL)
+            } returns CategoryPredictionOutcome.Matched(
+                CategorySuggestion(
+                    category = ExpenseCategory.FOOD,
+                    subcategory = ExpenseSubcategory.RESTAURANT,
+                    source = CategorySuggestionSource.LOCAL_RULES
+                )
+            )
+            coEvery {
+                suggestExpenseCategoryUseCase.diagnose("Unknown xyz", GroupContext.TRAVEL)
+            } returns CategoryPredictionOutcome.NoMatch
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Dinner"))
+            advanceUntilIdle()
+            assertEquals(CategorySuggestionStatus.Matched, viewModel.uiState.value.categorySuggestionStatus)
+
+            viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Unknown xyz"))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(CategorySuggestionStatus.NoMatch, state.categorySuggestionStatus)
+            assertNull(state.suggestedCategory)
+            assertNull(state.suggestedSubcategory)
+            assertNull(state.suggestedCategorySource)
+        }
+
+        @Test
+        fun `AiUnavailable outcome updates state to Error with unavailable string resource`() =
+            runTest(testDispatcher) {
+                coEvery {
+                    suggestExpenseCategoryUseCase.diagnose("Towels", GroupContext.EVERYDAY)
+                } returns CategoryPredictionOutcome.AiUnavailable
+
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryContextChanged(GroupContext.EVERYDAY))
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Towels"))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(CategorySuggestionStatus.Error, state.categorySuggestionStatus)
+                assertEquals(
+                    UiText.StringResource(R.string.developer_services_category_ai_unavailable),
+                    state.categorySuggestionErrorMessage
+                )
+            }
+
+        @Test
+        fun `AiTimeout outcome updates state to Error with timeout seconds`() = runTest(testDispatcher) {
+            coEvery {
+                suggestExpenseCategoryUseCase.diagnose("Towels", GroupContext.EVERYDAY)
+            } returns CategoryPredictionOutcome.AiTimeout(15_000L)
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(DeveloperServicesUiEvent.CategoryContextChanged(GroupContext.EVERYDAY))
+            viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Towels"))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(CategorySuggestionStatus.Error, state.categorySuggestionStatus)
+            assertEquals(
+                UiText.StringResource(R.string.developer_services_category_ai_timeout, 15L),
+                state.categorySuggestionErrorMessage
+            )
+        }
+
+        @Test
+        fun `AiFailure outcome updates state to Error with failure message`() = runTest(testDispatcher) {
+            coEvery {
+                suggestExpenseCategoryUseCase.diagnose("Towels", GroupContext.EVERYDAY)
+            } returns CategoryPredictionOutcome.AiFailure("AICore busy")
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(DeveloperServicesUiEvent.CategoryContextChanged(GroupContext.EVERYDAY))
+            viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Towels"))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(CategorySuggestionStatus.Error, state.categorySuggestionStatus)
+            assertEquals(UiText.DynamicString("AICore busy"), state.categorySuggestionErrorMessage)
+        }
+
+        @Test
+        fun `exception from use case updates state to Error with error message`() = runTest(testDispatcher) {
+            coEvery {
+                suggestExpenseCategoryUseCase.diagnose("Coffee", GroupContext.TRAVEL)
+            } throws IllegalStateException("Inference error")
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Coffee"))
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(CategorySuggestionStatus.Error, state.categorySuggestionStatus)
+            assertEquals(UiText.DynamicString("Inference error"), state.categorySuggestionErrorMessage)
+        }
+
+        @Test
+        fun `CategoryContextChanged re-triggers debounced prediction with new GroupContext`() =
+            runTest(testDispatcher) {
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Coffee"))
+                advanceUntilIdle()
+
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryContextChanged(GroupContext.EVERYDAY))
+                advanceUntilIdle()
+
+                coVerify(exactly = 1) {
+                    suggestExpenseCategoryUseCase.diagnose("Coffee", GroupContext.EVERYDAY)
+                }
+            }
+
+        @Test
+        fun `CategoryContextChanged with short title updates context without invoking use case`() =
+            runTest(testDispatcher) {
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryContextChanged(GroupContext.EVERYDAY))
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(GroupContext.EVERYDAY, state.categorySuggestionContext)
+                assertEquals(CategorySuggestionStatus.Idle, state.categorySuggestionStatus)
+                coVerify(exactly = 0) { suggestExpenseCategoryUseCase(any(), any()) }
+            }
+
+        @Test
+        fun `ClearCategoryInput cancels pending debounced prediction and resets state to Idle`() =
+            runTest(testDispatcher) {
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                viewModel.onEvent(DeveloperServicesUiEvent.CategoryTitleChanged("Dinner"))
+                advanceTimeBy(100)
+                runCurrent()
+
+                viewModel.onEvent(DeveloperServicesUiEvent.ClearCategoryInput)
+                advanceUntilIdle()
+
+                val state = viewModel.uiState.value
+                assertEquals(CategorySuggestionStatus.Idle, state.categorySuggestionStatus)
+                assertEquals("", state.categorySuggestionInput)
+                coVerify(exactly = 0) { suggestExpenseCategoryUseCase(any(), any()) }
+            }
     }
 
     @Nested

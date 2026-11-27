@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.domain.service
 
 import es.pedrazamiguez.splittrip.domain.enums.GroupContext
+import es.pedrazamiguez.splittrip.domain.model.CategoryPredictionOutcome
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
 
 /**
@@ -12,4 +13,9 @@ interface ExpenseCategoryAiClassifierService {
         title: String,
         groupContext: GroupContext
     ): CategorySuggestion?
+
+    suspend fun classifyDetailed(
+        title: String,
+        groupContext: GroupContext
+    ): CategoryPredictionOutcome
 }

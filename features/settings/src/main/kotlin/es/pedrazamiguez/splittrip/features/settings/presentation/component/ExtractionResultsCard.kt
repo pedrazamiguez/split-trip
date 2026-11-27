@@ -26,6 +26,7 @@ import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.ExtractionFieldItem
+import es.pedrazamiguez.splittrip.features.settings.presentation.model.InstalledLocalAiPackInfo
 
 @Suppress("LongParameterList")
 @Composable
@@ -42,7 +43,8 @@ internal fun ExtractionResultsCard(
     notes: String?,
     source: ExtractionSource?,
     confidence: ExtractionConfidence?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    installedLocalAiPack: InstalledLocalAiPackInfo? = null
 ) {
     val context = LocalContext.current
     SectionCard(
@@ -69,7 +71,10 @@ internal fun ExtractionResultsCard(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             }
 
-            ExtractionSourceRow(source = source)
+            ExtractionSourceRow(
+                source = source,
+                installedLocalAiPack = installedLocalAiPack
+            )
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             ExtractionConfidenceRow(confidence = confidence)
         }

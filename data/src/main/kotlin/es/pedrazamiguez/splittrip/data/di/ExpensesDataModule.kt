@@ -90,6 +90,23 @@ val expensesDataModule = module {
         )
     }
 
+    single<GenerativeModel>(named("ai_core_classifier")) {
+        GenerativeModel(
+            generationConfig = generationConfig {
+                context = androidContext().applicationContext
+                temperature = AICORE_CLASSIFIER_TEMPERATURE
+                maxOutputTokens = AICORE_CLASSIFIER_MAX_OUTPUT_TOKENS
+            }
+        )
+    }
+
+    single<AiInferenceRepository>(named("ai_core_classifier")) {
+        AICoreInferenceRepositoryImpl(
+            generativeModel = get<GenerativeModel>(named("ai_core_classifier")),
+            defaultDispatcher = Dispatchers.Default
+        )
+    }
+
     single<LocalAiDeviceCompatibilityProvider> {
         LocalAiDeviceCompatibilityProvider(context = androidContext())
     }
@@ -175,7 +192,7 @@ val expensesDataModule = module {
         val localAiModelPackService = get<LocalAiModelPackService>()
         ExpenseCategoryAiClassifierServiceImpl(
             aiCoreCapabilityProvider = aiCoreCapabilityProvider,
-            aiCoreInferenceRepository = lazy { get<AiInferenceRepository>(named("ai_core")) },
+            aiCoreInferenceRepository = lazy { get<AiInferenceRepository>(named("ai_core_classifier")) },
             liteRtInferenceRepository = lazy { get<AiInferenceRepository>(named("lite_rt")) },
             aiModelResolver = aiModelResolverService,
             localAiModelPackService = localAiModelPackService,
@@ -186,3 +203,5 @@ val expensesDataModule = module {
 
 private const val AICORE_MAX_OUTPUT_TOKENS = 150
 private const val AICORE_TEMPERATURE = 0.7f
+private const val AICORE_CLASSIFIER_MAX_OUTPUT_TOKENS = 64
+private const val AICORE_CLASSIFIER_TEMPERATURE = 0.1f

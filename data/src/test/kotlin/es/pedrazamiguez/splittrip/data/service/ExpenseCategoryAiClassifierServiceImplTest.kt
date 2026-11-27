@@ -5,6 +5,7 @@ import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelUnavailableException
+import es.pedrazamiguez.splittrip.domain.model.CategoryPredictionOutcome
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestionSource
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
@@ -449,5 +450,67 @@ class ExpenseCategoryAiClassifierServiceImplTest {
             )
             assertTrue(aiCoreLazyInitialized)
             assertFalse(liteRtLazyInitialized)
+        }
+
+    @Test
+    fun `classifyDetailed returns AiUnavailable when neither engine is supported`() = runTest(testDispatcher) {
+        every { aiCoreCapabilityProvider.isSupported() } returns false
+        every { localAiModelPackService.isPackInstalled() } returns false
+
+        val outcome = createService().classifyDetailed("Towels", GroupContext.EVERYDAY)
+
+        assertEquals(CategoryPredictionOutcome.AiUnavailable, outcome)
+    }
+
+    @Test
+    fun `classifyDetailed returns AiTimeout when inference exceeds timeout`() = runTest(testDispatcher) {
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+        coEvery { aiInferenceRepository.generateContent(any()) } coAnswers {
+            delay(1_000L)
+            Result.success("""{"category":"HOME","subcategory":"HOME_SUPPLIES"}""")
+        }
+
+        val outcome = createService(timeoutMs = 100L).classifyDetailed("Towels", GroupContext.EVERYDAY)
+
+        assertEquals(CategoryPredictionOutcome.AiTimeout(100L), outcome)
+    }
+
+    @Test
+    fun `classifyDetailed returns AiFailure with error message when inference fails`() = runTest(testDispatcher) {
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+        coEvery { aiInferenceRepository.generateContent(any()) } returns Result.failure(
+            IllegalStateException("AICore model not downloaded")
+        )
+
+        val outcome = createService().classifyDetailed("Towels", GroupContext.EVERYDAY)
+
+        assertEquals(CategoryPredictionOutcome.AiFailure("AICore model not downloaded"), outcome)
+    }
+
+    @Test
+    fun `EVERYDAY prompt includes HOME_SUPPLIES guidance and few-shot examples without TRAVEL categories`() =
+        runTest(testDispatcher) {
+            every { aiCoreCapabilityProvider.isSupported() } returns true
+            val promptSlot = slot<String>()
+            coEvery { aiInferenceRepository.generateContent(capture(promptSlot)) } returns Result.success(
+                """{"category":"HOME","subcategory":"HOME_SUPPLIES"}"""
+            )
+
+            val outcome = createService().classifyDetailed("Towels", GroupContext.EVERYDAY)
+
+            val prompt = promptSlot.captured
+            assertTrue(prompt.contains("HOME:HOME_SUPPLIES"))
+            assertTrue(prompt.contains("Examples:"))
+            assertFalse(prompt.contains("LODGING:"))
+            assertEquals(
+                CategoryPredictionOutcome.Matched(
+                    CategorySuggestion(
+                        category = ExpenseCategory.HOME,
+                        subcategory = ExpenseSubcategory.HOME_SUPPLIES,
+                        source = CategorySuggestionSource.ON_DEVICE_AI
+                    )
+                ),
+                outcome
+            )
         }
 }
