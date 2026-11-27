@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.appcheck.getDebugTokenFromPrefs
 import es.pedrazamiguez.splittrip.appcheck.seedDebugToken
 import es.pedrazamiguez.splittrip.core.logging.LogContext
 import es.pedrazamiguez.splittrip.core.logging.buffer.RollingLogBuffer
+import es.pedrazamiguez.splittrip.core.logging.exit.ProcessExitDiagnosticsReporter
 import es.pedrazamiguez.splittrip.core.logging.tree.DevelopmentLogcatTree
 import es.pedrazamiguez.splittrip.core.logging.tree.ProductionCrashlyticsTree
 import es.pedrazamiguez.splittrip.core.logging.tree.RollingLogTree
@@ -90,8 +91,14 @@ class App : Application() {
 
         NotificationChannelInitializer.createChannels(this)
 
+        val processExitDiagnosticsReporter = GlobalContext.get().get<ProcessExitDiagnosticsReporter>()
         val appConfigRepository = GlobalContext.get().get<AppConfigRepository>()
         CoroutineScope(Dispatchers.IO).launch {
+            try {
+                processExitDiagnosticsReporter.reportRecentAbnormalExits()
+            } catch (e: Exception) {
+                Timber.w(e, "ProcessExitDiagnosticsReporter failed")
+            }
             try {
                 appConfigRepository.fetchConfiguration()
                 Timber.d("AppConfigRepository fetchConfiguration completed successfully")
