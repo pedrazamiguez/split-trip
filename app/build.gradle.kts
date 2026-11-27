@@ -37,6 +37,7 @@ val appVersionCode = vMajor * 1000000 + vMinor * 1000 + vPatch
 
 android {
     namespace = "es.pedrazamiguez.splittrip"
+    dynamicFeatures += setOf(":dynamic_litertlm")
 
     defaultConfig {
         applicationId = "es.pedrazamiguez.splittrip"
@@ -44,6 +45,10 @@ android {
         versionCode = appVersionCode
         versionName = appVersionName
         testInstrumentationRunner = "es.pedrazamiguez.splittrip.TestRunner"
+        // Match dynamic_litertlm native ABIs (the dynamic runtime does not ship 32-bit x86).
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+        }
         // Default: production builds use Play Integrity (no debug App Check logging).
         buildConfigField("Boolean", "USE_DEBUG_APP_CHECK", "false")
 
@@ -159,6 +164,7 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.play.app.update.ktx)
     implementation(libs.play.billing.ktx)
+    implementation(libs.play.feature.delivery.ktx)
     testImplementation(libs.junit4)
     testImplementation(libs.mockk)
     testImplementation(platform(libs.junit.bom))

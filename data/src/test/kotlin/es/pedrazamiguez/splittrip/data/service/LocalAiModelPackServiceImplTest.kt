@@ -1,8 +1,10 @@
 package es.pedrazamiguez.splittrip.data.service
 
+import es.pedrazamiguez.splittrip.data.litert.LiteRtDynamicRuntimeManager
+import es.pedrazamiguez.splittrip.data.litert.LiteRtDynamicRuntimeState
+import es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClient
 import es.pedrazamiguez.splittrip.data.local.datastore.InstalledModelPackMetadata
 import es.pedrazamiguez.splittrip.data.local.datastore.LocalAiModelPackPreferences
-import es.pedrazamiguez.splittrip.data.repository.impl.LiteRtEngineClient
 import es.pedrazamiguez.splittrip.data.worker.LocalAiModelPackWorkScheduler
 import es.pedrazamiguez.splittrip.data.worker.ModelPackWorkState
 import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelNotEntitledException
@@ -50,6 +52,7 @@ class LocalAiModelPackServiceImplTest {
     private lateinit var preferences: LocalAiModelPackPreferences
     private lateinit var workScheduler: LocalAiModelPackWorkScheduler
     private lateinit var engineClient: LiteRtEngineClient
+    private lateinit var dynamicRuntimeManager: LiteRtDynamicRuntimeManager
     private var isEngineInitialized = false
 
     private val compactConfig = ModelPackConfig(
@@ -85,6 +88,7 @@ class LocalAiModelPackServiceImplTest {
     private val installedFlow = MutableStateFlow<InstalledModelPackMetadata?>(null)
     private val wifiOnlyFlow = MutableStateFlow(true)
     private val workStateFlow = MutableStateFlow<ModelPackWorkState>(ModelPackWorkState.Idle)
+    private val runtimeStateFlow = MutableStateFlow<LiteRtDynamicRuntimeState>(LiteRtDynamicRuntimeState.Installed)
 
     private val compatibleResult = DeviceCompatibilityResult(
         isCompatible = true,
@@ -107,8 +111,11 @@ class LocalAiModelPackServiceImplTest {
         preferences = mockk(relaxed = true)
         workScheduler = mockk(relaxed = true)
         engineClient = mockk(relaxed = true)
+        dynamicRuntimeManager = mockk(relaxed = true)
         isEngineInitialized = false
 
+        every { dynamicRuntimeManager.observeState() } returns runtimeStateFlow
+        every { dynamicRuntimeManager.isRuntimeInstalled() } returns true
         every { appConfigRepository.localAiModelPackCatalog } returns catalogFlow
         every { featureGateService.isFeatureEnabled(GatedFeature.LOCAL_AI_MODEL_PACK) } returns entitledFlow
         every { preferences.installedPackMetadata } returns installedFlow
@@ -139,6 +146,7 @@ class LocalAiModelPackServiceImplTest {
                 override val value: LiteRtEngineClient get() = engineClient
                 override fun isInitialized(): Boolean = isEngineInitialized
             },
+            dynamicRuntimeManager = dynamicRuntimeManager,
             ioDispatcher = testDispatcher
         )
     }
@@ -458,4 +466,214 @@ class LocalAiModelPackServiceImplTest {
         assertFalse(service.isPackInstalled())
         assertNull(service.getInstalledModelPath())
     }
+
+    @Test
+    fun `requestDownload requests dynamic runtime install before enqueuing download when not installed`() =
+        runTest(testDispatcher) {
+            every { dynamicRuntimeManager.isRuntimeInstalled() } returns false
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.NotInstalled
+            wifiOnlyFlow.value = false
+
+            val result = service.requestDownload(packId = "qwen3-0.6b-litert-v1")
+
+            assertTrue(result.isSuccess)
+            verify(exactly = 1) { dynamicRuntimeManager.requestInstall() }
+            verify(exactly = 0) { workScheduler.enqueueDownload(any(), any()) }
+        }
+
+    @Test
+    fun `enqueues pending model pack download automatically when dynamic runtime transitions to Installed`() =
+        runTest(testDispatcher) {
+            every { dynamicRuntimeManager.isRuntimeInstalled() } returns false
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.NotInstalled
+            wifiOnlyFlow.value = false
+
+            service.requestDownload(packId = "qwen3-0.6b-litert-v1")
+            advanceUntilIdle()
+            verify(exactly = 0) { workScheduler.enqueueDownload(any(), any()) }
+
+            every { dynamicRuntimeManager.isRuntimeInstalled() } returns true
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.Installed
+            advanceUntilIdle()
+
+            verify(exactly = 1) { workScheduler.enqueueDownload(compactConfig, false) }
+        }
+
+    @Test
+    fun `observeStatus emits InstallingRuntime while dynamic runtime is Pending, Downloading, or Installing`() =
+        runTest(testDispatcher) {
+            every { dynamicRuntimeManager.isRuntimeInstalled() } returns false
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.NotInstalled
+            service.requestDownload(packId = "qwen3-0.6b-litert-v1")
+
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.Pending
+            assertEquals(
+                ModelPackStatus.InstallingRuntime(progressPercent = null, packId = "qwen3-0.6b-litert-v1"),
+                service.observeStatus().first()
+            )
+
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.Downloading(
+                bytesDownloaded = 4_000_000L,
+                totalBytesToDownload = 10_000_000L
+            )
+            assertEquals(
+                ModelPackStatus.InstallingRuntime(progressPercent = 40, packId = "qwen3-0.6b-litert-v1"),
+                service.observeStatus().first()
+            )
+
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.Installing
+            assertEquals(
+                ModelPackStatus.InstallingRuntime(progressPercent = null, packId = "qwen3-0.6b-litert-v1"),
+                service.observeStatus().first()
+            )
+        }
+
+    @Test
+    fun `observeStatus emits Error RUNTIME_UNAVAILABLE when dynamic runtime install fails`() =
+        runTest(testDispatcher) {
+            every { dynamicRuntimeManager.isRuntimeInstalled() } returns false
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.NotInstalled
+            service.requestDownload(packId = "qwen3-0.6b-litert-v1")
+
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.Failed(
+                reason = ModelPackErrorReason.RUNTIME_UNAVAILABLE,
+                errorCode = -1
+            )
+
+            assertEquals(
+                ModelPackStatus.Error(
+                    reason = ModelPackErrorReason.RUNTIME_UNAVAILABLE,
+                    canRetry = true,
+                    packId = "qwen3-0.6b-litert-v1"
+                ),
+                service.observeStatus().first()
+            )
+        }
+
+    @Test
+    fun `auto-requests dynamic runtime install when valid pack exists on disk and blocks isPackInstalled`() =
+        runTest(testDispatcher) {
+            every { dynamicRuntimeManager.isRuntimeInstalled() } returns false
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.NotInstalled
+            every { storageManager.isFileValid("/data/model.litertlm", 1_597_922_856L) } returns true
+            installedFlow.value = InstalledModelPackMetadata(
+                packId = "qwen2.5-1.5b-litert-v1",
+                version = "1.0.0",
+                sizeBytes = 1_597_922_856L,
+                sha256Checksum = "b".repeat(64),
+                filePath = "/data/model.litertlm"
+            )
+            advanceUntilIdle()
+
+            verify(atLeast = 1) { dynamicRuntimeManager.requestInstall() }
+            assertFalse(service.isPackInstalled())
+
+            every { dynamicRuntimeManager.isRuntimeInstalled() } returns true
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.Installed
+            advanceUntilIdle()
+
+            assertTrue(service.isPackInstalled())
+            assertEquals(
+                ModelPackStatus.Installed(
+                    version = "1.0.0",
+                    sizeBytes = 1_597_922_856L,
+                    isUpdateAvailable = false,
+                    packId = "qwen2.5-1.5b-litert-v1"
+                ),
+                service.observeStatus().first()
+            )
+        }
+
+    @Test
+    fun `cancelDownload cancels dynamic runtime install and clears pending download`() = runTest(testDispatcher) {
+        every { dynamicRuntimeManager.isRuntimeInstalled() } returns false
+        runtimeStateFlow.value = LiteRtDynamicRuntimeState.NotInstalled
+        service.requestDownload(packId = "qwen3-0.6b-litert-v1")
+
+        val cancelResult = service.cancelDownload(packId = "qwen3-0.6b-litert-v1")
+        assertTrue(cancelResult.isSuccess)
+        verify(exactly = 1) { dynamicRuntimeManager.cancelInstall() }
+
+        runtimeStateFlow.value = LiteRtDynamicRuntimeState.Installed
+        advanceUntilIdle()
+        verify(exactly = 0) { workScheduler.enqueueDownload(any(), any()) }
+    }
+
+    @Test
+    fun `deletePack requests deferred uninstall of dynamic runtime module`() = runTest(testDispatcher) {
+        val result = service.deletePack()
+
+        assertTrue(result.isSuccess)
+        verify(exactly = 1) { dynamicRuntimeManager.cancelInstall() }
+        verify(exactly = 1) { dynamicRuntimeManager.requestDeferredUninstall() }
+    }
+
+    @Test
+    fun `observeStatus and observeCatalogEntries emit Downloading at 0 percent when workState is Queued`() =
+        runTest(testDispatcher) {
+            workStateFlow.value = ModelPackWorkState.Queued(packId = "qwen3-0.6b-litert-v1")
+
+            val status = service.observeStatus().first()
+            val entries = service.observeCatalogEntries().first()
+
+            assertEquals(
+                ModelPackStatus.Downloading(
+                    progressPercent = 0,
+                    downloadedBytes = 0L,
+                    totalBytes = compactConfig.sizeBytes,
+                    packId = "qwen3-0.6b-litert-v1"
+                ),
+                status
+            )
+            assertEquals(status, entries.first { it.config.packId == "qwen3-0.6b-litert-v1" }.status)
+        }
+
+    @Test
+    fun `observeCatalogEntries maps InstallingRuntime, runtime Failed, Verifying, and Incompatible tiers`() =
+        runTest(testDispatcher) {
+            val incompatibleResult = compatibleResult.copy(
+                isCompatible = false,
+                reason = ModelPackIncompatibilityReason.INSUFFICIENT_RAM
+            )
+            every { compatibilityProvider.evaluateCatalog(any(), any()) } returns listOf(
+                EvaluatedCatalogPack(compactConfig, compatibleResult, isRecommended = true),
+                EvaluatedCatalogPack(balancedConfig, incompatibleResult, isRecommended = false)
+            )
+            every { dynamicRuntimeManager.isRuntimeInstalled() } returns false
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.NotInstalled
+            service.requestDownload(packId = "qwen3-0.6b-litert-v1")
+
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.Downloading(
+                bytesDownloaded = 2_500_000L,
+                totalBytesToDownload = 10_000_000L
+            )
+            val installingEntries = service.observeCatalogEntries().first()
+            assertEquals(
+                ModelPackStatus.InstallingRuntime(progressPercent = 25, packId = "qwen3-0.6b-litert-v1"),
+                installingEntries[0].status
+            )
+            assertTrue(installingEntries[0].isActiveDownload)
+            assertTrue(installingEntries[1].status is ModelPackStatus.Incompatible)
+
+            runtimeStateFlow.value = LiteRtDynamicRuntimeState.Failed(
+                reason = ModelPackErrorReason.RUNTIME_UNAVAILABLE,
+                errorCode = -1
+            )
+            val failedEntries = service.observeCatalogEntries().first()
+            assertEquals(
+                ModelPackStatus.Error(
+                    reason = ModelPackErrorReason.RUNTIME_UNAVAILABLE,
+                    canRetry = true,
+                    packId = "qwen3-0.6b-litert-v1"
+                ),
+                failedEntries[0].status
+            )
+
+            workStateFlow.value = ModelPackWorkState.Verifying("1.0.0", packId = "qwen3-0.6b-litert-v1")
+            val verifyingEntries = service.observeCatalogEntries().first()
+            assertEquals(
+                ModelPackStatus.Verifying("1.0.0", packId = "qwen3-0.6b-litert-v1"),
+                verifyingEntries[0].status
+            )
+        }
 }
