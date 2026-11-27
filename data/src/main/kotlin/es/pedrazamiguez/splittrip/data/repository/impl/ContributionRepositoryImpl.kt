@@ -6,18 +6,20 @@ import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
 import es.pedrazamiguez.splittrip.data.sync.SyncCreateParams
 import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
-import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
+import es.pedrazamiguez.splittrip.data.sync.syncGroupCollection
 import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import java.time.LocalDateTime
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -39,9 +41,13 @@ class ContributionRepositoryImpl(
     private val syncScope = CoroutineScope(ioDispatcher)
 
     private val cloudSubscriptionTracker = KeyedSubscriptionTracker()
+    private val syncedArchivedGroupIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     init {
-        syncTeardownCoordinator.registerAction { cloudSubscriptionTracker.cancelAll() }
+        syncTeardownCoordinator.registerAction {
+            cloudSubscriptionTracker.cancelAll()
+            syncedArchivedGroupIds.clear()
+        }
     }
 
     override suspend fun addContribution(groupId: String, contribution: Contribution) {
@@ -176,9 +182,16 @@ class ContributionRepositoryImpl(
     override fun getGroupContributionsFlow(groupId: String): Flow<List<Contribution>> =
         localContributionDataSource.getContributionsByGroupIdFlow(groupId)
             .trackSubscription(cloudSubscriptionTracker, groupId, syncScope) {
-                subscribeAndReconcile(
-                    cloudFlow = cloudContributionDataSource
-                        .getContributionsByGroupIdFlow(groupId),
+                syncGroupCollection(
+                    groupId = groupId,
+                    isGroupArchived = {
+                        localGroupDataSource.getGroupById(groupId)?.status == GroupStatus.ARCHIVED
+                    },
+                    syncedArchivedGroupIds = syncedArchivedGroupIds,
+                    fetchOnce = { cloudContributionDataSource.fetchContributionsByGroupId(groupId) },
+                    cloudFlow = {
+                        cloudContributionDataSource.getContributionsByGroupIdFlow(groupId)
+                    },
                     params = SyncReconciliationParams(
                         reconcileLocal = { remoteContributions ->
                             localContributionDataSource.replaceContributionsForGroup(

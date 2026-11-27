@@ -5,8 +5,10 @@ import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Contribution
+import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -14,6 +16,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.verify
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -325,6 +328,50 @@ class ContributionRepositoryImplTest {
                     cloudContributions
                 )
             }
+        }
+
+        @Test
+        fun `uses one-shot fetch without persistent listener for ARCHIVED group`() = runTest(testDispatcher) {
+            val realTeardownCoordinator = SyncTeardownCoordinator()
+            val realRepo = ContributionRepositoryImpl(
+                cloudContributionDataSource = cloudContributionDataSource,
+                localContributionDataSource = localContributionDataSource,
+                localGroupDataSource = localGroupDataSource,
+                authenticationService = authenticationService,
+                performanceMonitor = performanceMonitor,
+                syncTeardownCoordinator = realTeardownCoordinator,
+                ioDispatcher = testDispatcher
+            )
+            every {
+                localContributionDataSource.getContributionsByGroupIdFlow(testGroupId)
+            } returns flowOf(emptyList())
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns Group(
+                id = testGroupId,
+                status = GroupStatus.ARCHIVED
+            )
+            coEvery {
+                cloudContributionDataSource.fetchContributionsByGroupId(testGroupId)
+            } returns cloudContributions
+            coEvery {
+                localContributionDataSource.replaceContributionsForGroup(any(), any())
+            } just Runs
+
+            realRepo.getGroupContributionsFlow(testGroupId).first()
+            advanceUntilIdle()
+            realRepo.getGroupContributionsFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            verify(exactly = 0) { cloudContributionDataSource.getContributionsByGroupIdFlow(testGroupId) }
+            coVerify(exactly = 1) { cloudContributionDataSource.fetchContributionsByGroupId(testGroupId) }
+            coVerify(exactly = 1) {
+                localContributionDataSource.replaceContributionsForGroup(testGroupId, cloudContributions)
+            }
+
+            realTeardownCoordinator.teardownAll()
+            realRepo.getGroupContributionsFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            coVerify(exactly = 2) { cloudContributionDataSource.fetchContributionsByGroupId(testGroupId) }
         }
     }
 

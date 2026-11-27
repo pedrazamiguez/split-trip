@@ -7,14 +7,18 @@ import es.pedrazamiguez.splittrip.data.local.mapper.toEntity
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
 import es.pedrazamiguez.splittrip.data.sync.SyncCreateParams
 import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
-import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
+import es.pedrazamiguez.splittrip.data.sync.syncGroupCollection
 import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashTransferDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashTransfer
 import es.pedrazamiguez.splittrip.domain.repository.CashTransferRepository
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,12 +28,22 @@ import kotlinx.coroutines.flow.map
 class CashTransferRepositoryImpl(
     private val cashTransferDao: CashTransferDao,
     private val cloudCashTransferDataSource: CloudCashTransferDataSource,
+    private val localGroupDataSource: LocalGroupDataSource,
     private val performanceMonitor: PerformanceMonitor,
+    private val syncTeardownCoordinator: SyncTeardownCoordinator,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : CashTransferRepository {
 
     private val syncScope = CoroutineScope(ioDispatcher)
     private val subscriptionTracker = KeyedSubscriptionTracker()
+    private val syncedArchivedGroupIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+    init {
+        syncTeardownCoordinator.registerAction {
+            subscriptionTracker.cancelAll()
+            syncedArchivedGroupIds.clear()
+        }
+    }
 
     override suspend fun addTransfer(transfer: CashTransfer): Result<Unit> {
         val transferWithMetadata = if (transfer.id.isBlank()) {
@@ -63,8 +77,14 @@ class CashTransferRepositoryImpl(
         return cashTransferDao.observeByGroupId(groupId)
             .map { entities -> entities.map { it.toDomain() } }
             .trackSubscription(subscriptionTracker, groupId, syncScope) {
-                subscribeAndReconcile(
-                    cloudFlow = cloudCashTransferDataSource.getGroupCashTransfersFlow(groupId),
+                syncGroupCollection(
+                    groupId = groupId,
+                    isGroupArchived = {
+                        localGroupDataSource.getGroupById(groupId)?.status == GroupStatus.ARCHIVED
+                    },
+                    syncedArchivedGroupIds = syncedArchivedGroupIds,
+                    fetchOnce = { cloudCashTransferDataSource.fetchGroupCashTransfers(groupId) },
+                    cloudFlow = { cloudCashTransferDataSource.getGroupCashTransfersFlow(groupId) },
                     params = SyncReconciliationParams(
                         reconcileLocal = { remoteTransfers ->
                             cashTransferDao.replaceCashTransfersForGroup(
@@ -81,7 +101,8 @@ class CashTransferRepositoryImpl(
                         },
                         entityLabel = "cash_transfer",
                         logContext = "for group $groupId",
-                        performanceMonitor = performanceMonitor
+                        performanceMonitor = performanceMonitor,
+                        verifyParentExists = { localGroupDataSource.getGroupById(groupId) != null }
                     )
                 )
             }

@@ -30,11 +30,7 @@ class FirebaseStorageConfigConsistencyTest {
 
     @Test
     fun `storage rules enforces rules_version 2 and public read only for public avatars`() {
-        val rootDir = resolveProjectRoot()
-        val storageRulesFile = File(rootDir, "storage.rules")
-        assertTrue(storageRulesFile.exists(), "storage.rules not found: ${storageRulesFile.absolutePath}")
-
-        val content = storageRulesFile.readText(StandardCharsets.UTF_8)
+        val content = readStorageRules()
 
         assertTrue(
             content.contains("rules_version = '2';"),
@@ -61,9 +57,60 @@ class FirebaseStorageConfigConsistencyTest {
             "storage.rules must contain fallback match /{allPaths=**}"
         )
         assertTrue(
-            content.contains("allow read, write: if request.auth != null;"),
-            "storage.rules must require authentication for all other paths"
+            content.contains("allow read, write: if false;"),
+            "storage.rules fallback must default-deny all unmatched paths"
         )
+        assertFalse(
+            content.contains("allow read, write: if request.auth != null;"),
+            "storage.rules must not contain unrestricted authenticated catch-all rule"
+        )
+    }
+
+    @Test
+    fun `storage rules enforces scoped path caps and MIME type checks`() {
+        val content = readStorageRules()
+
+        assertTrue(
+            content.contains("match /avatars/{userId}/{fileName}"),
+            "storage.rules must scope user avatar rules to /avatars/{userId}/{fileName}"
+        )
+        assertTrue(
+            content.contains("isOwner(userId) && isValidImage(2 * 1024 * 1024)"),
+            "storage.rules must restrict avatar create/update to owner and 2 MB image cap"
+        )
+        assertTrue(
+            content.contains("allow delete: if isOwner(userId);"),
+            "storage.rules must allow avatar deletion only by owner"
+        )
+        assertTrue(
+            content.contains("match /groups/{groupId}/{fileName}"),
+            "storage.rules must scope group cover rules to /groups/{groupId}/{fileName}"
+        )
+        assertTrue(
+            content.contains("isAuthenticated() && isValidImage(3 * 1024 * 1024)"),
+            "storage.rules must enforce 3 MB image cap on group covers"
+        )
+        assertTrue(
+            content.contains("match /receipts/{expenseId}/{fileName}"),
+            "storage.rules must scope receipt rules to /receipts/{expenseId}/{fileName}"
+        )
+        assertTrue(
+            content.contains("5 * 1024 * 1024") &&
+                content.contains("application/pdf") &&
+                content.contains("10 * 1024 * 1024"),
+            "storage.rules must enforce 5 MB image cap and 10 MB PDF cap on receipts"
+        )
+        assertTrue(
+            content.contains("contentType.matches('image/.*')"),
+            "storage.rules must validate image/* MIME types"
+        )
+    }
+
+    private fun readStorageRules(): String {
+        val rootDir = resolveProjectRoot()
+        val storageRulesFile = File(rootDir, "storage.rules")
+        assertTrue(storageRulesFile.exists(), "storage.rules not found: ${storageRulesFile.absolutePath}")
+        return storageRulesFile.readText(StandardCharsets.UTF_8)
     }
 
     @Test

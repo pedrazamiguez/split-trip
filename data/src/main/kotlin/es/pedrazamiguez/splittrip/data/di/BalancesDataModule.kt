@@ -53,7 +53,9 @@ val balancesDataModule = module {
         SettlementRepositoryImpl(
             cloudSettlementDataSource = get<CloudSettlementDataSource>(),
             localSettlementDataSource = get<LocalSettlementDataSource>(),
+            localGroupDataSource = get<LocalGroupDataSource>(),
             performanceMonitor = get<PerformanceMonitor>(),
+            syncTeardownCoordinator = get<SyncTeardownCoordinator>(),
             ioDispatcher = Dispatchers.IO
         )
     }
@@ -62,7 +64,9 @@ val balancesDataModule = module {
         CashTransferRepositoryImpl(
             cashTransferDao = get<CashTransferDao>(),
             cloudCashTransferDataSource = get<CloudCashTransferDataSource>(),
+            localGroupDataSource = get<LocalGroupDataSource>(),
             performanceMonitor = get<PerformanceMonitor>(),
+            syncTeardownCoordinator = get<SyncTeardownCoordinator>(),
             ioDispatcher = Dispatchers.IO
         )
     }

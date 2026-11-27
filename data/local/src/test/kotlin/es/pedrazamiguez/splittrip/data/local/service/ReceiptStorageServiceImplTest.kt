@@ -33,6 +33,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricTestRunner::class)
@@ -144,6 +145,7 @@ class ReceiptStorageServiceImplTest {
     }
 
     @Test
+    @Config(sdk = [Build.VERSION_CODES.R])
     fun copyAndCompress_imageJpeg_compressesToWebp_AndroidR() = runTest {
         ReflectionHelpers.setStaticField(Build.VERSION::class.java, "SDK_INT", Build.VERSION_CODES.R)
 
@@ -183,6 +185,7 @@ class ReceiptStorageServiceImplTest {
         assertNotNull(attachment)
         assertEquals("image/webp", attachment.mimeType)
         assertTrue(attachment.localUri.endsWith(".webp"))
+        verify { mockBitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 85, any()) }
 
         val compressedFile = File(URI(attachment.localUri))
         assertTrue(compressedFile.exists())
@@ -233,6 +236,7 @@ class ReceiptStorageServiceImplTest {
         assertNotNull(attachment)
         assertEquals("image/webp", attachment.mimeType)
         assertTrue(attachment.localUri.endsWith(".webp"))
+        verify { mockBitmap.compress(Bitmap.CompressFormat.WEBP, 85, any()) }
 
         val compressedFile = File(URI(attachment.localUri))
         assertTrue(compressedFile.exists())
@@ -589,6 +593,36 @@ class ReceiptStorageServiceImplTest {
         }
     }
 
+    @Test
+    fun copyAndCompress_largeImage_downsamplesToMaxDimension1280() = runTest {
+        val capturedOptions = mutableListOf<BitmapFactory.Options>()
+        val setup = setupImageMock("downsample_4032", 4032, 3024, capturedOptions)
+        try {
+            val attachment = setup.localService.copyAndCompress(setup.sourceUri)
+
+            assertNotNull(attachment)
+            val decodeOpts = capturedOptions.single { !it.inJustDecodeBounds }
+            assertEquals(4, decodeOpts.inSampleSize)
+        } finally {
+            setup.cleanUp()
+        }
+    }
+
+    @Test
+    fun copyAndCompress_imageAtMaxDimension1280_keepsInSampleSize1() = runTest {
+        val capturedOptions = mutableListOf<BitmapFactory.Options>()
+        val setup = setupImageMock("exact_1280", 1280, 960, capturedOptions)
+        try {
+            val attachment = setup.localService.copyAndCompress(setup.sourceUri)
+
+            assertNotNull(attachment)
+            val decodeOpts = capturedOptions.single { !it.inJustDecodeBounds }
+            assertEquals(1, decodeOpts.inSampleSize)
+        } finally {
+            setup.cleanUp()
+        }
+    }
+
     private fun createMockBitmaps(width: Int, height: Int): Pair<Bitmap, Bitmap> {
         val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
         var originalRecycled = false
@@ -610,7 +644,8 @@ class ReceiptStorageServiceImplTest {
     private fun setupImageMock(
         tag: String,
         width: Int = 1000,
-        height: Int = 800
+        height: Int = 800,
+        capturedOptions: MutableList<BitmapFactory.Options>? = null
     ): ImageMockSetup {
         val mockContext = mockk<Context>()
         val mockResolver = mockk<ContentResolver>()
@@ -635,6 +670,7 @@ class ReceiptStorageServiceImplTest {
         mockkStatic(BitmapFactory::class)
         every { BitmapFactory.decodeFile(any(), any()) } answers {
             val opts = arg<BitmapFactory.Options>(1)
+            capturedOptions?.add(opts)
             if (opts.inJustDecodeBounds) {
                 opts.outWidth = width
                 opts.outHeight = height

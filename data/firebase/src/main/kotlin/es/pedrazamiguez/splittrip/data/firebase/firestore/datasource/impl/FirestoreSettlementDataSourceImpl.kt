@@ -20,6 +20,17 @@ class FirestoreSettlementDataSourceImpl(
     private val firestore: FirebaseFirestore
 ) : CloudSettlementDataSource {
 
+    override suspend fun fetchSettlementsByGroupId(groupId: String): List<SettlementRecord> {
+        val snapshot = firestore
+            .collection(GroupDocument.COLLECTION_PATH)
+            .document(groupId)
+            .collection(SETTLEMENTS_COLLECTION)
+            .get()
+            .await()
+
+        return snapshot.documents.mapNotNull { it.toSettlementRecord() }
+    }
+
     override fun getSettlementsByGroupIdFlow(groupId: String): Flow<List<SettlementRecord>> =
         callbackFlow {
             val collectionRef = firestore

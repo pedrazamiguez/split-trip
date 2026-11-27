@@ -5,9 +5,11 @@ import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
@@ -471,6 +473,27 @@ class ExpenseRepositoryImplTest {
             verify(exactly = 1) { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) }
             job1.cancel()
             job2.cancel()
+        }
+
+        @Test
+        fun `uses one-shot fetch without persistent listener for ARCHIVED group`() = runTest(testDispatcher) {
+            every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns Group(
+                id = testGroupId,
+                status = GroupStatus.ARCHIVED
+            )
+            coEvery { cloudExpenseDataSource.fetchExpensesByGroupId(testGroupId) } returns cloudExpenses
+            coEvery { localExpenseDataSource.replaceExpensesForGroup(any(), any()) } just Runs
+            coEvery { localExpenseDataSource.getPendingSyncExpenseIds(testGroupId) } returns emptyList()
+
+            repository.getGroupExpensesFlow(testGroupId).first()
+            advanceUntilIdle()
+            repository.getGroupExpensesFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            verify(exactly = 0) { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) }
+            coVerify(exactly = 1) { cloudExpenseDataSource.fetchExpensesByGroupId(testGroupId) }
+            coVerify(exactly = 1) { localExpenseDataSource.replaceExpensesForGroup(testGroupId, cloudExpenses) }
         }
     }
 

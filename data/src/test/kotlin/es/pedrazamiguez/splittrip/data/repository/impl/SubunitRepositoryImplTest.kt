@@ -5,7 +5,9 @@ import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSubunitDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSubunitDataSource
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
+import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import io.mockk.Runs
@@ -14,6 +16,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.verify
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -779,6 +782,28 @@ class SubunitRepositoryImplTest {
             // Then — should not attempt any verification
             coVerify(exactly = 0) {
                 cloudSubunitDataSource.verifySubunitOnServer(any(), any())
+            }
+        }
+
+        @Test
+        fun `uses one-shot fetch without persistent listener for ARCHIVED group`() = runTest(testDispatcher) {
+            every { localSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns Group(
+                id = testGroupId,
+                status = GroupStatus.ARCHIVED
+            )
+            coEvery { cloudSubunitDataSource.fetchSubunitsByGroupId(testGroupId) } returns cloudSubunits
+            coEvery { localSubunitDataSource.replaceSubunitsForGroup(any(), any()) } just Runs
+
+            repository.getGroupSubunitsFlow(testGroupId).first()
+            advanceUntilIdle()
+            repository.getGroupSubunitsFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            verify(exactly = 0) { cloudSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId) }
+            coVerify(exactly = 1) { cloudSubunitDataSource.fetchSubunitsByGroupId(testGroupId) }
+            coVerify(exactly = 1) {
+                localSubunitDataSource.replaceSubunitsForGroup(testGroupId, cloudSubunits)
             }
         }
     }

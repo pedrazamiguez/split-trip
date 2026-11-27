@@ -98,6 +98,8 @@ export interface UserDoc {
   username: string;
   email: string;
   displayName?: string;
+  timezone?: string;
+  preferredReminderTime?: string;
 }
 
 export interface DeviceDoc {
