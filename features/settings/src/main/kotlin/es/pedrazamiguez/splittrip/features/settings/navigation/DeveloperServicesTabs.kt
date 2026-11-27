@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
-import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CreditCard
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Category
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.TextScan2
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.FloatingNavTab
@@ -35,20 +35,20 @@ object AiExtractionTabItem : FloatingNavTab {
     override fun getLabel() = stringResource(R.string.developer_services_tab_ai_extraction)
 }
 
-object BillingTabItem : FloatingNavTab {
-    override val id = "billing"
+object CategorySuggestionTabItem : FloatingNavTab {
+    override val id = "category_suggestion"
 
     @Composable
     override fun Icon(isSelected: Boolean, tint: Color) {
         Icon(
-            imageVector = TablerIcons.Outline.CreditCard,
+            imageVector = TablerIcons.Outline.Category,
             contentDescription = getLabel(),
             tint = tint
         )
     }
 
     @Composable
-    override fun getLabel(): String = stringResource(R.string.developer_services_tab_billing)
+    override fun getLabel(): String = stringResource(R.string.developer_services_tab_category_suggestion)
 }
 
-val SERVICE_TABS = listOf(OcrTabItem, AiExtractionTabItem, BillingTabItem)
+val SERVICE_TABS = listOf(OcrTabItem, AiExtractionTabItem, CategorySuggestionTabItem)

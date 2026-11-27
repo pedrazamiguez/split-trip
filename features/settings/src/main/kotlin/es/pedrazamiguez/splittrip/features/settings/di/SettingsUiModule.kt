@@ -17,6 +17,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.SendPasswordResetEmailUseC
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.UnlinkProviderUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.GetDiagnosticLogsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.SuggestExpenseCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.GetNotificationPreferencesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UpdateNotificationPreferenceUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.CancelLocalAiModelPackDownloadUseCase
@@ -155,17 +156,15 @@ val settingsUiModule = module {
         val receiptOcrService = get<ReceiptOcrService>()
         val receiptExtractionService = get<ReceiptExtractionService>()
         val aiModelResolverService = get<AiModelResolverService>()
-        val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
-        val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
-        val updateUserTierUseCase = get<UpdateUserTierUseCase>()
+        val observeLocalAiModelPackStateUseCase = get<ObserveLocalAiModelPackStateUseCase>()
+        val suggestExpenseCategoryUseCase = get<SuggestExpenseCategoryUseCase>()
         val observeDeveloperAccessUseCase = get<ObserveDeveloperAccessUseCase>()
         DeveloperServicesViewModel(
             receiptOcrService = receiptOcrService,
             receiptExtractionService = receiptExtractionService,
             aiModelResolver = aiModelResolverService,
-            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
-            getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-            updateUserTierUseCase = updateUserTierUseCase,
+            observeLocalAiModelPackStateUseCase = observeLocalAiModelPackStateUseCase,
+            suggestExpenseCategoryUseCase = suggestExpenseCategoryUseCase,
             observeDeveloperAccessUseCase = observeDeveloperAccessUseCase
         )
     }

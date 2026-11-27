@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.navigation.FloatingNavigationBar
 import es.pedrazamiguez.splittrip.features.settings.navigation.SERVICE_TABS
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.AiExtractionTabContent
-import es.pedrazamiguez.splittrip.features.settings.presentation.component.BillingTabContent
+import es.pedrazamiguez.splittrip.features.settings.presentation.component.CategorySuggestionTabContent
 import es.pedrazamiguez.splittrip.features.settings.presentation.component.OcrTabContent
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesTab
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesUiEvent
@@ -20,12 +20,12 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.Devel
 private fun DeveloperServicesTab.toNavId() = when (this) {
     DeveloperServicesTab.Ocr -> "ocr"
     DeveloperServicesTab.AiExtraction -> "ai_extraction"
-    DeveloperServicesTab.Billing -> "billing"
+    DeveloperServicesTab.CategorySuggestion -> "category_suggestion"
 }
 
 private fun String.toDeveloperServicesTab() = when (this) {
     "ai_extraction" -> DeveloperServicesTab.AiExtraction
-    "billing" -> DeveloperServicesTab.Billing
+    "category_suggestion" -> DeveloperServicesTab.CategorySuggestion
     else -> DeveloperServicesTab.Ocr
 }
 
@@ -54,7 +54,7 @@ fun DeveloperServicesScreen(
                     onSelectReceiptForAiClick = onSelectReceiptForAiClick,
                     onEvent = onEvent
                 )
-                DeveloperServicesTab.Billing -> BillingTabContent(
+                DeveloperServicesTab.CategorySuggestion -> CategorySuggestionTabContent(
                     uiState = uiState,
                     onEvent = onEvent,
                     modifier = Modifier.fillMaxSize()

@@ -24,7 +24,6 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesUiEvent
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesUiState
@@ -48,12 +47,13 @@ internal fun AiExtractionTabContent(
             availableModels = uiState.availableModels,
             selectedModel = uiState.developerOverrideModel,
             resolvedModel = uiState.activeResolvedModel,
+            installedLocalAiPack = uiState.installedLocalAiPack,
             onModelSelected = { onEvent(DeveloperServicesUiEvent.SelectModel(it)) }
         )
 
         Box(modifier = Modifier.weight(1f)) {
             when (uiState.extractionStatus) {
-                ExtractionStatus.Loading -> ShimmerLoadingList(itemCount = 1)
+                ExtractionStatus.Loading -> AiExtractionLoadingIndicator(modifier = Modifier.fillMaxSize())
 
                 ExtractionStatus.Success -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -72,7 +72,8 @@ internal fun AiExtractionTabContent(
                             subcategory = uiState.extractedSubcategory,
                             notes = uiState.extractedNotes,
                             source = uiState.extractionSource,
-                            confidence = uiState.extractionConfidence
+                            confidence = uiState.extractionConfidence,
+                            installedLocalAiPack = uiState.installedLocalAiPack
                         )
                     }
                 }
