@@ -247,7 +247,7 @@ sonarqube {
                 "**/designsystem/ad/AdConsentManager*.kt",
                 "**/data/litert/LiteRtEngineClient.kt",
                 "**/data/litert/AndroidPlaySplitInstallClient.kt",
-                "**/dynamic/litertlm/LiteRtLmEngineClientImpl.kt",
+                "**/dynamic/litertlm/AndroidLiteRtNativeEngineFactory.kt",
             ).joinToString(","),
         )
 

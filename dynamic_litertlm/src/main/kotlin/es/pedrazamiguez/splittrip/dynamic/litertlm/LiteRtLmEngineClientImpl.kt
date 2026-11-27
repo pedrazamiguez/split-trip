@@ -1,190 +1,286 @@
 package es.pedrazamiguez.splittrip.dynamic.litertlm
 
 import android.content.Context
-import com.google.ai.edge.litertlm.Backend
-import com.google.ai.edge.litertlm.Content
-import com.google.ai.edge.litertlm.Contents
-import com.google.ai.edge.litertlm.Conversation
-import com.google.ai.edge.litertlm.ConversationConfig
-import com.google.ai.edge.litertlm.Engine
-import com.google.ai.edge.litertlm.EngineConfig
-import com.google.ai.edge.litertlm.LogSeverity
-import com.google.ai.edge.litertlm.Message
-import com.google.ai.edge.litertlm.MessageCallback
-import com.google.ai.edge.litertlm.SamplerConfig
-import com.google.ai.edge.litertlm.ThinkingConfig
-import com.google.android.play.core.splitinstall.SplitInstallHelper
 import es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClient
 import es.pedrazamiguez.splittrip.data.litert.LiteRtRuntimeConfig
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 
 internal class LiteRtLmEngineClientImpl(
-    private val context: Context
+    private val engineFactory: LiteRtNativeEngineFactory,
+    private val callbackDrainTimeoutMs: Long = DEFAULT_CALLBACK_DRAIN_TIMEOUT_MS
 ) : LiteRtEngineClient {
+
+    constructor(context: Context) : this(
+        engineFactory = AndroidLiteRtNativeEngineFactory(context)
+    )
 
     private val mutex = Mutex()
     private val engineStateLock = Any()
-    private var cachedEngine: Engine? = null
+    private var cachedEngine: ManagedLiteRtEngine? = null
     private var cachedModelPath: String? = null
-
-    @Volatile
-    private var nativeLibrariesPreloaded = false
+    private var initializingModelPath: String? = null
+    private var activeGenerationEngine: ManagedLiteRtEngine? = null
+    private var activeGenerationInvalidated: Boolean = false
+    private var engineCreationEpoch: Long = 0L
 
     override suspend fun generate(
         modelPath: String,
         prompt: String,
         systemInstruction: String?
     ): String = mutex.withLock {
-        val engine = getOrCreateEngine(modelPath)
-        val conversationSpec = LiteRtRuntimeConfig.buildConversationSpec(systemInstruction)
-        val conversationConfig = conversationSpec.toConversationConfig()
+        val engine = acquireEngineForGeneration(modelPath)
+        var conversationDrained = true
         try {
-            engine.createConversation(conversationConfig).use { conversation ->
-                awaitConversationResponse(
-                    conversation = conversation,
-                    prompt = prompt,
-                    conversationSpec = conversationSpec
-                )
-            }
+            val conversationSpec = LiteRtRuntimeConfig.buildConversationSpec(systemInstruction)
+            val conversation = engine.createConversation(conversationSpec)
+            awaitConversationWithSafeTeardown(
+                conversation = conversation,
+                prompt = prompt,
+                conversationSpec = conversationSpec,
+                onDrainTimeout = { conversationDrained = false }
+            )
         } catch (e: CancellationException) {
             throw e
         } catch (t: Throwable) {
             invalidate(modelPath)
             throw t
+        } finally {
+            val engineToClose = releaseEngineAfterGeneration(
+                engine = engine,
+                conversationDrained = conversationDrained
+            )
+            engineToClose?.let { closeEngineSafely(it) }
         }
     }
 
     override fun invalidate(modelPath: String?) {
-        synchronized(engineStateLock) {
-            if (modelPath == null || modelPath == cachedModelPath) {
-                runCatching { cachedEngine?.close() }
+        val engineToCloseNow = synchronized(engineStateLock) {
+            val matchesTarget = modelPath == null ||
+                modelPath == cachedModelPath ||
+                modelPath == initializingModelPath
+            if (matchesTarget) {
+                engineCreationEpoch++
+            }
+            val current = cachedEngine
+            if (current != null && (modelPath == null || modelPath == cachedModelPath)) {
                 cachedEngine = null
                 cachedModelPath = null
+                if (activeGenerationEngine === current) {
+                    activeGenerationInvalidated = true
+                    null
+                } else {
+                    current
+                }
+            } else {
+                null
             }
         }
+        engineToCloseNow?.let { closeEngineSafely(it) }
     }
 
     override fun close() {
         invalidate()
     }
 
-    private suspend fun awaitConversationResponse(
-        conversation: Conversation,
+    private suspend fun awaitConversationWithSafeTeardown(
+        conversation: ManagedLiteRtConversation,
         prompt: String,
-        conversationSpec: LiteRtRuntimeConfig.ConversationSpec
-    ): String = suspendCancellableCoroutine { continuation ->
-        val outputBuffer = StringBuffer()
-        val callback = object : MessageCallback {
-            override fun onMessage(message: Message) {
-                message.contents.contents
-                    .filterIsInstance<Content.Text>()
-                    .forEach { content -> outputBuffer.append(content.text) }
-            }
+        conversationSpec: LiteRtRuntimeConfig.ConversationSpec,
+        onDrainTimeout: () -> Unit
+    ): String {
+        val terminalCallbackReceived = CompletableDeferred<Unit>()
+        val cancelRequested = AtomicBoolean(false)
+        var asyncRequestScheduled = false
 
-            override fun onDone() {
-                if (continuation.isActive) {
-                    continuation.resume(outputBuffer.toString())
-                }
+        fun requestCancelOnce() {
+            if (cancelRequested.compareAndSet(false, true)) {
+                runCatching { conversation.cancelProcess() }
+                    .onFailure { Timber.w(it, "LiteRtLmEngineClientImpl: cancelProcess() failed") }
             }
-
-            override fun onError(throwable: Throwable) {
-                if (continuation.isActive) {
-                    continuation.resumeWithException(throwable)
-                }
-            }
-        }
-
-        // Abort the native C++ decoding loop immediately when coroutine timeout cancels generation.
-        continuation.invokeOnCancellation {
-            runCatching { conversation.cancelProcess() }
         }
 
         try {
-            conversation.sendMessageAsync(
-                text = prompt,
-                callback = callback,
-                maxOutputToken = conversationSpec.maxOutputTokens,
-                thinkingConfig = conversationSpec.thinkingSpec.toThinkingConfig()
+            return awaitConversationResponse(
+                conversation = conversation,
+                prompt = prompt,
+                conversationSpec = conversationSpec,
+                terminalCallbackReceived = terminalCallbackReceived,
+                onAsyncScheduled = { asyncRequestScheduled = true },
+                onCancelRequested = ::requestCancelOnce
             )
+        } finally {
+            // Native Conversation::session_ is freed by close(); wait for the worker callback to drain first.
+            withContext(NonCancellable) {
+                val canCloseSafely = if (!asyncRequestScheduled || terminalCallbackReceived.isCompleted) {
+                    true
+                } else {
+                    requestCancelOnce()
+                    val drained = withTimeoutOrNull(callbackDrainTimeoutMs) {
+                        terminalCallbackReceived.await()
+                        true
+                    } ?: false
+                    if (!drained) {
+                        onDrainTimeout()
+                        Timber.w(
+                            "LiteRtLmEngineClientImpl: drain timed out after %d ms; skipping close",
+                            callbackDrainTimeoutMs
+                        )
+                    }
+                    drained
+                }
+                if (canCloseSafely) {
+                    runCatching { conversation.close() }
+                        .onFailure { Timber.w(it, "LiteRtLmEngineClientImpl: conversation.close() failed") }
+                }
+            }
+        }
+    }
+
+    private suspend fun awaitConversationResponse(
+        conversation: ManagedLiteRtConversation,
+        prompt: String,
+        conversationSpec: LiteRtRuntimeConfig.ConversationSpec,
+        terminalCallbackReceived: CompletableDeferred<Unit>,
+        onAsyncScheduled: () -> Unit,
+        onCancelRequested: () -> Unit
+    ): String = suspendCancellableCoroutine { continuation ->
+        if (!continuation.isActive) return@suspendCancellableCoroutine
+
+        val outputBuffer = StringBuffer()
+        val callback = buildConversationCallback(
+            outputBuffer = outputBuffer,
+            terminalCallbackReceived = terminalCallbackReceived,
+            continuation = continuation
+        )
+
+        try {
+            conversation.sendMessageAsync(
+                prompt = prompt,
+                conversationSpec = conversationSpec,
+                callback = callback
+            )
+            onAsyncScheduled()
         } catch (t: Throwable) {
             if (continuation.isActive) {
                 continuation.resumeWithException(t)
             }
+            return@suspendCancellableCoroutine
+        }
+
+        // Abort the native C++ decoding loop immediately when coroutine timeout or typing cancels generation.
+        continuation.invokeOnCancellation {
+            onCancelRequested()
         }
     }
 
-    private fun getOrCreateEngine(modelPath: String): Engine = synchronized(engineStateLock) {
-        val currentEngine = cachedEngine
-        if (currentEngine != null && cachedModelPath == modelPath && currentEngine.isInitialized()) {
-            currentEngine
-        } else {
-            runCatching { currentEngine?.close() }
+    private fun buildConversationCallback(
+        outputBuffer: StringBuffer,
+        terminalCallbackReceived: CompletableDeferred<Unit>,
+        continuation: CancellableContinuation<String>
+    ): LiteRtConversationCallback = object : LiteRtConversationCallback {
+        override fun onTextChunk(text: String) {
+            outputBuffer.append(text)
+        }
+
+        override fun onDone() {
+            terminalCallbackReceived.complete(Unit)
+            if (continuation.isActive) {
+                continuation.resume(outputBuffer.toString())
+            }
+        }
+
+        override fun onError(throwable: Throwable) {
+            terminalCallbackReceived.complete(Unit)
+            if (continuation.isActive) {
+                continuation.resumeWithException(throwable)
+            }
+        }
+    }
+
+    private fun acquireEngineForGeneration(modelPath: String): ManagedLiteRtEngine {
+        var staleEngineToClose: ManagedLiteRtEngine? = null
+        var observedEpoch = 0L
+
+        synchronized(engineStateLock) {
+            val current = cachedEngine
+            if (current != null && cachedModelPath == modelPath && current.isInitialized()) {
+                activeGenerationEngine = current
+                activeGenerationInvalidated = false
+                return current
+            }
+            staleEngineToClose = current
             cachedEngine = null
             cachedModelPath = null
+            initializingModelPath = modelPath
+            observedEpoch = engineCreationEpoch
+        }
 
-            ensureNativeLibrariesLoaded()
-            Engine.setNativeMinLogSeverity(LogSeverity.WARNING)
-            val engineSpec = LiteRtRuntimeConfig.buildEngineSpec(
-                modelPath = modelPath,
-                cacheDir = context.cacheDir.absolutePath
+        staleEngineToClose?.let { closeEngineSafely(it) }
+
+        val newEngine = try {
+            engineFactory.createAndInitialize(modelPath)
+        } catch (t: Throwable) {
+            synchronized(engineStateLock) {
+                initializingModelPath = null
+            }
+            throw t
+        }
+
+        synchronized(engineStateLock) {
+            initializingModelPath = null
+            activeGenerationEngine = newEngine
+            if (engineCreationEpoch == observedEpoch) {
+                cachedEngine = newEngine
+                cachedModelPath = modelPath
+                activeGenerationInvalidated = false
+            } else {
+                activeGenerationInvalidated = true
+            }
+        }
+        return newEngine
+    }
+
+    private fun releaseEngineAfterGeneration(
+        engine: ManagedLiteRtEngine,
+        conversationDrained: Boolean
+    ): ManagedLiteRtEngine? = synchronized(engineStateLock) {
+        val shouldClose = activeGenerationInvalidated || cachedEngine !== engine
+        if (!conversationDrained && cachedEngine === engine) {
+            cachedEngine = null
+            cachedModelPath = null
+        }
+        activeGenerationEngine = null
+        activeGenerationInvalidated = false
+        if (!conversationDrained) {
+            Timber.w(
+                "LiteRtLmEngineClientImpl: detached engine without closing after un-drained conversation timeout"
             )
-            val engine = Engine(engineSpec.toEngineConfig())
-            engine.initialize()
-            cachedEngine = engine
-            cachedModelPath = modelPath
-            Timber.d(
-                "LiteRtLmEngineClientImpl: initialized CPU engine (maxNumTokens=%d) for %s",
-                LiteRtRuntimeConfig.DEFAULT_MAX_NUM_TOKENS,
-                modelPath
-            )
+            null
+        } else if (shouldClose) {
             engine
+        } else {
+            null
         }
     }
 
-    // Load split native .so libraries immediately after on-demand install so JNI succeeds without process restart.
-    private fun ensureNativeLibrariesLoaded() {
-        if (nativeLibrariesPreloaded) return
-        runCatching { SplitInstallHelper.loadLibrary(context, NATIVE_LIB_LITERT) }
-            .onFailure { Timber.d(it, "SplitInstallHelper preload skipped for %s", NATIVE_LIB_LITERT) }
-        runCatching { SplitInstallHelper.loadLibrary(context, NATIVE_LIB_LITERT_LM_JNI) }
-            .onFailure { Timber.w(it, "SplitInstallHelper preload failed for %s", NATIVE_LIB_LITERT_LM_JNI) }
-        nativeLibrariesPreloaded = true
+    private fun closeEngineSafely(engine: ManagedLiteRtEngine) {
+        runCatching { engine.close() }
+            .onFailure { Timber.w(it, "LiteRtLmEngineClientImpl: engine.close() failed") }
     }
 
-    private fun LiteRtRuntimeConfig.EngineSpec.toEngineConfig(): EngineConfig = EngineConfig(
-        modelPath = modelPath,
-        backend = when (backend) {
-            LiteRtRuntimeConfig.BackendType.CPU -> Backend.CPU()
-        },
-        maxNumTokens = maxNumTokens,
-        cacheDir = cacheDir
-    )
-
-    private fun LiteRtRuntimeConfig.ThinkingSpec.toThinkingConfig(): ThinkingConfig = ThinkingConfig(
-        enableThinking = enableThinking,
-        thinkingTokenBudget = thinkingTokenBudget
-    )
-
-    private fun LiteRtRuntimeConfig.ConversationSpec.toConversationConfig(): ConversationConfig = ConversationConfig(
-        systemInstruction = systemInstruction?.let { Contents.of(it) },
-        samplerConfig = SamplerConfig(
-            topK = samplerSpec.topK,
-            topP = samplerSpec.topP,
-            temperature = samplerSpec.temperature,
-            seed = samplerSpec.seed
-        ),
-        maxOutputToken = maxOutputTokens,
-        thinkingConfig = thinkingSpec.toThinkingConfig()
-    )
-
-    private companion object {
-        private const val NATIVE_LIB_LITERT = "LiteRt"
-        private const val NATIVE_LIB_LITERT_LM_JNI = "litertlm_jni"
+    internal companion object {
+        const val DEFAULT_CALLBACK_DRAIN_TIMEOUT_MS = 5_000L
     }
 }
