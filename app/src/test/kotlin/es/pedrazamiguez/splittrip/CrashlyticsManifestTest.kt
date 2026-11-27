@@ -77,4 +77,24 @@ class CrashlyticsManifestTest {
             }
         }
     }
+
+    @Test
+    fun `app build script includes firebase-crashlytics-ndk dependency`() {
+        val buildGradle = resolveAppFile("build.gradle.kts")
+        assertTrue(buildGradle.exists(), "Expected app/build.gradle.kts to exist")
+        val buildGradleText = buildGradle.readText()
+        assertTrue(
+            buildGradleText.contains("libs.firebase.crashlytics.ndk"),
+            "Expected app/build.gradle.kts to declare libs.firebase.crashlytics.ndk"
+        )
+
+        val rootDir = buildGradle.canonicalFile.parentFile.parentFile
+        val libsVersions = File(rootDir, "gradle/libs.versions.toml")
+        assertTrue(libsVersions.exists(), "Expected gradle/libs.versions.toml to exist")
+        val libsVersionsText = libsVersions.readText()
+        assertTrue(
+            libsVersionsText.contains("firebase-crashlytics-ndk"),
+            "Expected gradle/libs.versions.toml to define firebase-crashlytics-ndk"
+        )
+    }
 }

@@ -6,10 +6,14 @@ import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelUnavailableExcept
 import es.pedrazamiguez.splittrip.domain.service.LocalAiModelPackService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -17,6 +21,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class LiteRtInferenceRepositoryImplTest {
 
@@ -115,5 +120,32 @@ class LiteRtInferenceRepositoryImplTest {
 
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull() is LocalAiModelUnavailableException)
+    }
+
+    @Test
+    fun `generateStructuredOutput catches UnsatisfiedLinkError, invalidates engineClient, and wraps error`() =
+        runTest(testDispatcher) {
+            coEvery {
+                engineClient.generate(any(), any(), any())
+            } throws UnsatisfiedLinkError("dlopen failed")
+            every { engineClient.invalidate(any()) } just Runs
+
+            val result = repository.generateStructuredOutput("Extract", "{}")
+
+            assertTrue(result.isFailure)
+            assertTrue(result.exceptionOrNull() is LocalAiModelUnavailableException)
+            assertTrue(result.exceptionOrNull()?.cause is UnsatisfiedLinkError)
+            verify(exactly = 1) { engineClient.invalidate("/data/ai_models/model.litertlm") }
+        }
+
+    @Test
+    fun `generateContent rethrows CancellationException without wrapping`() = runTest(testDispatcher) {
+        coEvery {
+            engineClient.generate(any(), any(), any())
+        } throws CancellationException("Cancelled")
+
+        assertThrows<CancellationException> {
+            repository.generateContent("Receipt")
+        }
     }
 }
