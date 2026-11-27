@@ -56,6 +56,12 @@ interface SettlementRecordDao {
     @Query("DELETE FROM settlement_records WHERE id IN (:ids)")
     suspend fun deleteSettlementsByIds(ids: List<String>)
 
+    @Query("SELECT * FROM settlement_records WHERE groupId = :groupId AND id IN (:ids)")
+    suspend fun getByGroupAndIds(groupId: String, ids: List<String>): List<SettlementRecordEntity>
+
+    @Query("DELETE FROM settlement_records WHERE groupId = :groupId AND id IN (:ids)")
+    suspend fun deleteByGroupAndIds(groupId: String, ids: List<String>)
+
     @Transaction
     suspend fun replaceForGroup(groupId: String, entities: List<SettlementRecordEntity>) {
         val unsyncedStatuses = getUnsyncedSettlementStatuses(groupId)
@@ -65,33 +71,66 @@ interface SettlementRecordDao {
         val remoteIds = entities.map { it.id }.toSet()
 
         val mergedEntities = entities.map { remote ->
-            val local = localEntities[remote.id]
-            if (local != null) {
-                // If local is not synced, preserve local modifications but take remote fields
-                // that aren't user-editable (e.g. metadata)
-                if (local.syncStatus != "SYNCED") {
-                    remote.copy(
-                        status = local.status,
-                        confirmedByPayerAt = local.confirmedByPayerAt,
-                        confirmedByPayeeAt = local.confirmedByPayeeAt,
-                        resolvedAt = local.resolvedAt,
-                        disputedBy = local.disputedBy,
-                        disputeReason = local.disputeReason,
-                        syncStatus = local.syncStatus
-                    )
-                } else {
-                    remote.copy(syncStatus = "SYNCED")
-                }
-            } else {
-                remote
-            }
+            mergeRemoteWithLocal(remote, localEntities[remote.id])
         }
 
         mergedEntities.forEach { upsert(it) }
 
         val staleIds = localEntities.keys.filter { it !in remoteIds && it !in unsyncedIds }
         if (staleIds.isNotEmpty()) {
-            deleteSettlementsByIds(staleIds.toList())
+            staleIds.chunked(SQLITE_BIND_LIMIT).forEach { chunk ->
+                deleteSettlementsByIds(chunk)
+            }
         }
+    }
+
+    @Transaction
+    suspend fun applyDeltaForGroup(
+        groupId: String,
+        upserts: List<SettlementRecordEntity>,
+        deletedIds: List<String>
+    ) {
+        if (upserts.isEmpty() && deletedIds.isEmpty()) return
+
+        if (upserts.isNotEmpty()) {
+            val existingById = upserts
+                .map { it.id }
+                .chunked(SQLITE_BIND_LIMIT)
+                .flatMap { chunk -> getByGroupAndIds(groupId, chunk) }
+                .associateBy { it.id }
+            upserts
+                .map { remote -> mergeRemoteWithLocal(remote, existingById[remote.id]) }
+                .forEach { upsert(it) }
+        }
+
+        deletedIds.chunked(SQLITE_BIND_LIMIT).forEach { chunk ->
+            deleteByGroupAndIds(groupId, chunk)
+        }
+    }
+
+    private fun mergeRemoteWithLocal(
+        remote: SettlementRecordEntity,
+        local: SettlementRecordEntity?
+    ): SettlementRecordEntity {
+        if (local == null) return remote
+        // If local is not synced, preserve local modifications but take remote fields
+        // that aren't user-editable (e.g. metadata)
+        return if (local.syncStatus != "SYNCED") {
+            remote.copy(
+                status = local.status,
+                confirmedByPayerAt = local.confirmedByPayerAt,
+                confirmedByPayeeAt = local.confirmedByPayeeAt,
+                resolvedAt = local.resolvedAt,
+                disputedBy = local.disputedBy,
+                disputeReason = local.disputeReason,
+                syncStatus = local.syncStatus
+            )
+        } else {
+            remote.copy(syncStatus = "SYNCED")
+        }
+    }
+
+    private companion object {
+        const val SQLITE_BIND_LIMIT = 500
     }
 }

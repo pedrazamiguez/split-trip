@@ -17,6 +17,7 @@ import es.pedrazamiguez.splittrip.data.local.dao.ExchangeRateDao
 import es.pedrazamiguez.splittrip.data.local.dao.ExpenseDao
 import es.pedrazamiguez.splittrip.data.local.dao.ExpenseSplitDao
 import es.pedrazamiguez.splittrip.data.local.dao.GroupDao
+import es.pedrazamiguez.splittrip.data.local.dao.GroupSyncCheckpointDao
 import es.pedrazamiguez.splittrip.data.local.dao.MembershipRemovalEventDao
 import es.pedrazamiguez.splittrip.data.local.dao.SettlementRecordDao
 import es.pedrazamiguez.splittrip.data.local.dao.SubunitDao
@@ -29,6 +30,7 @@ import es.pedrazamiguez.splittrip.data.local.entity.ExchangeRateEntity
 import es.pedrazamiguez.splittrip.data.local.entity.ExpenseEntity
 import es.pedrazamiguez.splittrip.data.local.entity.ExpenseSplitEntity
 import es.pedrazamiguez.splittrip.data.local.entity.GroupEntity
+import es.pedrazamiguez.splittrip.data.local.entity.GroupSyncCheckpointEntity
 import es.pedrazamiguez.splittrip.data.local.entity.MembershipRemovalEventEntity
 import es.pedrazamiguez.splittrip.data.local.entity.SettlementRecordEntity
 import es.pedrazamiguez.splittrip.data.local.entity.SubunitEntity
@@ -47,9 +49,10 @@ import es.pedrazamiguez.splittrip.data.local.entity.UserEntity
         UserEntity::class,
         SubunitEntity::class,
         SettlementRecordEntity::class,
-        MembershipRemovalEventEntity::class
+        MembershipRemovalEventEntity::class,
+        GroupSyncCheckpointEntity::class
     ],
-    version = 46,
+    version = 47,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 33, to = 34),
@@ -86,4 +89,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun subunitDao(): SubunitDao
     abstract fun settlementRecordDao(): SettlementRecordDao
     abstract fun membershipRemovalEventDao(): MembershipRemovalEventDao
+    abstract fun groupSyncCheckpointDao(): GroupSyncCheckpointDao
 }

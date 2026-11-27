@@ -6,10 +6,14 @@ import es.pedrazamiguez.splittrip.data.local.entity.CashTransferEntity
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashTransferDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSyncCheckpointDataSource
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
+import es.pedrazamiguez.splittrip.domain.enums.SyncCollectionName
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashTransfer
+import es.pedrazamiguez.splittrip.domain.model.DeltaSyncBatch
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.model.SyncWatermark
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -21,6 +25,7 @@ import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -42,6 +47,7 @@ class CashTransferRepositoryImplTest {
     private lateinit var cashTransferDao: CashTransferDao
     private lateinit var cloudDataSource: CloudCashTransferDataSource
     private lateinit var localGroupDataSource: LocalGroupDataSource
+    private lateinit var localSyncCheckpointDataSource: LocalSyncCheckpointDataSource
     private lateinit var performanceMonitor: PerformanceMonitor
     private lateinit var syncTeardownCoordinator: SyncTeardownCoordinator
     private lateinit var testDispatcher: TestDispatcher
@@ -64,9 +70,11 @@ class CashTransferRepositoryImplTest {
         cashTransferDao = mockk()
         cloudDataSource = mockk()
         localGroupDataSource = mockk(relaxed = true)
+        localSyncCheckpointDataSource = mockk(relaxed = true)
+        coEvery { localSyncCheckpointDataSource.getWatermark(any(), any()) } returns null
         performanceMonitor = mockk(relaxed = true) {
-            io.mockk.coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
-            io.mockk.every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
+            coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
+            every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
         }
         syncTeardownCoordinator = SyncTeardownCoordinator()
         testDispatcher = StandardTestDispatcher()
@@ -75,6 +83,7 @@ class CashTransferRepositoryImplTest {
             cashTransferDao = cashTransferDao,
             cloudCashTransferDataSource = cloudDataSource,
             localGroupDataSource = localGroupDataSource,
+            localSyncCheckpointDataSource = localSyncCheckpointDataSource,
             performanceMonitor = performanceMonitor,
             syncTeardownCoordinator = syncTeardownCoordinator,
             ioDispatcher = testDispatcher
@@ -118,7 +127,14 @@ class CashTransferRepositoryImplTest {
         )
 
         every { cashTransferDao.observeByGroupId(testGroupId) } returns flowOf(localEntities)
-        every { cloudDataSource.getGroupCashTransfersFlow(testGroupId) } returns flowOf(emptyList())
+        coEvery { cloudDataSource.fetchGroupCashTransfersFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+            upserts = emptyList(),
+            deletedIds = emptyList(),
+            maxServerUpdatedAt = null,
+            isServerConfirmed = true,
+            isFullSnapshot = true
+        )
+        every { cloudDataSource.observeGroupCashTransfersDeltaFlow(testGroupId, null) } returns emptyFlow()
         coEvery { cashTransferDao.getPendingSyncCashTransferIds(testGroupId) } returns emptyList()
         coEvery { cashTransferDao.replaceCashTransfersForGroup(any(), any()) } just Runs
 
@@ -128,19 +144,23 @@ class CashTransferRepositoryImplTest {
         assertEquals("transfer-1", result[0].id)
 
         advanceUntilIdle()
-        coVerify { cloudDataSource.getGroupCashTransfersFlow(testGroupId) }
+        coVerify { cloudDataSource.observeGroupCashTransfersDeltaFlow(testGroupId, null) }
     }
 
     @Test
     fun `registers teardown callback and cancels active listener on sign-out`() = runTest(testDispatcher) {
         val localFlow = MutableSharedFlow<List<CashTransferEntity>>()
+        val validWatermark = SyncWatermark((System.currentTimeMillis() / 1000L) - 60L, 0)
         var cancelled = false
         every { cashTransferDao.observeByGroupId(testGroupId) } returns localFlow
         coEvery { localGroupDataSource.getGroupById(testGroupId) } returns Group(
             id = testGroupId,
             status = GroupStatus.ACTIVE
         )
-        every { cloudDataSource.getGroupCashTransfersFlow(testGroupId) } returns flow {
+        coEvery {
+            localSyncCheckpointDataSource.getWatermark(testGroupId, SyncCollectionName.CASH_TRANSFERS)
+        } returns validWatermark
+        every { cloudDataSource.observeGroupCashTransfersDeltaFlow(testGroupId, validWatermark) } returns flow {
             try {
                 awaitCancellation()
             } finally {
@@ -167,7 +187,13 @@ class CashTransferRepositoryImplTest {
             id = testGroupId,
             status = GroupStatus.ARCHIVED
         )
-        coEvery { cloudDataSource.fetchGroupCashTransfers(testGroupId) } returns listOf(testTransfer)
+        coEvery { cloudDataSource.fetchGroupCashTransfersFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+            upserts = listOf(testTransfer),
+            deletedIds = emptyList(),
+            maxServerUpdatedAt = SyncWatermark(100L, 0),
+            isServerConfirmed = true,
+            isFullSnapshot = true
+        )
         coEvery { cashTransferDao.replaceCashTransfersForGroup(any(), any()) } just Runs
 
         repository.observeGroupCashTransfers(testGroupId).first()
@@ -175,8 +201,45 @@ class CashTransferRepositoryImplTest {
         repository.observeGroupCashTransfers(testGroupId).first()
         advanceUntilIdle()
 
-        verify(exactly = 0) { cloudDataSource.getGroupCashTransfersFlow(testGroupId) }
-        coVerify(exactly = 1) { cloudDataSource.fetchGroupCashTransfers(testGroupId) }
+        verify(exactly = 0) { cloudDataSource.observeGroupCashTransfersDeltaFlow(testGroupId, any()) }
+        coVerify(exactly = 1) { cloudDataSource.fetchGroupCashTransfersFullSnapshot(testGroupId) }
         coVerify(exactly = 1) { cashTransferDao.replaceCashTransfersForGroup(testGroupId, any()) }
     }
+
+    @Test
+    fun `existing checkpoint passes SyncWatermark to delta flow and applies tombstone`() =
+        runTest(testDispatcher) {
+            val validWatermark = SyncWatermark((System.currentTimeMillis() / 1000L) - 60L, 0)
+            val nextWatermark = SyncWatermark(System.currentTimeMillis() / 1000L, 0)
+            every { cashTransferDao.observeByGroupId(testGroupId) } returns flowOf(emptyList())
+            coEvery {
+                localSyncCheckpointDataSource.getWatermark(testGroupId, SyncCollectionName.CASH_TRANSFERS)
+            } returns validWatermark
+            every {
+                cloudDataSource.observeGroupCashTransfersDeltaFlow(testGroupId, validWatermark)
+            } returns flowOf(
+                DeltaSyncBatch(
+                    upserts = listOf(testTransfer),
+                    deletedIds = listOf("tombstone-1"),
+                    maxServerUpdatedAt = nextWatermark,
+                    isServerConfirmed = true,
+                    isFullSnapshot = false
+                )
+            )
+            coEvery { cashTransferDao.applyCashTransfersDeltaForGroup(any(), any(), any()) } just Runs
+            coEvery { cashTransferDao.getPendingSyncCashTransferIds(testGroupId) } returns emptyList()
+
+            repository.observeGroupCashTransfers(testGroupId).first()
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { cloudDataSource.fetchGroupCashTransfersFullSnapshot(any()) }
+            verify(exactly = 1) { cloudDataSource.observeGroupCashTransfersDeltaFlow(testGroupId, validWatermark) }
+            coVerify(exactly = 1) {
+                cashTransferDao.applyCashTransfersDeltaForGroup(
+                    testGroupId,
+                    match { it.map { e -> e.id } == listOf(testTransfer.id) },
+                    listOf("tombstone-1")
+                )
+            }
+        }
 }

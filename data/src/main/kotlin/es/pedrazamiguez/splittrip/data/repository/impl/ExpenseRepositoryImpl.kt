@@ -2,17 +2,19 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
+import es.pedrazamiguez.splittrip.data.sync.DeltaSyncParams
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
-import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
-import es.pedrazamiguez.splittrip.data.sync.fetchOnceAndReconcile
+import es.pedrazamiguez.splittrip.data.sync.syncGroupCollectionDelta
 import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSyncCheckpointDataSource
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
+import es.pedrazamiguez.splittrip.domain.enums.SyncCollectionName
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
 import es.pedrazamiguez.splittrip.domain.model.Expense
@@ -46,6 +48,7 @@ class ExpenseRepositoryImpl(
     private val receiptStorageService: ReceiptStorageService,
     private val performanceMonitor: PerformanceMonitor,
     private val localGroupDataSource: LocalGroupDataSource,
+    private val localSyncCheckpointDataSource: LocalSyncCheckpointDataSource,
     private val remainderDistributionService: RemainderDistributionService,
     private val syncTeardownCoordinator: SyncTeardownCoordinator,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -205,109 +208,48 @@ class ExpenseRepositoryImpl(
     override fun getGroupExpensesFlow(groupId: String): Flow<List<Expense>> =
         localExpenseDataSource.getExpensesByGroupIdFlow(groupId)
             .trackSubscription(cloudSubscriptionTracker, groupId, syncScope) {
+                val syncParams = DeltaSyncParams(
+                    groupId = groupId,
+                    collectionName = SyncCollectionName.EXPENSES,
+                    checkpointDataSource = localSyncCheckpointDataSource,
+                    isGroupArchived = {
+                        localGroupDataSource.getGroupById(groupId)?.status == GroupStatus.ARCHIVED
+                    },
+                    syncedArchivedGroupIds = syncedArchivedGroupIds,
+                    fetchFullSnapshot = { cloudExpenseDataSource.fetchExpensesFullSnapshot(groupId) },
+                    fetchDeltaOnce = { watermark ->
+                        cloudExpenseDataSource.fetchExpensesDelta(groupId, watermark)
+                    },
+                    observeDeltaFlow = { watermark ->
+                        cloudExpenseDataSource.observeExpensesDeltaFlow(groupId, watermark)
+                    },
+                    replaceLocal = { remoteExpenses ->
+                        localExpenseDataSource.replaceExpensesForGroup(groupId, remoteExpenses)
+                    },
+                    applyDeltaLocal = { upserts, deletedIds ->
+                        localExpenseDataSource.applyExpensesDeltaForGroup(groupId, upserts, deletedIds)
+                    },
+                    getPendingIds = { localExpenseDataSource.getPendingSyncExpenseIds(groupId) },
+                    verifyOnServer = { id -> cloudExpenseDataSource.verifyExpenseOnServer(groupId, id) },
+                    markSynced = { id -> localExpenseDataSource.updateSyncStatus(id, SyncStatus.SYNCED) },
+                    entityLabel = "expense",
+                    logContext = "for group $groupId",
+                    performanceMonitor = performanceMonitor,
+                    verifyParentExists = { localGroupDataSource.getGroupById(groupId) != null },
+                    onAfterReconcile = { retryPendingReceiptUploads(groupId) }
+                )
+
                 if (localGroupDataSource.getGroupById(groupId)?.status == GroupStatus.ARCHIVED) {
-                    fetchOnceAndReconcile(
-                        groupId = groupId,
-                        syncedArchivedGroupIds = syncedArchivedGroupIds,
-                        fetchOnce = { cloudExpenseDataSource.fetchExpensesByGroupId(groupId) },
-                        params = SyncReconciliationParams(
-                            reconcileLocal = { remoteExpenses ->
-                                localExpenseDataSource.replaceExpensesForGroup(groupId, remoteExpenses)
-                            },
-                            getPendingIds = { localExpenseDataSource.getPendingSyncExpenseIds(groupId) },
-                            verifyOnServer = { id -> cloudExpenseDataSource.verifyExpenseOnServer(groupId, id) },
-                            markSynced = { id -> localExpenseDataSource.updateSyncStatus(id, SyncStatus.SYNCED) },
-                            entityLabel = "expense",
-                            logContext = "for group $groupId",
-                            performanceMonitor = performanceMonitor,
-                            verifyParentExists = { localGroupDataSource.getGroupById(groupId) != null }
-                        )
-                    )
+                    syncGroupCollectionDelta(syncParams)
                 } else {
                     coroutineScope {
                         launch {
                             observeAndProcessMembershipRemovals(groupId)
                         }
-                        subscribeToCloudChanges(groupId)
+                        syncGroupCollectionDelta(syncParams)
                     }
                 }
             }
-
-    /**
-     * Subscribes to real-time Firestore snapshot changes for a group's expenses.
-     *
-     * The Firestore snapshotListener fires whenever ANY user adds, modifies, or
-     * deletes an expense in this group. Each snapshot represents the complete
-     * authoritative state of the collection.
-     *
-     * We use [replaceExpensesForGroup] with a merge reconciliation strategy
-     * (upsert remote + selective delete of stale) to safely reconcile the
-     * local DB with the cloud snapshot. This handles:
-     * - Additions by other users → new items appear locally
-     * - Deletions by other users → stale items are removed locally
-     * - Modifications by other users → items are updated locally
-     * - Locally-created expenses not yet synced → preserved (not deleted)
-     *
-     * After reconciliation, [confirmPendingSyncExpenses] attempts to verify
-     * any PENDING_SYNC items against the server. This handles the
-     * PENDING_SYNC → SYNCED transition when the device comes back online
-     * after an app restart (where the syncScope coroutine that would normally
-     * call updateSyncStatus(SYNCED) was killed before completing).
-     *
-     * The Room Flow re-emits automatically after each reconciliation,
-     * keeping the UI in sync across all devices in near real-time.
-     */
-    private suspend fun subscribeToCloudChanges(groupId: String) {
-        try {
-            cloudExpenseDataSource.getExpensesByGroupIdFlow(groupId)
-                .collect { remoteExpenses ->
-                    try {
-                        if (localGroupDataSource.getGroupById(groupId) == null) {
-                            Timber.w("Parent group missing, skipping expense reconciliation")
-                            return@collect
-                        }
-                        Timber.d("Real-time sync: ${remoteExpenses.size} expenses for group $groupId")
-                        localExpenseDataSource.replaceExpensesForGroup(groupId, remoteExpenses)
-                        confirmPendingSyncExpenses(groupId)
-                        retryPendingReceiptUploads(groupId)
-                    } catch (e: Exception) {
-                        Timber.w(e, "Error reconciling expenses from cloud snapshot")
-                    }
-                }
-        } catch (e: Exception) {
-            Timber.w(e, "Error subscribing to cloud expense changes, using local cache")
-        }
-    }
-
-    /**
-     * Attempts to confirm PENDING_SYNC expenses by verifying their existence on the server.
-     *
-     * Called after each reconciliation cycle. When the device is online and Firestore
-     * has confirmed the pending write, the server verification succeeds and the
-     * expense transitions to SYNCED. When offline, the verification throws and the
-     * expense remains PENDING_SYNC.
-     *
-     * This mechanism handles the case where the app is killed before the syncScope
-     * coroutine in addExpense() can call updateSyncStatus(SYNCED). On app restart,
-     * the snapshot listener fires, reconciliation restores PENDING_SYNC (Step 3),
-     * and this method then verifies and transitions confirmed items to SYNCED.
-     */
-    private suspend fun confirmPendingSyncExpenses(groupId: String) {
-        val pendingIds = localExpenseDataSource.getPendingSyncExpenseIds(groupId)
-        if (pendingIds.isEmpty()) return
-
-        for (id in pendingIds) {
-            try {
-                if (cloudExpenseDataSource.verifyExpenseOnServer(groupId, id)) {
-                    localExpenseDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
-                    Timber.d("Confirmed expense sync: $id")
-                }
-            } catch (e: Exception) {
-                // Server unreachable — keep as PENDING_SYNC
-                Timber.d(e, "Cannot confirm expense $id — server unreachable")
-            }
-        }
-    }
 
     /**
      * Scans for expenses in the group that have a local receipt but no remote URL,

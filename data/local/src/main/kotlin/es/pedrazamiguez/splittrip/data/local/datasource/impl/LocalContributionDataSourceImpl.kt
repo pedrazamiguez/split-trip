@@ -38,6 +38,18 @@ class LocalContributionDataSourceImpl(private val contributionDao: ContributionD
         )
     }
 
+    override suspend fun applyContributionsDeltaForGroup(
+        groupId: String,
+        upserts: List<Contribution>,
+        deletedIds: List<String>
+    ) {
+        contributionDao.applyContributionsDeltaForGroup(
+            groupId = groupId,
+            upserts = upserts.map { it.toEntity() },
+            deletedIds = deletedIds
+        )
+    }
+
     override suspend fun getContributionIdsByGroup(groupId: String): List<String> =
         contributionDao.getContributionIdsByGroupId(groupId)
 

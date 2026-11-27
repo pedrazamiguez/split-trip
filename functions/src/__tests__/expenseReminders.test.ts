@@ -585,4 +585,38 @@ describe("processExpenseReminders", () => {
     expect(getUserDeviceTokensMock).toHaveBeenCalledWith("user1");
     expect(sendDataMessageMock).toHaveBeenCalledTimes(2);
   });
+
+  it("skips soft-deleted SCHEDULED and REFUNDABLE expenses (isDeleted === true)", async () => {
+    const docs = [
+      {
+        id: "exp-del-sched",
+        data: () => ({
+          groupId: "group1",
+          paymentStatus: "SCHEDULED",
+          title: "Deleted Scheduled",
+          dueDate: { toDate: () => new Date("2026-05-10T00:00:00Z") },
+          isDeleted: true,
+        }),
+        ref: { parent: { parent: { id: "group1" } } },
+      },
+      {
+        id: "exp-del-ref",
+        data: () => ({
+          groupId: "group1",
+          paymentStatus: "REFUNDABLE",
+          title: "Deleted Refundable",
+          dueDate: { toDate: () => new Date("2026-05-10T00:00:00Z") },
+          isDeleted: true,
+        }),
+        ref: { parent: { parent: { id: "group1" } } },
+      },
+    ];
+
+    setupCollectionGroupDocs(docs);
+
+    await processExpenseReminders(new Date("2026-05-09T13:00:00Z"));
+
+    expect(getGroupDataMock).not.toHaveBeenCalled();
+    expect(sendDataMessageMock).not.toHaveBeenCalled();
+  });
 });

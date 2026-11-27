@@ -15,4 +15,9 @@ interface LocalSettlementDataSource {
     suspend fun updateSyncStatus(id: String, syncStatus: SyncStatus)
     suspend fun getPendingSyncSettlementIds(groupId: String): List<String>
     suspend fun replaceSettlementsForGroup(groupId: String, records: List<SettlementRecord>)
+    suspend fun applySettlementsDeltaForGroup(
+        groupId: String,
+        upserts: List<SettlementRecord>,
+        deletedIds: List<String>
+    )
 }

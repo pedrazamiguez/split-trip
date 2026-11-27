@@ -27,6 +27,7 @@ import es.pedrazamiguez.splittrip.data.local.database.migration.MIGRATION_31_32
 import es.pedrazamiguez.splittrip.data.local.database.migration.MIGRATION_32_33
 import es.pedrazamiguez.splittrip.data.local.database.migration.MIGRATION_38_39
 import es.pedrazamiguez.splittrip.data.local.database.migration.MIGRATION_3_4
+import es.pedrazamiguez.splittrip.data.local.database.migration.MIGRATION_46_47
 import es.pedrazamiguez.splittrip.data.local.database.migration.MIGRATION_4_5
 import es.pedrazamiguez.splittrip.data.local.database.migration.MIGRATION_5_6
 import es.pedrazamiguez.splittrip.data.local.database.migration.MIGRATION_6_7
@@ -53,5 +54,6 @@ internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25,
     MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28,
     MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31,
-    MIGRATION_31_32, MIGRATION_32_33, MIGRATION_38_39
+    MIGRATION_31_32, MIGRATION_32_33, MIGRATION_38_39,
+    MIGRATION_46_47
 )

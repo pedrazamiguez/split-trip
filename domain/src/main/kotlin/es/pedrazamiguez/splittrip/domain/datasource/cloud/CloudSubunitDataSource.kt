@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.domain.datasource.cloud
 
+import es.pedrazamiguez.splittrip.domain.model.DeltaSyncBatch
 import es.pedrazamiguez.splittrip.domain.model.Subunit
+import es.pedrazamiguez.splittrip.domain.model.SyncWatermark
 import kotlinx.coroutines.flow.Flow
 
 interface CloudSubunitDataSource {
@@ -12,14 +14,19 @@ interface CloudSubunitDataSource {
     suspend fun deleteSubunit(groupId: String, subunitId: String)
 
     /**
-     * One-shot fetch of subunits for sync purposes.
+     * One-shot paginated full-collection fetch used for initial bootstrap or expired-checkpoint fallback.
      */
-    suspend fun fetchSubunitsByGroupId(groupId: String): List<Subunit>
+    suspend fun fetchSubunitsFullSnapshot(groupId: String): DeltaSyncBatch<Subunit>
 
     /**
-     * Reactive stream of subunits for real-time sync via Firestore snapshot listener.
+     * One-shot incremental delta fetch for changes after [sinceWatermark].
      */
-    fun getSubunitsByGroupIdFlow(groupId: String): Flow<List<Subunit>>
+    suspend fun fetchSubunitsDelta(groupId: String, sinceWatermark: SyncWatermark): DeltaSyncBatch<Subunit>
+
+    /**
+     * Reactive delta stream for real-time sync via Firestore snapshot listener.
+     */
+    fun observeSubunitsDeltaFlow(groupId: String, sinceWatermark: SyncWatermark?): Flow<DeltaSyncBatch<Subunit>>
 
     /**
      * Verifies that a subunit document exists on the Firestore server (not just local cache).

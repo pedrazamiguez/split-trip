@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl
 
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.MetadataChanges
@@ -17,6 +18,7 @@ import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toDomain
 import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toRegularMemberDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toTimestampUtc
+import es.pedrazamiguez.splittrip.data.firebase.firestore.sync.FirestoreSyncFields
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudGroupDataSource
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.MembershipRemovalEvent
@@ -409,11 +411,24 @@ class FirestoreGroupDataSourceImpl(
             .document(groupId)
             .collection(SubunitDocument.COLLECTION_PATH)
 
-        val snapshot = subunitsCollection.get().await()
-        val affectedDocs = snapshot.documents.filter { doc ->
-            val memberIds = doc.get("memberIds") as? List<*>
-            memberIds?.contains(userId) == true
-        }
+        val affectedDocs = mutableListOf<DocumentSnapshot>()
+        var lastDoc: DocumentSnapshot? = null
+        do {
+            var query = subunitsCollection
+                .orderBy(FieldPath.documentId())
+                .limit(FirestoreSyncFields.MAX_QUERY_LIMIT)
+            if (lastDoc != null) {
+                query = query.startAfter(lastDoc)
+            }
+            val snapshot = query.get().await()
+            snapshot.documents
+                .filter { doc ->
+                    doc.getBoolean(FirestoreSyncFields.IS_DELETED) != true &&
+                        (doc.get("memberIds") as? List<*>)?.contains(userId) == true
+                }
+                .let(affectedDocs::addAll)
+            lastDoc = snapshot.documents.lastOrNull()
+        } while (snapshot.documents.size >= FirestoreSyncFields.MAX_QUERY_LIMIT && lastDoc != null)
 
         if (affectedDocs.isEmpty()) return
 
@@ -421,7 +436,13 @@ class FirestoreGroupDataSourceImpl(
         affectedDocs.chunked(BATCH_SIZE).forEach { chunk ->
             firestore.batch().apply {
                 chunk.forEach { doc ->
-                    update(doc.reference, "memberIds", FieldValue.arrayRemove(userId))
+                    update(
+                        doc.reference,
+                        mapOf(
+                            "memberIds" to FieldValue.arrayRemove(userId),
+                            FirestoreSyncFields.SERVER_UPDATED_AT to FieldValue.serverTimestamp()
+                        )
+                    )
                 }
             }.commit().await()
         }

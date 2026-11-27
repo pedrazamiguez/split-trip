@@ -5,10 +5,14 @@ import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSubunitDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSubunitDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSyncCheckpointDataSource
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
+import es.pedrazamiguez.splittrip.domain.enums.SyncCollectionName
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
+import es.pedrazamiguez.splittrip.domain.model.DeltaSyncBatch
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Subunit
+import es.pedrazamiguez.splittrip.domain.model.SyncWatermark
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -20,6 +24,7 @@ import io.mockk.verify
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -82,8 +87,8 @@ class SubunitRepositoryImplTest {
         )
     )
 
-    private lateinit var localGroupDataSource:
-        LocalGroupDataSource
+    private lateinit var localGroupDataSource: LocalGroupDataSource
+    private lateinit var localSyncCheckpointDataSource: LocalSyncCheckpointDataSource
     private lateinit var syncTeardownCoordinator: SyncTeardownCoordinator
 
     @BeforeEach
@@ -92,22 +97,25 @@ class SubunitRepositoryImplTest {
         localSubunitDataSource = mockk(relaxed = true)
         authenticationService = mockk()
         performanceMonitor = mockk(relaxed = true) {
-            io.mockk.coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
-            io.mockk.every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
+            coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
+            every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
         }
 
         coEvery { authenticationService.currentUserId() } returns testUserId
 
         localGroupDataSource = mockk(relaxed = true)
+        localSyncCheckpointDataSource = mockk(relaxed = true)
+        coEvery { localSyncCheckpointDataSource.getWatermark(any(), any()) } returns null
         syncTeardownCoordinator = mockk(relaxed = true)
         repository = SubunitRepositoryImpl(
             cloudSubunitDataSource = cloudSubunitDataSource,
             localSubunitDataSource = localSubunitDataSource,
+            localGroupDataSource = localGroupDataSource,
+            localSyncCheckpointDataSource = localSyncCheckpointDataSource,
             authenticationService = authenticationService,
             performanceMonitor = performanceMonitor,
-            ioDispatcher = testDispatcher,
-            localGroupDataSource = localGroupDataSource,
-            syncTeardownCoordinator = syncTeardownCoordinator
+            syncTeardownCoordinator = syncTeardownCoordinator,
+            ioDispatcher = testDispatcher
         )
     }
 
@@ -556,9 +564,12 @@ class SubunitRepositoryImplTest {
             every {
                 localSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId)
             } returns flowOf(listOf(testSubunit))
+            coEvery {
+                cloudSubunitDataSource.fetchSubunitsFullSnapshot(testGroupId)
+            } returns DeltaSyncBatch(cloudSubunits, emptyList(), SyncWatermark(100L, 0), true, true)
             every {
-                cloudSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId)
-            } returns flowOf(cloudSubunits)
+                cloudSubunitDataSource.observeSubunitsDeltaFlow(testGroupId, any())
+            } returns emptyFlow()
             coEvery {
                 localSubunitDataSource.replaceSubunitsForGroup(any(), any())
             } just Runs
@@ -577,9 +588,12 @@ class SubunitRepositoryImplTest {
             every {
                 localSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId)
             } returns flowOf(emptyList())
+            coEvery {
+                cloudSubunitDataSource.fetchSubunitsFullSnapshot(testGroupId)
+            } returns DeltaSyncBatch(cloudSubunits, emptyList(), SyncWatermark(100L, 0), true, true)
             every {
-                cloudSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId)
-            } returns flowOf(cloudSubunits)
+                cloudSubunitDataSource.observeSubunitsDeltaFlow(testGroupId, any())
+            } returns emptyFlow()
             coEvery {
                 localSubunitDataSource.replaceSubunitsForGroup(any(), any())
             } just Runs
@@ -604,16 +618,17 @@ class SubunitRepositoryImplTest {
             every {
                 localSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId)
             } returns flowOf(emptyList())
+            coEvery {
+                cloudSubunitDataSource.fetchSubunitsFullSnapshot(testGroupId)
+            } returns DeltaSyncBatch(cloudSubunits, emptyList(), SyncWatermark(100L, 0), true, true)
             every {
-                cloudSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId)
-            } returns flowOf(cloudSubunits)
+                cloudSubunitDataSource.observeSubunitsDeltaFlow(testGroupId, any())
+            } returns emptyFlow()
             coEvery {
                 localSubunitDataSource.replaceSubunitsForGroup(any(), any())
             } just Runs
 
             // When - Subscribe twice to the same groupId
-            // With flowOf(), the first Job completes before the second call,
-            // so both subscriptions complete and reconcile once each.
             val flow1 = repository.getGroupSubunitsFlow(testGroupId)
             flow1.first()
             advanceUntilIdle()
@@ -623,11 +638,66 @@ class SubunitRepositoryImplTest {
             advanceUntilIdle()
 
             // Then - replaceSubunitsForGroup should not be called more than twice
-            // (once per subscription, not accumulated from leaked listeners)
             coVerify(atMost = 2) {
                 localSubunitDataSource.replaceSubunitsForGroup(testGroupId, cloudSubunits)
             }
         }
+
+        @Test
+        fun `existing checkpoint passes stored SyncWatermark to observeSubunitsDeltaFlow and applies tombstones`() =
+            runTest(testDispatcher) {
+                val stored = SyncWatermark((System.currentTimeMillis() / 1000L) - 60L, 0)
+                val next = SyncWatermark(System.currentTimeMillis() / 1000L, 0)
+                every { localSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
+                coEvery {
+                    localSyncCheckpointDataSource.getWatermark(testGroupId, SyncCollectionName.SUBUNITS)
+                } returns stored
+                every { cloudSubunitDataSource.observeSubunitsDeltaFlow(testGroupId, stored) } returns flowOf(
+                    DeltaSyncBatch(
+                        cloudSubunits,
+                        listOf("sub-deleted"),
+                        next,
+                        isServerConfirmed = true,
+                        isFullSnapshot = false
+                    )
+                )
+
+                repository.getGroupSubunitsFlow(testGroupId).first()
+                advanceUntilIdle()
+
+                coVerify(exactly = 0) { cloudSubunitDataSource.fetchSubunitsFullSnapshot(any()) }
+                verify(exactly = 1) { cloudSubunitDataSource.observeSubunitsDeltaFlow(testGroupId, stored) }
+                coVerify(exactly = 1) {
+                    localSubunitDataSource.applySubunitsDeltaForGroup(testGroupId, cloudSubunits, listOf("sub-deleted"))
+                }
+            }
+
+        @Test
+        fun `expired checkpoint falls back to fetchSubunitsFullSnapshot and replaceSubunitsForGroup`() =
+            runTest(testDispatcher) {
+                val expired = SyncWatermark(1000L, 0)
+                every { localSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
+                coEvery {
+                    localSyncCheckpointDataSource.getWatermark(testGroupId, SyncCollectionName.SUBUNITS)
+                } returns expired
+                coEvery {
+                    cloudSubunitDataSource.fetchSubunitsFullSnapshot(testGroupId)
+                } returns
+                    DeltaSyncBatch(
+                        cloudSubunits,
+                        emptyList(),
+                        SyncWatermark(System.currentTimeMillis() / 1000L, 0),
+                        true,
+                        true
+                    )
+                every { cloudSubunitDataSource.observeSubunitsDeltaFlow(testGroupId, any()) } returns emptyFlow()
+
+                repository.getGroupSubunitsFlow(testGroupId).first()
+                advanceUntilIdle()
+
+                coVerify(exactly = 1) { cloudSubunitDataSource.fetchSubunitsFullSnapshot(testGroupId) }
+                coVerify(exactly = 1) { localSubunitDataSource.replaceSubunitsForGroup(testGroupId, cloudSubunits) }
+            }
     }
 
     @Nested
@@ -680,7 +750,7 @@ class SubunitRepositoryImplTest {
             coVerify(exactly = 0) { cloudSubunitDataSource.addSubunit(any(), any()) }
             coVerify(exactly = 0) { cloudSubunitDataSource.updateSubunit(any(), any()) }
             coVerify(exactly = 0) { cloudSubunitDataSource.deleteSubunit(any(), any()) }
-            coVerify(exactly = 0) { cloudSubunitDataSource.fetchSubunitsByGroupId(any()) }
+            coVerify(exactly = 0) { cloudSubunitDataSource.fetchSubunitsFullSnapshot(any()) }
         }
 
         @Test
@@ -706,9 +776,12 @@ class SubunitRepositoryImplTest {
             every {
                 localSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId)
             } returns flowOf(emptyList())
+            coEvery {
+                cloudSubunitDataSource.fetchSubunitsFullSnapshot(testGroupId)
+            } returns DeltaSyncBatch(cloudSubunits, emptyList(), SyncWatermark(100L, 0), true, true)
             every {
-                cloudSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId)
-            } returns flowOf(cloudSubunits)
+                cloudSubunitDataSource.observeSubunitsDeltaFlow(testGroupId, any())
+            } returns emptyFlow()
             coEvery {
                 localSubunitDataSource.replaceSubunitsForGroup(any(), any())
             } just Runs
@@ -736,9 +809,12 @@ class SubunitRepositoryImplTest {
             every {
                 localSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId)
             } returns flowOf(emptyList())
+            coEvery {
+                cloudSubunitDataSource.fetchSubunitsFullSnapshot(testGroupId)
+            } returns DeltaSyncBatch(cloudSubunits, emptyList(), SyncWatermark(100L, 0), true, true)
             every {
-                cloudSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId)
-            } returns flowOf(cloudSubunits)
+                cloudSubunitDataSource.observeSubunitsDeltaFlow(testGroupId, any())
+            } returns emptyFlow()
             coEvery {
                 localSubunitDataSource.replaceSubunitsForGroup(any(), any())
             } just Runs
@@ -765,9 +841,12 @@ class SubunitRepositoryImplTest {
             every {
                 localSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId)
             } returns flowOf(emptyList())
+            coEvery {
+                cloudSubunitDataSource.fetchSubunitsFullSnapshot(testGroupId)
+            } returns DeltaSyncBatch(cloudSubunits, emptyList(), SyncWatermark(100L, 0), true, true)
             every {
-                cloudSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId)
-            } returns flowOf(cloudSubunits)
+                cloudSubunitDataSource.observeSubunitsDeltaFlow(testGroupId, any())
+            } returns emptyFlow()
             coEvery {
                 localSubunitDataSource.replaceSubunitsForGroup(any(), any())
             } just Runs
@@ -792,7 +871,9 @@ class SubunitRepositoryImplTest {
                 id = testGroupId,
                 status = GroupStatus.ARCHIVED
             )
-            coEvery { cloudSubunitDataSource.fetchSubunitsByGroupId(testGroupId) } returns cloudSubunits
+            coEvery {
+                cloudSubunitDataSource.fetchSubunitsFullSnapshot(testGroupId)
+            } returns DeltaSyncBatch(cloudSubunits, emptyList(), SyncWatermark(100L, 0), true, true)
             coEvery { localSubunitDataSource.replaceSubunitsForGroup(any(), any()) } just Runs
 
             repository.getGroupSubunitsFlow(testGroupId).first()
@@ -800,8 +881,8 @@ class SubunitRepositoryImplTest {
             repository.getGroupSubunitsFlow(testGroupId).first()
             advanceUntilIdle()
 
-            verify(exactly = 0) { cloudSubunitDataSource.getSubunitsByGroupIdFlow(testGroupId) }
-            coVerify(exactly = 1) { cloudSubunitDataSource.fetchSubunitsByGroupId(testGroupId) }
+            verify(exactly = 0) { cloudSubunitDataSource.observeSubunitsDeltaFlow(testGroupId, any()) }
+            coVerify(exactly = 1) { cloudSubunitDataSource.fetchSubunitsFullSnapshot(testGroupId) }
             coVerify(exactly = 1) {
                 localSubunitDataSource.replaceSubunitsForGroup(testGroupId, cloudSubunits)
             }

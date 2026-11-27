@@ -1,7 +1,9 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl
 
+import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Transaction
@@ -11,6 +13,7 @@ import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ExpenseDocume
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupMemberDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.UserDocument
+import es.pedrazamiguez.splittrip.data.firebase.firestore.sync.FirestoreSyncFields
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
@@ -54,31 +57,31 @@ class FirestoreGroupReconciler(private val firestore: FirebaseFirestore) {
             .collection(GroupMemberDocument.SUBCOLLECTION_PATH)
             .document(activeUserId)
 
-        val expensesQuery = firestore.collection(GroupDocument.COLLECTION_PATH)
-            .document(groupId)
-            .collection(ExpenseDocument.COLLECTION_PATH)
-            .get()
-            .await()
+        val expenseDocs = fetchActiveDocuments(
+            firestore.collection(GroupDocument.COLLECTION_PATH)
+                .document(groupId)
+                .collection(ExpenseDocument.COLLECTION_PATH)
+        )
 
-        val contributionsQuery = firestore.collection(GroupDocument.COLLECTION_PATH)
-            .document(groupId)
-            .collection(ContributionDocument.COLLECTION_PATH)
-            .get()
-            .await()
+        val contributionDocs = fetchActiveDocuments(
+            firestore.collection(GroupDocument.COLLECTION_PATH)
+                .document(groupId)
+                .collection(ContributionDocument.COLLECTION_PATH)
+        )
 
-        val withdrawalsQuery = firestore.collection(GroupDocument.COLLECTION_PATH)
-            .document(groupId)
-            .collection(CashWithdrawalDocument.COLLECTION_PATH)
-            .get()
-            .await()
+        val withdrawalDocs = fetchActiveDocuments(
+            firestore.collection(GroupDocument.COLLECTION_PATH)
+                .document(groupId)
+                .collection(CashWithdrawalDocument.COLLECTION_PATH)
+        )
 
         firestore.runTransaction { transaction ->
             // --- ALL READS FIRST ---
             val freshGroupDoc = transaction.get(groupDocRef)
             val pendingMemberSnap = transaction.get(memberDocRef)
-            val freshExpenseSnaps = expensesQuery.documents.map { transaction.get(it.reference) }
-            val freshContributionSnaps = contributionsQuery.documents.map { transaction.get(it.reference) }
-            val freshWithdrawalSnaps = withdrawalsQuery.documents.map { transaction.get(it.reference) }
+            val freshExpenseSnaps = expenseDocs.map { transaction.get(it.reference) }
+            val freshContributionSnaps = contributionDocs.map { transaction.get(it.reference) }
+            val freshWithdrawalSnaps = withdrawalDocs.map { transaction.get(it.reference) }
 
             // --- ALL WRITES AFTER ---
             updateGroupMembersInTransaction(transaction, groupDocRef, freshGroupDoc, pendingUserId, activeUserId)
@@ -131,6 +134,27 @@ class FirestoreGroupReconciler(private val firestore: FirebaseFirestore) {
         }
     }
 
+    private suspend fun fetchActiveDocuments(
+        collectionRef: CollectionReference
+    ): List<DocumentSnapshot> {
+        val activeDocs = mutableListOf<DocumentSnapshot>()
+        var lastDoc: DocumentSnapshot? = null
+        do {
+            var query = collectionRef
+                .orderBy(FieldPath.documentId())
+                .limit(FirestoreSyncFields.MAX_QUERY_LIMIT)
+            if (lastDoc != null) {
+                query = query.startAfter(lastDoc)
+            }
+            val page = query.get().await()
+            page.documents
+                .filter { it.getBoolean(FirestoreSyncFields.IS_DELETED) != true }
+                .let(activeDocs::addAll)
+            lastDoc = page.documents.lastOrNull()
+        } while (page.documents.size >= FirestoreSyncFields.MAX_QUERY_LIMIT && lastDoc != null)
+        return activeDocs
+    }
+
     private fun updateExpensesInTransaction(
         transaction: Transaction,
         expenseSnaps: List<DocumentSnapshot>,
@@ -138,6 +162,7 @@ class FirestoreGroupReconciler(private val firestore: FirebaseFirestore) {
         activeUserId: String
     ) {
         for (freshExpSnap in expenseSnaps) {
+            if (freshExpSnap.getBoolean(FirestoreSyncFields.IS_DELETED) == true) continue
             val expense = freshExpSnap.toObject(ExpenseDocument::class.java) ?: continue
             val updatedExpense = expense.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId)
             if (updatedExpense != null) {
@@ -153,6 +178,7 @@ class FirestoreGroupReconciler(private val firestore: FirebaseFirestore) {
         activeUserId: String
     ) {
         for (freshContrSnap in contributionSnaps) {
+            if (freshContrSnap.getBoolean(FirestoreSyncFields.IS_DELETED) == true) continue
             val contribution = freshContrSnap.toObject(ContributionDocument::class.java) ?: continue
             val updatedContribution = contribution.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId)
             if (updatedContribution != null) {
@@ -168,6 +194,7 @@ class FirestoreGroupReconciler(private val firestore: FirebaseFirestore) {
         activeUserId: String
     ) {
         for (freshWithdSnap in withdrawalSnaps) {
+            if (freshWithdSnap.getBoolean(FirestoreSyncFields.IS_DELETED) == true) continue
             val withdrawal = freshWithdSnap.toObject(CashWithdrawalDocument::class.java) ?: continue
             val updatedWithdrawal = withdrawal.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId)
             if (updatedWithdrawal != null) {

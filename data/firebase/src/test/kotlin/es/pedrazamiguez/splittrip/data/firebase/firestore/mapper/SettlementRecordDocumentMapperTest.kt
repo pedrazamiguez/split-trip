@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.data.firebase.firestore.mapper
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import es.pedrazamiguez.splittrip.domain.model.Settlement
 import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import es.pedrazamiguez.splittrip.domain.model.SettlementRecord
@@ -11,8 +12,10 @@ import io.mockk.mockk
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
@@ -72,6 +75,12 @@ class SettlementRecordDocumentMapperTest {
             assertNotNull(doc["resolvedAt"])
             assertEquals("user-3", doc["disputedBy"])
             assertEquals("Wrong amount", doc["disputeReason"])
+            assertEquals(FieldValue.serverTimestamp(), doc["serverUpdatedAt"])
+            assertEquals(false, doc["isDeleted"])
+            assertTrue(doc.containsKey("deletedAt"))
+            assertNull(doc["deletedAt"])
+            assertTrue(doc.containsKey("expireAt"))
+            assertNull(doc["expireAt"])
         }
 
         @Test
@@ -203,6 +212,21 @@ class SettlementRecordDocumentMapperTest {
             assertNull(result.resolvedAt)
             assertNull(result.disputedBy)
             assertNull(result.disputeReason)
+        }
+
+        @Test
+        fun `returns null when document is soft-deleted tombstone`() {
+            val snapshot = mockk<DocumentSnapshot>(relaxed = true)
+            every { snapshot.getBoolean("isDeleted") } returns true
+            every { snapshot.getString("id") } returns testId
+            every { snapshot.getString("groupId") } returns testGroupId
+            every { snapshot.getString("fromUserId") } returns testFromUserId
+            every { snapshot.getString("toUserId") } returns testToUserId
+            every { snapshot.getString("amountCents") } returns testAmountCents.toString()
+            every { snapshot.getTimestamp("createdAt") } returns testFirebaseTimestamp
+
+            assertNull(snapshot.toSettlementRecord())
+            assertFalse(false)
         }
     }
 }

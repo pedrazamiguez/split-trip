@@ -46,6 +46,7 @@ export async function processExpenseReminders(now: Date = new Date()): Promise<v
 
   for (const doc of expensesQuery.docs) {
     const expense = doc.data();
+    if (expense.isDeleted === true) continue;
     if (!expense.dueDate) continue;
 
     const dueDate: Date = typeof expense.dueDate.toDate === "function"

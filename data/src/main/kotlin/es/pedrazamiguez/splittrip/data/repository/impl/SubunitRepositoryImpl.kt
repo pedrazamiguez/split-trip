@@ -1,18 +1,20 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
+import es.pedrazamiguez.splittrip.data.sync.DeltaSyncParams
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
 import es.pedrazamiguez.splittrip.data.sync.SyncCreateParams
-import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
 import es.pedrazamiguez.splittrip.data.sync.syncDeletionToCloud
-import es.pedrazamiguez.splittrip.data.sync.syncGroupCollection
+import es.pedrazamiguez.splittrip.data.sync.syncGroupCollectionDelta
 import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSubunitDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSubunitDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSyncCheckpointDataSource
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
+import es.pedrazamiguez.splittrip.domain.enums.SyncCollectionName
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
@@ -29,6 +31,7 @@ class SubunitRepositoryImpl(
     private val cloudSubunitDataSource: CloudSubunitDataSource,
     private val localSubunitDataSource: LocalSubunitDataSource,
     private val localGroupDataSource: LocalGroupDataSource,
+    private val localSyncCheckpointDataSource: LocalSyncCheckpointDataSource,
     private val authenticationService: AuthenticationService,
     private val performanceMonitor: PerformanceMonitor,
     private val syncTeardownCoordinator: SyncTeardownCoordinator,
@@ -128,17 +131,27 @@ class SubunitRepositoryImpl(
     override fun getGroupSubunitsFlow(groupId: String): Flow<List<Subunit>> =
         localSubunitDataSource.getSubunitsByGroupIdFlow(groupId)
             .trackSubscription(subscriptionTracker, groupId, syncScope) {
-                syncGroupCollection(
-                    groupId = groupId,
-                    isGroupArchived = {
-                        localGroupDataSource.getGroupById(groupId)?.status == GroupStatus.ARCHIVED
-                    },
-                    syncedArchivedGroupIds = syncedArchivedGroupIds,
-                    fetchOnce = { cloudSubunitDataSource.fetchSubunitsByGroupId(groupId) },
-                    cloudFlow = { cloudSubunitDataSource.getSubunitsByGroupIdFlow(groupId) },
-                    params = SyncReconciliationParams(
-                        reconcileLocal = { remoteSubunits ->
+                syncGroupCollectionDelta(
+                    DeltaSyncParams(
+                        groupId = groupId,
+                        collectionName = SyncCollectionName.SUBUNITS,
+                        checkpointDataSource = localSyncCheckpointDataSource,
+                        isGroupArchived = {
+                            localGroupDataSource.getGroupById(groupId)?.status == GroupStatus.ARCHIVED
+                        },
+                        syncedArchivedGroupIds = syncedArchivedGroupIds,
+                        fetchFullSnapshot = { cloudSubunitDataSource.fetchSubunitsFullSnapshot(groupId) },
+                        fetchDeltaOnce = { watermark ->
+                            cloudSubunitDataSource.fetchSubunitsDelta(groupId, watermark)
+                        },
+                        observeDeltaFlow = { watermark ->
+                            cloudSubunitDataSource.observeSubunitsDeltaFlow(groupId, watermark)
+                        },
+                        replaceLocal = { remoteSubunits ->
                             localSubunitDataSource.replaceSubunitsForGroup(groupId, remoteSubunits)
+                        },
+                        applyDeltaLocal = { upserts, deletedIds ->
+                            localSubunitDataSource.applySubunitsDeltaForGroup(groupId, upserts, deletedIds)
                         },
                         getPendingIds = { localSubunitDataSource.getPendingSyncSubunitIds(groupId) },
                         verifyOnServer = { id ->

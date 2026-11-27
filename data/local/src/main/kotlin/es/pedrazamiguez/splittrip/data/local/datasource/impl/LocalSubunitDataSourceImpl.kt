@@ -38,6 +38,18 @@ class LocalSubunitDataSourceImpl(private val subunitDao: SubunitDao) : LocalSubu
         )
     }
 
+    override suspend fun applySubunitsDeltaForGroup(
+        groupId: String,
+        upserts: List<Subunit>,
+        deletedIds: List<String>
+    ) {
+        subunitDao.applySubunitsDeltaForGroup(
+            groupId = groupId,
+            upserts = upserts.map { it.toEntity() },
+            deletedIds = deletedIds
+        )
+    }
+
     override suspend fun getSubunitIdsByGroup(groupId: String): List<String> =
         subunitDao.getSubunitIdsByGroupId(groupId)
 

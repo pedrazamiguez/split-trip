@@ -191,4 +191,13 @@ describe("onSettlementUpdated trigger", () => {
 
     expect(sendDataMessageMock).not.toHaveBeenCalled();
   });
+
+  it("skips notification when after.isDeleted is true (soft-delete tombstone write)", async () => {
+    await invokeTrigger("SUGGESTED", "CONFIRMED_BY_PAYER", {
+      after: { isDeleted: true },
+    });
+
+    expect(getGroupDataMock).not.toHaveBeenCalled();
+    expect(sendDataMessageMock).not.toHaveBeenCalled();
+  });
 });

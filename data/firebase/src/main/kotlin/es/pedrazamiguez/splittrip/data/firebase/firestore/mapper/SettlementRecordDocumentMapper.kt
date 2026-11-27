@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.mapper
 
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
+import es.pedrazamiguez.splittrip.data.firebase.firestore.sync.FirestoreSyncFields
 import es.pedrazamiguez.splittrip.domain.model.Settlement
 import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import es.pedrazamiguez.splittrip.domain.model.SettlementRecord
@@ -20,10 +22,15 @@ fun SettlementRecord.toDocument(): Map<String, Any?> = mapOf(
     "confirmedByPayeeAt" to confirmedByPayeeAt?.toTimestampUtc(),
     "resolvedAt" to resolvedAt?.toTimestampUtc(),
     "disputedBy" to disputedBy,
-    "disputeReason" to disputeReason
+    "disputeReason" to disputeReason,
+    FirestoreSyncFields.SERVER_UPDATED_AT to FieldValue.serverTimestamp(),
+    FirestoreSyncFields.IS_DELETED to false,
+    FirestoreSyncFields.DELETED_AT to null,
+    FirestoreSyncFields.EXPIRE_AT to null
 )
 
 fun DocumentSnapshot.toSettlementRecord(): SettlementRecord? {
+    if (getBoolean(FirestoreSyncFields.IS_DELETED) == true) return null
     val id = getString("id") ?: return null
     val groupId = getString("groupId") ?: return null
     val fromUserId = getString("fromUserId") ?: return null

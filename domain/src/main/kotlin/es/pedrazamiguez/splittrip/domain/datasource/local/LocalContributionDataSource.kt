@@ -25,6 +25,15 @@ interface LocalContributionDataSource {
      */
     suspend fun replaceContributionsForGroup(groupId: String, contributions: List<Contribution>)
 
+    /**
+     * Atomically applies an incremental delta (upserts + tombstone deletions) for a group.
+     */
+    suspend fun applyContributionsDeltaForGroup(
+        groupId: String,
+        upserts: List<Contribution>,
+        deletedIds: List<String>
+    )
+
     suspend fun getContributionIdsByGroup(groupId: String): List<String>
 
     /**

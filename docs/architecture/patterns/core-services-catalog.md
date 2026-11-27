@@ -743,7 +743,19 @@ Manages a set of keyed cloud subscription `Job`s via a `ConcurrentHashMap`, ensu
 
 **When NOT to use:** `GroupRepositoryImpl` uses a single `Job?` for its non-keyed subscription — the 3-line pattern doesn't benefit from keyed tracking.
 
-### G.2 CloudSyncDelegates
+### G.2 DeltaSyncDelegates & Domain Sync Models
+
+**Files:** `:data` `sync/DeltaSyncDelegates.kt`, `:domain` `SyncWatermark`, `DeltaSyncBatch`, `SyncCollectionName`, `LocalSyncCheckpointDataSource`
+
+| Symbol | Purpose | When to Use |
+|---|---|---|
+| `syncGroupCollectionDelta<T>()` | Two-phase bootstrap → bounded delta listener (`limit(500)`) with monotonic server-confirmed watermarks and 30-day expiry fallback. | In `get*Flow()` for all 6 group subcollections (`expenses`, `contributions`, `cash_withdrawals`, `cash_transfers`, `subunits`, `settlements`). |
+| `SyncCheckpointPolicy` | Defines `CHECKPOINT_MAX_AGE_MILLIS` (30 days) and clock-skew-safe `isExpired(watermark, nowMillis)`. | Used by `syncGroupCollectionDelta` to fall back to full sync if a checkpoint outlives half the 60-day tombstone TTL. |
+| `SyncWatermark` | Pure-Kotlin `(seconds: Long, nanoseconds: Int)` `Comparable` cursor. | Returned by `DeltaSyncBatch` and persisted by `LocalSyncCheckpointDataSource`. |
+| `DeltaSyncBatch<T>` | Batch containing `upserts`, `deletedIds`, `maxServerUpdatedAt`, `isServerConfirmed`, `isFullSnapshot`, `reachedPageLimit`. | Returned by `Cloud*DataSource` delta/full methods and `FirestoreDeltaSyncHelper`. |
+| `LocalSyncCheckpointDataSource` | Domain local data source interface backed by Room `group_sync_checkpoints`. | Injected into all 6 subcollection repositories. |
+
+### G.3 CloudSyncDelegates
 
 **File:** `sync/CloudSyncDelegates.kt`
 **Type:** Top-level internal functions
@@ -768,9 +780,9 @@ confirmPendingSync:  PENDING_SYNC ──server verified──→ SYNCED
 ```
 
 **Reference implementations:**
-- `SubunitRepositoryImpl` — cleanest example, uses all 4 delegates + `KeyedSubscriptionTracker`
-- `CashWithdrawalRepositoryImpl` — demonstrates mixing delegates with entity-specific batch operations
-- `GroupRepositoryImpl` — uses `subscribeAndReconcile` only; create/delete have unique patterns
+- `SubunitRepositoryImpl` — uses `syncGroupCollectionDelta` + `syncCreateToCloud` / `syncDeletionToCloud` + `KeyedSubscriptionTracker`
+- `CashWithdrawalRepositoryImpl` — demonstrates mixing `syncGroupCollectionDelta` with entity-specific batch operations
+- `GroupRepositoryImpl` — uses `subscribeAndReconcile` from `CloudSyncDelegates.kt` for top-level group discovery
 
 ---
 
