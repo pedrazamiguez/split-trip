@@ -138,10 +138,11 @@ object JacocoExclusions {
         // Business state machine is unit-tested in LiteRtDynamicRuntimeManagerImplTest.
         "**/data/litert/AndroidPlaySplitInstallClient.*",
         "**/data/litert/AndroidPlaySplitInstallClient\$*.*",
-        // LiteRtLmEngineClientImpl wraps LiteRT-LM native JNI engine (Engine/Conversation)
-        // which loads liblitertlm_jni.so inside :dynamic_litertlm and cannot run in pure JVM unit tests.
-        "**/dynamic/litertlm/LiteRtLmEngineClientImpl.*",
-        "**/dynamic/litertlm/LiteRtLmEngineClientImpl\$*.*",
+        // AndroidLiteRtNativeEngineFactory wraps LiteRT-LM native JNI engine (Engine/Conversation)
+        // and SplitInstallHelper inside :dynamic_litertlm; LiteRtLmEngineClientImpl lifecycle
+        // orchestration is unit-tested in LiteRtLmEngineClientImplTest.
+        "**/dynamic/litertlm/AndroidLiteRtNativeEngineFactory.*",
+        "**/dynamic/litertlm/AndroidLiteRtNativeEngineFactory\$*.*",
         // ── Database migrations — raw DDL SQL strings; no meaningful unit-test path
         // and triggers Sonar string-duplication false positives (table names repeated).
         // Covers both the aggregated file AND individual Migration*To* files.

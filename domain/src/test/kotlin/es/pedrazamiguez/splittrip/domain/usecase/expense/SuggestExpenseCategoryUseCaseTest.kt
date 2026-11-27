@@ -16,13 +16,20 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import java.util.Locale
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SuggestExpenseCategoryUseCaseTest {
 
     private lateinit var localClassifierService: ExpenseCategoryClassifierService
@@ -167,4 +174,105 @@ class SuggestExpenseCategoryUseCaseTest {
         assertEquals(CategoryPredictionOutcome.AiTimeout(15_000L), actual)
         coVerify(exactly = 1) { aiClassifierService.classifyDetailed("Towels", GroupContext.EVERYDAY) }
     }
+
+    @Test
+    fun `Tier 1 match returns immediately without waiting for Tier 2 quiet window`() = runTest {
+        val localResult = CategorySuggestion(
+            category = ExpenseCategory.FOOD,
+            subcategory = ExpenseSubcategory.RESTAURANT,
+            source = CategorySuggestionSource.LOCAL_RULES
+        )
+        every { localClassifierService.classify("Dinner", GroupContext.TRAVEL, "es") } returns localResult
+
+        var result: CategorySuggestion? = null
+        val job = launch {
+            result = useCase("Dinner", GroupContext.TRAVEL)
+        }
+
+        runCurrent()
+
+        assertTrue(job.isCompleted)
+        assertEquals(localResult, result)
+        coVerify(exactly = 0) { aiClassifierService.classify(any(), any()) }
+    }
+
+    @Test
+    fun `invoke waits tierTwoDebounceMs after Tier 1 miss before calling Tier 2 AI classifier`() = runTest {
+        val aiResult = CategorySuggestion(
+            category = ExpenseCategory.ACTIVITIES,
+            subcategory = ExpenseSubcategory.MUSEUM_CULTURE,
+            source = CategorySuggestionSource.ON_DEVICE_AI
+        )
+        every { localClassifierService.classify("entradas", GroupContext.TRAVEL, "es") } returns null
+        coEvery { aiClassifierService.classify("entradas", GroupContext.TRAVEL) } returns aiResult
+
+        var result: CategorySuggestion? = null
+        val job = launch {
+            result = useCase("entradas", GroupContext.TRAVEL)
+        }
+
+        advanceTimeBy(SuggestExpenseCategoryUseCaseImpl.DEFAULT_TIER_TWO_DEBOUNCE_MS - 1L)
+        runCurrent()
+        coVerify(exactly = 0) { aiClassifierService.classify(any(), any()) }
+
+        advanceTimeBy(1L)
+        runCurrent()
+        assertTrue(job.isCompleted)
+        assertEquals(aiResult, result)
+        coVerify(exactly = 1) { aiClassifierService.classify("entradas", GroupContext.TRAVEL) }
+    }
+
+    @Test
+    fun `cancelling invoke during Tier 2 quiet window prevents Tier 2 AI classifier invocation`() = runTest {
+        every { localClassifierService.classify("entradas", GroupContext.TRAVEL, "es") } returns null
+        coEvery { aiClassifierService.classify(any(), any()) } returns null
+
+        val job = launch {
+            useCase("entradas", GroupContext.TRAVEL)
+        }
+
+        advanceTimeBy(400L)
+        runCurrent()
+        job.cancel()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { aiClassifierService.classify(any(), any()) }
+    }
+
+    @Test
+    fun `diagnose waits tierTwoDebounceMs after Tier 1 miss and respects cancellation`() =
+        runTest {
+            val aiOutcome = CategoryPredictionOutcome.Matched(
+                CategorySuggestion(
+                    category = ExpenseCategory.ACTIVITIES,
+                    subcategory = ExpenseSubcategory.MUSEUM_CULTURE,
+                    source = CategorySuggestionSource.ON_DEVICE_AI
+                )
+            )
+            every { localClassifierService.classify("entradas", GroupContext.TRAVEL, "es") } returns null
+            coEvery { aiClassifierService.classifyDetailed("entradas", GroupContext.TRAVEL) } returns aiOutcome
+
+            val cancelledJob = launch {
+                useCase.diagnose("entradas", GroupContext.TRAVEL)
+            }
+
+            advanceTimeBy(SuggestExpenseCategoryUseCaseImpl.DEFAULT_TIER_TWO_DEBOUNCE_MS - 1L)
+            runCurrent()
+            coVerify(exactly = 0) { aiClassifierService.classifyDetailed(any(), any()) }
+
+            cancelledJob.cancel()
+            advanceUntilIdle()
+            coVerify(exactly = 0) { aiClassifierService.classifyDetailed(any(), any()) }
+
+            var outcome: CategoryPredictionOutcome? = null
+            val completedJob = launch {
+                outcome = useCase.diagnose("entradas", GroupContext.TRAVEL)
+            }
+
+            advanceTimeBy(SuggestExpenseCategoryUseCaseImpl.DEFAULT_TIER_TWO_DEBOUNCE_MS)
+            runCurrent()
+            assertTrue(completedJob.isCompleted)
+            assertEquals(aiOutcome, outcome)
+            coVerify(exactly = 1) { aiClassifierService.classifyDetailed("entradas", GroupContext.TRAVEL) }
+        }
 }
