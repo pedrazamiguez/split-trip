@@ -53,3 +53,15 @@
 ############################################################################
 
 -dontwarn timber.log.Timber
+
+############################################################################
+# 🤖 LITERT-LM (JNI Reflection Boundary — AAR ships no consumer rules)
+############################################################################
+
+# liblitertlm_jni.so resolves LiteRT-LM classes, constructors, config getters
+# (SamplerConfig, ThinkingConfig, RepetitionPenaltyConfig, NoRepeatNgramConfig),
+# exceptions (LiteRtLmJniException), InputData subtypes, and callback interfaces
+# by name via JNI FindClass/GetMethodID.
+-keep class com.google.ai.edge.litertlm.** { *; }
+-keep class * implements com.google.ai.edge.litertlm.LiteRtLmJni$JniMessageCallback { *; }
+-keep class * implements com.google.ai.edge.litertlm.LiteRtLmJni$JniInferenceCallback { *; }
