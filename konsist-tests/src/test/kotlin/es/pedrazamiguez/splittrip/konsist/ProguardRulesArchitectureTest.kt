@@ -137,4 +137,22 @@ class ProguardRulesArchitectureTest {
             "ViewModels constructed via Koin DSL must not be kept with blanket rules"
         )
     }
+
+    @Test
+    @DisplayName("LiteRT-LM JNI boundary classes and callbacks must have keep rules")
+    fun `litertlm jni boundary must have keep rules`() {
+        val rules = readProguardRules()
+        assertTrue(
+            rules.contains("com.google.ai.edge.litertlm.**"),
+            "Proguard rules must keep com.google.ai.edge.litertlm.** for JNI lookups"
+        )
+        assertTrue(
+            rules.contains("com.google.ai.edge.litertlm.LiteRtLmJni\$JniMessageCallback"),
+            "Proguard rules must keep LiteRtLmJni\$JniMessageCallback implementations"
+        )
+        assertTrue(
+            rules.contains("com.google.ai.edge.litertlm.LiteRtLmJni\$JniInferenceCallback"),
+            "Proguard rules must keep LiteRtLmJni\$JniInferenceCallback implementations"
+        )
+    }
 }

@@ -61,9 +61,24 @@ internal class LiteRtInferenceRepositoryImpl(
             Result.success(output)
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Exception) {
-            Timber.e(e, "LiteRT inference failed")
-            Result.failure(LocalAiModelUnavailableException("LiteRT inference failed", e))
+        } catch (e: LinkageError) {
+            handleInferenceFailure(modelPath = modelPath, throwable = e, invalidateEngine = true)
+        } catch (e: OutOfMemoryError) {
+            handleInferenceFailure(modelPath = modelPath, throwable = e, invalidateEngine = true)
+        } catch (t: Throwable) {
+            handleInferenceFailure(modelPath = modelPath, throwable = t, invalidateEngine = false)
         }
+    }
+
+    private fun handleInferenceFailure(
+        modelPath: String,
+        throwable: Throwable,
+        invalidateEngine: Boolean
+    ): Result<String> {
+        if (invalidateEngine) {
+            runCatching { engineClient.invalidate(modelPath) }
+        }
+        Timber.e(throwable, "LiteRT inference failed")
+        return Result.failure(LocalAiModelUnavailableException("LiteRT inference failed", throwable))
     }
 }
