@@ -8,6 +8,14 @@ import es.pedrazamiguez.splittrip.data.local.entity.SubunitEntity
 import es.pedrazamiguez.splittrip.data.local.entity.SyncStatusEntry
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * DAO for group subunits.
+ *
+ * The function count exceeds Detekt's `TooManyFunctions` threshold because this single-table
+ * Room DAO exposes queries, writes, sync-status transitions, and @Transaction delta/full
+ * reconciliation helpers for the `subunits` table.
+ */
+@Suppress("TooManyFunctions")
 @Dao
 interface SubunitDao {
 

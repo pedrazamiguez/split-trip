@@ -160,15 +160,8 @@ class FirestoreGroupReconciler(private val firestore: FirebaseFirestore) {
         expenseSnaps: List<DocumentSnapshot>,
         pendingUserId: String,
         activeUserId: String
-    ) {
-        for (freshExpSnap in expenseSnaps) {
-            if (freshExpSnap.getBoolean(FirestoreSyncFields.IS_DELETED) == true) continue
-            val expense = freshExpSnap.toObject(ExpenseDocument::class.java) ?: continue
-            val updatedExpense = expense.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId)
-            if (updatedExpense != null) {
-                transaction.set(freshExpSnap.reference, updatedExpense)
-            }
-        }
+    ) = updateDocumentsInTransaction(transaction, expenseSnaps, ExpenseDocument::class.java) { expense ->
+        expense.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId)
     }
 
     private fun updateContributionsInTransaction(
@@ -176,15 +169,8 @@ class FirestoreGroupReconciler(private val firestore: FirebaseFirestore) {
         contributionSnaps: List<DocumentSnapshot>,
         pendingUserId: String,
         activeUserId: String
-    ) {
-        for (freshContrSnap in contributionSnaps) {
-            if (freshContrSnap.getBoolean(FirestoreSyncFields.IS_DELETED) == true) continue
-            val contribution = freshContrSnap.toObject(ContributionDocument::class.java) ?: continue
-            val updatedContribution = contribution.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId)
-            if (updatedContribution != null) {
-                transaction.set(freshContrSnap.reference, updatedContribution)
-            }
-        }
+    ) = updateDocumentsInTransaction(transaction, contributionSnaps, ContributionDocument::class.java) { contribution ->
+        contribution.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId)
     }
 
     private fun updateWithdrawalsInTransaction(
@@ -192,13 +178,22 @@ class FirestoreGroupReconciler(private val firestore: FirebaseFirestore) {
         withdrawalSnaps: List<DocumentSnapshot>,
         pendingUserId: String,
         activeUserId: String
+    ) = updateDocumentsInTransaction(transaction, withdrawalSnaps, CashWithdrawalDocument::class.java) { withdrawal ->
+        withdrawal.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId)
+    }
+
+    private fun <T : Any> updateDocumentsInTransaction(
+        transaction: Transaction,
+        snapshots: List<DocumentSnapshot>,
+        clazz: Class<T>,
+        transform: (T) -> T?
     ) {
-        for (freshWithdSnap in withdrawalSnaps) {
-            if (freshWithdSnap.getBoolean(FirestoreSyncFields.IS_DELETED) == true) continue
-            val withdrawal = freshWithdSnap.toObject(CashWithdrawalDocument::class.java) ?: continue
-            val updatedWithdrawal = withdrawal.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId)
-            if (updatedWithdrawal != null) {
-                transaction.set(freshWithdSnap.reference, updatedWithdrawal)
+        snapshots.forEach { snap ->
+            if (snap.getBoolean(FirestoreSyncFields.IS_DELETED) != true) {
+                val updated = snap.toObject(clazz)?.let(transform)
+                if (updated != null) {
+                    transaction.set(snap.reference, updated)
+                }
             }
         }
     }

@@ -39,7 +39,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LongParameterList")
 class ExpenseRepositoryImpl(
     private val cloudExpenseDataSource: CloudExpenseDataSource,
     private val localExpenseDataSource: LocalExpenseDataSource,

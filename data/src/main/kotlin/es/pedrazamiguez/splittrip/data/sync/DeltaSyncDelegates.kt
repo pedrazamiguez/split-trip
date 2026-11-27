@@ -45,8 +45,6 @@ internal data class DeltaSyncParams<T>(
     val clockMillis: () -> Long = { System.currentTimeMillis() }
 )
 
-private class PageCursorAdvanceSignal : CancellationException("Advancing delta sync cursor")
-
 internal suspend fun <T> syncGroupCollectionDelta(params: DeltaSyncParams<T>) {
     var currentWatermark = resolveEffectiveWatermark(params)
 
@@ -150,72 +148,108 @@ private suspend fun <T> bootstrapFullSnapshot(params: DeltaSyncParams<T>): Boots
     }
 }
 
-@Suppress("LoopWithTooManyJumpStatements")
+private sealed interface DeltaWindowOutcome {
+    data class Continue(val watermark: SyncWatermark?) : DeltaWindowOutcome
+    data class AdvanceCursor(val watermark: SyncWatermark) : DeltaWindowOutcome
+    data object StopListening : DeltaWindowOutcome
+    data object Completed : DeltaWindowOutcome
+}
+
+private class AbortDeltaCollectionSignal : CancellationException("Stopping current delta listener window")
+
 private suspend fun <T> runRealtimeDeltaLoop(
     initialWatermark: SyncWatermark?,
     params: DeltaSyncParams<T>
 ) {
     var currentWatermark = initialWatermark
     while (currentCoroutineContext().isActive) {
-        var shouldResubscribe = false
-        try {
-            params.observeDeltaFlow(currentWatermark).collect { batch ->
-                if (params.verifyParentExists != null && !params.verifyParentExists.invoke()) {
-                    Timber.tag(LogTag.SYNC).w(
-                        "Parent missing, stopping delta listener for %ss",
-                        params.entityLabel
-                    )
-                    throw ParentMissingSignal()
-                }
-                var watermarkAdvanced = false
-                try {
-                    params.performanceMonitor.traceAsync(PerformanceTraces.SYNC_SUBSCRIBE_AND_RECONCILE) {
-                        applyBatchLocal(batch, params)
-                        val advanced = maybeAdvanceWatermark(currentWatermark, batch, params)
-                        if (advanced != null) {
-                            currentWatermark = advanced
-                            watermarkAdvanced = true
-                        }
-                        confirmPendingSync(
-                            params.getPendingIds,
-                            params.verifyOnServer,
-                            params.markSynced,
-                            params.entityLabel
-                        )
-                        params.onAfterReconcile?.invoke()
-                    }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Timber.tag(LogTag.SYNC).w(
-                        e,
-                        "Error reconciling %ss from delta batch",
-                        params.entityLabel
-                    )
-                }
-
-                if (batch.reachedPageLimit && batch.isServerConfirmed && watermarkAdvanced) {
-                    throw PageCursorAdvanceSignal()
-                }
-            }
-        } catch (_: PageCursorAdvanceSignal) {
-            shouldResubscribe = true
-        } catch (_: ParentMissingSignal) {
-            return
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Timber.tag(LogTag.SYNC).w(
-                e,
-                "Error subscribing to cloud %s delta changes, using local cache",
-                params.entityLabel
-            )
+        when (val outcome = collectDeltaWindow(currentWatermark, params)) {
+            is DeltaWindowOutcome.AdvanceCursor -> currentWatermark = outcome.watermark
+            DeltaWindowOutcome.StopListening, DeltaWindowOutcome.Completed, is DeltaWindowOutcome.Continue -> break
         }
-        if (!shouldResubscribe) break
     }
 }
 
-private class ParentMissingSignal : CancellationException("Parent entity no longer exists")
+private suspend fun <T> collectDeltaWindow(
+    initialWatermark: SyncWatermark?,
+    params: DeltaSyncParams<T>
+): DeltaWindowOutcome {
+    var currentWatermark = initialWatermark
+    var outcome: DeltaWindowOutcome = DeltaWindowOutcome.Completed
+    try {
+        params.observeDeltaFlow(initialWatermark).collect { batch ->
+            when (val stepOutcome = processDeltaBatch(currentWatermark, batch, params)) {
+                is DeltaWindowOutcome.Continue -> {
+                    currentWatermark = stepOutcome.watermark ?: currentWatermark
+                }
+                is DeltaWindowOutcome.AdvanceCursor, DeltaWindowOutcome.StopListening -> {
+                    outcome = stepOutcome
+                    throw AbortDeltaCollectionSignal()
+                }
+                DeltaWindowOutcome.Completed -> Unit
+            }
+        }
+    } catch (_: AbortDeltaCollectionSignal) {
+        // Outcome was already recorded before aborting collection.
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Timber.tag(LogTag.SYNC).w(
+            e,
+            "Error subscribing to cloud %s delta changes, using local cache",
+            params.entityLabel
+        )
+    }
+    return outcome
+}
+
+private suspend fun <T> processDeltaBatch(
+    currentWatermark: SyncWatermark?,
+    batch: DeltaSyncBatch<T>,
+    params: DeltaSyncParams<T>
+): DeltaWindowOutcome {
+    if (params.verifyParentExists != null && !params.verifyParentExists.invoke()) {
+        Timber.tag(LogTag.SYNC).w("Parent missing, stopping delta listener for %ss", params.entityLabel)
+        return DeltaWindowOutcome.StopListening
+    }
+    val advancedWatermark = reconcileDeltaBatch(currentWatermark, batch, params)
+    return if (batch.reachedPageLimit && batch.isServerConfirmed && advancedWatermark != null) {
+        DeltaWindowOutcome.AdvanceCursor(advancedWatermark)
+    } else {
+        DeltaWindowOutcome.Continue(advancedWatermark)
+    }
+}
+
+private suspend fun <T> reconcileDeltaBatch(
+    currentWatermark: SyncWatermark?,
+    batch: DeltaSyncBatch<T>,
+    params: DeltaSyncParams<T>
+): SyncWatermark? {
+    return try {
+        var advanced: SyncWatermark? = null
+        params.performanceMonitor.traceAsync(PerformanceTraces.SYNC_SUBSCRIBE_AND_RECONCILE) {
+            applyBatchLocal(batch, params)
+            advanced = maybeAdvanceWatermark(currentWatermark, batch, params)
+            confirmPendingSync(
+                params.getPendingIds,
+                params.verifyOnServer,
+                params.markSynced,
+                params.entityLabel
+            )
+            params.onAfterReconcile?.invoke()
+        }
+        advanced
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Timber.tag(LogTag.SYNC).w(
+            e,
+            "Error reconciling %ss from delta batch",
+            params.entityLabel
+        )
+        null
+    }
+}
 
 private suspend fun <T> applyBatchLocal(
     batch: DeltaSyncBatch<T>,
