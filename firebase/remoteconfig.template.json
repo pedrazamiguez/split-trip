@@ -149,9 +149,9 @@
         },
         "local_ai_model_pack_json": {
           "defaultValue": {
-            "value": "{\"pack_id\":\"qwen2.5-1.5b-litert-v1\",\"version\":\"1.0.0\",\"download_url\":\"https://models.splittrip.eu/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm\",\"sha256_checksum\":\"c4a9b7289365ab80fe599b844b77ad253eb3c53fb0e5d963d699146a6f01255e\",\"size_bytes\":1597922856,\"min_ram_mb\":3072,\"min_free_storage_bytes\":3221225472,\"is_enabled\":true}"
+            "value": "{\"schema_version\":2,\"packs\":[{\"pack_id\":\"qwen3-0.6b-litert-v1\",\"display_name\":\"Compact (Qwen 3 0.6B)\",\"tier\":\"compact\",\"priority\":10,\"version\":\"1.0.0\",\"download_url\":\"https://models.splittrip.eu/Qwen3-0.6B_dynamic_wi4b32_afp32.litertlm\",\"sha256_checksum\":\"bf1aba9ce8d963124407353c6aa4cbf72eba78db21ae133de983eac672ce83e0\",\"size_bytes\":343490560,\"min_ram_mb\":2048,\"min_free_storage_bytes\":1073741824,\"is_enabled\":true},{\"pack_id\":\"qwen2.5-1.5b-litert-v1\",\"display_name\":\"Balanced (Qwen 2.5 1.5B)\",\"tier\":\"balanced\",\"priority\":20,\"version\":\"1.0.0\",\"download_url\":\"https://models.splittrip.eu/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm\",\"sha256_checksum\":\"c4a9b7289365ab80fe599b844b77ad253eb3c53fb0e5d963d699146a6f01255e\",\"size_bytes\":1597922856,\"min_ram_mb\":3072,\"min_free_storage_bytes\":3221225472,\"is_enabled\":true},{\"pack_id\":\"gemma4-e2b-litert-v1\",\"display_name\":\"High Quality (Gemma 4 E2B)\",\"tier\":\"high_quality\",\"priority\":30,\"version\":\"1.0.0\",\"download_url\":\"https://models.splittrip.eu/gemma-4-E2B-it.litertlm\",\"sha256_checksum\":\"181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c\",\"size_bytes\":2588147712,\"min_ram_mb\":6144,\"min_free_storage_bytes\":5368709120,\"is_enabled\":true}]}"
           },
-          "description": "Configuration and metadata for the optional downloadable local LiteRT-LM AI model pack.",
+          "description": "Multi-tier catalog configuration and metadata for optional downloadable local LiteRT-LM AI model packs.",
           "valueType": "JSON"
         }
       }

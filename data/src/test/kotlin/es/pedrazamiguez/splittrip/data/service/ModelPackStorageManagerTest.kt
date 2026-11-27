@@ -120,4 +120,42 @@ class ModelPackStorageManagerTest {
         assertTrue(targetFile.exists())
         assertEquals("fallback-weights", targetFile.readText())
     }
+
+    @Test
+    fun `deleteOtherModelFiles removes other pack directories and older versions while preserving kept pack file`() {
+        val storageManager = ModelPackStorageManager(tempDir)
+        val keptTarget = storageManager.getTargetFile("qwen2.5-1.5b-litert-v1", "2.0.0")
+        val keptLingeringTemp = storageManager.getTempFile("qwen2.5-1.5b-litert-v1", "2.0.0")
+        val oldVersionTarget = storageManager.getTargetFile("qwen2.5-1.5b-litert-v1", "1.0.0")
+        val otherPackTarget = storageManager.getTargetFile("qwen3-0.6b-litert-v1", "1.0.0")
+        listOf(keptTarget, keptLingeringTemp, oldVersionTarget, otherPackTarget).forEach { file ->
+            file.parentFile?.mkdirs()
+            file.writeText(file.name)
+        }
+
+        storageManager.deleteOtherModelFiles(keepPackId = "qwen2.5-1.5b-litert-v1", keepVersion = "2.0.0")
+
+        assertTrue(keptTarget.exists())
+        assertFalse(keptLingeringTemp.exists())
+        assertFalse(oldVersionTarget.exists())
+        assertFalse(otherPackTarget.exists())
+    }
+
+    @Test
+    fun `deleteAllTempFiles removes all part files across pack directories without deleting installed model files`() {
+        val storageManager = ModelPackStorageManager(tempDir)
+        val installedTarget = storageManager.getTargetFile("qwen3-0.6b-litert-v1", "1.0.0")
+        val tempA = storageManager.getTempFile("qwen3-0.6b-litert-v1", "1.0.0")
+        val tempB = storageManager.getTempFile("gemma4-e2b-litert-v1", "1.0.0")
+        listOf(installedTarget, tempA, tempB).forEach { file ->
+            file.parentFile?.mkdirs()
+            file.writeText(file.name)
+        }
+
+        storageManager.deleteAllTempFiles()
+
+        assertTrue(installedTarget.exists())
+        assertFalse(tempA.exists())
+        assertFalse(tempB.exists())
+    }
 }

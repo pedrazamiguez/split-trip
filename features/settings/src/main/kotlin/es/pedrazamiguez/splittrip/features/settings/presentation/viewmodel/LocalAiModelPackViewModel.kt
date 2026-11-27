@@ -58,10 +58,13 @@ class LocalAiModelPackViewModel(
 
     fun onEvent(event: LocalAiModelPackUiEvent) {
         when (event) {
-            LocalAiModelPackUiEvent.RequestDownload,
-            LocalAiModelPackUiEvent.RetryDownload -> handleDownloadRequest()
+            is LocalAiModelPackUiEvent.RequestDownload -> handleDownloadRequest(event.packId)
 
-            LocalAiModelPackUiEvent.CancelDownload -> handleCancelDownload()
+            is LocalAiModelPackUiEvent.RetryDownload ->
+                handleDownloadRequest(event.packId ?: _uiState.value.activeTargetPackId)
+
+            is LocalAiModelPackUiEvent.CancelDownload ->
+                handleCancelDownload(event.packId ?: _uiState.value.activeTargetPackId)
 
             LocalAiModelPackUiEvent.RequestDelete -> showDeleteConfirmation.value = true
 
@@ -75,9 +78,9 @@ class LocalAiModelPackViewModel(
         }
     }
 
-    private fun handleDownloadRequest() {
+    private fun handleDownloadRequest(packId: String?) {
         viewModelScope.launch {
-            downloadLocalAiModelPackUseCase()
+            downloadLocalAiModelPackUseCase(packId)
                 .onSuccess {
                     _actions.send(
                         LocalAiModelPackUiAction.ShowTopPill(
@@ -99,9 +102,9 @@ class LocalAiModelPackViewModel(
         }
     }
 
-    private fun handleCancelDownload() {
+    private fun handleCancelDownload(packId: String?) {
         viewModelScope.launch {
-            cancelLocalAiModelPackDownloadUseCase()
+            cancelLocalAiModelPackDownloadUseCase(packId)
                 .onSuccess {
                     _actions.send(
                         LocalAiModelPackUiAction.ShowTopPill(

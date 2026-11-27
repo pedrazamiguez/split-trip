@@ -451,5 +451,16 @@
     <string name="local_ai_pack_pill_download_cancelled">Download cancelled</string>
     <string name="local_ai_pack_pill_deleted">Local AI pack deleted</string>
     <string name="local_ai_pack_pill_action_failed">Operation failed. Please try again.</string>
+    <string name="local_ai_pack_section_available_models">Available Model Packs</string>
+    <string name="local_ai_pack_badge_recommended">Recommended</string>
+    <string name="local_ai_pack_badge_compatible">Compatible</string>
+    <string name="local_ai_pack_tier_compact">Compact</string>
+    <string name="local_ai_pack_tier_balanced">Balanced</string>
+    <string name="local_ai_pack_tier_high_quality">High Quality</string>
+    <string name="local_ai_pack_requirements_format">Min %1$d MB RAM · %2$s storage</string>
+    <string name="local_ai_pack_action_switch">Switch Pack</string>
+    <string name="local_ai_pack_status_installed_named_desc">Active model: %1$s. Running offline via LiteRT-LM.</string>
+    <string name="local_ai_pack_status_downloading_named_title">Downloading %1$s…</string>
+    <string name="local_ai_pack_status_verifying_named_title">Verifying %1$s…</string>
 </resources>
 

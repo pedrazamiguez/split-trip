@@ -403,4 +403,15 @@
     <string name="local_ai_pack_pill_download_cancelled">Dêccarga cançelá</string>
     <string name="local_ai_pack_pill_deleted">Paquete de IA locâh eliminao</string>
     <string name="local_ai_pack_pill_action_failed">La operaçión fayó. Inténtalo de nuebo.</string>
+    <string name="local_ai_pack_section_available_models">Paquetê de modelô dîpponiblê</string>
+    <string name="local_ai_pack_badge_recommended">Recomendao</string>
+    <string name="local_ai_pack_badge_compatible">Compatible</string>
+    <string name="local_ai_pack_tier_compact">Compâtto</string>
+    <string name="local_ai_pack_tier_balanced">Equilibrao</string>
+    <string name="local_ai_pack_tier_high_quality">Arta calidá</string>
+    <string name="local_ai_pack_requirements_format">Mín. %1$d MB RAM · %2$s de êppaçio</string>
+    <string name="local_ai_pack_action_switch">Cambiâh paquete</string>
+    <string name="local_ai_pack_status_installed_named_desc">Modelo âttibo: %1$s. Ehecutándoçe çin conêççión mediante LiteRT-RM.</string>
+    <string name="local_ai_pack_status_downloading_named_title">Dêccargando %1$s…</string>
+    <string name="local_ai_pack_status_verifying_named_title">Berificando %1$s…</string>
 </resources>

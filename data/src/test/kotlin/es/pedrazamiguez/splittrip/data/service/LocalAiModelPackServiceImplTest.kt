@@ -6,11 +6,14 @@ import es.pedrazamiguez.splittrip.data.repository.impl.LiteRtEngineClient
 import es.pedrazamiguez.splittrip.data.worker.LocalAiModelPackWorkScheduler
 import es.pedrazamiguez.splittrip.data.worker.ModelPackWorkState
 import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelNotEntitledException
+import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelUnavailableException
 import es.pedrazamiguez.splittrip.domain.model.DeviceCompatibilityResult
+import es.pedrazamiguez.splittrip.domain.model.ModelPackCatalog
 import es.pedrazamiguez.splittrip.domain.model.ModelPackConfig
 import es.pedrazamiguez.splittrip.domain.model.ModelPackErrorReason
 import es.pedrazamiguez.splittrip.domain.model.ModelPackIncompatibilityReason
 import es.pedrazamiguez.splittrip.domain.model.ModelPackStatus
+import es.pedrazamiguez.splittrip.domain.model.ModelPackTier
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
 import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
@@ -49,18 +52,35 @@ class LocalAiModelPackServiceImplTest {
     private lateinit var engineClient: LiteRtEngineClient
     private var isEngineInitialized = false
 
-    private val configFlow = MutableStateFlow(
-        ModelPackConfig(
-            packId = "gemma-litert-receipt-v1",
-            version = "1.0.0",
-            downloadUrl = "https://example.com/model.litertlm",
-            sha256Checksum = "abcdef123456",
-            sizeBytes = 500_000_000L,
-            minRamMb = 4096,
-            minFreeStorageBytes = 1_073_741_824L,
-            isEnabled = true
-        )
+    private val compactConfig = ModelPackConfig(
+        packId = "qwen3-0.6b-litert-v1",
+        displayName = "Compact (Qwen 3 0.6B)",
+        tier = ModelPackTier.COMPACT,
+        priority = 10,
+        version = "1.0.0",
+        downloadUrl = "https://models.splittrip.eu/compact.litertlm",
+        sha256Checksum = "a".repeat(64),
+        sizeBytes = 343_490_560L,
+        minRamMb = 2048,
+        minFreeStorageBytes = 1_073_741_824L,
+        isEnabled = true
     )
+
+    private val balancedConfig = ModelPackConfig(
+        packId = "qwen2.5-1.5b-litert-v1",
+        displayName = "Balanced (Qwen 2.5 1.5B)",
+        tier = ModelPackTier.BALANCED,
+        priority = 20,
+        version = "1.0.0",
+        downloadUrl = "https://models.splittrip.eu/balanced.litertlm",
+        sha256Checksum = "b".repeat(64),
+        sizeBytes = 1_597_922_856L,
+        minRamMb = 3072,
+        minFreeStorageBytes = 3_221_225_472L,
+        isEnabled = true
+    )
+
+    private val catalogFlow = MutableStateFlow(ModelPackCatalog(packs = listOf(compactConfig, balancedConfig)))
     private val entitledFlow = MutableStateFlow(true)
     private val installedFlow = MutableStateFlow<InstalledModelPackMetadata?>(null)
     private val wifiOnlyFlow = MutableStateFlow(true)
@@ -70,9 +90,9 @@ class LocalAiModelPackServiceImplTest {
         isCompatible = true,
         reason = null,
         availableRamMb = 8192L,
-        requiredRamMb = 4096,
-        availableStorageBytes = 4_000_000_000L,
-        requiredStorageBytes = 1_073_741_824L,
+        requiredRamMb = 3072,
+        availableStorageBytes = 8_000_000_000L,
+        requiredStorageBytes = 3_221_225_472L,
         supportedAbis = listOf("arm64-v8a")
     )
 
@@ -89,12 +109,23 @@ class LocalAiModelPackServiceImplTest {
         engineClient = mockk(relaxed = true)
         isEngineInitialized = false
 
-        every { appConfigRepository.localAiModelPackConfig } returns configFlow
+        every { appConfigRepository.localAiModelPackCatalog } returns catalogFlow
         every { featureGateService.isFeatureEnabled(GatedFeature.LOCAL_AI_MODEL_PACK) } returns entitledFlow
         every { preferences.installedPackMetadata } returns installedFlow
         every { preferences.wifiOnlyDownload } returns wifiOnlyFlow
         every { workScheduler.observeWorkState() } returns workStateFlow
         every { compatibilityProvider.evaluate(any(), any()) } returns compatibleResult
+        every { compatibilityProvider.evaluateCatalog(any(), any()) } answers {
+            val catalog = firstArg<ModelPackCatalog>()
+            catalog.enabledPacks.mapIndexed { idx, config ->
+                EvaluatedCatalogPack(
+                    config = config,
+                    compatibility = compatibleResult,
+                    isRecommended = idx == catalog.enabledPacks.lastIndex
+                )
+            }
+        }
+        every { compatibilityProvider.selectAggregateCompatibility(any(), any()) } returns compatibleResult
         every { storageManager.isFileValid(any(), any()) } returns false
 
         service = LocalAiModelPackServiceImpl(
@@ -118,81 +149,126 @@ class LocalAiModelPackServiceImplTest {
     }
 
     @Test
-    fun `observeStatus emits NotInstalled when compatible and no file installed`() = runTest(testDispatcher) {
-        val status = service.observeStatus().first()
+    fun `observeStatus emits NotInstalled for recommended pack when compatible and no file installed`() =
+        runTest(testDispatcher) {
+            val status = service.observeStatus().first()
 
-        assertEquals(ModelPackStatus.NotInstalled("1.0.0", 500_000_000L), status)
-    }
+            assertEquals(
+                ModelPackStatus.NotInstalled(
+                    availableVersion = "1.0.0",
+                    downloadSizeBytes = 1_597_922_856L,
+                    packId = "qwen2.5-1.5b-litert-v1"
+                ),
+                status
+            )
+        }
 
     @Test
     fun `observeStatus emits Downloading with progress when worker reports Downloading`() = runTest(testDispatcher) {
         workStateFlow.value = ModelPackWorkState.Downloading(
             progressPercent = 45,
             downloadedBytes = 225_000_000L,
-            totalBytes = 500_000_000L
+            totalBytes = 500_000_000L,
+            packId = "qwen3-0.6b-litert-v1"
         )
 
         val status = service.observeStatus().first()
 
         assertEquals(
-            ModelPackStatus.Downloading(45, 225_000_000L, 500_000_000L),
+            ModelPackStatus.Downloading(45, 225_000_000L, 500_000_000L, packId = "qwen3-0.6b-litert-v1"),
             status
         )
     }
 
     @Test
     fun `observeStatus emits Verifying when worker reports Verifying`() = runTest(testDispatcher) {
-        workStateFlow.value = ModelPackWorkState.Verifying("1.0.0")
+        workStateFlow.value = ModelPackWorkState.Verifying("1.0.0", packId = "qwen2.5-1.5b-litert-v1")
 
         val status = service.observeStatus().first()
 
-        assertEquals(ModelPackStatus.Verifying("1.0.0"), status)
+        assertEquals(ModelPackStatus.Verifying("1.0.0", packId = "qwen2.5-1.5b-litert-v1"), status)
     }
 
     @Test
     fun `observeStatus emits Installed when metadata and valid file exist`() = runTest(testDispatcher) {
         installedFlow.value = InstalledModelPackMetadata(
+            packId = "qwen2.5-1.5b-litert-v1",
             version = "1.0.0",
-            sizeBytes = 500_000_000L,
-            sha256Checksum = "abcdef123456",
+            sizeBytes = 1_597_922_856L,
+            sha256Checksum = "b".repeat(64),
             filePath = "/data/model.litertlm"
         )
-        every { storageManager.isFileValid("/data/model.litertlm", 500_000_000L) } returns true
+        every { storageManager.isFileValid("/data/model.litertlm", 1_597_922_856L) } returns true
 
         val status = service.observeStatus().first()
 
         assertEquals(
-            ModelPackStatus.Installed(version = "1.0.0", sizeBytes = 500_000_000L, isUpdateAvailable = false),
+            ModelPackStatus.Installed(
+                version = "1.0.0",
+                sizeBytes = 1_597_922_856L,
+                isUpdateAvailable = false,
+                packId = "qwen2.5-1.5b-litert-v1"
+            ),
             status
         )
     }
 
     @Test
-    fun `observeStatus emits Installed with isUpdateAvailable true when remote version differs`() =
+    fun `observeStatus sets isUpdateAvailable true only when installed packId has newer remote version`() =
         runTest(testDispatcher) {
             installedFlow.value = InstalledModelPackMetadata(
+                packId = "qwen3-0.6b-litert-v1",
                 version = "0.9.0",
-                sizeBytes = 400_000_000L,
+                sizeBytes = 340_000_000L,
                 sha256Checksum = "old",
-                filePath = "/data/model.litertlm"
+                filePath = "/data/compact.litertlm"
             )
-            every { storageManager.isFileValid("/data/model.litertlm", 400_000_000L) } returns true
+            every { storageManager.isFileValid("/data/compact.litertlm", 340_000_000L) } returns true
 
-            val status = service.observeStatus().first()
-
+            val statusUpdateAvailable = service.observeStatus().first()
             assertEquals(
-                ModelPackStatus.Installed(version = "0.9.0", sizeBytes = 400_000_000L, isUpdateAvailable = true),
-                status
+                ModelPackStatus.Installed(
+                    version = "0.9.0",
+                    sizeBytes = 340_000_000L,
+                    isUpdateAvailable = true,
+                    packId = "qwen3-0.6b-litert-v1"
+                ),
+                statusUpdateAvailable
+            )
+
+            installedFlow.value = InstalledModelPackMetadata(
+                packId = "qwen2.5-1.5b-litert-v1",
+                version = "1.0.0",
+                sizeBytes = 1_597_922_856L,
+                sha256Checksum = "b".repeat(64),
+                filePath = "/data/balanced.litertlm"
+            )
+            every { storageManager.isFileValid("/data/balanced.litertlm", 1_597_922_856L) } returns true
+
+            val statusUpToDate = service.observeStatus().first()
+            assertEquals(
+                ModelPackStatus.Installed(
+                    version = "1.0.0",
+                    sizeBytes = 1_597_922_856L,
+                    isUpdateAvailable = false,
+                    packId = "qwen2.5-1.5b-litert-v1"
+                ),
+                statusUpToDate
             )
         }
 
     @Test
     fun `observeStatus emits Incompatible when device fails compatibility check`() = runTest(testDispatcher) {
-        every { compatibilityProvider.evaluate(any(), true) } returns compatibleResult.copy(
+        val incompatibleResult = compatibleResult.copy(
             isCompatible = false,
             reason = ModelPackIncompatibilityReason.INSUFFICIENT_RAM,
-            availableRamMb = 2048L
+            availableRamMb = 1024L,
+            requiredRamMb = 2048
         )
+        every { compatibilityProvider.evaluateCatalog(any(), any()) } returns listOf(
+            EvaluatedCatalogPack(compactConfig, incompatibleResult, isRecommended = false)
+        )
+        every { compatibilityProvider.selectAggregateCompatibility(any(), any()) } returns incompatibleResult
 
         val status = service.observeStatus().first()
 
@@ -202,12 +278,63 @@ class LocalAiModelPackServiceImplTest {
 
     @Test
     fun `observeStatus emits Error with reason when worker reports Failed`() = runTest(testDispatcher) {
-        workStateFlow.value = ModelPackWorkState.Failed(ModelPackErrorReason.CHECKSUM_MISMATCH)
+        workStateFlow.value = ModelPackWorkState.Failed(
+            reason = ModelPackErrorReason.CHECKSUM_MISMATCH,
+            packId = "qwen3-0.6b-litert-v1"
+        )
 
         val status = service.observeStatus().first()
 
-        assertEquals(ModelPackStatus.Error(ModelPackErrorReason.CHECKSUM_MISMATCH), status)
+        assertEquals(
+            ModelPackStatus.Error(ModelPackErrorReason.CHECKSUM_MISMATCH, packId = "qwen3-0.6b-litert-v1"),
+            status
+        )
     }
+
+    @Test
+    fun `observeCatalogEntries exposes all enabled packs with individual statuses and recommended flag`() =
+        runTest(testDispatcher) {
+            val entries = service.observeCatalogEntries().first()
+
+            assertEquals(2, entries.size)
+            assertEquals("qwen3-0.6b-litert-v1", entries[0].config.packId)
+            assertFalse(entries[0].isRecommended)
+            assertTrue(entries[0].status is ModelPackStatus.NotInstalled)
+            assertEquals("qwen2.5-1.5b-litert-v1", entries[1].config.packId)
+            assertTrue(entries[1].isRecommended)
+            assertTrue(entries[1].status is ModelPackStatus.NotInstalled)
+        }
+
+    @Test
+    fun `observeCatalogEntries marks only targeted pack Downloading while keeping installed pack Installed`() =
+        runTest(testDispatcher) {
+            installedFlow.value = InstalledModelPackMetadata(
+                packId = "qwen3-0.6b-litert-v1",
+                version = "1.0.0",
+                sizeBytes = 343_490_560L,
+                sha256Checksum = "a".repeat(64),
+                filePath = "/data/compact.litertlm"
+            )
+            every { storageManager.isFileValid("/data/compact.litertlm", 343_490_560L) } returns true
+            workStateFlow.value = ModelPackWorkState.Downloading(
+                progressPercent = 30,
+                downloadedBytes = 400_000_000L,
+                totalBytes = 1_597_922_856L,
+                packId = "qwen2.5-1.5b-litert-v1"
+            )
+
+            val entries = service.observeCatalogEntries().first()
+            val compact = entries.first { it.config.packId == "qwen3-0.6b-litert-v1" }
+            val balanced = entries.first { it.config.packId == "qwen2.5-1.5b-litert-v1" }
+
+            assertTrue(compact.isInstalled)
+            assertFalse(compact.isActiveDownload)
+            assertTrue(compact.status is ModelPackStatus.Installed)
+
+            assertFalse(balanced.isInstalled)
+            assertTrue(balanced.isActiveDownload)
+            assertTrue(balanced.status is ModelPackStatus.Downloading)
+        }
 
     @Test
     fun `requestDownload fails with LocalAiModelNotEntitledException when user lacks Pro entitlement`() =
@@ -222,61 +349,82 @@ class LocalAiModelPackServiceImplTest {
         }
 
     @Test
-    fun `requestDownload fails when remote config URL is blank or non-HTTPS`() = runTest(testDispatcher) {
-        configFlow.value = configFlow.value.copy(downloadUrl = "")
-
-        val resultBlank = service.requestDownload()
-        assertTrue(resultBlank.isFailure)
-
-        configFlow.value = configFlow.value.copy(downloadUrl = "http://insecure.example.com/model.litertlm")
-        val resultHttp = service.requestDownload()
-        assertTrue(resultHttp.isFailure)
-        verify(exactly = 0) { workScheduler.enqueueDownload(any(), any()) }
-    }
-
-    @Test
-    fun `requestDownload fails when device is incompatible`() = runTest(testDispatcher) {
-        every { compatibilityProvider.evaluate(any(), any()) } returns compatibleResult.copy(
-            isCompatible = false,
-            reason = ModelPackIncompatibilityReason.UNSUPPORTED_ABI
-        )
-
-        val result = service.requestDownload()
-
-        assertTrue(result.isFailure)
-        verify(exactly = 0) { workScheduler.enqueueDownload(any(), any()) }
-    }
-
-    @Test
-    fun `requestDownload enqueues WorkManager download respecting wifiOnly preference when entitled and compatible`() =
+    fun `requestDownload with explicit packId enqueues that specific pack when entitled and compatible`() =
         runTest(testDispatcher) {
             wifiOnlyFlow.value = false
 
-            val result = service.requestDownload()
+            val result = service.requestDownload(packId = "qwen3-0.6b-litert-v1")
 
             assertTrue(result.isSuccess)
-            verify(exactly = 1) { workScheduler.enqueueDownload(configFlow.value, false) }
+            verify(exactly = 1) { workScheduler.enqueueDownload(compactConfig, false) }
         }
 
     @Test
-    fun `cancelDownload cancels work scheduler and cleans temp files`() = runTest(testDispatcher) {
-        val result = service.cancelDownload()
+    fun `requestDownload with explicit packId fails when pack is incompatible, disabled, or unknown`() =
+        runTest(testDispatcher) {
+            val unknownResult = service.requestDownload(packId = "missing-pack")
+            assertTrue(unknownResult.isFailure)
+            assertTrue(unknownResult.exceptionOrNull() is IllegalStateException)
 
-        assertTrue(result.isSuccess)
-        verify(exactly = 1) { workScheduler.cancelDownload() }
-        verify(exactly = 1) { storageManager.deleteTempFiles("gemma-litert-receipt-v1", "1.0.0") }
-    }
+            catalogFlow.value = ModelPackCatalog(packs = listOf(compactConfig.copy(isEnabled = false), balancedConfig))
+            val disabledResult = service.requestDownload(packId = "qwen3-0.6b-litert-v1")
+            assertTrue(disabledResult.isFailure)
+            assertTrue(disabledResult.exceptionOrNull() is IllegalStateException)
+
+            every { compatibilityProvider.evaluate(balancedConfig, true) } returns compatibleResult.copy(
+                isCompatible = false,
+                reason = ModelPackIncompatibilityReason.INSUFFICIENT_STORAGE
+            )
+            val incompatibleResult = service.requestDownload(packId = "qwen2.5-1.5b-litert-v1")
+            assertTrue(incompatibleResult.isFailure)
+            assertTrue(incompatibleResult.exceptionOrNull() is LocalAiModelUnavailableException)
+
+            verify(exactly = 0) { workScheduler.enqueueDownload(any(), any()) }
+        }
+
+    @Test
+    fun `requestDownload with null packId selects recommended compatible pack by default`() =
+        runTest(testDispatcher) {
+            wifiOnlyFlow.value = true
+
+            val result = service.requestDownload(packId = null)
+
+            assertTrue(result.isSuccess)
+            verify(exactly = 1) { workScheduler.enqueueDownload(balancedConfig, true) }
+        }
+
+    @Test
+    fun `cancelDownload with explicit packId cancels scheduler and deletes that pack temp file`() =
+        runTest(testDispatcher) {
+            val result = service.cancelDownload(packId = "qwen3-0.6b-litert-v1")
+
+            assertTrue(result.isSuccess)
+            verify(exactly = 1) { workScheduler.cancelDownload() }
+            verify(exactly = 1) { storageManager.deleteTempFiles("qwen3-0.6b-litert-v1", "1.0.0") }
+            verify(exactly = 0) { storageManager.deleteAllTempFiles() }
+        }
+
+    @Test
+    fun `cancelDownload with null packId cancels scheduler and deletes all temp files`() =
+        runTest(testDispatcher) {
+            val result = service.cancelDownload(packId = null)
+
+            assertTrue(result.isSuccess)
+            verify(exactly = 1) { workScheduler.cancelDownload() }
+            verify(exactly = 1) { storageManager.deleteAllTempFiles() }
+        }
 
     @Test
     fun `deletePack cancels work, closes engine, deletes files, and clears metadata`() =
         runTest(testDispatcher) {
             installedFlow.value = InstalledModelPackMetadata(
+                packId = "qwen2.5-1.5b-litert-v1",
                 version = "1.0.0",
-                sizeBytes = 500_000_000L,
-                sha256Checksum = "abcdef123456",
+                sizeBytes = 1_597_922_856L,
+                sha256Checksum = "b".repeat(64),
                 filePath = "/data/model.litertlm"
             )
-            every { storageManager.isFileValid("/data/model.litertlm", 500_000_000L) } returns true
+            every { storageManager.isFileValid("/data/model.litertlm", 1_597_922_856L) } returns true
             isEngineInitialized = true
             every { engineClient.close() } just runs
             every { storageManager.deleteAllModelFiles() } returns true
@@ -298,12 +446,13 @@ class LocalAiModelPackServiceImplTest {
     @Test
     fun `isPackInstalled returns false when persisted file was externally deleted`() = runTest(testDispatcher) {
         installedFlow.value = InstalledModelPackMetadata(
+            packId = "qwen2.5-1.5b-litert-v1",
             version = "1.0.0",
-            sizeBytes = 500_000_000L,
-            sha256Checksum = "abcdef123456",
+            sizeBytes = 1_597_922_856L,
+            sha256Checksum = "b".repeat(64),
             filePath = "/data/missing.litertlm"
         )
-        every { storageManager.isFileValid("/data/missing.litertlm", 500_000_000L) } returns false
+        every { storageManager.isFileValid("/data/missing.litertlm", 1_597_922_856L) } returns false
         advanceUntilIdle()
 
         assertFalse(service.isPackInstalled())

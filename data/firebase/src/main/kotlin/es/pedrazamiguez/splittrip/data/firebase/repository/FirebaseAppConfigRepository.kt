@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.data.firebase.R
 import es.pedrazamiguez.splittrip.data.firebase.config.CategoryClassifierRulesParser
 import es.pedrazamiguez.splittrip.domain.model.CategoryClassifierRuleConfig
 import es.pedrazamiguez.splittrip.domain.model.DeveloperInfo
+import es.pedrazamiguez.splittrip.domain.model.ModelPackCatalog
 import es.pedrazamiguez.splittrip.domain.model.ModelPackConfig
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import kotlin.coroutines.cancellation.CancellationException
@@ -136,9 +137,9 @@ class FirebaseAppConfigRepository(
     override val categoryClassifierRules: StateFlow<CategoryClassifierRuleConfig> =
         _categoryClassifierRules.asStateFlow()
 
-    private val _localAiModelPackConfig = MutableStateFlow(DEFAULT_MODEL_PACK_CONFIG)
-    override val localAiModelPackConfig: StateFlow<ModelPackConfig> =
-        _localAiModelPackConfig.asStateFlow()
+    private val _localAiModelPackCatalog = MutableStateFlow(DEFAULT_MODEL_PACK_CATALOG)
+    override val localAiModelPackCatalog: StateFlow<ModelPackCatalog> =
+        _localAiModelPackCatalog.asStateFlow()
 
     init {
         remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
@@ -329,10 +330,10 @@ class FirebaseAppConfigRepository(
         _developerAllowlistEmailHashes.value =
             parseAllowlistHashes(allowlistStr, DEFAULT_DEVELOPER_ALLOWLIST_EMAIL_HASHES)
         val modelPackJson = remoteConfig.getString(KEY_LOCAL_AI_MODEL_PACK_JSON)
-        _localAiModelPackConfig.value = FirebaseModelPackConfigParser.parse(
+        _localAiModelPackCatalog.value = FirebaseModelPackConfigParser.parseCatalog(
             gson = gson,
             jsonStr = modelPackJson,
-            defaultConfig = DEFAULT_MODEL_PACK_CONFIG
+            defaultCatalog = DEFAULT_MODEL_PACK_CATALOG
         )
     }
 
@@ -435,6 +436,10 @@ class FirebaseAppConfigRepository(
             minRamMb = DEFAULT_MODEL_PACK_MIN_RAM_MB,
             minFreeStorageBytes = DEFAULT_MODEL_PACK_MIN_STORAGE_BYTES,
             isEnabled = false
+        )
+
+        val DEFAULT_MODEL_PACK_CATALOG = ModelPackCatalog(
+            packs = listOf(DEFAULT_MODEL_PACK_CONFIG)
         )
 
         private const val LANG_EN = "en"

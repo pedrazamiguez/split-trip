@@ -21,6 +21,7 @@ internal fun LocalAiModelPackActionsSection(
     onEvent: (LocalAiModelPackUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val fallbackPrimaryAction = resolveFallbackPrimaryAction(uiState)
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.Medium)
@@ -33,31 +34,18 @@ internal fun LocalAiModelPackActionsSection(
             )
         }
 
-        if (uiState.showDownloadButton) {
-            val labelRes = if (uiState.isUpdateAvailable) {
-                R.string.local_ai_pack_action_update
-            } else {
-                R.string.local_ai_pack_action_download
-            }
+        fallbackPrimaryAction?.let { (labelRes, event) ->
             GradientButton(
                 text = stringResource(labelRes),
-                onClick = { onEvent(LocalAiModelPackUiEvent.RequestDownload) },
+                onClick = { onEvent(event) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
 
-        if (uiState.showRetryButton) {
-            GradientButton(
-                text = stringResource(R.string.local_ai_pack_action_retry),
-                onClick = { onEvent(LocalAiModelPackUiEvent.RetryDownload) },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        if (uiState.showCancelButton) {
+        if (uiState.catalogTiers.isEmpty() && uiState.showCancelButton) {
             SecondaryButton(
                 text = stringResource(R.string.local_ai_pack_action_cancel),
-                onClick = { onEvent(LocalAiModelPackUiEvent.CancelDownload) },
+                onClick = { onEvent(LocalAiModelPackUiEvent.CancelDownload(uiState.activeTargetPackId)) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -69,5 +57,27 @@ internal fun LocalAiModelPackActionsSection(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+    }
+}
+
+private fun resolveFallbackPrimaryAction(
+    uiState: LocalAiModelPackUiState
+): Pair<Int, LocalAiModelPackUiEvent>? {
+    if (uiState.catalogTiers.isNotEmpty()) return null
+    return when {
+        uiState.showDownloadButton -> {
+            val labelRes = if (uiState.isUpdateAvailable) {
+                R.string.local_ai_pack_action_update
+            } else {
+                R.string.local_ai_pack_action_download
+            }
+            labelRes to LocalAiModelPackUiEvent.RequestDownload(uiState.activeTargetPackId)
+        }
+
+        uiState.showRetryButton ->
+            R.string.local_ai_pack_action_retry to
+                LocalAiModelPackUiEvent.RetryDownload(uiState.activeTargetPackId)
+
+        else -> null
     }
 }

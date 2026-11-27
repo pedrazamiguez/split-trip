@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.domain.enums.GroupContext
 import es.pedrazamiguez.splittrip.domain.model.CategoryKeywordRule
 import es.pedrazamiguez.splittrip.domain.model.CategoryRuleMergeMode
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
+import es.pedrazamiguez.splittrip.domain.model.ModelPackConfig
 import es.pedrazamiguez.splittrip.domain.service.AppConfigService
 import es.pedrazamiguez.splittrip.domain.service.impl.ExpenseCategoryClassifierServiceImpl
 import io.mockk.every
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.w3c.dom.Element
 
+@Suppress("LargeClass")
 class RemoteConfigTemplateConsistencyTest {
 
     private lateinit var xmlDefaults: Map<String, String>
@@ -370,33 +372,85 @@ class RemoteConfigTemplateConsistencyTest {
 
         val rawValue = param?.defaultValue.orEmpty()
         val xmlRawValue = xmlDefaults["local_ai_model_pack_json"].orEmpty()
-        assertEquals(JsonParser.parseString(rawValue), JsonParser.parseString(xmlRawValue))
+        val templateJson = JsonParser.parseString(rawValue).asJsonObject
+        val xmlJson = JsonParser.parseString(xmlRawValue).asJsonObject
+        assertEquals(templateJson, xmlJson)
+        assertEquals(2, templateJson.get("schema_version")?.asInt)
 
-        val parsed = FirebaseModelPackConfigParser.parse(
+        val catalog = FirebaseModelPackConfigParser.parseCatalog(
             gson = Gson(),
             jsonStr = rawValue,
-            defaultConfig = FirebaseAppConfigRepository.DEFAULT_MODEL_PACK_CONFIG
+            defaultCatalog = FirebaseAppConfigRepository.DEFAULT_MODEL_PACK_CATALOG
         )
 
-        val expectedUrl =
-            "https://models.splittrip.eu/Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm"
-        val expectedSha256 = "c4a9b7289365ab80fe599b844b77ad253eb3c53fb0e5d963d699146a6f01255e"
+        assertEquals(3, catalog.packs.size)
+        val hex64Regex = Regex("^[0-9a-f]{64}$")
+        catalog.enabledPacks.forEach { pack ->
+            assertTrue(pack.downloadUrl.startsWith("https://models.splittrip.eu/"))
+            assertTrue(pack.downloadUrl.endsWith(".litertlm"))
+            assertFalse(pack.downloadUrl.contains("firebasestorage", ignoreCase = true))
+            assertFalse(pack.downloadUrl.contains("r2.dev", ignoreCase = true))
+            assertTrue(hex64Regex.matches(pack.sha256Checksum))
+            assertTrue(pack.minFreeStorageBytes > pack.sizeBytes * 2L)
+        }
 
-        assertEquals("qwen2.5-1.5b-litert-v1", parsed.packId)
-        assertEquals("1.0.0", parsed.version)
-        assertEquals(expectedUrl, parsed.downloadUrl)
-        assertEquals(expectedSha256, parsed.sha256Checksum)
-        assertEquals(1_597_922_856L, parsed.sizeBytes)
-        assertEquals(3072, parsed.minRamMb)
-        assertEquals(3_221_225_472L, parsed.minFreeStorageBytes)
-        assertTrue(parsed.isEnabled)
+        val compact = catalog.findById("qwen3-0.6b-litert-v1")
+        assertTierMetadata(
+            pack = compact,
+            expectedDisplayName = "Compact (Qwen 3 0.6B)",
+            expectedPriority = 10,
+            expectedFilename = "Qwen3-0.6B_dynamic_wi4b32_afp32.litertlm",
+            expectedSha256 = "bf1aba9ce8d963124407353c6aa4cbf72eba78db21ae133de983eac672ce83e0",
+            expectedSizeBytes = 343_490_560L,
+            expectedMinRamMb = 2048,
+            expectedMinStorageBytes = 1_073_741_824L
+        )
 
-        assertTrue(parsed.downloadUrl.startsWith("https://models.splittrip.eu/"))
-        assertTrue(parsed.downloadUrl.endsWith(".litertlm"))
-        assertFalse(parsed.downloadUrl.contains("firebasestorage", ignoreCase = true))
-        assertFalse(parsed.downloadUrl.contains("r2.dev", ignoreCase = true))
-        assertTrue(Regex("^[0-9a-f]{64}$").matches(parsed.sha256Checksum))
-        assertTrue(parsed.minFreeStorageBytes > parsed.sizeBytes)
+        val balanced = catalog.findById("qwen2.5-1.5b-litert-v1")
+        assertTierMetadata(
+            pack = balanced,
+            expectedDisplayName = "Balanced (Qwen 2.5 1.5B)",
+            expectedPriority = 20,
+            expectedFilename = "Qwen2.5-1.5B-Instruct_multi-prefill-seq_q8_ekv4096.litertlm",
+            expectedSha256 = "c4a9b7289365ab80fe599b844b77ad253eb3c53fb0e5d963d699146a6f01255e",
+            expectedSizeBytes = 1_597_922_856L,
+            expectedMinRamMb = 3072,
+            expectedMinStorageBytes = 3_221_225_472L
+        )
+
+        val highQuality = catalog.findById("gemma4-e2b-litert-v1")
+        assertTierMetadata(
+            pack = highQuality,
+            expectedDisplayName = "High Quality (Gemma 4 E2B)",
+            expectedPriority = 30,
+            expectedFilename = "gemma-4-E2B-it.litertlm",
+            expectedSha256 = "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
+            expectedSizeBytes = 2_588_147_712L,
+            expectedMinRamMb = 6144,
+            expectedMinStorageBytes = 5_368_709_120L
+        )
+    }
+
+    @Suppress("LongParameterList")
+    private fun assertTierMetadata(
+        pack: ModelPackConfig?,
+        expectedDisplayName: String,
+        expectedPriority: Int,
+        expectedFilename: String,
+        expectedSha256: String,
+        expectedSizeBytes: Long,
+        expectedMinRamMb: Int,
+        expectedMinStorageBytes: Long
+    ) {
+        assertEquals(expectedDisplayName, pack?.displayName)
+        assertEquals("1.0.0", pack?.version)
+        assertEquals(expectedPriority, pack?.priority)
+        assertEquals("https://models.splittrip.eu/$expectedFilename", pack?.downloadUrl)
+        assertEquals(expectedSha256, pack?.sha256Checksum)
+        assertEquals(expectedSizeBytes, pack?.sizeBytes)
+        assertEquals(expectedMinRamMb, pack?.minRamMb)
+        assertEquals(expectedMinStorageBytes, pack?.minFreeStorageBytes)
+        assertEquals(true, pack?.isEnabled)
     }
 
     private fun assertDefaultCategoryClassifierJsonStructure(rawValue: String) {

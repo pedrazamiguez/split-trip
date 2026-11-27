@@ -5,8 +5,15 @@ import android.content.Context
 import android.os.Build
 import android.os.StatFs
 import es.pedrazamiguez.splittrip.domain.model.DeviceCompatibilityResult
+import es.pedrazamiguez.splittrip.domain.model.ModelPackCatalog
 import es.pedrazamiguez.splittrip.domain.model.ModelPackConfig
 import es.pedrazamiguez.splittrip.domain.model.ModelPackIncompatibilityReason
+
+internal data class EvaluatedCatalogPack(
+    val config: ModelPackConfig,
+    val compatibility: DeviceCompatibilityResult,
+    val isRecommended: Boolean
+)
 
 internal class LocalAiDeviceCompatibilityProvider(
     private val context: Context,
@@ -41,6 +48,81 @@ internal class LocalAiDeviceCompatibilityProvider(
             requiredStorageBytes = requiredStorageBytes,
             supportedAbis = supportedAbis
         )
+    }
+
+    fun evaluateCatalog(
+        catalog: ModelPackCatalog,
+        installedPackId: String? = null
+    ): List<EvaluatedCatalogPack> {
+        val enabledPacks = catalog.enabledPacks
+        if (enabledPacks.isEmpty()) return emptyList()
+
+        val sortedPacks = enabledPacks.sortedWith(
+            compareBy<ModelPackConfig> { it.priority }
+                .thenBy { it.tier.rank }
+                .thenBy { it.packId }
+        )
+
+        val evaluatedPairs = sortedPacks.map { pack ->
+            pack to evaluate(
+                config = pack,
+                requireStorageCheck = pack.packId != installedPackId
+            )
+        }
+
+        val recommendedPackId = evaluatedPairs
+            .filter { (_, result) -> result.isCompatible }
+            .maxWithOrNull(
+                compareBy<Pair<ModelPackConfig, DeviceCompatibilityResult>> { it.first.priority }
+                    .thenBy { it.first.tier.rank }
+                    .thenBy { it.first.minRamMb }
+                    .thenByDescending { it.first.packId }
+            )
+            ?.first
+            ?.packId
+
+        return evaluatedPairs.map { (config, compatibility) ->
+            EvaluatedCatalogPack(
+                config = config,
+                compatibility = compatibility,
+                isRecommended = config.packId == recommendedPackId
+            )
+        }
+    }
+
+    fun selectAggregateCompatibility(
+        evaluated: List<EvaluatedCatalogPack>,
+        installedPackId: String? = null
+    ): DeviceCompatibilityResult {
+        if (evaluated.isEmpty()) {
+            return DeviceCompatibilityResult(
+                isCompatible = false,
+                reason = ModelPackIncompatibilityReason.PACK_DISABLED,
+                availableRamMb = totalRamMbProvider().coerceAtLeast(0L),
+                requiredRamMb = 0,
+                availableStorageBytes = availableStorageBytesProvider().coerceAtLeast(0L),
+                requiredStorageBytes = 0L,
+                supportedAbis = supportedAbisProvider()
+            )
+        }
+
+        evaluated.firstOrNull { it.isRecommended && it.compatibility.isCompatible }?.let {
+            return it.compatibility
+        }
+
+        if (installedPackId != null) {
+            evaluated.firstOrNull {
+                it.config.packId == installedPackId && it.compatibility.isCompatible
+            }?.let {
+                return it.compatibility
+            }
+        }
+
+        return evaluated.minWith(
+            compareBy<EvaluatedCatalogPack> { it.config.minRamMb }
+                .thenBy { it.config.minFreeStorageBytes }
+                .thenBy { it.config.priority }
+        ).compatibility
     }
 
     private companion object {

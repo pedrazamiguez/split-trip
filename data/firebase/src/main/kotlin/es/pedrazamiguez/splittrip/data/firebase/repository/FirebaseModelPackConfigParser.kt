@@ -2,37 +2,68 @@ package es.pedrazamiguez.splittrip.data.firebase.repository
 
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
+import es.pedrazamiguez.splittrip.domain.model.ModelPackCatalog
 import es.pedrazamiguez.splittrip.domain.model.ModelPackConfig
+import es.pedrazamiguez.splittrip.domain.model.ModelPackTier
 import timber.log.Timber
 
 internal object FirebaseModelPackConfigParser {
 
-    fun parse(
+    private const val DEFAULT_PRIORITY_MULTIPLIER = 10
+    private const val DEFAULT_MIN_RAM_MB = 4096
+    private const val DEFAULT_MIN_STORAGE_BYTES = 1_073_741_824L
+
+    fun parseCatalog(
         gson: Gson,
         jsonStr: String,
-        defaultConfig: ModelPackConfig
-    ): ModelPackConfig {
-        if (jsonStr.isBlank()) return defaultConfig
+        defaultCatalog: ModelPackCatalog
+    ): ModelPackCatalog {
+        if (jsonStr.isBlank()) return defaultCatalog
         return try {
-            val dto = gson.fromJson(jsonStr, ModelPackConfigDto::class.java) ?: return defaultConfig
-            ModelPackConfig(
-                packId = dto.packId?.takeIf { it.isNotBlank() } ?: defaultConfig.packId,
-                version = dto.version?.takeIf { it.isNotBlank() } ?: defaultConfig.version,
-                downloadUrl = dto.downloadUrl?.trim().orEmpty(),
-                sha256Checksum = dto.sha256Checksum?.trim().orEmpty(),
-                sizeBytes = (dto.sizeBytes ?: defaultConfig.sizeBytes).coerceAtLeast(0L),
-                minRamMb = (dto.minRamMb ?: defaultConfig.minRamMb).coerceAtLeast(0),
-                minFreeStorageBytes = (dto.minFreeStorageBytes ?: defaultConfig.minFreeStorageBytes).coerceAtLeast(0L),
-                isEnabled = dto.isEnabled ?: defaultConfig.isEnabled
-            )
+            val catalogDto = gson.fromJson(jsonStr, ModelPackCatalogDto::class.java) ?: return defaultCatalog
+            val rawPacks = catalogDto.packs
+            if (rawPacks.isNullOrEmpty()) return defaultCatalog
+
+            val parsedPacks = rawPacks
+                .mapNotNull { dto -> mapDtoToConfig(dto) }
+                .distinctBy { it.packId }
+
+            if (parsedPacks.isNotEmpty()) ModelPackCatalog(parsedPacks) else defaultCatalog
         } catch (e: Exception) {
             Timber.w(e, "Firebase Remote Config: Failed to parse local_ai_model_pack_json.")
-            defaultConfig
+            defaultCatalog
         }
     }
 
+    private fun mapDtoToConfig(dto: ModelPackConfigDto): ModelPackConfig? {
+        val packId = dto.packId?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        val tier = ModelPackTier.fromCode(dto.tier)
+        val displayName = dto.displayName?.trim().orEmpty().ifBlank { packId }
+        val priority = dto.priority ?: (tier.rank * DEFAULT_PRIORITY_MULTIPLIER)
+        return ModelPackConfig(
+            packId = packId,
+            displayName = displayName,
+            tier = tier,
+            priority = priority,
+            version = dto.version?.trim().orEmpty(),
+            downloadUrl = dto.downloadUrl?.trim().orEmpty(),
+            sha256Checksum = dto.sha256Checksum?.trim().orEmpty(),
+            sizeBytes = (dto.sizeBytes ?: 0L).coerceAtLeast(0L),
+            minRamMb = (dto.minRamMb ?: DEFAULT_MIN_RAM_MB).coerceAtLeast(0),
+            minFreeStorageBytes = (dto.minFreeStorageBytes ?: DEFAULT_MIN_STORAGE_BYTES).coerceAtLeast(0L),
+            isEnabled = dto.isEnabled ?: false
+        )
+    }
+
+    private data class ModelPackCatalogDto(
+        @SerializedName("packs") val packs: List<ModelPackConfigDto>? = null
+    )
+
     private data class ModelPackConfigDto(
         @SerializedName("pack_id") val packId: String? = null,
+        @SerializedName("display_name") val displayName: String? = null,
+        @SerializedName("tier") val tier: String? = null,
+        @SerializedName("priority") val priority: Int? = null,
         @SerializedName("version") val version: String? = null,
         @SerializedName("download_url") val downloadUrl: String? = null,
         @SerializedName("sha256_checksum") val sha256Checksum: String? = null,

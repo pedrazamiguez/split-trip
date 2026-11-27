@@ -124,15 +124,15 @@ class LocalAiModelPackViewModelTest {
     @Test
     fun `RequestDownload invokes DownloadLocalAiModelPackUseCase and shows error pill on failure`() =
         runTest(testDispatcher) {
-            coEvery { downloadLocalAiModelPackUseCase() } returns Result.failure(IllegalStateException("Network"))
+            coEvery { downloadLocalAiModelPackUseCase(null) } returns Result.failure(IllegalStateException("Network"))
             val actions = mutableListOf<LocalAiModelPackUiAction>()
             val job = launch { viewModel.actions.collect { actions.add(it) } }
 
-            viewModel.onEvent(LocalAiModelPackUiEvent.RequestDownload)
+            viewModel.onEvent(LocalAiModelPackUiEvent.RequestDownload())
             advanceUntilIdle()
             job.cancel()
 
-            coVerify(exactly = 1) { downloadLocalAiModelPackUseCase() }
+            coVerify(exactly = 1) { downloadLocalAiModelPackUseCase(null) }
             assertEquals(
                 listOf(
                     LocalAiModelPackUiAction.ShowTopPill(
@@ -144,11 +144,54 @@ class LocalAiModelPackViewModelTest {
         }
 
     @Test
+    fun `RequestDownload with packId forwards packId to DownloadLocalAiModelPackUseCase`() =
+        runTest(testDispatcher) {
+            coEvery { downloadLocalAiModelPackUseCase("qwen3-0.6b-litert-v1") } returns Result.success(Unit)
+
+            viewModel.onEvent(LocalAiModelPackUiEvent.RequestDownload("qwen3-0.6b-litert-v1"))
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { downloadLocalAiModelPackUseCase("qwen3-0.6b-litert-v1") }
+            assertEquals(
+                LocalAiModelPackUiAction.ShowTopPill(
+                    UiText.StringResource(R.string.local_ai_pack_pill_download_started)
+                ),
+                viewModel.actions.first()
+            )
+        }
+
+    @Test
+    fun `RetryDownload with packId forwards packId and falls back to activeTargetPackId when null`() =
+        runTest(testDispatcher) {
+            every { localAiModelPackUiMapper.map(any(), any()) } returns LocalAiModelPackUiState(
+                isLoading = false,
+                activeTargetPackId = "qwen2.5-1.5b-litert-v1"
+            )
+            val reViewModel = LocalAiModelPackViewModel(
+                observeLocalAiModelPackStateUseCase = observeLocalAiModelPackStateUseCase,
+                downloadLocalAiModelPackUseCase = downloadLocalAiModelPackUseCase,
+                cancelLocalAiModelPackDownloadUseCase = cancelLocalAiModelPackDownloadUseCase,
+                deleteLocalAiModelPackUseCase = deleteLocalAiModelPackUseCase,
+                setLocalAiModelPackWifiOnlyUseCase = setLocalAiModelPackWifiOnlyUseCase,
+                localAiModelPackUiMapper = localAiModelPackUiMapper
+            )
+            advanceUntilIdle()
+            coEvery { downloadLocalAiModelPackUseCase(any()) } returns Result.success(Unit)
+
+            reViewModel.onEvent(LocalAiModelPackUiEvent.RetryDownload("gemma4-e2b-litert-v1"))
+            reViewModel.onEvent(LocalAiModelPackUiEvent.RetryDownload())
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { downloadLocalAiModelPackUseCase("gemma4-e2b-litert-v1") }
+            coVerify(exactly = 1) { downloadLocalAiModelPackUseCase("qwen2.5-1.5b-litert-v1") }
+        }
+
+    @Test
     fun `RequestDownload emits RequestUpgrade action when use case fails with LocalAiModelNotEntitledException`() =
         runTest(testDispatcher) {
-            coEvery { downloadLocalAiModelPackUseCase() } returns Result.failure(LocalAiModelNotEntitledException())
+            coEvery { downloadLocalAiModelPackUseCase(null) } returns Result.failure(LocalAiModelNotEntitledException())
 
-            viewModel.onEvent(LocalAiModelPackUiEvent.RequestDownload)
+            viewModel.onEvent(LocalAiModelPackUiEvent.RequestDownload())
             advanceUntilIdle()
 
             assertEquals(LocalAiModelPackUiAction.RequestUpgrade, viewModel.actions.first())
@@ -156,12 +199,12 @@ class LocalAiModelPackViewModelTest {
 
     @Test
     fun `CancelDownload invokes CancelLocalAiModelPackDownloadUseCase`() = runTest(testDispatcher) {
-        coEvery { cancelLocalAiModelPackDownloadUseCase() } returns Result.success(Unit)
+        coEvery { cancelLocalAiModelPackDownloadUseCase(null) } returns Result.success(Unit)
 
-        viewModel.onEvent(LocalAiModelPackUiEvent.CancelDownload)
+        viewModel.onEvent(LocalAiModelPackUiEvent.CancelDownload())
         advanceUntilIdle()
 
-        coVerify(exactly = 1) { cancelLocalAiModelPackDownloadUseCase() }
+        coVerify(exactly = 1) { cancelLocalAiModelPackDownloadUseCase(null) }
         assertEquals(
             LocalAiModelPackUiAction.ShowTopPill(
                 UiText.StringResource(R.string.local_ai_pack_pill_download_cancelled)
@@ -169,6 +212,17 @@ class LocalAiModelPackViewModelTest {
             viewModel.actions.first()
         )
     }
+
+    @Test
+    fun `CancelDownload with packId forwards packId to CancelLocalAiModelPackDownloadUseCase`() =
+        runTest(testDispatcher) {
+            coEvery { cancelLocalAiModelPackDownloadUseCase("qwen3-0.6b-litert-v1") } returns Result.success(Unit)
+
+            viewModel.onEvent(LocalAiModelPackUiEvent.CancelDownload("qwen3-0.6b-litert-v1"))
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { cancelLocalAiModelPackDownloadUseCase("qwen3-0.6b-litert-v1") }
+        }
 
     @Test
     fun `RequestDelete opens confirmation dialog and DismissDeleteDialog closes it`() = runTest(testDispatcher) {

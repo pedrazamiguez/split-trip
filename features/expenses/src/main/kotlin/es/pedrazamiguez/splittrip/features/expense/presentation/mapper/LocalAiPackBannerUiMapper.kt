@@ -17,11 +17,16 @@ class LocalAiPackBannerUiMapper(
     fun map(packState: LocalAiModelPackState): LocalAiPackBannerUiModel? {
         if (!packState.isOptInBannerEligible) return null
         val notInstalledStatus = packState.status as? ModelPackStatus.NotInstalled ?: return null
+        val sizeBytes = packState.catalogEntries
+            .firstOrNull { it.isRecommended }
+            ?.config
+            ?.sizeBytes
+            ?: notInstalledStatus.downloadSizeBytes
 
         return LocalAiPackBannerUiModel(
             title = UiText.StringResource(R.string.expense_local_ai_banner_enable_title),
             description = UiText.StringResource(R.string.expense_local_ai_banner_enable_description),
-            sizeBadge = formatSizeBadge(notInstalledStatus.downloadSizeBytes),
+            sizeBadge = formatSizeBadge(sizeBytes),
             actionLabel = UiText.StringResource(R.string.expense_local_ai_banner_action)
         )
     }

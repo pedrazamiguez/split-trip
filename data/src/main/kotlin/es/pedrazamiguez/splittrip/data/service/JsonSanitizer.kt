@@ -1,12 +1,27 @@
 package es.pedrazamiguez.splittrip.data.service
 
 object JsonSanitizer {
+
+    private val THOUGHT_BLOCK_REGEX = Regex(
+        "<(?:think|thought)>.*?</(?:think|thought)>",
+        setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
+    )
+    private val PIPE_THOUGHT_BLOCK_REGEX = Regex(
+        "<\\|thought\\|>.*?<\\|thought\\|>",
+        setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
+    )
+
     /**
-     * Sanitizes raw model outputs by stripping markdown code fences and conversational filler,
-     * extracting the raw JSON block between the first '{' and last '}' characters.
+     * Sanitizes raw model outputs by stripping reasoning blocks, markdown code fences, and
+     * conversational filler, extracting the raw JSON block between the first '{' and last '}'
+     * characters.
      */
     fun sanitize(rawInput: String): String {
-        val clean = stripCodeFences(rawInput.trim())
+        val withoutThoughts = rawInput.trim()
+            .replace(THOUGHT_BLOCK_REGEX, "")
+            .replace(PIPE_THOUGHT_BLOCK_REGEX, "")
+            .trim()
+        val clean = stripCodeFences(withoutThoughts)
 
         val firstBrace = clean.indexOf('{')
         val lastBrace = clean.lastIndexOf('}')
