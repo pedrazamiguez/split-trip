@@ -6,10 +6,12 @@ import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashWithdrawalDat
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalQueryDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalWriteDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawalRemainingAmountUpdate
+import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -19,6 +21,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -254,6 +257,29 @@ class CashWithdrawalRepositoryImplTest {
             // Then
             assertEquals(1, result.size)
             assertEquals(testWithdrawal.id, result[0].id)
+        }
+
+        @Test
+        fun `uses one-shot fetch without persistent listener for ARCHIVED group`() = runTest(testDispatcher) {
+            val remoteWithdrawals = listOf(testWithdrawal)
+            every { localQueryDataSource.getWithdrawalsByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns Group(
+                id = testGroupId,
+                status = GroupStatus.ARCHIVED
+            )
+            coEvery { cloudDataSource.fetchWithdrawalsByGroupId(testGroupId) } returns remoteWithdrawals
+            coEvery { localWriteDataSource.replaceWithdrawalsForGroup(any(), any()) } just Runs
+
+            repository.getGroupWithdrawalsFlow(testGroupId).first()
+            advanceUntilIdle()
+            repository.getGroupWithdrawalsFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            verify(exactly = 0) { cloudDataSource.getWithdrawalsByGroupIdFlow(testGroupId) }
+            coVerify(exactly = 1) { cloudDataSource.fetchWithdrawalsByGroupId(testGroupId) }
+            coVerify(exactly = 1) {
+                localWriteDataSource.replaceWithdrawalsForGroup(testGroupId, remoteWithdrawals)
+            }
         }
     }
 

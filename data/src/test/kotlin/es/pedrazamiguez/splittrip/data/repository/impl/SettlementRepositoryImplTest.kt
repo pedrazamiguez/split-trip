@@ -1,9 +1,13 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSettlementDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSettlementDataSource
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
+import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.Settlement
 import es.pedrazamiguez.splittrip.domain.model.SettlementPocketType
 import es.pedrazamiguez.splittrip.domain.model.SettlementRecord
@@ -13,14 +17,22 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -34,8 +46,10 @@ class SettlementRepositoryImplTest {
 
     private lateinit var cloudSettlementDataSource: CloudSettlementDataSource
     private lateinit var localSettlementDataSource: LocalSettlementDataSource
+    private lateinit var localGroupDataSource: LocalGroupDataSource
     private lateinit var authenticationService: AuthenticationService
     private lateinit var performanceMonitor: PerformanceMonitor
+    private lateinit var syncTeardownCoordinator: SyncTeardownCoordinator
     private lateinit var repository: SettlementRepositoryImpl
 
     private val testGroupId = "group-123"
@@ -62,18 +76,22 @@ class SettlementRepositoryImplTest {
     fun setUp() {
         cloudSettlementDataSource = mockk(relaxed = true)
         localSettlementDataSource = mockk(relaxed = true)
+        localGroupDataSource = mockk(relaxed = true)
         authenticationService = mockk()
         performanceMonitor = mockk(relaxed = true) {
             coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
             every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
         }
+        syncTeardownCoordinator = SyncTeardownCoordinator()
 
         coEvery { authenticationService.currentUserId() } returns testUserId
 
         repository = SettlementRepositoryImpl(
             cloudSettlementDataSource = cloudSettlementDataSource,
             localSettlementDataSource = localSettlementDataSource,
+            localGroupDataSource = localGroupDataSource,
             performanceMonitor = performanceMonitor,
+            syncTeardownCoordinator = syncTeardownCoordinator,
             ioDispatcher = testDispatcher
         )
     }
@@ -220,6 +238,64 @@ class SettlementRepositoryImplTest {
                     }
                 )
             }
+        }
+
+        @Test
+        fun `registers teardown callback and cancels active listener on sign-out`() = runTest(testDispatcher) {
+            val localFlow = MutableSharedFlow<List<SettlementRecord>>()
+            var cancelled = false
+            every { localSettlementDataSource.getSettlementsByGroupIdFlow(testGroupId) } returns localFlow
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns Group(
+                id = testGroupId,
+                status = GroupStatus.ACTIVE
+            )
+            every { cloudSettlementDataSource.getSettlementsByGroupIdFlow(testGroupId) } returns flow {
+                try {
+                    awaitCancellation()
+                } finally {
+                    cancelled = true
+                }
+            }
+
+            val collectorJob = launch { repository.getGroupSettlementsFlow(testGroupId).collect {} }
+            runCurrent()
+            assertFalse(cancelled)
+
+            syncTeardownCoordinator.teardownAll()
+            runCurrent()
+
+            assertTrue(cancelled)
+            collectorJob.cancel()
+            advanceUntilIdle()
+        }
+
+        @Test
+        fun `uses one-shot fetch without persistent listener for ARCHIVED group`() = runTest(testDispatcher) {
+            val confirmedRecord = testRecord.copy(id = "confirmed-rec", status = SettlementStatus.CONFIRMED_BY_PAYER)
+            every { localSettlementDataSource.getSettlementsByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
+            coEvery { localGroupDataSource.getGroupById(testGroupId) } returns Group(
+                id = testGroupId,
+                status = GroupStatus.ARCHIVED
+            )
+            coEvery { cloudSettlementDataSource.fetchSettlementsByGroupId(testGroupId) } returns listOf(confirmedRecord)
+            coEvery { localSettlementDataSource.replaceSettlementsForGroup(any(), any()) } returns Unit
+
+            repository.getGroupSettlementsFlow(testGroupId).first()
+            advanceUntilIdle()
+            repository.getGroupSettlementsFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            verify(exactly = 0) { cloudSettlementDataSource.getSettlementsByGroupIdFlow(testGroupId) }
+            coVerify(exactly = 1) { cloudSettlementDataSource.fetchSettlementsByGroupId(testGroupId) }
+            coVerify(exactly = 1) {
+                localSettlementDataSource.replaceSettlementsForGroup(testGroupId, listOf(confirmedRecord))
+            }
+
+            syncTeardownCoordinator.teardownAll()
+            repository.getGroupSettlementsFlow(testGroupId).first()
+            advanceUntilIdle()
+
+            coVerify(exactly = 2) { cloudSettlementDataSource.fetchSettlementsByGroupId(testGroupId) }
         }
     }
 }

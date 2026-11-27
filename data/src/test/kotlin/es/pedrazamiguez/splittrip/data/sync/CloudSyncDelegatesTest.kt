@@ -15,6 +15,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
@@ -458,6 +459,221 @@ class CloudSyncDelegatesTest {
                 // the coroutine is cancelled → isCancelled = true.
                 // If it were swallowed, the coroutine would complete normally → isCancelled = false.
                 assertTrue(launchedJob.isCancelled, "Coroutine should be cancelled, not completed normally")
+            }
+    }
+
+    @Nested
+    @DisplayName("fetchOnceAndReconcile")
+    inner class FetchOnceAndReconcileTests {
+
+        @Test
+        fun `fetches once, reconciles local, and caches groupId in syncedArchivedGroupIds`() = runTest(testDispatcher) {
+            val syncedIds = mutableSetOf<String>()
+            val remoteItems = listOf("item-1", "item-2")
+            val reconciled = mutableListOf<List<String>>()
+            var fetchCalls = 0
+
+            fetchOnceAndReconcile(
+                groupId = "group-1",
+                syncedArchivedGroupIds = syncedIds,
+                fetchOnce = {
+                    fetchCalls++
+                    remoteItems
+                },
+                params = SyncReconciliationParams(
+                    reconcileLocal = { reconciled.add(it) },
+                    getPendingIds = { emptyList() },
+                    verifyOnServer = { true },
+                    markSynced = { },
+                    entityLabel = "test",
+                    logContext = "for group-1",
+                    performanceMonitor = mockPerformanceMonitor
+                )
+            )
+
+            assertEquals(1, fetchCalls)
+            assertEquals(1, reconciled.size)
+            assertEquals(remoteItems, reconciled[0])
+            assertTrue("group-1" in syncedIds)
+        }
+
+        @Test
+        fun `skips cloud fetch when groupId is already in syncedArchivedGroupIds`() = runTest(testDispatcher) {
+            val syncedIds = mutableSetOf("group-1")
+            var fetchCalled = false
+            var reconcileCalled = false
+
+            fetchOnceAndReconcile(
+                groupId = "group-1",
+                syncedArchivedGroupIds = syncedIds,
+                fetchOnce = {
+                    fetchCalled = true
+                    listOf("item-1")
+                },
+                params = SyncReconciliationParams(
+                    reconcileLocal = { reconcileCalled = true },
+                    getPendingIds = { emptyList() },
+                    verifyOnServer = { true },
+                    markSynced = { },
+                    entityLabel = "test",
+                    logContext = "",
+                    performanceMonitor = mockPerformanceMonitor
+                )
+            )
+
+            assertFalse(fetchCalled)
+            assertFalse(reconcileCalled)
+        }
+
+        @Test
+        fun `does not cache groupId when fetchOnce throws exception`() = runTest(testDispatcher) {
+            val syncedIds = mutableSetOf<String>()
+
+            fetchOnceAndReconcile<String>(
+                groupId = "group-1",
+                syncedArchivedGroupIds = syncedIds,
+                fetchOnce = { throw IOException("Network error") },
+                params = SyncReconciliationParams(
+                    reconcileLocal = { },
+                    getPendingIds = { emptyList() },
+                    verifyOnServer = { true },
+                    markSynced = { },
+                    entityLabel = "test",
+                    logContext = "",
+                    performanceMonitor = mockPerformanceMonitor
+                )
+            )
+
+            assertTrue("group-1" !in syncedIds)
+        }
+
+        @Test
+        fun `skips reconciliation and does not cache groupId when verifyParentExists returns false`() =
+            runTest(testDispatcher) {
+                val syncedIds = mutableSetOf<String>()
+                var reconcileCalled = false
+
+                fetchOnceAndReconcile(
+                    groupId = "group-1",
+                    syncedArchivedGroupIds = syncedIds,
+                    fetchOnce = { listOf("item-1") },
+                    params = SyncReconciliationParams(
+                        reconcileLocal = { reconcileCalled = true },
+                        getPendingIds = { emptyList() },
+                        verifyOnServer = { true },
+                        markSynced = { },
+                        entityLabel = "test",
+                        logContext = "",
+                        performanceMonitor = mockPerformanceMonitor,
+                        verifyParentExists = { false }
+                    )
+                )
+
+                assertFalse(reconcileCalled)
+                assertTrue("group-1" !in syncedIds)
+            }
+
+        @Test
+        fun `rethrows CancellationException from fetchOnce`() = runTest(testDispatcher) {
+            val syncedIds = mutableSetOf<String>()
+
+            val thrown = runCatching {
+                fetchOnceAndReconcile<String>(
+                    groupId = "group-1",
+                    syncedArchivedGroupIds = syncedIds,
+                    fetchOnce = { throw CancellationException("Cancelled") },
+                    params = SyncReconciliationParams(
+                        reconcileLocal = { },
+                        getPendingIds = { emptyList() },
+                        verifyOnServer = { true },
+                        markSynced = { },
+                        entityLabel = "test",
+                        logContext = "",
+                        performanceMonitor = mockPerformanceMonitor
+                    )
+                )
+            }.exceptionOrNull()
+
+            assertInstanceOf(CancellationException::class.java, thrown)
+        }
+    }
+
+    @Nested
+    @DisplayName("syncGroupCollection")
+    inner class SyncGroupCollectionTests {
+
+        @Test
+        fun `uses fetchOnceAndReconcile without collecting cloudFlow when group is archived`() =
+            runTest(testDispatcher) {
+                val syncedIds = mutableSetOf<String>()
+                var fetchCalls = 0
+                var cloudFlowCollected = false
+
+                syncGroupCollection(
+                    groupId = "group-1",
+                    isGroupArchived = { true },
+                    syncedArchivedGroupIds = syncedIds,
+                    fetchOnce = {
+                        fetchCalls++
+                        listOf("item-1")
+                    },
+                    cloudFlow = {
+                        flow {
+                            cloudFlowCollected = true
+                            emit(listOf("item-1"))
+                        }
+                    },
+                    params = SyncReconciliationParams(
+                        reconcileLocal = { },
+                        getPendingIds = { emptyList() },
+                        verifyOnServer = { true },
+                        markSynced = { },
+                        entityLabel = "test",
+                        logContext = "",
+                        performanceMonitor = mockPerformanceMonitor
+                    )
+                )
+
+                assertEquals(1, fetchCalls)
+                assertFalse(cloudFlowCollected)
+                assertTrue("group-1" in syncedIds)
+            }
+
+        @Test
+        fun `uses subscribeAndReconcile without calling fetchOnce when group is active`() =
+            runTest(testDispatcher) {
+                val syncedIds = mutableSetOf<String>()
+                var fetchCalled = false
+                var cloudFlowCollected = false
+
+                syncGroupCollection(
+                    groupId = "group-1",
+                    isGroupArchived = { false },
+                    syncedArchivedGroupIds = syncedIds,
+                    fetchOnce = {
+                        fetchCalled = true
+                        listOf("item-1")
+                    },
+                    cloudFlow = {
+                        flow {
+                            cloudFlowCollected = true
+                            emit(listOf("item-1"))
+                        }
+                    },
+                    params = SyncReconciliationParams(
+                        reconcileLocal = { },
+                        getPendingIds = { emptyList() },
+                        verifyOnServer = { true },
+                        markSynced = { },
+                        entityLabel = "test",
+                        logContext = "",
+                        performanceMonitor = mockPerformanceMonitor
+                    )
+                )
+
+                assertTrue(cloudFlowCollected)
+                assertFalse(fetchCalled)
+                assertTrue("group-1" !in syncedIds)
             }
     }
 }

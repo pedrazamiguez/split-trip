@@ -3,12 +3,15 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
+import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
+import es.pedrazamiguez.splittrip.data.sync.fetchOnceAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
@@ -28,6 +31,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -56,9 +60,13 @@ class ExpenseRepositoryImpl(
      * WhileSubscribed resubscriptions, flatMapLatest restarts).
      */
     private val cloudSubscriptionTracker = KeyedSubscriptionTracker()
+    private val syncedArchivedGroupIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     init {
-        syncTeardownCoordinator.registerAction { cloudSubscriptionTracker.cancelAll() }
+        syncTeardownCoordinator.registerAction {
+            cloudSubscriptionTracker.cancelAll()
+            syncedArchivedGroupIds.clear()
+        }
     }
 
     /**
@@ -197,11 +205,31 @@ class ExpenseRepositoryImpl(
     override fun getGroupExpensesFlow(groupId: String): Flow<List<Expense>> =
         localExpenseDataSource.getExpensesByGroupIdFlow(groupId)
             .trackSubscription(cloudSubscriptionTracker, groupId, syncScope) {
-                kotlinx.coroutines.coroutineScope {
-                    launch {
-                        observeAndProcessMembershipRemovals(groupId)
+                if (localGroupDataSource.getGroupById(groupId)?.status == GroupStatus.ARCHIVED) {
+                    fetchOnceAndReconcile(
+                        groupId = groupId,
+                        syncedArchivedGroupIds = syncedArchivedGroupIds,
+                        fetchOnce = { cloudExpenseDataSource.fetchExpensesByGroupId(groupId) },
+                        params = SyncReconciliationParams(
+                            reconcileLocal = { remoteExpenses ->
+                                localExpenseDataSource.replaceExpensesForGroup(groupId, remoteExpenses)
+                            },
+                            getPendingIds = { localExpenseDataSource.getPendingSyncExpenseIds(groupId) },
+                            verifyOnServer = { id -> cloudExpenseDataSource.verifyExpenseOnServer(groupId, id) },
+                            markSynced = { id -> localExpenseDataSource.updateSyncStatus(id, SyncStatus.SYNCED) },
+                            entityLabel = "expense",
+                            logContext = "for group $groupId",
+                            performanceMonitor = performanceMonitor,
+                            verifyParentExists = { localGroupDataSource.getGroupById(groupId) != null }
+                        )
+                    )
+                } else {
+                    coroutineScope {
+                        launch {
+                            observeAndProcessMembershipRemovals(groupId)
+                        }
+                        subscribeToCloudChanges(groupId)
                     }
-                    subscribeToCloudChanges(groupId)
                 }
             }
 

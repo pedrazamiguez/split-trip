@@ -53,6 +53,16 @@ class FirestoreCashTransferDataSourceImpl(
         }
     }
 
+    override suspend fun fetchGroupCashTransfers(groupId: String): List<CashTransfer> {
+        val snapshot = createTransfersCollection(groupId)
+            .get()
+            .await()
+
+        return snapshot.documents
+            .mapNotNull { it.toObject(CashTransferDocument::class.java)?.toDomain(it.id) }
+            .sortedByDescending { it.createdAt }
+    }
+
     override fun getGroupCashTransfersFlow(groupId: String): Flow<List<CashTransfer>> = callbackFlow {
         val transfersCollection = createTransfersCollection(groupId)
 

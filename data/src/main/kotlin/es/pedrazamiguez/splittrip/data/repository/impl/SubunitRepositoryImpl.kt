@@ -5,19 +5,21 @@ import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
 import es.pedrazamiguez.splittrip.data.sync.SyncCreateParams
 import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
-import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
 import es.pedrazamiguez.splittrip.data.sync.syncDeletionToCloud
+import es.pedrazamiguez.splittrip.data.sync.syncGroupCollection
 import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudSubunitDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSubunitDataSource
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Subunit
 import es.pedrazamiguez.splittrip.domain.repository.SubunitRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import java.time.LocalDateTime
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,9 +37,13 @@ class SubunitRepositoryImpl(
 
     private val syncScope = CoroutineScope(ioDispatcher)
     private val subscriptionTracker = KeyedSubscriptionTracker()
+    private val syncedArchivedGroupIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     init {
-        syncTeardownCoordinator.registerAction { subscriptionTracker.cancelAll() }
+        syncTeardownCoordinator.registerAction {
+            subscriptionTracker.cancelAll()
+            syncedArchivedGroupIds.clear()
+        }
     }
 
     override suspend fun createSubunit(groupId: String, subunit: Subunit): String {
@@ -122,8 +128,14 @@ class SubunitRepositoryImpl(
     override fun getGroupSubunitsFlow(groupId: String): Flow<List<Subunit>> =
         localSubunitDataSource.getSubunitsByGroupIdFlow(groupId)
             .trackSubscription(subscriptionTracker, groupId, syncScope) {
-                subscribeAndReconcile(
-                    cloudFlow = cloudSubunitDataSource.getSubunitsByGroupIdFlow(groupId),
+                syncGroupCollection(
+                    groupId = groupId,
+                    isGroupArchived = {
+                        localGroupDataSource.getGroupById(groupId)?.status == GroupStatus.ARCHIVED
+                    },
+                    syncedArchivedGroupIds = syncedArchivedGroupIds,
+                    fetchOnce = { cloudSubunitDataSource.fetchSubunitsByGroupId(groupId) },
+                    cloudFlow = { cloudSubunitDataSource.getSubunitsByGroupIdFlow(groupId) },
                     params = SyncReconciliationParams(
                         reconcileLocal = { remoteSubunits ->
                             localSubunitDataSource.replaceSubunitsForGroup(groupId, remoteSubunits)

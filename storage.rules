@@ -2,15 +2,63 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidImage(maxBytes) {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= maxBytes
+        && request.resource.contentType != null
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    function isValidReceipt() {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.contentType != null
+        && (
+          (request.resource.contentType.matches('image/.*') && request.resource.size <= 5 * 1024 * 1024)
+          || (request.resource.contentType == 'application/pdf' && request.resource.size <= 10 * 1024 * 1024)
+        );
+    }
+
     // Expose public static assets
     match /public/avatars/{imageId} {
       allow read: if true;
       allow write: if false; // Restrict uploads to Firebase Console or Admin SDK
     }
 
-    // Default rule protecting all other storage paths
+    // User profile avatars — readable by authenticated users, writable/deletable only by owner (<= 2 MB image)
+    match /avatars/{userId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId) && isValidImage(2 * 1024 * 1024);
+      allow delete: if isOwner(userId);
+    }
+
+    // Group cover photos — authenticated read/write/delete (<= 3 MB image)
+    match /groups/{groupId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidImage(3 * 1024 * 1024);
+      allow delete: if isAuthenticated();
+    }
+
+    // Expense receipts — authenticated read/write/delete (<= 5 MB image or <= 10 MB PDF)
+    match /receipts/{expenseId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidReceipt();
+      allow delete: if isAuthenticated();
+    }
+
+    // Default-deny all other paths
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }
