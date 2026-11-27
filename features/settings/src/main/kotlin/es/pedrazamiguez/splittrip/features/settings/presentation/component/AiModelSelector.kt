@@ -29,6 +29,7 @@ internal fun AiModelSelector(
     availableModels: ImmutableList<AiEngineType?>,
     selectedModel: AiEngineType?,
     resolvedModel: AiEngineType?,
+    isAiCoreSupported: Boolean,
     installedLocalAiPack: InstalledLocalAiPackInfo?,
     onModelSelected: (AiEngineType?) -> Unit,
     modifier: Modifier = Modifier
@@ -64,12 +65,11 @@ internal fun AiModelSelector(
             },
             modifier = Modifier.fillMaxWidth()
         )
-        resolvedModel?.let { resolved ->
-            AiResolvedEngineRow(
-                resolvedModel = resolved,
-                installedLocalAiPack = installedLocalAiPack
-            )
-        }
+        AiResolvedEngineRow(
+            resolvedModel = resolvedModel,
+            isAiCoreSupported = isAiCoreSupported,
+            installedLocalAiPack = installedLocalAiPack
+        )
     }
 
     if (isSheetOpen) {

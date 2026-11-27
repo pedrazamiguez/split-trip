@@ -54,6 +54,7 @@ internal fun AiExtractionTabContent(
             availableModels = uiState.availableModels,
             selectedModel = uiState.developerOverrideModel,
             resolvedModel = uiState.activeResolvedModel,
+            isAiCoreSupported = uiState.isAiCoreSupported,
             installedLocalAiPack = uiState.installedLocalAiPack,
             onModelSelected = { onEvent(DeveloperServicesUiEvent.SelectModel(it)) }
         )

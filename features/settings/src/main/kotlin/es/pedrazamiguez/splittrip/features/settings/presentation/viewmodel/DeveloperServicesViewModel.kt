@@ -11,6 +11,7 @@ import es.pedrazamiguez.splittrip.domain.model.CategoryPredictionOutcome
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestionSource
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
+import es.pedrazamiguez.splittrip.domain.model.ModelPackStatus
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
@@ -79,6 +80,7 @@ data class DeveloperServicesUiState(
     val extractionErrorMessage: UiText? = null,
     val activeResolvedModel: AiEngineType? = null,
     val developerOverrideModel: AiEngineType? = null,
+    val isAiCoreSupported: Boolean = false,
     val installedLocalAiPack: InstalledLocalAiPackInfo? = null,
     val availableModels: ImmutableList<AiEngineType?> = persistentListOf(
         null,
@@ -149,10 +151,21 @@ class DeveloperServicesViewModel(
             aiModelResolver.getDeveloperOverrideModel(),
             observeLocalAiModelPackStateUseCase()
         ) { activeModel, overrideModel, packState ->
+            val isActiveEngineSupported = when (activeModel) {
+                AiEngineType.AI_CORE_GEMMA_4 -> packState.isAiCoreSupported
+                AiEngineType.LITE_RT_LM ->
+                    packState.isEntitled && packState.status is ModelPackStatus.Installed
+            }
+            val resolvedModel = when {
+                overrideModel != null -> overrideModel
+                isActiveEngineSupported -> activeModel
+                else -> null
+            }
             _uiState.update {
                 it.copy(
-                    activeResolvedModel = activeModel,
+                    activeResolvedModel = resolvedModel,
                     developerOverrideModel = overrideModel,
+                    isAiCoreSupported = packState.isAiCoreSupported,
                     installedLocalAiPack = InstalledLocalAiPackInfo.fromState(packState)
                 )
             }
@@ -468,6 +481,7 @@ class DeveloperServicesViewModel(
             selectedTab = current.selectedTab,
             activeResolvedModel = current.activeResolvedModel,
             developerOverrideModel = current.developerOverrideModel,
+            isAiCoreSupported = current.isAiCoreSupported,
             installedLocalAiPack = current.installedLocalAiPack,
             categorySuggestionInput = current.categorySuggestionInput,
             categorySuggestionContext = current.categorySuggestionContext,

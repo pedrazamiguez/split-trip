@@ -95,6 +95,8 @@ private fun DeveloperServicesScreenAiSuccessPreview() {
         DeveloperServicesScreen(
             uiState = DeveloperServicesUiState(
                 selectedTab = DeveloperServicesTab.AiExtraction,
+                activeResolvedModel = AiEngineType.AI_CORE_GEMMA_4,
+                isAiCoreSupported = true,
                 extractionStatus = ExtractionStatus.Success,
                 extractedAmount = "991.00",
                 extractedCurrency = "THB",

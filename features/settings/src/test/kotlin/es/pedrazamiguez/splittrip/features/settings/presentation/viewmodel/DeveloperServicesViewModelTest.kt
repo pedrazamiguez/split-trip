@@ -131,13 +131,14 @@ class DeveloperServicesViewModelTest {
             downloadSizeBytes = 100L
         ),
         catalogEntries: List<ModelPackCatalogEntry> = emptyList(),
-        installedPackId: String? = null
+        installedPackId: String? = null,
+        isAiCoreSupported: Boolean = false
     ) = LocalAiModelPackState(
         status = status,
         compatibility = createCompatibilityResult(),
         isEntitled = true,
         isWifiOnly = true,
-        isAiCoreSupported = false,
+        isAiCoreSupported = isAiCoreSupported,
         activeEngine = AiEngineType.LITE_RT_LM,
         catalogEntries = catalogEntries,
         recommendedPackId = null,
@@ -206,7 +207,8 @@ class DeveloperServicesViewModelTest {
         assertNull(state.extractedSubcategory)
         assertNull(state.extractedNotes)
         assertEquals(DeveloperServicesTab.Ocr, state.selectedTab)
-        assertEquals(AiEngineType.AI_CORE_GEMMA_4, state.activeResolvedModel)
+        assertNull(state.activeResolvedModel)
+        assertFalse(state.isAiCoreSupported)
         assertNull(state.developerOverrideModel)
         assertNull(state.installedLocalAiPack)
         assertEquals("", state.categorySuggestionInput)
@@ -609,6 +611,69 @@ class DeveloperServicesViewModelTest {
             advanceUntilIdle()
 
             coVerify { aiModelResolver.setDeveloperOverrideModel(AiEngineType.LITE_RT_LM) }
+        }
+
+        @Test
+        fun `Automatic mode exposes AI_CORE_GEMMA_4 when AICore is supported`() = runTest(testDispatcher) {
+            localAiModelPackStateFlow.value = createLocalAiModelPackState(isAiCoreSupported = true)
+            activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+            overrideEngineFlow.value = null
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(AiEngineType.AI_CORE_GEMMA_4, viewModel.uiState.value.activeResolvedModel)
+            assertTrue(viewModel.uiState.value.isAiCoreSupported)
+        }
+
+        @Test
+        fun `Automatic mode clears activeResolvedModel when AICore unsupported and no pack installed`() =
+            runTest(testDispatcher) {
+                localAiModelPackStateFlow.value = createLocalAiModelPackState(isAiCoreSupported = false)
+                activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+                overrideEngineFlow.value = null
+
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                assertNull(viewModel.uiState.value.activeResolvedModel)
+                assertFalse(viewModel.uiState.value.isAiCoreSupported)
+            }
+
+        @Test
+        fun `Explicit AI_CORE_GEMMA_4 override retains model with isAiCoreSupported false`() =
+            runTest(testDispatcher) {
+                localAiModelPackStateFlow.value = createLocalAiModelPackState(isAiCoreSupported = false)
+                activeEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+                overrideEngineFlow.value = AiEngineType.AI_CORE_GEMMA_4
+
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+
+                assertEquals(AiEngineType.AI_CORE_GEMMA_4, viewModel.uiState.value.activeResolvedModel)
+                assertFalse(viewModel.uiState.value.isAiCoreSupported)
+            }
+
+        @Test
+        fun `Automatic mode exposes LITE_RT_LM when pack is installed and entitled`() = runTest(testDispatcher) {
+            val entry = createCatalogEntry(
+                packId = "qwen3-0.6b-litert-v1",
+                displayName = "Compact (Qwen 3 0.6B)",
+                tier = ModelPackTier.COMPACT
+            )
+            localAiModelPackStateFlow.value = createLocalAiModelPackState(
+                status = entry.status,
+                catalogEntries = listOf(entry),
+                installedPackId = entry.config.packId,
+                isAiCoreSupported = false
+            )
+            activeEngineFlow.value = AiEngineType.LITE_RT_LM
+            overrideEngineFlow.value = null
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(AiEngineType.LITE_RT_LM, viewModel.uiState.value.activeResolvedModel)
         }
     }
 

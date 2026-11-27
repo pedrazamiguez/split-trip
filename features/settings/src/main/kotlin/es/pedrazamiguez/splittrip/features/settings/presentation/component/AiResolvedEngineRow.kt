@@ -21,12 +21,14 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.model.Installed
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun AiResolvedEngineRow(
-    resolvedModel: AiEngineType,
+    resolvedModel: AiEngineType?,
+    isAiCoreSupported: Boolean,
     installedLocalAiPack: InstalledLocalAiPackInfo?,
     modifier: Modifier = Modifier
 ) {
     val localizedTierLabel = installedLocalAiPack?.tier?.let { stringResource(it.toLabelRes()) }
     val resolvedLabel = when (resolvedModel) {
+        null -> null
         AiEngineType.AI_CORE_GEMMA_4 -> stringResource(R.string.developer_services_ai_model_ai_core)
         AiEngineType.LITE_RT_LM -> formatLiteRtDisplayLabel(
             baseLabel = stringResource(R.string.developer_services_ai_model_lite_rt),
@@ -46,8 +48,21 @@ internal fun AiResolvedEngineRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.CenterVertically)
         )
+        if (resolvedLabel == null) {
+            PassportTag(
+                text = stringResource(R.string.developer_services_extraction_source_no_op),
+                style = PassportTagStyle.WARNING
+            )
+            return@FlowRow
+        }
+
         PassportTag(text = resolvedLabel, style = PassportTagStyle.INFO)
-        if (resolvedModel == AiEngineType.LITE_RT_LM && localizedTierLabel != null) {
+        if (resolvedModel == AiEngineType.AI_CORE_GEMMA_4 && !isAiCoreSupported) {
+            PassportTag(
+                text = stringResource(R.string.developer_services_extraction_capability_unsupported),
+                style = PassportTagStyle.WARNING
+            )
+        } else if (resolvedModel == AiEngineType.LITE_RT_LM && localizedTierLabel != null) {
             PassportTag(text = localizedTierLabel, style = PassportTagStyle.NEUTRAL)
         } else if (resolvedModel == AiEngineType.LITE_RT_LM && installedLocalAiPack == null) {
             PassportTag(
