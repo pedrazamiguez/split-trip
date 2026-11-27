@@ -6,11 +6,15 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.model.DeviceCompatibilityResult
 import es.pedrazamiguez.splittrip.domain.model.LocalAiModelPackState
+import es.pedrazamiguez.splittrip.domain.model.ModelPackCatalogEntry
+import es.pedrazamiguez.splittrip.domain.model.ModelPackConfig
 import es.pedrazamiguez.splittrip.domain.model.ModelPackErrorReason
 import es.pedrazamiguez.splittrip.domain.model.ModelPackIncompatibilityReason
 import es.pedrazamiguez.splittrip.domain.model.ModelPackStatus
+import es.pedrazamiguez.splittrip.domain.model.ModelPackTier
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.LocalAiModelPackUiMapperImpl
+import es.pedrazamiguez.splittrip.features.settings.presentation.model.LocalAiModelPackTierAction
 import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -285,4 +289,231 @@ class LocalAiModelPackUiMapperImplTest {
         )
         assertNull(okState.errorMessage)
     }
+
+    @Test
+    fun `maps multi-tier catalog with recommended PRIMARY badge, requirements, and incompatibility reasons`() {
+        val mapper = LocalAiModelPackUiMapperImpl(usLocaleProvider)
+        val compact = catalogEntry(
+            config = tierConfig("qwen3-0.6b-litert-v1", "Compact (Qwen 3 0.6B)", ModelPackTier.COMPACT, 10, 2048),
+            isRecommended = true,
+            status = ModelPackStatus.NotInstalled("1.0.0", 343_490_560L, "qwen3-0.6b-litert-v1")
+        )
+        val high = catalogEntry(
+            config = tierConfig(
+                "gemma4-e2b-litert-v1",
+                "High Quality (Gemma 4 E2B)",
+                ModelPackTier.HIGH_QUALITY,
+                30,
+                6144
+            ),
+            incompatibleReason = ModelPackIncompatibilityReason.INSUFFICIENT_RAM,
+            status = ModelPackStatus.Incompatible(
+                reason = ModelPackIncompatibilityReason.INSUFFICIENT_RAM,
+                requiredRamMb = 6144,
+                availableRamMb = 2048L,
+                requiredStorageBytes = 5_368_709_120L,
+                availableStorageBytes = 8_000_000_000L,
+                packId = "gemma4-e2b-litert-v1"
+            )
+        )
+        val state = stateWith(
+            status = compact.status,
+            isEntitled = true
+        ).copy(
+            catalogEntries = listOf(compact, high),
+            recommendedPackId = compact.config.packId
+        )
+
+        val uiState = mapper.map(state, showDeleteConfirmation = false)
+
+        assertEquals(2, uiState.catalogTiers.size)
+        val compactUi = uiState.catalogTiers[0]
+        assertEquals(PassportTagStyle.PRIMARY, compactUi.statusTagStyle)
+        assertEquals(UiText.StringResource(R.string.local_ai_pack_badge_recommended), compactUi.statusBadge)
+        assertEquals(
+            UiText.StringResource(R.string.local_ai_pack_requirements_format, 2048, "1 GB"),
+            compactUi.requirementsLabel
+        )
+        assertEquals(LocalAiModelPackTierAction.DOWNLOAD, compactUi.action)
+        assertTrue(compactUi.isActionEnabled)
+
+        val highUi = uiState.catalogTiers[1]
+        assertEquals(PassportTagStyle.WARNING, highUi.statusTagStyle)
+        assertEquals(UiText.StringResource(R.string.local_ai_pack_incompatible_ram, 6144), highUi.incompatibilityReason)
+        assertEquals(LocalAiModelPackTierAction.NONE, highUi.action)
+        assertFalse(highUi.isActionEnabled)
+    }
+
+    @Test
+    fun `maps installed tier with compatible SWITCH tier and incompatible NONE tier`() {
+        val mapper = LocalAiModelPackUiMapperImpl(usLocaleProvider)
+        val compact = catalogEntry(
+            config = tierConfig("qwen3-0.6b-litert-v1", "Compact (Qwen 3 0.6B)", ModelPackTier.COMPACT, 10, 2048),
+            isInstalled = true,
+            status = ModelPackStatus.Installed("1.0.0", 343_490_560L, packId = "qwen3-0.6b-litert-v1")
+        )
+        val balanced = catalogEntry(
+            config = tierConfig("qwen2.5-1.5b-litert-v1", "Balanced (Qwen 2.5 1.5B)", ModelPackTier.BALANCED, 20, 3072),
+            isRecommended = true,
+            status = ModelPackStatus.NotInstalled("1.0.0", 1_597_922_856L, "qwen2.5-1.5b-litert-v1")
+        )
+        val high = catalogEntry(
+            config = tierConfig(
+                "gemma4-e2b-litert-v1",
+                "High Quality (Gemma 4 E2B)",
+                ModelPackTier.HIGH_QUALITY,
+                30,
+                6144
+            ),
+            incompatibleReason = ModelPackIncompatibilityReason.INSUFFICIENT_RAM,
+            status = ModelPackStatus.Incompatible(
+                reason = ModelPackIncompatibilityReason.INSUFFICIENT_RAM,
+                requiredRamMb = 6144,
+                availableRamMb = 4096L,
+                requiredStorageBytes = 5_368_709_120L,
+                availableStorageBytes = 8_000_000_000L,
+                packId = "gemma4-e2b-litert-v1"
+            )
+        )
+        val state = stateWith(
+            status = compact.status,
+            isEntitled = true,
+            activeEngine = AiEngineType.LITE_RT_LM
+        ).copy(
+            catalogEntries = listOf(compact, balanced, high),
+            installedPackId = compact.config.packId,
+            recommendedPackId = balanced.config.packId
+        )
+
+        val uiState = mapper.map(state, showDeleteConfirmation = false)
+
+        assertEquals(UiText.DynamicString("Compact (Qwen 3 0.6B)"), uiState.activePackName)
+        assertEquals(LocalAiModelPackTierAction.NONE, uiState.catalogTiers[0].action)
+        assertEquals(PassportTagStyle.SUCCESS, uiState.catalogTiers[0].statusTagStyle)
+        assertEquals(LocalAiModelPackTierAction.SWITCH, uiState.catalogTiers[1].action)
+        assertTrue(uiState.catalogTiers[1].isActionEnabled)
+        assertEquals(LocalAiModelPackTierAction.NONE, uiState.catalogTiers[2].action)
+    }
+
+    @Test
+    fun `disables other tier actions while one tier is Downloading and exposes CANCEL on active tier`() {
+        val mapper = LocalAiModelPackUiMapperImpl(usLocaleProvider)
+        val compact = catalogEntry(
+            config = tierConfig("qwen3-0.6b-litert-v1", "Compact (Qwen 3 0.6B)", ModelPackTier.COMPACT, 10, 2048),
+            status = ModelPackStatus.NotInstalled("1.0.0", 343_490_560L, "qwen3-0.6b-litert-v1")
+        )
+        val downloadingStatus = ModelPackStatus.Downloading(
+            progressPercent = 40,
+            downloadedBytes = 400_000_000L,
+            totalBytes = 1_000_000_000L,
+            packId = "qwen2.5-1.5b-litert-v1"
+        )
+        val balanced = catalogEntry(
+            config = tierConfig("qwen2.5-1.5b-litert-v1", "Balanced (Qwen 2.5 1.5B)", ModelPackTier.BALANCED, 20, 3072),
+            isRecommended = true,
+            isActiveDownload = true,
+            status = downloadingStatus
+        )
+        val state = stateWith(status = downloadingStatus, isEntitled = true).copy(
+            catalogEntries = listOf(compact, balanced),
+            recommendedPackId = balanced.config.packId
+        )
+
+        val uiState = mapper.map(state, showDeleteConfirmation = false)
+
+        assertEquals(LocalAiModelPackTierAction.DOWNLOAD, uiState.catalogTiers[0].action)
+        assertFalse(uiState.catalogTiers[0].isActionEnabled)
+        assertEquals(LocalAiModelPackTierAction.CANCEL, uiState.catalogTiers[1].action)
+        assertTrue(uiState.catalogTiers[1].isActionEnabled)
+    }
+
+    @Test
+    fun `maps Error on targeted pack with RETRY action on that pack`() {
+        val mapper = LocalAiModelPackUiMapperImpl(usLocaleProvider)
+        val errorStatus = ModelPackStatus.Error(
+            reason = ModelPackErrorReason.NETWORK_ERROR,
+            canRetry = true,
+            packId = "qwen3-0.6b-litert-v1"
+        )
+        val compact = catalogEntry(
+            config = tierConfig("qwen3-0.6b-litert-v1", "Compact (Qwen 3 0.6B)", ModelPackTier.COMPACT, 10, 2048),
+            status = errorStatus
+        )
+        val state = stateWith(status = errorStatus, isEntitled = true).copy(
+            catalogEntries = listOf(compact)
+        )
+
+        val uiState = mapper.map(state, showDeleteConfirmation = false)
+
+        assertEquals(1, uiState.catalogTiers.size)
+        assertEquals(PassportTagStyle.ERROR, uiState.catalogTiers[0].statusTagStyle)
+        assertEquals(LocalAiModelPackTierAction.RETRY, uiState.catalogTiers[0].action)
+        assertTrue(uiState.catalogTiers[0].isActionEnabled)
+        assertEquals("qwen3-0.6b-litert-v1", uiState.activeTargetPackId)
+    }
+
+    @Test
+    fun `maps non-entitled user catalog tiers as previewable with single upgrade CTA and NONE tier actions`() {
+        val mapper = LocalAiModelPackUiMapperImpl(usLocaleProvider)
+        val compact = catalogEntry(
+            config = tierConfig("qwen3-0.6b-litert-v1", "Compact (Qwen 3 0.6B)", ModelPackTier.COMPACT, 10, 2048),
+            isRecommended = true,
+            status = ModelPackStatus.NotInstalled("1.0.0", 343_490_560L, "qwen3-0.6b-litert-v1")
+        )
+        val state = stateWith(
+            status = compact.status,
+            isEntitled = false
+        ).copy(
+            catalogEntries = listOf(compact),
+            recommendedPackId = compact.config.packId
+        )
+
+        val uiState = mapper.map(state, showDeleteConfirmation = false)
+
+        assertTrue(uiState.showUpgradeButton)
+        assertEquals(1, uiState.catalogTiers.size)
+        assertEquals(LocalAiModelPackTierAction.NONE, uiState.catalogTiers[0].action)
+        assertFalse(uiState.catalogTiers[0].isActionEnabled)
+    }
+
+    private fun tierConfig(
+        packId: String,
+        displayName: String,
+        tier: ModelPackTier,
+        priority: Int,
+        minRamMb: Int
+    ): ModelPackConfig = ModelPackConfig(
+        packId = packId,
+        displayName = displayName,
+        tier = tier,
+        priority = priority,
+        version = "1.0.0",
+        downloadUrl = "https://models.splittrip.eu/$packId.litertlm",
+        sha256Checksum = "a".repeat(64),
+        sizeBytes = 343_490_560L,
+        minRamMb = minRamMb,
+        minFreeStorageBytes = 1_073_741_824L,
+        isEnabled = true
+    )
+
+    private fun catalogEntry(
+        config: ModelPackConfig,
+        status: ModelPackStatus,
+        isRecommended: Boolean = false,
+        isInstalled: Boolean = false,
+        isActiveDownload: Boolean = false,
+        incompatibleReason: ModelPackIncompatibilityReason? = null
+    ): ModelPackCatalogEntry = ModelPackCatalogEntry(
+        config = config,
+        compatibility = compatibleResult.copy(
+            isCompatible = incompatibleReason == null,
+            reason = incompatibleReason,
+            requiredRamMb = config.minRamMb,
+            requiredStorageBytes = config.minFreeStorageBytes
+        ),
+        status = status,
+        isRecommended = isRecommended,
+        isInstalled = isInstalled,
+        isActiveDownload = isActiveDownload
+    )
 }

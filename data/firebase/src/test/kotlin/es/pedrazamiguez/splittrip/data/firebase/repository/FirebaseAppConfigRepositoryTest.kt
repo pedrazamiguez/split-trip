@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
+@Suppress("LargeClass")
 @OptIn(ExperimentalCoroutinesApi::class)
 class FirebaseAppConfigRepositoryTest {
 
@@ -80,6 +81,7 @@ class FirebaseAppConfigRepositoryTest {
         every { firebaseRemoteConfig.getString("optional_update_version_codes") } returns "1001000,1002000"
         every { firebaseRemoteConfig.getLong("optional_update_cooldown_hours") } returns 48L
         every { firebaseRemoteConfig.getString("category_classifier_rules_json") } returns ""
+        every { firebaseRemoteConfig.getString("local_ai_model_pack_json") } returns ""
 
         repository = FirebaseAppConfigRepository(firebaseRemoteConfig)
     }
@@ -671,6 +673,56 @@ class FirebaseAppConfigRepositoryTest {
 
         assertEquals(CategoryRuleMergeMode.REPLACE, repository.categoryClassifierRules.value.mergeMode)
         assertEquals(setOf("bote"), repository.categoryClassifierRules.value.disabledTerms["es"])
+    }
+
+    @Test
+    fun `parses local_ai_model_pack_json catalog on init and real-time ConfigUpdateListener`() {
+        val multiPackJson = """
+            {
+              "schema_version": 2,
+              "packs": [
+                {
+                  "pack_id": "qwen3-0.6b-litert-v1",
+                  "display_name": "Compact",
+                  "tier": "compact",
+                  "priority": 10,
+                  "version": "1.0.0",
+                  "download_url": "https://models.splittrip.eu/compact.litertlm",
+                  "sha256_checksum": "abc123",
+                  "size_bytes": 343490560,
+                  "min_ram_mb": 2048,
+                  "min_free_storage_bytes": 1073741824,
+                  "is_enabled": true
+                }
+              ]
+            }
+        """.trimIndent()
+        every { firebaseRemoteConfig.getString("local_ai_model_pack_json") } returns multiPackJson
+
+        val initializedRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+        assertEquals(1, initializedRepo.localAiModelPackCatalog.value.packs.size)
+        assertEquals("qwen3-0.6b-litert-v1", initializedRepo.localAiModelPackCatalog.value.packs.first().packId)
+
+        every { firebaseRemoteConfig.getString("local_ai_model_pack_json") } returns "{malformed"
+        val fallbackRepo = FirebaseAppConfigRepository(firebaseRemoteConfig)
+        assertEquals(FirebaseAppConfigRepository.DEFAULT_MODEL_PACK_CATALOG, fallbackRepo.localAiModelPackCatalog.value)
+
+        val mockConfigUpdate = mockk<ConfigUpdate>(relaxed = true)
+        val updateListeners = mutableListOf<ConfigUpdateListener>()
+        verify(exactly = 3) { firebaseRemoteConfig.addOnConfigUpdateListener(capture(updateListeners)) }
+
+        val mockActivateTask = mockk<Task<Boolean>>()
+        every { firebaseRemoteConfig.activate() } returns mockActivateTask
+        val listenerSlot = slot<OnCompleteListener<Boolean>>()
+        every { mockActivateTask.addOnCompleteListener(capture(listenerSlot)) } returns mockActivateTask
+        every { mockActivateTask.isSuccessful } returns true
+
+        every { firebaseRemoteConfig.getString("local_ai_model_pack_json") } returns multiPackJson
+
+        updateListeners.first().onUpdate(mockConfigUpdate)
+        listenerSlot.captured.onComplete(mockActivateTask)
+
+        assertEquals("qwen3-0.6b-litert-v1", repository.localAiModelPackCatalog.value.packs.first().packId)
     }
 
     private fun setupMockRemoteConfigValues() {

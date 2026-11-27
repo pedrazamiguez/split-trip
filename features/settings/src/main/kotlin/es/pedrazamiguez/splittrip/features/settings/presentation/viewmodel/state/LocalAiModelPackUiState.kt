@@ -2,6 +2,9 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.stat
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
+import es.pedrazamiguez.splittrip.features.settings.presentation.model.LocalAiModelPackTierUiModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
 data class LocalAiModelPackUiState(
     val isLoading: Boolean = true,
@@ -9,6 +12,8 @@ data class LocalAiModelPackUiState(
     val statusTagStyle: PassportTagStyle = PassportTagStyle.NEUTRAL,
     val statusTitle: UiText = UiText.DynamicString(""),
     val statusDescription: UiText = UiText.DynamicString(""),
+    val activePackName: UiText? = null,
+    val activeTargetPackId: String? = null,
     val packVersionLabel: UiText? = null,
     val packSizeLabel: String? = null,
     val isDownloading: Boolean = false,
@@ -29,5 +34,6 @@ data class LocalAiModelPackUiState(
     val showDeleteButton: Boolean = false,
     val showUpgradeButton: Boolean = false,
     val errorMessage: UiText? = null,
-    val showDeleteConfirmation: Boolean = false
+    val showDeleteConfirmation: Boolean = false,
+    val catalogTiers: ImmutableList<LocalAiModelPackTierUiModel> = persistentListOf()
 )

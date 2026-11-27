@@ -57,4 +57,29 @@ class JsonSanitizerTest {
         val output = JsonSanitizer.sanitize(input)
         assertEquals("""{"amount":"12.34","notes":"some notes"}""", output)
     }
+
+    @Test
+    fun `strips think and thought reasoning blocks containing braces before extracting JSON payload`() {
+        val thinkInput = """
+            <think>
+            Let me consider { "wrong": 1 } before formatting.
+            </think>
+            ```json
+            {"amount":"24.50","currency":"EUR"}
+            ```
+        """.trimIndent()
+        assertEquals("""{"amount":"24.50","currency":"EUR"}""", JsonSanitizer.sanitize(thinkInput))
+
+        val thoughtInput = """
+            <thought>Internal draft {bad: true}</thought>
+            {"amount":"9.99","currency":"USD"}
+        """.trimIndent()
+        assertEquals("""{"amount":"9.99","currency":"USD"}""", JsonSanitizer.sanitize(thoughtInput))
+
+        val pipeThoughtInput = """
+            <|thought|>Draft {foo: bar}<|thought|>
+            {"amount":"15.00","currency":"GBP"}
+        """.trimIndent()
+        assertEquals("""{"amount":"15.00","currency":"GBP"}""", JsonSanitizer.sanitize(pipeThoughtInput))
+    }
 }

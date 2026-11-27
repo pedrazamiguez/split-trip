@@ -23,24 +23,46 @@ class LocalAiModelPackUseCasesTest {
 
     @Test
     fun `DownloadLocalAiModelPackUseCase delegates to requestDownload`() = runTest {
-        coEvery { service.requestDownload() } returns Result.success(Unit)
+        coEvery { service.requestDownload(null) } returns Result.success(Unit)
         val useCase = DownloadLocalAiModelPackUseCaseImpl(service)
 
         val result = useCase()
 
         assertTrue(result.isSuccess)
-        coVerify(exactly = 1) { service.requestDownload() }
+        coVerify(exactly = 1) { service.requestDownload(null) }
+    }
+
+    @Test
+    fun `DownloadLocalAiModelPackUseCase forwards optional packId to requestDownload`() = runTest {
+        coEvery { service.requestDownload("qwen3-0.6b-litert-v1") } returns Result.success(Unit)
+        val useCase = DownloadLocalAiModelPackUseCaseImpl(service)
+
+        val result = useCase("qwen3-0.6b-litert-v1")
+
+        assertTrue(result.isSuccess)
+        coVerify(exactly = 1) { service.requestDownload("qwen3-0.6b-litert-v1") }
     }
 
     @Test
     fun `CancelLocalAiModelPackDownloadUseCase delegates to cancelDownload`() = runTest {
-        coEvery { service.cancelDownload() } returns Result.success(Unit)
+        coEvery { service.cancelDownload(null) } returns Result.success(Unit)
         val useCase = CancelLocalAiModelPackDownloadUseCaseImpl(service)
 
         val result = useCase()
 
         assertTrue(result.isSuccess)
-        coVerify(exactly = 1) { service.cancelDownload() }
+        coVerify(exactly = 1) { service.cancelDownload(null) }
+    }
+
+    @Test
+    fun `CancelLocalAiModelPackDownloadUseCase forwards optional packId to cancelDownload`() = runTest {
+        coEvery { service.cancelDownload("gemma4-e2b-litert-v1") } returns Result.success(Unit)
+        val useCase = CancelLocalAiModelPackDownloadUseCaseImpl(service)
+
+        val result = useCase("gemma4-e2b-litert-v1")
+
+        assertTrue(result.isSuccess)
+        coVerify(exactly = 1) { service.cancelDownload("gemma4-e2b-litert-v1") }
     }
 
     @Test

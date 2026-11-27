@@ -60,16 +60,59 @@ internal class ModelPackStorageManager(baseDir: File) {
         }
     }
 
+    fun deleteAllTempFiles() {
+        if (!modelsRoot.exists()) return
+        modelsRoot.walkTopDown()
+            .filter { it.isFile && it.name == TEMP_MODEL_FILE_NAME }
+            .forEach { tempFile ->
+                if (!tempFile.delete()) {
+                    Timber.w("ModelPackStorageManager: failed to delete temp file %s", tempFile.name)
+                }
+            }
+    }
+
+    fun deleteOtherModelFiles(keepPackId: String, keepVersion: String) {
+        if (!modelsRoot.exists()) return
+        val safeKeepPackId = sanitizeSegment(keepPackId)
+        val safeKeepVersion = sanitizeSegment(keepVersion)
+        modelsRoot.listFiles().orEmpty().forEach { packEntry ->
+            if (packEntry.name != safeKeepPackId) {
+                if (!packEntry.deleteRecursively()) {
+                    Timber.w("ModelPackStorageManager: failed to delete pack directory %s", packEntry.name)
+                }
+            } else {
+                cleanupVersionDirectory(packDir = packEntry, safeKeepVersion = safeKeepVersion)
+            }
+        }
+    }
+
     fun deleteAllModelFiles(): Boolean {
         if (!modelsRoot.exists()) return true
         return modelsRoot.deleteRecursively()
     }
 
+    private fun cleanupVersionDirectory(packDir: File, safeKeepVersion: String) {
+        packDir.listFiles().orEmpty().forEach { versionEntry ->
+            if (versionEntry.name != safeKeepVersion) {
+                if (!versionEntry.deleteRecursively()) {
+                    Timber.w("ModelPackStorageManager: failed to delete version directory %s", versionEntry.name)
+                }
+            } else {
+                val lingeringTemp = File(versionEntry, TEMP_MODEL_FILE_NAME)
+                if (lingeringTemp.exists() && !lingeringTemp.delete()) {
+                    Timber.w("ModelPackStorageManager: failed to delete temp file %s", lingeringTemp.name)
+                }
+            }
+        }
+    }
+
     private fun getVersionDir(packId: String, version: String): File {
-        val safePackId = packId.replace(INVALID_SEGMENT_REGEX, "_")
-        val safeVersion = version.replace(INVALID_SEGMENT_REGEX, "_")
+        val safePackId = sanitizeSegment(packId)
+        val safeVersion = sanitizeSegment(version)
         return File(File(modelsRoot, safePackId), safeVersion)
     }
+
+    private fun sanitizeSegment(segment: String): String = segment.replace(INVALID_SEGMENT_REGEX, "_")
 
     private companion object {
         private const val MODELS_DIR_NAME = "ai_models"

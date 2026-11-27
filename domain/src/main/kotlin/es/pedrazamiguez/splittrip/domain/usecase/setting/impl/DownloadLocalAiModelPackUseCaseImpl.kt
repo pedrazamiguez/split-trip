@@ -7,5 +7,6 @@ class DownloadLocalAiModelPackUseCaseImpl(
     private val localAiModelPackService: LocalAiModelPackService
 ) : DownloadLocalAiModelPackUseCase {
 
-    override suspend operator fun invoke(): Result<Unit> = localAiModelPackService.requestDownload()
+    override suspend operator fun invoke(packId: String?): Result<Unit> =
+        localAiModelPackService.requestDownload(packId)
 }

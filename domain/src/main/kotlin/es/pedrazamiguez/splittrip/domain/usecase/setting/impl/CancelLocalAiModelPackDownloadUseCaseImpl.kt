@@ -7,5 +7,6 @@ class CancelLocalAiModelPackDownloadUseCaseImpl(
     private val localAiModelPackService: LocalAiModelPackService
 ) : CancelLocalAiModelPackDownloadUseCase {
 
-    override suspend operator fun invoke(): Result<Unit> = localAiModelPackService.cancelDownload()
+    override suspend operator fun invoke(packId: String?): Result<Unit> =
+        localAiModelPackService.cancelDownload(packId)
 }

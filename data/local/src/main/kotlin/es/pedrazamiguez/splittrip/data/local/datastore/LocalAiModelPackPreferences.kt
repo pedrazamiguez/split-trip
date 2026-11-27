@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 data class InstalledModelPackMetadata(
+    val packId: String,
     val version: String,
     val sizeBytes: Long,
     val sha256Checksum: String,
@@ -18,6 +19,7 @@ data class InstalledModelPackMetadata(
 class LocalAiModelPackPreferences(private val context: Context) {
 
     private companion object {
+        val KEY_INSTALLED_PACK_ID = stringPreferencesKey("local_ai_pack_installed_pack_id")
         val KEY_INSTALLED_VERSION = stringPreferencesKey("local_ai_pack_installed_version")
         val KEY_INSTALLED_SIZE_BYTES = longPreferencesKey("local_ai_pack_installed_size_bytes")
         val KEY_INSTALLED_SHA256 = stringPreferencesKey("local_ai_pack_installed_sha256")
@@ -26,11 +28,13 @@ class LocalAiModelPackPreferences(private val context: Context) {
     }
 
     val installedPackMetadata: Flow<InstalledModelPackMetadata?> = context.dataStore.data.map { prefs ->
+        val packId = prefs[KEY_INSTALLED_PACK_ID]?.takeIf { it.isNotBlank() } ?: return@map null
         val version = prefs[KEY_INSTALLED_VERSION]?.takeIf { it.isNotBlank() } ?: return@map null
         val sizeBytes = prefs[KEY_INSTALLED_SIZE_BYTES] ?: return@map null
         val sha256 = prefs[KEY_INSTALLED_SHA256]?.takeIf { it.isNotBlank() } ?: return@map null
         val filePath = prefs[KEY_INSTALLED_FILE_PATH]?.takeIf { it.isNotBlank() } ?: return@map null
         InstalledModelPackMetadata(
+            packId = packId,
             version = version,
             sizeBytes = sizeBytes,
             sha256Checksum = sha256,
@@ -44,6 +48,7 @@ class LocalAiModelPackPreferences(private val context: Context) {
 
     suspend fun saveInstalledPackMetadata(metadata: InstalledModelPackMetadata) {
         context.dataStore.edit { prefs ->
+            prefs[KEY_INSTALLED_PACK_ID] = metadata.packId
             prefs[KEY_INSTALLED_VERSION] = metadata.version
             prefs[KEY_INSTALLED_SIZE_BYTES] = metadata.sizeBytes
             prefs[KEY_INSTALLED_SHA256] = metadata.sha256Checksum
@@ -53,6 +58,7 @@ class LocalAiModelPackPreferences(private val context: Context) {
 
     suspend fun clearInstalledPackMetadata() {
         context.dataStore.edit { prefs ->
+            prefs.remove(KEY_INSTALLED_PACK_ID)
             prefs.remove(KEY_INSTALLED_VERSION)
             prefs.remove(KEY_INSTALLED_SIZE_BYTES)
             prefs.remove(KEY_INSTALLED_SHA256)

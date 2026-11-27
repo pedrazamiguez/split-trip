@@ -52,6 +52,13 @@ internal fun LocalAiModelPackStatusCard(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
+            uiState.activePackName?.let { packName ->
+                Text(
+                    text = packName.asString(),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
             Text(
                 text = uiState.statusDescription.asString(),
                 style = MaterialTheme.typography.bodyMedium,

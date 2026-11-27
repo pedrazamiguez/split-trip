@@ -45,6 +45,13 @@ internal fun LocalAiModelPackContent(
     ) {
         LocalAiModelPackStatusCard(uiState = uiState)
 
+        if (uiState.catalogTiers.isNotEmpty()) {
+            LocalAiModelPackCatalogSection(
+                tiers = uiState.catalogTiers,
+                onEvent = onEvent
+            )
+        }
+
         LocalAiModelPackSettingsCard(
             uiState = uiState,
             onToggleWifiOnly = { enabled ->

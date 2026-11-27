@@ -6,11 +6,13 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import es.pedrazamiguez.splittrip.data.local.datastore.InstalledModelPackMetadata
 import es.pedrazamiguez.splittrip.data.local.datastore.LocalAiModelPackPreferences
+import es.pedrazamiguez.splittrip.data.repository.impl.LiteRtEngineClient
 import es.pedrazamiguez.splittrip.data.service.ModelPackDownloader
 import es.pedrazamiguez.splittrip.data.service.ModelPackStorageManager
 import es.pedrazamiguez.splittrip.domain.model.ModelPackErrorReason
 import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.flow.first
 import org.koin.core.context.GlobalContext
 import timber.log.Timber
 
@@ -28,7 +30,7 @@ class LocalAiModelDownloadWorker(
         val expectedSizeBytes = inputData.getLong(KEY_SIZE_BYTES, 0L)
 
         if (listOf(packId, version, downloadUrl, expectedSha256).any { it.isBlank() }) {
-            return failureResult(ModelPackErrorReason.INVALID_CONFIG)
+            return failureResult(ModelPackErrorReason.INVALID_CONFIG, packId)
         }
 
         val koin = GlobalContext.get()
@@ -42,6 +44,7 @@ class LocalAiModelDownloadWorker(
         return try {
             setProgress(
                 workDataOf(
+                    KEY_PACK_ID to packId,
                     KEY_STAGE to STAGE_DOWNLOADING,
                     KEY_PROGRESS_PERCENT to 0,
                     KEY_DOWNLOADED_BYTES to 0L,
@@ -61,6 +64,7 @@ class LocalAiModelDownloadWorker(
                 }
                 setProgress(
                     workDataOf(
+                        KEY_PACK_ID to packId,
                         KEY_STAGE to STAGE_DOWNLOADING,
                         KEY_PROGRESS_PERCENT to percent,
                         KEY_DOWNLOADED_BYTES to downloaded,
@@ -71,6 +75,7 @@ class LocalAiModelDownloadWorker(
 
             setProgress(
                 workDataOf(
+                    KEY_PACK_ID to packId,
                     KEY_STAGE to STAGE_VERIFYING,
                     KEY_VERSION to version
                 )
@@ -80,24 +85,32 @@ class LocalAiModelDownloadWorker(
             if (!actualSha256.equals(expectedSha256, ignoreCase = true)) {
                 Timber.e("LocalAiModelDownloadWorker: SHA-256 checksum mismatch for %s", packId)
                 storageManager.deleteTempFiles(packId, version)
-                return failureResult(ModelPackErrorReason.CHECKSUM_MISMATCH)
+                return failureResult(ModelPackErrorReason.CHECKSUM_MISMATCH, packId)
             }
 
+            val previousInstalled = preferences.installedPackMetadata.first()
             if (!storageManager.promoteTempToFinal(tempFile, targetFile)) {
                 Timber.e("LocalAiModelDownloadWorker: Failed to promote temp file for %s", packId)
                 storageManager.deleteTempFiles(packId, version)
-                return failureResult(ModelPackErrorReason.IO_ERROR)
+                return failureResult(ModelPackErrorReason.IO_ERROR, packId)
             }
 
             preferences.saveInstalledPackMetadata(
                 InstalledModelPackMetadata(
+                    packId = packId,
                     version = version,
                     sizeBytes = downloadedBytes,
                     sha256Checksum = actualSha256,
                     filePath = targetFile.absolutePath
                 )
             )
-            Result.success()
+            val previousPath = previousInstalled?.filePath
+            if (!previousPath.isNullOrBlank() && previousPath != targetFile.absolutePath) {
+                val engineClient: LiteRtEngineClient = koin.get()
+                engineClient.invalidate(previousPath)
+            }
+            storageManager.deleteOtherModelFiles(keepPackId = packId, keepVersion = version)
+            Result.success(workDataOf(KEY_PACK_ID to packId))
         } catch (e: CancellationException) {
             storageManager.deleteTempFiles(packId, version)
             throw e
@@ -109,11 +122,11 @@ class LocalAiModelDownloadWorker(
             } else {
                 ModelPackErrorReason.NETWORK_ERROR
             }
-            failureResult(reason)
+            failureResult(reason, packId)
         } catch (e: Exception) {
             Timber.e(e, "LocalAiModelDownloadWorker: Unexpected error downloading %s", packId)
             storageManager.deleteTempFiles(packId, version)
-            failureResult(ModelPackErrorReason.UNKNOWN)
+            failureResult(ModelPackErrorReason.UNKNOWN, packId)
         }
     }
 
@@ -122,8 +135,13 @@ class LocalAiModelDownloadWorker(
         return message.contains("enospc") || message.contains("no space")
     }
 
-    private fun failureResult(reason: ModelPackErrorReason): Result =
-        Result.failure(workDataOf(KEY_ERROR_REASON to reason.name))
+    private fun failureResult(reason: ModelPackErrorReason, packId: String): Result =
+        Result.failure(
+            workDataOf(
+                KEY_ERROR_REASON to reason.name,
+                KEY_PACK_ID to packId
+            )
+        )
 
     companion object {
         const val UNIQUE_WORK_NAME = "local_ai_model_pack_download"

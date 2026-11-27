@@ -451,5 +451,16 @@
     <string name="local_ai_pack_pill_download_cancelled">Descarga cancelada</string>
     <string name="local_ai_pack_pill_deleted">Paquete de IA local eliminado</string>
     <string name="local_ai_pack_pill_action_failed">La operación falló. Inténtalo de nuevo.</string>
+    <string name="local_ai_pack_section_available_models">Paquetes de modelos disponibles</string>
+    <string name="local_ai_pack_badge_recommended">Recomendado</string>
+    <string name="local_ai_pack_badge_compatible">Compatible</string>
+    <string name="local_ai_pack_tier_compact">Compacto</string>
+    <string name="local_ai_pack_tier_balanced">Equilibrado</string>
+    <string name="local_ai_pack_tier_high_quality">Alta calidad</string>
+    <string name="local_ai_pack_requirements_format">Mín. %1$d MB RAM · %2$s de espacio</string>
+    <string name="local_ai_pack_action_switch">Cambiar paquete</string>
+    <string name="local_ai_pack_status_installed_named_desc">Modelo activo: %1$s. Ejecutándose sin conexión mediante LiteRT-LM.</string>
+    <string name="local_ai_pack_status_downloading_named_title">Descargando %1$s…</string>
+    <string name="local_ai_pack_status_verifying_named_title">Verificando %1$s…</string>
 </resources>
 
