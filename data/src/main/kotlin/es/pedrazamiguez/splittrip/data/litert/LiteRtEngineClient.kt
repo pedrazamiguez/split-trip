@@ -1,6 +1,6 @@
-package es.pedrazamiguez.splittrip.data.repository.impl
+package es.pedrazamiguez.splittrip.data.litert
 
-internal interface LiteRtEngineClient : AutoCloseable {
+interface LiteRtEngineClient : AutoCloseable {
     suspend fun generate(
         modelPath: String,
         prompt: String,

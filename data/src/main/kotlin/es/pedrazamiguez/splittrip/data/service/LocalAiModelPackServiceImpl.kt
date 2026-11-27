@@ -1,17 +1,17 @@
 package es.pedrazamiguez.splittrip.data.service
 
+import es.pedrazamiguez.splittrip.data.litert.LiteRtDynamicRuntimeManager
+import es.pedrazamiguez.splittrip.data.litert.LiteRtDynamicRuntimeState
+import es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClient
 import es.pedrazamiguez.splittrip.data.local.datastore.InstalledModelPackMetadata
 import es.pedrazamiguez.splittrip.data.local.datastore.LocalAiModelPackPreferences
-import es.pedrazamiguez.splittrip.data.repository.impl.LiteRtEngineClient
 import es.pedrazamiguez.splittrip.data.worker.LocalAiModelPackWorkScheduler
-import es.pedrazamiguez.splittrip.data.worker.ModelPackWorkState
 import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelNotEntitledException
 import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelUnavailableException
 import es.pedrazamiguez.splittrip.domain.model.DeviceCompatibilityResult
 import es.pedrazamiguez.splittrip.domain.model.ModelPackCatalog
 import es.pedrazamiguez.splittrip.domain.model.ModelPackCatalogEntry
 import es.pedrazamiguez.splittrip.domain.model.ModelPackConfig
-import es.pedrazamiguez.splittrip.domain.model.ModelPackIncompatibilityReason
 import es.pedrazamiguez.splittrip.domain.model.ModelPackStatus
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.LocalAiModelPackService
@@ -23,8 +23,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -37,251 +39,124 @@ internal class LocalAiModelPackServiceImpl(
     private val preferences: LocalAiModelPackPreferences,
     private val workScheduler: LocalAiModelPackWorkScheduler,
     private val engineClient: Lazy<LiteRtEngineClient>,
+    private val dynamicRuntimeManager: LiteRtDynamicRuntimeManager,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : LocalAiModelPackService, AutoCloseable {
 
+    private data class PendingRuntimeDownload(
+        val config: ModelPackConfig,
+        val wifiOnly: Boolean
+    )
+
+    private data class InstalledEntitlementSnapshot(
+        val metadata: InstalledModelPackMetadata?,
+        val isEntitled: Boolean
+    )
+
+    private val statusResolver = ModelPackStatusResolver(compatibilityProvider)
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(serviceJob + ioDispatcher)
 
     @Volatile
     private var cachedInstalledPack: InstalledModelPackMetadata? = null
 
+    private val pendingRuntimeDownload = MutableStateFlow<PendingRuntimeDownload?>(null)
+    private val activeRuntimePackId = MutableStateFlow<String?>(null)
+
     init {
         serviceScope.launch {
-            preferences.installedPackMetadata.collect { metadata ->
-                cachedInstalledPack = metadata
+            combine(
+                preferences.installedPackMetadata,
+                featureGateService.isFeatureEnabled(GatedFeature.LOCAL_AI_MODEL_PACK)
+            ) { metadata, isEntitled ->
+                InstalledEntitlementSnapshot(metadata = metadata, isEntitled = isEntitled)
+            }.collect(::handleInstalledPackEntitlement)
+        }
+
+        serviceScope.launch {
+            dynamicRuntimeManager.observeState().collect(::handleRuntimeStateTransition)
+        }
+    }
+
+    private suspend fun handleInstalledPackEntitlement(snapshot: InstalledEntitlementSnapshot) {
+        val metadata = snapshot.metadata
+        cachedInstalledPack = metadata
+        val needsRuntimeBackfill = metadata != null &&
+            snapshot.isEntitled &&
+            isInstalledPackValid(metadata) &&
+            !dynamicRuntimeManager.isRuntimeInstalled()
+        if (needsRuntimeBackfill &&
+            dynamicRuntimeManager.observeState().value is LiteRtDynamicRuntimeState.NotInstalled
+        ) {
+            activeRuntimePackId.value = metadata.packId
+            dynamicRuntimeManager.requestInstall()
+        }
+    }
+
+    private fun handleRuntimeStateTransition(runtimeState: LiteRtDynamicRuntimeState) {
+        when (runtimeState) {
+            LiteRtDynamicRuntimeState.Installed -> {
+                val pending = pendingRuntimeDownload.getAndUpdate { null }
+                if (pending != null) {
+                    workScheduler.enqueueDownload(pending.config, pending.wifiOnly)
+                }
+                activeRuntimePackId.value = null
             }
+
+            is LiteRtDynamicRuntimeState.Failed -> {
+                pendingRuntimeDownload.value = null
+            }
+
+            LiteRtDynamicRuntimeState.NotInstalled,
+            LiteRtDynamicRuntimeState.Pending,
+            is LiteRtDynamicRuntimeState.Downloading,
+            LiteRtDynamicRuntimeState.Installing -> Unit
         }
     }
 
     override fun observeStatus(): Flow<ModelPackStatus> = combine(
         appConfigRepository.localAiModelPackCatalog,
         preferences.installedPackMetadata,
-        workScheduler.observeWorkState()
-    ) { catalog, installed, workState ->
+        workScheduler.observeWorkState(),
+        dynamicRuntimeManager.observeState()
+    ) { catalog, installed, workState, runtimeState ->
         cachedInstalledPack = installed
         val isInstalledValid = isInstalledPackValid(installed)
         val validInstalledPackId = installed?.takeIf { isInstalledValid }?.packId
         val evaluated = compatibilityProvider.evaluateCatalog(catalog, installedPackId = validInstalledPackId)
 
-        when (workState) {
-            is ModelPackWorkState.Queued -> {
-                val targetConfig = resolveWorkTargetConfig(catalog, workState.packId)
-                ModelPackStatus.Downloading(
-                    progressPercent = 0,
-                    downloadedBytes = 0L,
-                    totalBytes = targetConfig?.sizeBytes ?: 0L,
-                    packId = workState.packId
-                )
-            }
-
-            is ModelPackWorkState.Downloading -> {
-                val targetConfig = resolveWorkTargetConfig(catalog, workState.packId)
-                ModelPackStatus.Downloading(
-                    progressPercent = workState.progressPercent,
-                    downloadedBytes = workState.downloadedBytes,
-                    totalBytes = workState.totalBytes.takeIf { it > 0L } ?: targetConfig?.sizeBytes ?: 0L,
-                    packId = workState.packId
-                )
-            }
-
-            is ModelPackWorkState.Verifying -> {
-                val targetConfig = resolveWorkTargetConfig(catalog, workState.packId)
-                ModelPackStatus.Verifying(
-                    version = workState.version.ifBlank { targetConfig?.version.orEmpty() },
-                    packId = workState.packId
-                )
-            }
-
-            is ModelPackWorkState.Failed -> ModelPackStatus.Error(
-                reason = workState.reason,
-                canRetry = true,
-                packId = workState.packId
-            )
-
-            ModelPackWorkState.Idle,
-            is ModelPackWorkState.Succeeded,
-            ModelPackWorkState.Cancelled -> resolveSettledStatus(
-                catalog = catalog,
-                evaluated = evaluated,
-                installed = installed,
-                isInstalledValid = isInstalledValid
-            )
-        }
+        statusResolver.resolveAggregateStatus(
+            catalog = catalog,
+            evaluated = evaluated,
+            installed = installed,
+            isInstalledValid = isInstalledValid,
+            workState = workState,
+            runtimeState = runtimeState,
+            activeRuntimePackId = activeRuntimePackId.value
+        )
     }
 
     override fun observeCatalogEntries(): Flow<List<ModelPackCatalogEntry>> = combine(
         appConfigRepository.localAiModelPackCatalog,
         preferences.installedPackMetadata,
-        workScheduler.observeWorkState()
-    ) { catalog, installed, workState ->
+        workScheduler.observeWorkState(),
+        dynamicRuntimeManager.observeState()
+    ) { catalog, installed, workState, runtimeState ->
         cachedInstalledPack = installed
         val isInstalledValid = isInstalledPackValid(installed)
         val validInstalledPackId = installed?.takeIf { isInstalledValid }?.packId
         val evaluated = compatibilityProvider.evaluateCatalog(catalog, installedPackId = validInstalledPackId)
 
         evaluated.map { entry ->
-            mapCatalogEntry(
+            statusResolver.mapCatalogEntry(
                 entry = entry,
                 installed = installed,
                 isInstalledValid = isInstalledValid,
-                workState = workState
+                workState = workState,
+                runtimeState = runtimeState,
+                activeRuntimePackId = activeRuntimePackId.value
             )
         }
-    }
-
-    private fun mapCatalogEntry(
-        entry: EvaluatedCatalogPack,
-        installed: InstalledModelPackMetadata?,
-        isInstalledValid: Boolean,
-        workState: ModelPackWorkState
-    ): ModelPackCatalogEntry {
-        val packId = entry.config.packId
-        val isThisInstalled = isInstalledValid && installed?.packId == packId
-        val isThisActiveWork = workState.targetPackId() == packId
-        val status = resolveCatalogEntryStatus(
-            entry = entry,
-            installed = installed,
-            isThisInstalled = isThisInstalled,
-            isThisActiveWork = isThisActiveWork,
-            workState = workState
-        )
-        val isActiveDownload = isThisActiveWork && workState.isActiveDownload()
-
-        return ModelPackCatalogEntry(
-            config = entry.config,
-            compatibility = entry.compatibility,
-            status = status,
-            isRecommended = entry.isRecommended,
-            isInstalled = isThisInstalled,
-            isActiveDownload = isActiveDownload
-        )
-    }
-
-    private fun resolveCatalogEntryStatus(
-        entry: EvaluatedCatalogPack,
-        installed: InstalledModelPackMetadata?,
-        isThisInstalled: Boolean,
-        isThisActiveWork: Boolean,
-        workState: ModelPackWorkState
-    ): ModelPackStatus {
-        val packId = entry.config.packId
-        if (isThisActiveWork) {
-            resolveActiveWorkStatus(entry.config, workState)?.let { return it }
-        }
-        if (isThisInstalled && installed != null) {
-            return ModelPackStatus.Installed(
-                version = installed.version,
-                sizeBytes = installed.sizeBytes,
-                isUpdateAvailable = installed.version != entry.config.version,
-                packId = packId
-            )
-        }
-        if (!entry.compatibility.isCompatible) {
-            return ModelPackStatus.Incompatible(
-                reason = entry.compatibility.reason ?: ModelPackIncompatibilityReason.PACK_DISABLED,
-                requiredRamMb = entry.compatibility.requiredRamMb,
-                availableRamMb = entry.compatibility.availableRamMb,
-                requiredStorageBytes = entry.compatibility.requiredStorageBytes,
-                availableStorageBytes = entry.compatibility.availableStorageBytes,
-                packId = packId
-            )
-        }
-        return ModelPackStatus.NotInstalled(
-            availableVersion = entry.config.version,
-            downloadSizeBytes = entry.config.sizeBytes,
-            packId = packId
-        )
-    }
-
-    private fun resolveActiveWorkStatus(
-        config: ModelPackConfig,
-        workState: ModelPackWorkState
-    ): ModelPackStatus? = when (workState) {
-        is ModelPackWorkState.Queued -> ModelPackStatus.Downloading(
-            progressPercent = 0,
-            downloadedBytes = 0L,
-            totalBytes = config.sizeBytes,
-            packId = config.packId
-        )
-
-        is ModelPackWorkState.Downloading -> ModelPackStatus.Downloading(
-            progressPercent = workState.progressPercent,
-            downloadedBytes = workState.downloadedBytes,
-            totalBytes = workState.totalBytes.takeIf { it > 0L } ?: config.sizeBytes,
-            packId = config.packId
-        )
-
-        is ModelPackWorkState.Verifying -> ModelPackStatus.Verifying(
-            version = workState.version.ifBlank { config.version },
-            packId = config.packId
-        )
-
-        is ModelPackWorkState.Failed -> ModelPackStatus.Error(
-            reason = workState.reason,
-            canRetry = true,
-            packId = config.packId
-        )
-
-        ModelPackWorkState.Idle,
-        is ModelPackWorkState.Succeeded,
-        ModelPackWorkState.Cancelled -> null
-    }
-
-    private fun resolveSettledStatus(
-        catalog: ModelPackCatalog,
-        evaluated: List<EvaluatedCatalogPack>,
-        installed: InstalledModelPackMetadata?,
-        isInstalledValid: Boolean
-    ): ModelPackStatus {
-        if (isInstalledValid && installed != null) {
-            val matchingConfig = catalog.findById(installed.packId)
-            return ModelPackStatus.Installed(
-                version = installed.version,
-                sizeBytes = installed.sizeBytes,
-                isUpdateAvailable = matchingConfig != null &&
-                    matchingConfig.isEnabled &&
-                    installed.version != matchingConfig.version,
-                packId = installed.packId
-            )
-        }
-
-        val recommended = evaluated.firstOrNull { it.isRecommended && it.compatibility.isCompatible }
-        if (recommended != null) {
-            return ModelPackStatus.NotInstalled(
-                availableVersion = recommended.config.version,
-                downloadSizeBytes = recommended.config.sizeBytes,
-                packId = recommended.config.packId
-            )
-        }
-
-        val compatibility = compatibilityProvider.selectAggregateCompatibility(evaluated, installedPackId = null)
-        return ModelPackStatus.Incompatible(
-            reason = compatibility.reason ?: ModelPackIncompatibilityReason.PACK_DISABLED,
-            requiredRamMb = compatibility.requiredRamMb,
-            availableRamMb = compatibility.availableRamMb,
-            requiredStorageBytes = compatibility.requiredStorageBytes,
-            availableStorageBytes = compatibility.availableStorageBytes,
-            packId = ""
-        )
-    }
-
-    private fun resolveWorkTargetConfig(catalog: ModelPackCatalog, packId: String): ModelPackConfig? =
-        packId.takeIf { it.isNotBlank() }?.let { catalog.findById(it) }
-
-    private fun ModelPackWorkState.isActiveDownload(): Boolean =
-        this is ModelPackWorkState.Queued ||
-            this is ModelPackWorkState.Downloading ||
-            this is ModelPackWorkState.Verifying
-
-    private fun ModelPackWorkState.targetPackId(): String? = when (this) {
-        is ModelPackWorkState.Queued -> packId.takeIf { it.isNotBlank() }
-        is ModelPackWorkState.Downloading -> packId.takeIf { it.isNotBlank() }
-        is ModelPackWorkState.Verifying -> packId.takeIf { it.isNotBlank() }
-        is ModelPackWorkState.Failed -> packId.takeIf { it.isNotBlank() }
-        is ModelPackWorkState.Succeeded -> packId.takeIf { it.isNotBlank() }
-        ModelPackWorkState.Idle,
-        ModelPackWorkState.Cancelled -> null
     }
 
     private suspend fun isInstalledPackValid(installed: InstalledModelPackMetadata?): Boolean {
@@ -302,7 +177,8 @@ internal class LocalAiModelPackServiceImpl(
 
     override fun isPackInstalled(): Boolean {
         val cached = cachedInstalledPack ?: return false
-        return storageManager.isFileValid(cached.filePath, cached.sizeBytes)
+        return dynamicRuntimeManager.isRuntimeInstalled() &&
+            storageManager.isFileValid(cached.filePath, cached.sizeBytes)
     }
 
     override fun getInstalledModelPath(): String? {
@@ -355,7 +231,15 @@ internal class LocalAiModelPackServiceImpl(
             }
 
             val wifiOnly = preferences.wifiOnlyDownload.first()
-            workScheduler.enqueueDownload(targetConfig, wifiOnly)
+            if (dynamicRuntimeManager.isRuntimeInstalled()) {
+                pendingRuntimeDownload.value = null
+                activeRuntimePackId.value = null
+                workScheduler.enqueueDownload(targetConfig, wifiOnly)
+            } else {
+                pendingRuntimeDownload.value = PendingRuntimeDownload(targetConfig, wifiOnly)
+                activeRuntimePackId.value = targetConfig.packId
+                dynamicRuntimeManager.requestInstall()
+            }
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
@@ -388,6 +272,9 @@ internal class LocalAiModelPackServiceImpl(
 
     override suspend fun cancelDownload(packId: String?): Result<Unit> {
         return try {
+            pendingRuntimeDownload.value = null
+            activeRuntimePackId.value = null
+            dynamicRuntimeManager.cancelInstall()
             workScheduler.cancelDownload()
             val catalog = appConfigRepository.localAiModelPackCatalog.value
             val targetConfig = packId?.takeIf { it.isNotBlank() }?.let { catalog.findById(it) }
@@ -408,6 +295,9 @@ internal class LocalAiModelPackServiceImpl(
 
     override suspend fun deletePack(): Result<Unit> {
         return try {
+            pendingRuntimeDownload.value = null
+            activeRuntimePackId.value = null
+            dynamicRuntimeManager.cancelInstall()
             workScheduler.cancelDownload()
             withContext(ioDispatcher) {
                 if (engineClient.isInitialized()) {
@@ -417,6 +307,7 @@ internal class LocalAiModelPackServiceImpl(
                 preferences.clearInstalledPackMetadata()
                 cachedInstalledPack = null
             }
+            dynamicRuntimeManager.requestDeferredUninstall()
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e

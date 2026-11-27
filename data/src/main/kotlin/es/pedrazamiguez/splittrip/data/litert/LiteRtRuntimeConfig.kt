@@ -1,6 +1,6 @@
-package es.pedrazamiguez.splittrip.data.repository.impl
+package es.pedrazamiguez.splittrip.data.litert
 
-internal object LiteRtRuntimeConfig {
+object LiteRtRuntimeConfig {
 
     const val DEFAULT_MAX_NUM_TOKENS = 2_560
     const val DEFAULT_MAX_OUTPUT_TOKENS = 384

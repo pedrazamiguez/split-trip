@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClient
 import es.pedrazamiguez.splittrip.data.local.datastore.InstalledModelPackMetadata
 import es.pedrazamiguez.splittrip.data.local.datastore.LocalAiModelPackPreferences
-import es.pedrazamiguez.splittrip.data.repository.impl.LiteRtEngineClient
 import es.pedrazamiguez.splittrip.data.service.ModelPackDownloader
 import es.pedrazamiguez.splittrip.data.service.ModelPackStorageManager
 import es.pedrazamiguez.splittrip.domain.model.ModelPackErrorReason
