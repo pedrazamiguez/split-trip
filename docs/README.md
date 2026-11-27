@@ -74,6 +74,7 @@ docs/
 * [Branching, Versioning & Release Strategy](engineering/branching-and-releases.md)
 * [Gradle Version Catalog Maintenance](engineering/version-catalog.md)
 * [Firebase Remote Config Management & Deployment](engineering/remote-config-management.md)
+* [Local AI Model Pack Hosting & Update Runbook (Cloudflare R2)](engineering/local-ai-model-pack-hosting.md)
 * [Monetization Funnel & Unit-Economics Forecast Model](engineering/monetization-and-unit-economics.md)
 
 ---
