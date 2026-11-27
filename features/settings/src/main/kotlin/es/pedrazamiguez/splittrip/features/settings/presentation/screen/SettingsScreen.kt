@@ -41,6 +41,7 @@ fun SettingsScreen(
     onOpenSourceClick: () -> Unit = {},
     onDeveloperInfoClick: () -> Unit = {},
     onCopyDiagnosticsClick: () -> Unit = {},
+    onLocalAiPackClick: () -> Unit = {},
     isAnonymous: Boolean = false,
     isDeveloperModeEnabled: Boolean = false
 ) {
@@ -65,7 +66,8 @@ fun SettingsScreen(
         onPrivacyPolicyClick = onPrivacyPolicyClick,
         onOpenSourceClick = onOpenSourceClick,
         onDeveloperInfoClick = onDeveloperInfoClick,
-        onCopyDiagnosticsClick = onCopyDiagnosticsClick
+        onCopyDiagnosticsClick = onCopyDiagnosticsClick,
+        onLocalAiPackClick = onLocalAiPackClick
     )
 
     val sections = buildSettingsSections(

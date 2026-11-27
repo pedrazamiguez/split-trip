@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.domain.enums.AuthProviderType
 import es.pedrazamiguez.splittrip.domain.enums.BiometricCapability
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -280,6 +281,7 @@ class AccountSecurityViewModelTest {
                 val action = assertInstanceOf(AccountSecurityUiAction.ShowTopPill::class.java, actions.first())
                 val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
                 assertEquals(R.string.account_security_password_reset_sent, message.resId)
+                assertEquals(TopPillStyle.SUCCESS, action.style)
 
                 job.cancel()
             }
@@ -304,6 +306,7 @@ class AccountSecurityViewModelTest {
             val action = assertInstanceOf(AccountSecurityUiAction.ShowTopPill::class.java, actions.first())
             val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
             assertEquals(R.string.account_security_error_prefix, message.resId)
+            assertEquals(TopPillStyle.ERROR, action.style)
 
             job.cancel()
         }
@@ -325,6 +328,7 @@ class AccountSecurityViewModelTest {
             val action = assertInstanceOf(AccountSecurityUiAction.ShowTopPill::class.java, actions.first())
             val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
             assertEquals(R.string.account_security_error_prefix, message.resId)
+            assertEquals(TopPillStyle.ERROR, action.style)
 
             job.cancel()
         }
@@ -404,6 +408,7 @@ class AccountSecurityViewModelTest {
                 val action = assertInstanceOf(AccountSecurityUiAction.ShowTopPill::class.java, actions.first())
                 val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
                 assertEquals(R.string.account_security_error_prefix, message.resId)
+                assertEquals(TopPillStyle.ERROR, action.style)
 
                 job.cancel()
             }
@@ -439,6 +444,7 @@ class AccountSecurityViewModelTest {
                 val action = assertInstanceOf(AccountSecurityUiAction.ShowTopPill::class.java, actions.first())
                 val message = assertInstanceOf(UiText.StringResource::class.java, action.message)
                 assertEquals(R.string.account_security_error_prefix, message.resId)
+                assertEquals(TopPillStyle.ERROR, action.style)
 
                 job.cancel()
             }

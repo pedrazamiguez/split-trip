@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.features.onboarding.presentation.screen.ReconciliationScreen
 import es.pedrazamiguez.splittrip.features.onboarding.presentation.viewmodel.ReconciliationViewModel
@@ -37,7 +38,7 @@ fun ReconciliationFeature(
                 }
                 is ReconciliationUiAction.ShowError -> {
                     val messageStr = action.message.asString(context)
-                    pillController.showPill(messageStr)
+                    pillController.showPill(message = messageStr, style = TopPillStyle.ERROR)
                 }
             }
         }

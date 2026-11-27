@@ -1,126 +1,119 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
+import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelNotEntitledException
+import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelUnavailableException
+import es.pedrazamiguez.splittrip.domain.service.LocalAiModelPackService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.FeatureGateService
+import es.pedrazamiguez.splittrip.domain.service.featuregate.GatedFeature
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class LiteRtInferenceRepositoryImplTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private val repository = LiteRtInferenceRepositoryImpl(defaultDispatcher = testDispatcher)
+    private lateinit var modelPackService: LocalAiModelPackService
+    private lateinit var featureGateService: FeatureGateService
+    private lateinit var engineClient: LiteRtEngineClient
+    private lateinit var repository: LiteRtInferenceRepositoryImpl
+
+    @BeforeEach
+    fun setUp() {
+        modelPackService = mockk()
+        featureGateService = mockk()
+        engineClient = mockk()
+
+        every { featureGateService.isFeatureEnabled(GatedFeature.LOCAL_AI_MODEL_PACK) } returns flowOf(true)
+        every { modelPackService.getInstalledModelPath() } returns "/data/ai_models/model.litertlm"
+
+        repository = LiteRtInferenceRepositoryImpl(
+            modelPackService = modelPackService,
+            featureGateService = featureGateService,
+            engineClient = engineClient,
+            defaultDispatcher = testDispatcher
+        )
+    }
 
     @Test
     fun `getEngineType returns LITE_RT_LM`() {
         assertEquals(AiEngineType.LITE_RT_LM, repository.getEngineType())
     }
 
-    // ── generateStructuredOutput ──────────────────────────────────────────
+    @Test
+    fun `generateContent succeeds with engine output when entitled and pack installed`() = runTest(testDispatcher) {
+        coEvery {
+            engineClient.generate(
+                modelPath = "/data/ai_models/model.litertlm",
+                prompt = "Receipt text",
+                systemInstruction = null
+            )
+        } returns """{"amount":"42.00"}"""
 
-    @Nested
-    inner class GenerateStructuredOutput {
+        val result = repository.generateContent("Receipt text")
 
-        @Test
-        fun `parses prompt correctly and extracts data`() = runTest(testDispatcher) {
-            val prompt = "Input: QUICK MART Drink 25.00 Snack 15.00 Water 10.00 TOTAL 50.00 USD 2025-03-10 13:45"
-            val result = repository.generateStructuredOutput(prompt, "schema")
-
-            assertTrue(result.isSuccess)
-            val json = result.getOrThrow()
-            assertTrue(json.contains("\"amount\": \"50.00\""))
-            assertTrue(json.contains("\"currency\": \"USD\""))
-            assertTrue(json.contains("\"date\": \"2025-03-10\""))
-        }
-
-        @Test
-        fun `extracts EUR currency from prompt`() = runTest(testDispatcher) {
-            val prompt = "Restaurant TOTAL 30.00 EUR 2026-01-20 19:30"
-            val result = repository.generateStructuredOutput(prompt, "schema")
-
-            assertTrue(result.isSuccess)
-            val json = result.getOrThrow()
-            assertTrue(json.contains("\"currency\": \"EUR\""))
-        }
-
-        @Test
-        fun `extracts GBP currency from prompt`() = runTest(testDispatcher) {
-            val prompt = "SUPERMARKET TOTAL 15.99 GBP 2026-02-10"
-            val result = repository.generateStructuredOutput(prompt, "schema")
-
-            assertTrue(result.isSuccess)
-            val json = result.getOrThrow()
-            assertTrue(json.contains("\"currency\": \"GBP\""))
-        }
-
-        @Test
-        fun `uses fallback amount when no total keyword present`() = runTest(testDispatcher) {
-            val prompt = "Generic store 99.99"
-            val result = repository.generateStructuredOutput(prompt, "schema")
-
-            assertTrue(result.isSuccess)
-            val json = result.getOrThrow()
-            assertTrue(json.contains("\"amount\""))
-        }
-
-        @Test
-        fun `uses fallback vendor when no matching line found`() = runTest(testDispatcher) {
-            val prompt = "TOTAL 20.00 EUR"
-            val result = repository.generateStructuredOutput(prompt, "schema")
-
-            assertTrue(result.isSuccess)
-            val json = result.getOrThrow()
-            assertTrue(json.contains("\"vendor\""))
-        }
-
-        @Test
-        fun `returns well-formed JSON with all expected fields`() = runTest(testDispatcher) {
-            val prompt = "CAFE PARIS TOTAL 15.50 EUR 2026-05-01 10:30"
-            val result = repository.generateStructuredOutput(prompt, "schema")
-
-            assertTrue(result.isSuccess)
-            val json = result.getOrThrow()
-            assertTrue(json.contains("\"amount\""))
-            assertTrue(json.contains("\"currency\""))
-            assertTrue(json.contains("\"date\""))
-            assertTrue(json.contains("\"time\""))
-            assertTrue(json.contains("\"vendor\""))
-            assertTrue(json.contains("\"title\""))
-            assertTrue(json.contains("\"category\""))
-            assertTrue(json.contains("\"paymentMethod\""))
-        }
+        assertTrue(result.isSuccess)
+        assertEquals("""{"amount":"42.00"}""", result.getOrThrow())
     }
 
-    // ── generateContent ───────────────────────────────────────────────────
+    @Test
+    fun `generateContent fails with LocalAiModelNotEntitledException when user is not entitled`() =
+        runTest(testDispatcher) {
+            every { featureGateService.isFeatureEnabled(GatedFeature.LOCAL_AI_MODEL_PACK) } returns flowOf(false)
 
-    @Nested
-    inner class GenerateContent {
+            val result = repository.generateContent("Receipt text")
 
-        @Test
-        fun `returns success with JSON content`() = runTest(testDispatcher) {
-            val prompt = "QUICK MART TOTAL 50.00 USD 2025-03-10 13:45"
-            val result = repository.generateContent(prompt)
+            assertTrue(result.isFailure)
+            assertTrue(result.exceptionOrNull() is LocalAiModelNotEntitledException)
+        }
+
+    @Test
+    fun `generateContent fails with LocalAiModelUnavailableException when pack is not installed`() =
+        runTest(testDispatcher) {
+            every { modelPackService.getInstalledModelPath() } returns null
+
+            val result = repository.generateContent("Receipt text")
+
+            assertTrue(result.isFailure)
+            assertTrue(result.exceptionOrNull() is LocalAiModelUnavailableException)
+        }
+
+    @Test
+    fun `generateStructuredOutput passes JSON schema system instruction and sanitizes fenced JSON output`() =
+        runTest(testDispatcher) {
+            val systemSlot = slot<String>()
+            coEvery {
+                engineClient.generate(
+                    modelPath = "/data/ai_models/model.litertlm",
+                    prompt = "Extract",
+                    systemInstruction = capture(systemSlot)
+                )
+            } returns "```json\n{\"amount\":\"15.50\",\"currency\":\"EUR\"}\n```"
+
+            val result = repository.generateStructuredOutput("Extract", """{"type":"object"}""")
 
             assertTrue(result.isSuccess)
-            val json = result.getOrThrow()
-            assertTrue(json.isNotBlank())
-            assertTrue(json.contains("\"amount\""))
+            assertTrue(systemSlot.captured.contains("""{"type":"object"}"""))
+            assertEquals("""{"amount":"15.50","currency":"EUR"}""", result.getOrThrow())
         }
 
-        @Test
-        fun `returns same extraction logic as generateStructuredOutput`() = runTest(testDispatcher) {
-            val prompt = "STORE TOTAL PAGAR 100.00 USD 2026-01-01 09:00"
+    @Test
+    fun `generateStructuredOutput wraps engine exception into Result failure`() = runTest(testDispatcher) {
+        coEvery {
+            engineClient.generate(any(), any(), any())
+        } throws IllegalStateException("Native failure")
 
-            val contentResult = repository.generateContent(prompt)
-            val structuredResult = repository.generateStructuredOutput(prompt, "schema")
+        val result = repository.generateStructuredOutput("Extract", "{}")
 
-            assertTrue(contentResult.isSuccess)
-            assertTrue(structuredResult.isSuccess)
-            // Both should succeed with same currency extraction
-            assertTrue(contentResult.getOrThrow().contains("\"currency\": \"USD\""))
-            assertTrue(structuredResult.getOrThrow().contains("\"currency\": \"USD\""))
-        }
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is LocalAiModelUnavailableException)
     }
 }

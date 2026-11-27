@@ -51,6 +51,7 @@ object Routes {
     const val SETTINGS_PRIVACY_POLICY = "settings_privacy_policy"
     const val SETTINGS_OPEN_SOURCE = "settings_open_source"
     const val SETTINGS_DEVELOPER_INFO = "settings_developer_info"
+    const val SETTINGS_LOCAL_AI_PACK = "settings_local_ai_pack"
     const val GROUP_DETAIL = "group_detail/{groupId}"
     const val EDIT_GROUP = "edit_group/{groupId}"
     const val EXPENSE_DETAIL = "expense_detail/{expenseId}"

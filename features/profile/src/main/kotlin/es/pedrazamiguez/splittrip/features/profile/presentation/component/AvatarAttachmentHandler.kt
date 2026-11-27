@@ -17,6 +17,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestCameraPermission
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CameraAttachmentTarget
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import java.io.File
 
 @Composable
@@ -53,7 +54,10 @@ internal fun AvatarAttachmentHandler(
             cameraImageUri = uri
             cameraLauncher.launch(uri)
         } else {
-            pillController.showPill(cameraPermissionRequiredMessage)
+            pillController.showPill(
+                message = cameraPermissionRequiredMessage,
+                style = TopPillStyle.WARNING
+            )
         }
     }
 

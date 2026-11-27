@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.model.AddOnUiMod
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CashTranchePreviewUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.CategoryUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.FundingSourceUiModel
+import es.pedrazamiguez.splittrip.features.expense.presentation.model.LocalAiPackBannerUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentMethodUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.PaymentStatusUiModel
 import es.pedrazamiguez.splittrip.features.expense.presentation.model.SplitTypeUiModel
@@ -202,6 +203,7 @@ data class AddExpenseUiState(
     val aiRemainingScansLabel: String? = null,
     val isAnalyzingReceipt: Boolean = false,
     val autoFillBanner: AutoFillBanner? = null,
+    val localAiPackBanner: LocalAiPackBannerUiModel? = null,
     val expenseDateMillis: Long? = null,
 
     // ── Manual Receipt Quota ────────────────────────────────────────────

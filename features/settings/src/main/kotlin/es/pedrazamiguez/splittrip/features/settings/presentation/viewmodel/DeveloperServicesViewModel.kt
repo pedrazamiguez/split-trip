@@ -4,24 +4,32 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
-import es.pedrazamiguez.splittrip.domain.enums.SubscriptionTier
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
+import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
+import es.pedrazamiguez.splittrip.domain.enums.GroupContext
+import es.pedrazamiguez.splittrip.domain.model.CategoryPredictionOutcome
+import es.pedrazamiguez.splittrip.domain.model.CategorySuggestionSource
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
+import es.pedrazamiguez.splittrip.domain.model.ModelPackStatus
 import es.pedrazamiguez.splittrip.domain.model.RawReceiptText
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
 import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptExtractionService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptOcrService
+import es.pedrazamiguez.splittrip.domain.usecase.expense.SuggestExpenseCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
-import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveLocalAiModelPackStateUseCase
 import es.pedrazamiguez.splittrip.features.settings.R
+import es.pedrazamiguez.splittrip.features.settings.presentation.model.InstalledLocalAiPackInfo
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.action.DeveloperServicesUiAction
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +44,15 @@ import kotlinx.coroutines.launch
 sealed interface DeveloperServicesTab {
     data object Ocr : DeveloperServicesTab
     data object AiExtraction : DeveloperServicesTab
-    data object Billing : DeveloperServicesTab
+    data object CategorySuggestion : DeveloperServicesTab
+}
+
+sealed interface CategorySuggestionStatus {
+    data object Idle : CategorySuggestionStatus
+    data object Loading : CategorySuggestionStatus
+    data object Matched : CategorySuggestionStatus
+    data object NoMatch : CategorySuggestionStatus
+    data object Error : CategorySuggestionStatus
 }
 
 data class DeveloperServicesUiState(
@@ -57,22 +73,27 @@ data class DeveloperServicesUiState(
     val extractedVendor: String? = null,
     val extractedPaymentMethod: String? = null,
     val extractedCategory: String? = null,
+    val extractedSubcategory: String? = null,
     val extractedNotes: String? = null,
     val extractionSource: ExtractionSource? = null,
     val extractionConfidence: ExtractionConfidence? = null,
     val extractionErrorMessage: UiText? = null,
     val activeResolvedModel: AiEngineType? = null,
     val developerOverrideModel: AiEngineType? = null,
+    val isAiCoreSupported: Boolean = false,
+    val installedLocalAiPack: InstalledLocalAiPackInfo? = null,
     val availableModels: ImmutableList<AiEngineType?> = persistentListOf(
         null,
         AiEngineType.AI_CORE_GEMMA_4,
         AiEngineType.LITE_RT_LM
     ),
-    val currentTier: SubscriptionTier = SubscriptionTier.FREE,
-    val isUpdatingTier: Boolean = false,
-    val pendingTargetTier: SubscriptionTier? = null,
-    val hasSignedInUser: Boolean = false,
-    val billingErrorMessage: UiText? = null
+    val categorySuggestionInput: String = "",
+    val categorySuggestionContext: GroupContext = GroupContext.TRAVEL,
+    val categorySuggestionStatus: CategorySuggestionStatus = CategorySuggestionStatus.Idle,
+    val suggestedCategory: ExpenseCategory? = null,
+    val suggestedSubcategory: ExpenseSubcategory? = null,
+    val suggestedCategorySource: CategorySuggestionSource? = null,
+    val categorySuggestionErrorMessage: UiText? = null
 )
 
 sealed interface OcrStatus {
@@ -96,17 +117,19 @@ sealed interface DeveloperServicesUiEvent {
     data object RunOcrAndExtract : DeveloperServicesUiEvent
     data object Reset : DeveloperServicesUiEvent
     data class SelectModel(val model: AiEngineType?) : DeveloperServicesUiEvent
-    data class SetSubscriptionTier(val tier: SubscriptionTier) : DeveloperServicesUiEvent
+    data class CategoryTitleChanged(val title: String) : DeveloperServicesUiEvent
+    data class CategoryContextChanged(val context: GroupContext) : DeveloperServicesUiEvent
+    data object ClearCategoryInput : DeveloperServicesUiEvent
 }
 
 class DeveloperServicesViewModel(
     private val receiptOcrService: ReceiptOcrService,
     private val receiptExtractionService: ReceiptExtractionService,
     private val aiModelResolver: AiModelResolverService,
-    private val observeCurrentUserProfileUseCase: ObserveCurrentUserProfileUseCase,
-    private val getCurrentUserProfileUseCase: GetCurrentUserProfileUseCase,
-    private val updateUserTierUseCase: UpdateUserTierUseCase,
-    private val observeDeveloperAccessUseCase: ObserveDeveloperAccessUseCase
+    private val observeLocalAiModelPackStateUseCase: ObserveLocalAiModelPackStateUseCase,
+    private val suggestExpenseCategoryUseCase: SuggestExpenseCategoryUseCase,
+    private val observeDeveloperAccessUseCase: ObserveDeveloperAccessUseCase,
+    private val categorySuggestionDebounceMs: Long = CATEGORY_SUGGESTION_DEBOUNCE_MS
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DeveloperServicesUiState())
@@ -119,22 +142,34 @@ class DeveloperServicesViewModel(
     val actions: Flow<DeveloperServicesUiAction> = _actions.receiveAsFlow()
 
     private var lastRawReceiptText: RawReceiptText? = null
-    private var currentUserId: String? = null
+    private var categorySuggestionJob: Job? = null
 
     init {
         observeDeveloperAccess()
         combine(
             aiModelResolver.getActiveModel(),
-            aiModelResolver.getDeveloperOverrideModel()
-        ) { activeModel, overrideModel ->
+            aiModelResolver.getDeveloperOverrideModel(),
+            observeLocalAiModelPackStateUseCase()
+        ) { activeModel, overrideModel, packState ->
+            val isActiveEngineSupported = when (activeModel) {
+                AiEngineType.AI_CORE_GEMMA_4 -> packState.isAiCoreSupported
+                AiEngineType.LITE_RT_LM ->
+                    packState.isEntitled && packState.status is ModelPackStatus.Installed
+            }
+            val resolvedModel = when {
+                overrideModel != null -> overrideModel
+                isActiveEngineSupported -> activeModel
+                else -> null
+            }
             _uiState.update {
                 it.copy(
-                    activeResolvedModel = activeModel,
-                    developerOverrideModel = overrideModel
+                    activeResolvedModel = resolvedModel,
+                    developerOverrideModel = overrideModel,
+                    isAiCoreSupported = packState.isAiCoreSupported,
+                    installedLocalAiPack = InstalledLocalAiPackInfo.fromState(packState)
                 )
             }
         }.launchIn(viewModelScope)
-        observeUserProfile()
     }
 
     private fun observeDeveloperAccess() {
@@ -148,20 +183,6 @@ class DeveloperServicesViewModel(
             .launchIn(viewModelScope)
     }
 
-    private fun observeUserProfile() {
-        observeCurrentUserProfileUseCase()
-            .onEach { user ->
-                currentUserId = user?.userId
-                _uiState.update {
-                    it.copy(
-                        currentTier = user?.tier ?: SubscriptionTier.FREE,
-                        hasSignedInUser = user != null
-                    )
-                }
-            }
-            .launchIn(viewModelScope)
-    }
-
     fun onEvent(event: DeveloperServicesUiEvent) {
         when (event) {
             is DeveloperServicesUiEvent.FileSelected -> handleFileSelected(event.uri, event.name, event.mimeType)
@@ -170,7 +191,19 @@ class DeveloperServicesViewModel(
             is DeveloperServicesUiEvent.RunOcrAndExtract -> runOcrAndExtract()
             is DeveloperServicesUiEvent.Reset -> reset()
             is DeveloperServicesUiEvent.SelectModel -> selectModel(event.model)
-            is DeveloperServicesUiEvent.SetSubscriptionTier -> setSubscriptionTier(event.tier)
+            is DeveloperServicesUiEvent.CategoryTitleChanged -> scheduleCategorySuggestion(
+                title = event.title,
+                context = _uiState.value.categorySuggestionContext
+            )
+            is DeveloperServicesUiEvent.CategoryContextChanged -> {
+                if (event.context != _uiState.value.categorySuggestionContext) {
+                    scheduleCategorySuggestion(
+                        title = _uiState.value.categorySuggestionInput,
+                        context = event.context
+                    )
+                }
+            }
+            is DeveloperServicesUiEvent.ClearCategoryInput -> clearCategoryInput()
         }
     }
 
@@ -180,56 +213,129 @@ class DeveloperServicesViewModel(
         }
     }
 
-    private fun setSubscriptionTier(targetTier: SubscriptionTier) {
-        viewModelScope.launch {
+    private fun scheduleCategorySuggestion(title: String, context: GroupContext) {
+        categorySuggestionJob?.cancel()
+        val trimmed = title.trim()
+        if (trimmed.length < MIN_CATEGORY_TITLE_LENGTH) {
             _uiState.update {
                 it.copy(
-                    isUpdatingTier = true,
-                    pendingTargetTier = targetTier,
-                    billingErrorMessage = null
+                    categorySuggestionInput = title,
+                    categorySuggestionContext = context,
+                    categorySuggestionStatus = CategorySuggestionStatus.Idle,
+                    suggestedCategory = null,
+                    suggestedSubcategory = null,
+                    suggestedCategorySource = null,
+                    categorySuggestionErrorMessage = null
                 )
             }
-            val userId = currentUserId ?: getCurrentUserProfileUseCase()?.userId
-            if (userId == null) {
-                val noUserError = UiText.StringResource(R.string.developer_services_billing_no_user_error)
-                _uiState.update {
-                    it.copy(
-                        isUpdatingTier = false,
-                        pendingTargetTier = null,
-                        billingErrorMessage = noUserError
-                    )
-                }
-                _actions.send(DeveloperServicesUiAction.ShowTopPill(noUserError))
-                return@launch
-            }
+            return
+        }
 
-            updateUserTierUseCase(userId, targetTier)
-                .onSuccess {
-                    _uiState.update {
-                        it.copy(
-                            isUpdatingTier = false,
-                            pendingTargetTier = null,
-                            billingErrorMessage = null,
-                            currentTier = targetTier
-                        )
-                    }
-                    val message = UiText.StringResource(
-                        R.string.developer_services_billing_tier_updated,
-                        targetTier.name
-                    )
-                    _actions.send(DeveloperServicesUiAction.ShowTopPill(message))
-                }
-                .onFailure { error ->
-                    val errorMessage = error.toUiText(R.string.developer_services_billing_update_error)
-                    _uiState.update {
-                        it.copy(
-                            isUpdatingTier = false,
-                            pendingTargetTier = null,
-                            billingErrorMessage = errorMessage
-                        )
-                    }
-                    _actions.send(DeveloperServicesUiAction.ShowTopPill(errorMessage))
-                }
+        _uiState.update {
+            it.copy(
+                categorySuggestionInput = title,
+                categorySuggestionContext = context,
+                categorySuggestionStatus = CategorySuggestionStatus.Loading,
+                suggestedCategory = null,
+                suggestedSubcategory = null,
+                suggestedCategorySource = null,
+                categorySuggestionErrorMessage = null
+            )
+        }
+
+        categorySuggestionJob = viewModelScope.launch {
+            delay(categorySuggestionDebounceMs)
+            executeCategorySuggestion(trimmed = trimmed, context = context)
+        }
+    }
+
+    private suspend fun executeCategorySuggestion(trimmed: String, context: GroupContext) {
+        val outcome = try {
+            suggestExpenseCategoryUseCase.diagnose(title = trimmed, groupContext = context)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            if (!isCurrentSuggestionRequest(trimmed, context)) return
+            _uiState.update {
+                it.copy(
+                    categorySuggestionStatus = CategorySuggestionStatus.Error,
+                    categorySuggestionErrorMessage = e.toUiText(R.string.developer_services_category_error_fallback)
+                )
+            }
+            return
+        }
+
+        if (!isCurrentSuggestionRequest(trimmed, context)) return
+
+        _uiState.update { state -> applyPredictionOutcome(state, outcome) }
+    }
+
+    private fun applyPredictionOutcome(
+        state: DeveloperServicesUiState,
+        outcome: CategoryPredictionOutcome
+    ): DeveloperServicesUiState = when (outcome) {
+        is CategoryPredictionOutcome.Matched -> state.copy(
+            categorySuggestionStatus = CategorySuggestionStatus.Matched,
+            suggestedCategory = outcome.suggestion.category,
+            suggestedSubcategory = outcome.suggestion.subcategory,
+            suggestedCategorySource = outcome.suggestion.source,
+            categorySuggestionErrorMessage = null
+        )
+        is CategoryPredictionOutcome.NoMatch -> state.copy(
+            categorySuggestionStatus = CategorySuggestionStatus.NoMatch,
+            suggestedCategory = null,
+            suggestedSubcategory = null,
+            suggestedCategorySource = null,
+            categorySuggestionErrorMessage = null
+        )
+        is CategoryPredictionOutcome.AiUnavailable -> state.copy(
+            categorySuggestionStatus = CategorySuggestionStatus.Error,
+            suggestedCategory = null,
+            suggestedSubcategory = null,
+            suggestedCategorySource = null,
+            categorySuggestionErrorMessage = UiText.StringResource(
+                R.string.developer_services_category_ai_unavailable
+            )
+        )
+        is CategoryPredictionOutcome.AiTimeout -> state.copy(
+            categorySuggestionStatus = CategorySuggestionStatus.Error,
+            suggestedCategory = null,
+            suggestedSubcategory = null,
+            suggestedCategorySource = null,
+            categorySuggestionErrorMessage = UiText.StringResource(
+                R.string.developer_services_category_ai_timeout,
+                (outcome.timeoutMs / MILLIS_PER_SECOND).coerceAtLeast(1L)
+            )
+        )
+        is CategoryPredictionOutcome.AiFailure -> state.copy(
+            categorySuggestionStatus = CategorySuggestionStatus.Error,
+            suggestedCategory = null,
+            suggestedSubcategory = null,
+            suggestedCategorySource = null,
+            categorySuggestionErrorMessage = outcome.message
+                ?.takeIf { it.isNotBlank() }
+                ?.let(UiText::DynamicString)
+                ?: UiText.StringResource(R.string.developer_services_category_error_fallback)
+        )
+    }
+
+    private fun isCurrentSuggestionRequest(trimmed: String, context: GroupContext): Boolean {
+        val current = _uiState.value
+        return current.categorySuggestionInput.trim() == trimmed && current.categorySuggestionContext == context
+    }
+
+    private fun clearCategoryInput() {
+        categorySuggestionJob?.cancel()
+        categorySuggestionJob = null
+        _uiState.update {
+            it.copy(
+                categorySuggestionInput = "",
+                categorySuggestionStatus = CategorySuggestionStatus.Idle,
+                suggestedCategory = null,
+                suggestedSubcategory = null,
+                suggestedCategorySource = null,
+                categorySuggestionErrorMessage = null
+            )
         }
     }
 
@@ -253,6 +359,7 @@ class DeveloperServicesViewModel(
                 extractedVendor = null,
                 extractedPaymentMethod = null,
                 extractedCategory = null,
+                extractedSubcategory = null,
                 extractedNotes = null,
                 extractionSource = null,
                 extractionConfidence = null,
@@ -350,6 +457,7 @@ class DeveloperServicesViewModel(
                         extractedVendor = receipt.vendor,
                         extractedPaymentMethod = receipt.paymentMethod,
                         extractedCategory = receipt.category,
+                        extractedSubcategory = receipt.subcategory,
                         extractedNotes = receipt.notes,
                         extractionSource = receipt.source,
                         extractionConfidence = receipt.confidence
@@ -373,16 +481,26 @@ class DeveloperServicesViewModel(
             selectedTab = current.selectedTab,
             activeResolvedModel = current.activeResolvedModel,
             developerOverrideModel = current.developerOverrideModel,
-            currentTier = current.currentTier,
-            isUpdatingTier = current.isUpdatingTier,
-            pendingTargetTier = current.pendingTargetTier,
-            hasSignedInUser = current.hasSignedInUser,
-            billingErrorMessage = current.billingErrorMessage
+            isAiCoreSupported = current.isAiCoreSupported,
+            installedLocalAiPack = current.installedLocalAiPack,
+            categorySuggestionInput = current.categorySuggestionInput,
+            categorySuggestionContext = current.categorySuggestionContext,
+            categorySuggestionStatus = current.categorySuggestionStatus,
+            suggestedCategory = current.suggestedCategory,
+            suggestedSubcategory = current.suggestedSubcategory,
+            suggestedCategorySource = current.suggestedCategorySource,
+            categorySuggestionErrorMessage = current.categorySuggestionErrorMessage
         )
     }
 
     private fun Throwable.toUiText(fallbackRes: Int): UiText {
         val msg = localizedMessage
         return if (msg != null) UiText.DynamicString(msg) else UiText.StringResource(fallbackRes)
+    }
+
+    companion object {
+        const val CATEGORY_SUGGESTION_DEBOUNCE_MS = 250L
+        private const val MIN_CATEGORY_TITLE_LENGTH = 2
+        private const val MILLIS_PER_SECOND = 1_000L
     }
 }

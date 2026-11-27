@@ -21,10 +21,10 @@ import androidx.compose.ui.res.stringResource
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.spacing
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.PhotoAi
+import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalBottomPadding
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.FormErrorBanner
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.form.GradientButton
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
-import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesUiEvent
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesUiState
@@ -38,22 +38,30 @@ internal fun AiExtractionTabContent(
     onEvent: (DeveloperServicesUiEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val spacing = MaterialTheme.spacing
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(MaterialTheme.spacing.ExtraLarge),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.ExtraLarge)
+            .padding(
+                start = spacing.ExtraLarge,
+                top = spacing.ExtraLarge,
+                end = spacing.ExtraLarge,
+                bottom = spacing.ExtraLarge + LocalBottomPadding.current
+            ),
+        verticalArrangement = Arrangement.spacedBy(spacing.ExtraLarge)
     ) {
         AiModelSelector(
             availableModels = uiState.availableModels,
             selectedModel = uiState.developerOverrideModel,
             resolvedModel = uiState.activeResolvedModel,
+            isAiCoreSupported = uiState.isAiCoreSupported,
+            installedLocalAiPack = uiState.installedLocalAiPack,
             onModelSelected = { onEvent(DeveloperServicesUiEvent.SelectModel(it)) }
         )
 
         Box(modifier = Modifier.weight(1f)) {
             when (uiState.extractionStatus) {
-                ExtractionStatus.Loading -> ShimmerLoadingList(itemCount = 1)
+                ExtractionStatus.Loading -> AiExtractionLoadingIndicator(modifier = Modifier.fillMaxSize())
 
                 ExtractionStatus.Success -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -69,9 +77,11 @@ internal fun AiExtractionTabContent(
                             vendor = uiState.extractedVendor,
                             paymentMethod = uiState.extractedPaymentMethod,
                             category = uiState.extractedCategory,
+                            subcategory = uiState.extractedSubcategory,
                             notes = uiState.extractedNotes,
                             source = uiState.extractionSource,
-                            confidence = uiState.extractionConfidence
+                            confidence = uiState.extractionConfidence,
+                            installedLocalAiPack = uiState.installedLocalAiPack
                         )
                     }
                 }

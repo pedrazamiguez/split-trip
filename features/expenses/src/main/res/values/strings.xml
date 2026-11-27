@@ -519,4 +519,10 @@
     <string name="add_expense_receipt_free_attachments_exhausted">0 free receipts left this month</string>
     <string name="add_expense_receipt_unlock_with_pro">Unlock unlimited receipts with Pro</string>
     <string name="add_expense_receipt_monthly_limit_reached">You\'ve used your %1$d monthly receipt attachments.</string>
+
+    <!-- Local AI Pack Opt-In Banner -->
+    <string name="expense_local_ai_banner_enable_title">Enable offline AI scanning</string>
+    <string name="expense_local_ai_banner_enable_description">Download Local AI Pack to enable offline receipt scanning on this device.</string>
+    <string name="expense_local_ai_banner_action">Manage Local AI Pack</string>
+    <string name="expense_local_ai_banner_dismiss_cd">Dismiss local AI pack banner</string>
 </resources>

@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.R as DesignSystemR
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.screen.AddCashWithdrawalScreen
 import es.pedrazamiguez.splittrip.features.withdrawal.presentation.viewmodel.AddCashWithdrawalViewModel
@@ -51,11 +52,17 @@ fun AddCashWithdrawalFeature(
         addCashWithdrawalViewModel.actions.collectLatest { action ->
             when (action) {
                 is AddCashWithdrawalUiAction.ShowError -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.ERROR
+                    )
                 }
 
                 is AddCashWithdrawalUiAction.ShowPill -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.WARNING
+                    )
                 }
 
                 AddCashWithdrawalUiAction.NavigateBack -> {

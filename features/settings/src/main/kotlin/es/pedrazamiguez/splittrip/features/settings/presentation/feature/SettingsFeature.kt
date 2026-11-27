@@ -27,6 +27,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.permission.rememberRequestNo
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.dialog.DestructiveConfirmationDialog
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.logging.MonetizationTelemetry
 import es.pedrazamiguez.splittrip.domain.enums.AppLanguage
 import es.pedrazamiguez.splittrip.features.settings.R
@@ -78,7 +79,8 @@ fun SettingsFeature(
                 AppLanguage.ANDALUZ -> languageAndaluz
             }
             pillController.showPill(
-                languageChangedFormat.format(languageName)
+                message = languageChangedFormat.format(languageName),
+                style = TopPillStyle.SUCCESS
             )
             settingsViewModel.consumeLanguagePill()
         }
@@ -167,7 +169,13 @@ fun SettingsFeature(
             onCopyDiagnosticsClick = {
                 val logs = settingsViewModel.getDiagnosticLogs()
                 clipboardManager.setText(AnnotatedString(logs))
-                pillController.showPill(diagnosticsCopiedMsg)
+                pillController.showPill(
+                    message = diagnosticsCopiedMsg,
+                    style = TopPillStyle.SUCCESS
+                )
+            },
+            onLocalAiPackClick = {
+                navController.navigate(Routes.SETTINGS_LOCAL_AI_PACK)
             },
             isAnonymous = isAnonymous,
             isDeveloperModeEnabled = isDeveloperModeEnabled

@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavContr
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.features.profile.presentation.screen.ProfileScreen
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.ProfileViewModel
 import es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel.action.ProfileUiAction
@@ -29,10 +30,16 @@ fun ProfileFeature(profileViewModel: ProfileViewModel = koinViewModel<ProfileVie
         profileViewModel.actions.collectLatest { action ->
             when (action) {
                 is ProfileUiAction.ShowError -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.ERROR
+                    )
                 }
                 is ProfileUiAction.ShowSuccess -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.SUCCESS
+                    )
                 }
             }
         }

@@ -23,6 +23,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.sheet.SheetAction
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.model.CameraAttachmentTarget
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import java.io.File
 
 /**
@@ -67,7 +68,7 @@ fun ReceiptAttachmentHandler(
             cameraImageUri = uri
             cameraLauncher.launch(uri)
         } else {
-            pillController.showPill(cameraPermissionRequiredMessage)
+            pillController.showPill(cameraPermissionRequiredMessage, TopPillStyle.WARNING)
         }
     }
 

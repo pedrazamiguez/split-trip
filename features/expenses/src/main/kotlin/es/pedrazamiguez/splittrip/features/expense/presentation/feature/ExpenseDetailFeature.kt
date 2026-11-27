@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.features.expense.presentation.feature
 
+import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -8,11 +9,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.detail.ConfirmPaymentBottomSheet
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.ExpenseDetailScreen
@@ -40,21 +44,7 @@ fun ExpenseDetailFeature(
 
     LaunchedEffect(Unit) {
         expenseDetailViewModel.actions.collectLatest { action ->
-            when (action) {
-                is ExpenseDetailUiAction.ShowError -> {
-                    pillController.showPill(message = action.message.asString(context))
-                }
-                is ExpenseDetailUiAction.DeleteSuccess -> {
-                    pillController.showPill(message = action.message.asString(context))
-                    navController.popBackStack()
-                }
-                is ExpenseDetailUiAction.CancelSuccess -> {
-                    pillController.showPill(message = action.message.asString(context))
-                }
-                is ExpenseDetailUiAction.ConfirmPaymentSuccess -> {
-                    pillController.showPill(message = action.message.asString(context))
-                }
-            }
+            handleExpenseDetailAction(action, context, pillController, navController)
         }
     }
 
@@ -82,5 +72,28 @@ fun ExpenseDetailFeature(
                 showConfirmBottomSheet = false
             }
         )
+    }
+}
+
+private fun handleExpenseDetailAction(
+    action: ExpenseDetailUiAction,
+    context: Context,
+    pillController: TopPillController,
+    navController: NavController
+) {
+    when (action) {
+        is ExpenseDetailUiAction.ShowError -> {
+            pillController.showPill(action.message.asString(context), TopPillStyle.ERROR)
+        }
+        is ExpenseDetailUiAction.DeleteSuccess -> {
+            pillController.showPill(action.message.asString(context), TopPillStyle.SUCCESS)
+            navController.popBackStack()
+        }
+        is ExpenseDetailUiAction.CancelSuccess -> {
+            pillController.showPill(action.message.asString(context), TopPillStyle.SUCCESS)
+        }
+        is ExpenseDetailUiAction.ConfirmPaymentSuccess -> {
+            pillController.showPill(action.message.asString(context), TopPillStyle.SUCCESS)
+        }
     }
 }

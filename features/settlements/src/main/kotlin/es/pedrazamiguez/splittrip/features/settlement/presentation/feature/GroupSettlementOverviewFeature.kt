@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.ad.InterstitialAdManager
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavController
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.features.settlement.presentation.screen.GroupSettlementOverviewScreen
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.GroupSettlementOverviewViewModel
 import es.pedrazamiguez.splittrip.features.settlement.presentation.viewmodel.action.GroupSettlementOverviewUiAction
@@ -40,10 +41,16 @@ fun GroupSettlementOverviewFeature(
         groupSettlementOverviewViewModel.actions.collectLatest { action ->
             when (action) {
                 is GroupSettlementOverviewUiAction.ShowError -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.ERROR
+                    )
                 }
                 is GroupSettlementOverviewUiAction.ShowSuccess -> {
-                    pillController.showPill(message = action.message.asString(context))
+                    pillController.showPill(
+                        message = action.message.asString(context),
+                        style = TopPillStyle.SUCCESS
+                    )
                     val activity = context as? Activity
                     if (activity != null) {
                         interstitialAdManager.onActionCompleted(activity) {}

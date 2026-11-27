@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel
 
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CropRect
 import es.pedrazamiguez.splittrip.domain.model.User
@@ -122,6 +123,7 @@ class EditProfileViewModelTest {
             val action = emittedActions.first() as EditProfileUiAction.ShowNotification
             assertTrue(action.message is UiText.StringResource)
             assertEquals(R.string.profile_error_loading, (action.message as UiText.StringResource).resId)
+            assertEquals(TopPillStyle.ERROR, action.style)
 
             collectJob.cancel()
         }
@@ -150,6 +152,7 @@ class EditProfileViewModelTest {
             val action = emittedActions.first() as EditProfileUiAction.ShowNotification
             assertTrue(action.message is UiText.StringResource)
             assertEquals(R.string.profile_error_loading, (action.message as UiText.StringResource).resId)
+            assertEquals(TopPillStyle.ERROR, action.style)
 
             collectJob.cancel()
         }
@@ -303,6 +306,7 @@ class EditProfileViewModelTest {
             val action = emittedActions.first() as EditProfileUiAction.ShowNotification
             assertTrue(action.message is UiText.StringResource)
             assertEquals(R.string.edit_profile_error_image_process, (action.message as UiText.StringResource).resId)
+            assertEquals(TopPillStyle.ERROR, action.style)
 
             collectJob.cancel()
         }
@@ -399,10 +403,12 @@ class EditProfileViewModelTest {
             assertFalse(state.isSaving)
             assertEquals(2, emittedActions.size)
             assertTrue(emittedActions[0] is EditProfileUiAction.ShowNotification)
+            val notificationAction = emittedActions[0] as EditProfileUiAction.ShowNotification
             assertEquals(
                 R.string.edit_profile_success_saved,
-                ((emittedActions[0] as EditProfileUiAction.ShowNotification).message as UiText.StringResource).resId
+                (notificationAction.message as UiText.StringResource).resId
             )
+            assertEquals(TopPillStyle.SUCCESS, notificationAction.style)
             assertTrue(emittedActions[1] is EditProfileUiAction.NavigateBack)
 
             collectJob.cancel()
@@ -487,6 +493,7 @@ class EditProfileViewModelTest {
             val action = emittedActions.first() as EditProfileUiAction.ShowNotification
             assertTrue(action.message is UiText.DynamicString)
             assertEquals("Network timeout", (action.message as UiText.DynamicString).value)
+            assertEquals(TopPillStyle.ERROR, action.style)
 
             collectJob.cancel()
         }
@@ -515,6 +522,7 @@ class EditProfileViewModelTest {
                 R.string.profile_error_loading,
                 (action.message as UiText.StringResource).resId
             )
+            assertEquals(TopPillStyle.ERROR, action.style)
             coVerify(exactly = 0) { updateUserProfileUseCase(any(), any(), any(), any()) }
 
             collectJob.cancel()

@@ -23,5 +23,6 @@ data class SettingsPreferencesParams(
     val onPrivacyPolicyClick: () -> Unit,
     val onOpenSourceClick: () -> Unit,
     val onDeveloperInfoClick: () -> Unit,
-    val onCopyDiagnosticsClick: () -> Unit
+    val onCopyDiagnosticsClick: () -> Unit,
+    val onLocalAiPackClick: () -> Unit = {}
 )

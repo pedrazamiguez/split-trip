@@ -2,6 +2,7 @@ package es.pedrazamiguez.splittrip.domain.usecase.expense.impl
 
 import es.pedrazamiguez.splittrip.domain.enums.AppLanguage
 import es.pedrazamiguez.splittrip.domain.enums.GroupContext
+import es.pedrazamiguez.splittrip.domain.model.CategoryPredictionOutcome
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
 import es.pedrazamiguez.splittrip.domain.repository.UserPreferenceRepository
 import es.pedrazamiguez.splittrip.domain.service.ExpenseCategoryAiClassifierService
@@ -22,22 +23,42 @@ class SuggestExpenseCategoryUseCaseImpl(
         val trimmedTitle = title.trim()
         if (trimmedTitle.length < MIN_TITLE_LENGTH) return null
 
+        return classifyTierOne(trimmedTitle, groupContext)
+            ?: expenseCategoryAiClassifierService.classify(
+                title = trimmedTitle,
+                groupContext = groupContext
+            )
+    }
+
+    override suspend fun diagnose(
+        title: String,
+        groupContext: GroupContext
+    ): CategoryPredictionOutcome {
+        val trimmedTitle = title.trim()
+        if (trimmedTitle.length < MIN_TITLE_LENGTH) return CategoryPredictionOutcome.NoMatch
+
+        val localSuggestion = classifyTierOne(trimmedTitle, groupContext)
+        if (localSuggestion != null) {
+            return CategoryPredictionOutcome.Matched(localSuggestion)
+        }
+
+        return expenseCategoryAiClassifierService.classifyDetailed(
+            title = trimmedTitle,
+            groupContext = groupContext
+        )
+    }
+
+    private suspend fun classifyTierOne(
+        trimmedTitle: String,
+        groupContext: GroupContext
+    ): CategorySuggestion? {
         val activeLanguageCode = AppLanguage.resolveBaseLanguageCode(
             userPreferenceRepository.getAppLanguage().firstOrNull()
         )
-
-        val localSuggestion = expenseCategoryClassifierService.classify(
+        return expenseCategoryClassifierService.classify(
             title = trimmedTitle,
             groupContext = groupContext,
             languageCode = activeLanguageCode
-        )
-        if (localSuggestion != null) {
-            return localSuggestion
-        }
-
-        return expenseCategoryAiClassifierService.classify(
-            title = trimmedTitle,
-            groupContext = groupContext
         )
     }
 

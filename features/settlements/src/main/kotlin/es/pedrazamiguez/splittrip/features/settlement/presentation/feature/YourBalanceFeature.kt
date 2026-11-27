@@ -1,6 +1,7 @@
 package es.pedrazamiguez.splittrip.features.settlement.presentation.feature
 
 import android.app.Activity
+import android.content.Context
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -12,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import es.pedrazamiguez.splittrip.core.common.presentation.asString
 import es.pedrazamiguez.splittrip.core.designsystem.ad.InterstitialAdManager
 import es.pedrazamiguez.splittrip.core.designsystem.icon.TablerIcons
@@ -25,6 +27,8 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.EmptyStateView
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.ShimmerLoadingList
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.settlement.R
@@ -55,26 +59,13 @@ fun YourBalanceFeature(
 
     LaunchedEffect(Unit) {
         yourBalanceViewModel.actions.collectLatest { action ->
-            when (action) {
-                is YourBalanceUiAction.ShowError -> {
-                    pillController.showPill(message = action.message.asString(context))
-                }
-                is YourBalanceUiAction.ShowSuccess -> {
-                    val activity = context as? Activity
-                    if (activity != null) {
-                        interstitialAdManager.onActionCompleted(activity) {}
-                    }
-                    pillController.showPill(message = action.message.asString(context))
-                }
-                is YourBalanceUiAction.NavigateToDisputeSettlement -> {
-                    navController.navigate(
-                        Routes.disputeSettlementRoute(
-                            groupId = action.groupId,
-                            settlementId = action.settlementId
-                        )
-                    )
-                }
-            }
+            handleYourBalanceAction(
+                action = action,
+                context = context,
+                pillController = pillController,
+                interstitialAdManager = interstitialAdManager,
+                navController = navController
+            )
         }
     }
 
@@ -98,6 +89,41 @@ fun YourBalanceFeature(
                     )
                 )
             }
+        }
+    }
+}
+
+private fun handleYourBalanceAction(
+    action: YourBalanceUiAction,
+    context: Context,
+    pillController: TopPillController,
+    interstitialAdManager: InterstitialAdManager,
+    navController: NavController
+) {
+    when (action) {
+        is YourBalanceUiAction.ShowError -> {
+            pillController.showPill(
+                message = action.message.asString(context),
+                style = TopPillStyle.ERROR
+            )
+        }
+        is YourBalanceUiAction.ShowSuccess -> {
+            val activity = context as? Activity
+            if (activity != null) {
+                interstitialAdManager.onActionCompleted(activity) {}
+            }
+            pillController.showPill(
+                message = action.message.asString(context),
+                style = TopPillStyle.SUCCESS
+            )
+        }
+        is YourBalanceUiAction.NavigateToDisputeSettlement -> {
+            navController.navigate(
+                Routes.disputeSettlementRoute(
+                    groupId = action.groupId,
+                    settlementId = action.settlementId
+                )
+            )
         }
     }
 }

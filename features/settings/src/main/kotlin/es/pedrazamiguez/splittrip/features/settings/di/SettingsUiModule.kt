@@ -17,9 +17,13 @@ import es.pedrazamiguez.splittrip.domain.usecase.auth.SendPasswordResetEmailUseC
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SignOutUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.UnlinkProviderUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.diagnostic.GetDiagnosticLogsUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.expense.SuggestExpenseCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.GetNotificationPreferencesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.notification.UpdateNotificationPreferenceUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.CancelLocalAiModelPackDownloadUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ConsumeLanguagePillUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.DeleteLocalAiModelPackUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.DownloadLocalAiModelPackUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetAppThemeUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetBiometricCapabilityUseCase
@@ -29,10 +33,12 @@ import es.pedrazamiguez.splittrip.domain.usecase.setting.GetReceiptExtractionCap
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetShouldShowLanguagePillUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveDeveloperAccessUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveLocalAiModelPackStateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.ObservePlanAllowancesUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppLanguageUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetAppThemeUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetBiometricLockEnabledUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.SetLocalAiModelPackWifiOnlyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetUserDefaultCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.GetCurrentUserProfileUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.user.ObserveCurrentUserProfileUseCase
@@ -43,11 +49,13 @@ import es.pedrazamiguez.splittrip.domain.usecase.user.UpdateUserTierUseCase
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.AccountSecurityUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.AccountStatusUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.DeveloperInfoUiMapper
+import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.LocalAiModelPackUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.NotificationPreferencesUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.PlanAllowancesUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.SubscriptionsUiMapper
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.AccountSecurityUiMapperImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.AccountStatusUiMapperImpl
+import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.LocalAiModelPackUiMapperImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.NotificationPreferencesUiMapperImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.PlanAllowancesUiMapperImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.SubscriptionsUiMapperImpl
@@ -58,6 +66,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.Dev
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.DeveloperServicesScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.FaqScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.LanguageScreenUiProviderImpl
+import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.LocalAiModelPackScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.NotificationPreferencesScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.OpenSourceScreenUiProviderImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.impl.PlanAllowancesScreenUiProviderImpl
@@ -73,6 +82,7 @@ import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.Devel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.DeveloperServicesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.InstallationIdViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.LanguageViewModel
+import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.LocalAiModelPackViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.NotificationPreferencesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.PlanAllowancesViewModel
 import es.pedrazamiguez.splittrip.features.settings.presentation.viewmodel.SettingsViewModel
@@ -146,17 +156,15 @@ val settingsUiModule = module {
         val receiptOcrService = get<ReceiptOcrService>()
         val receiptExtractionService = get<ReceiptExtractionService>()
         val aiModelResolverService = get<AiModelResolverService>()
-        val observeCurrentUserProfileUseCase = get<ObserveCurrentUserProfileUseCase>()
-        val getCurrentUserProfileUseCase = get<GetCurrentUserProfileUseCase>()
-        val updateUserTierUseCase = get<UpdateUserTierUseCase>()
+        val observeLocalAiModelPackStateUseCase = get<ObserveLocalAiModelPackStateUseCase>()
+        val suggestExpenseCategoryUseCase = get<SuggestExpenseCategoryUseCase>()
         val observeDeveloperAccessUseCase = get<ObserveDeveloperAccessUseCase>()
         DeveloperServicesViewModel(
             receiptOcrService = receiptOcrService,
             receiptExtractionService = receiptExtractionService,
             aiModelResolver = aiModelResolverService,
-            observeCurrentUserProfileUseCase = observeCurrentUserProfileUseCase,
-            getCurrentUserProfileUseCase = getCurrentUserProfileUseCase,
-            updateUserTierUseCase = updateUserTierUseCase,
+            observeLocalAiModelPackStateUseCase = observeLocalAiModelPackStateUseCase,
+            suggestExpenseCategoryUseCase = suggestExpenseCategoryUseCase,
             observeDeveloperAccessUseCase = observeDeveloperAccessUseCase
         )
     }
@@ -212,6 +220,27 @@ val settingsUiModule = module {
 
     factory<PlanAllowancesUiMapper> {
         PlanAllowancesUiMapperImpl(localeProvider = get())
+    }
+
+    factory<LocalAiModelPackUiMapper> {
+        LocalAiModelPackUiMapperImpl(localeProvider = get())
+    }
+
+    viewModel {
+        val observeLocalAiModelPackStateUseCase = get<ObserveLocalAiModelPackStateUseCase>()
+        val downloadLocalAiModelPackUseCase = get<DownloadLocalAiModelPackUseCase>()
+        val cancelLocalAiModelPackDownloadUseCase = get<CancelLocalAiModelPackDownloadUseCase>()
+        val deleteLocalAiModelPackUseCase = get<DeleteLocalAiModelPackUseCase>()
+        val setLocalAiModelPackWifiOnlyUseCase = get<SetLocalAiModelPackWifiOnlyUseCase>()
+        val localAiModelPackUiMapper = get<LocalAiModelPackUiMapper>()
+        LocalAiModelPackViewModel(
+            observeLocalAiModelPackStateUseCase = observeLocalAiModelPackStateUseCase,
+            downloadLocalAiModelPackUseCase = downloadLocalAiModelPackUseCase,
+            cancelLocalAiModelPackDownloadUseCase = cancelLocalAiModelPackDownloadUseCase,
+            deleteLocalAiModelPackUseCase = deleteLocalAiModelPackUseCase,
+            setLocalAiModelPackWifiOnlyUseCase = setLocalAiModelPackWifiOnlyUseCase,
+            localAiModelPackUiMapper = localAiModelPackUiMapper
+        )
     }
 
     viewModel {
@@ -283,4 +312,5 @@ val settingsUiModule = module {
     single { PrivacyPolicyScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { OpenSourceScreenUiProviderImpl() } bind ScreenUiProvider::class
     single { DeveloperInfoScreenUiProviderImpl() } bind ScreenUiProvider::class
+    single { LocalAiModelPackScreenUiProviderImpl() } bind ScreenUiProvider::class
 }

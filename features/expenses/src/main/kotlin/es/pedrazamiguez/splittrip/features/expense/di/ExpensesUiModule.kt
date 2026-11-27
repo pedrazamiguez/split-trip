@@ -46,6 +46,7 @@ import es.pedrazamiguez.splittrip.domain.usecase.group.ObserveSelectedGroupUseCa
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.GetGroupLastUsedPaymentMethodUseCase
+import es.pedrazamiguez.splittrip.domain.usecase.setting.ObserveLocalAiModelPackStateUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCategoryUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedCurrencyUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.setting.SetGroupLastUsedPaymentMethodUseCase
@@ -62,6 +63,7 @@ import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.AiReceipt
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseDetailUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpenseUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ExpensesFilterUiMapper
+import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.LocalAiPackBannerUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.ManualReceiptQuotaUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.mapper.PaymentStatusBadgeUiMapper
 import es.pedrazamiguez.splittrip.features.expense.presentation.screen.impl.AddExpenseScreenUiProviderImpl
@@ -140,6 +142,12 @@ val expensesUiModule = module {
     single {
         ManualReceiptQuotaUiMapper(
             resourceProvider = get<ResourceProvider>()
+        )
+    }
+
+    single {
+        LocalAiPackBannerUiMapper(
+            localeProvider = get<LocaleProvider>()
         )
     }
 
@@ -322,6 +330,8 @@ val expensesUiModule = module {
             telemetryTracker = get<TelemetryTracker>()
         )
 
+        val observeLocalAiModelPackStateUseCase = get<ObserveLocalAiModelPackStateUseCase>()
+        val localAiPackBannerUiMapper = get<LocalAiPackBannerUiMapper>()
         val receiptAutoFillEventHandler = ReceiptAutoFillEventHandler(
             extractReceiptFieldsUseCase = get<ExtractReceiptFieldsUseCase>(),
             receiptExtractionService = get<ReceiptExtractionService>(),
@@ -329,7 +339,9 @@ val expensesUiModule = module {
             addExpenseUiMapper = addExpenseUiMapper,
             featureGateService = featureGateService,
             aiReceiptQuotaUiMapper = aiReceiptQuotaUiMapper,
-            telemetryTracker = get<TelemetryTracker>()
+            telemetryTracker = get<TelemetryTracker>(),
+            observeLocalAiModelPackStateUseCase = observeLocalAiModelPackStateUseCase,
+            localAiPackBannerUiMapper = localAiPackBannerUiMapper
         )
 
         val categorySuggestionEventHandler = CategorySuggestionEventHandler(

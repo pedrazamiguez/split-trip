@@ -30,6 +30,8 @@
     <string name="settings_preferences_notifications_title">Notifications</string>
     <string name="settings_preferences_notifications_description">Reminders &amp; alerts</string>
     <string name="settings_preferences_currency_title">Default Currency</string>
+    <string name="settings_preferences_local_ai_pack_title">Local AI Pack</string>
+    <string name="settings_preferences_local_ai_pack_description">Offline AI models</string>
 
     <!-- Developer Options Section -->
     <string name="settings_section_developer">Developer Options</string>
@@ -104,6 +106,7 @@
     <string name="developer_services_extraction_vendor">Vendor:</string>
     <string name="developer_services_extraction_payment_method">Payment Method:</string>
     <string name="developer_services_extraction_category">Category:</string>
+    <string name="developer_services_extraction_subcategory">Subcategory:</string>
     <string name="developer_services_extraction_notes">Notes:</string>
     <string name="developer_services_extraction_source">Source:</string>
     <string name="developer_services_extraction_confidence">Confidence:</string>
@@ -115,7 +118,12 @@
     <string name="developer_services_ai_model_automatic">Automatic (Default)</string>
     <string name="developer_services_ai_model_ai_core">AICore (Gemma 4)</string>
     <string name="developer_services_ai_model_lite_rt">LiteRT-LM</string>
-    <string name="developer_services_ai_model_resolved_label">Active Resolved Engine: %1$s</string>
+    <string name="developer_services_ai_model_resolved_prefix">Active engine:</string>
+    <string name="developer_services_ai_model_picker_title">Select AI Engine</string>
+    <string name="developer_services_ai_model_automatic_subtitle">Uses AICore when supported, otherwise installed LiteRT-LM pack</string>
+    <string name="developer_services_ai_model_ai_core_subtitle">System-managed on-device Gemini Nano / Gemma</string>
+    <string name="developer_services_ai_model_lite_rt_installed_subtitle">Tier: %1$s · %2$s</string>
+    <string name="developer_services_ai_model_lite_rt_not_installed_subtitle">No local AI model pack installed</string>
     <string name="developer_services_extraction_confidence_high">High</string>
     <string name="developer_services_extraction_confidence_medium">Medium</string>
     <string name="developer_services_extraction_confidence_low">Low</string>
@@ -126,25 +134,36 @@
     <!-- Developer services navigation tabs -->
     <string name="developer_services_tab_ocr">OCR</string>
     <string name="developer_services_tab_ai_extraction">Parser</string>
-    <string name="developer_services_tab_billing">Billing</string>
+    <string name="developer_services_tab_category_suggestion">Categories</string>
 
     <!-- AI Extraction tab -->
     <string name="developer_services_ai_no_receipt">Select a receipt photo or PDF to extract data using on-device AI</string>
     <string name="developer_services_ai_select_receipt">Select Receipt</string>
+    <string name="developer_services_ai_extracting_title">Extracting receipt details…</string>
+    <string name="developer_services_ai_extracting_subtitle">Running OCR and on-device AI inference</string>
 
     <!-- AI Engines -->
     <string name="developer_services_ai_engine_ai_core">AICore (Gemma 4)</string>
     <string name="developer_services_ai_engine_lite_rt">LiteRT-LM (CD)</string>
     <string name="developer_services_extraction_source_lite_rt">LiteRT-LM</string>
 
-    <!-- Billing tab -->
-    <string name="developer_services_billing_section_title">Subscription Tier</string>
-    <string name="developer_services_billing_current_tier">Current tier:</string>
-    <string name="developer_services_billing_reset_free">Reset tier to FREE</string>
-    <string name="developer_services_billing_set_pro">Set tier to PRO</string>
-    <string name="developer_services_billing_tier_updated">Subscription tier updated to %1$s.</string>
-    <string name="developer_services_billing_update_error">Failed to update subscription tier.</string>
-    <string name="developer_services_billing_no_user_error">No signed-in user available to update tier.</string>
+    <!-- Category Suggestion tab -->
+    <string name="developer_services_category_input_title">Category Prediction</string>
+    <string name="developer_services_category_input_label">Expense title</string>
+    <string name="developer_services_category_input_placeholder">e.g., Dinner at La Tapería, Uber to airport</string>
+    <string name="developer_services_category_loading">Classifying expense title…</string>
+    <string name="developer_services_category_result_title">Prediction Result</string>
+    <string name="developer_services_category_source_label">Resolution mode</string>
+    <string name="developer_services_category_source_local_rules">Local Rules</string>
+    <string name="developer_services_category_source_on_device_ai">On-Device AI</string>
+    <string name="developer_services_category_engine_label">Active model:</string>
+    <string name="developer_services_category_idle_title">Test Category Prediction</string>
+    <string name="developer_services_category_idle_description">Type an expense title (at least 2 characters) to inspect local rules and on-device AI matching.</string>
+    <string name="developer_services_category_no_match_title">No matching category</string>
+    <string name="developer_services_category_no_match_description">Neither local rules nor on-device AI matched a category for this title.</string>
+    <string name="developer_services_category_error_fallback">Category prediction failed</string>
+    <string name="developer_services_category_ai_unavailable">Local rules did not match, and on-device AI is unavailable on this device.</string>
+    <string name="developer_services_category_ai_timeout">On-device AI timed out after %1$ds.</string>
 
     <!-- Language Selection -->
     <string name="settings_preferences_language_dialog_title">Select Language</string>
@@ -383,5 +402,81 @@
     <string name="plan_allowances_quota_ai_scans_subtitle_unsupported">On-device AI is not supported on this device</string>
     <string name="plan_allowances_status_not_supported">Not supported</string>
     <string name="plan_allowances_upgrade_description_no_ai">Upgrade to SplitTrip Pro for unlimited groups, larger member limits, unlimited media uploads, full PDF &amp; CSV exports, unlimited subunits, and an ad-free experience.</string>
+
+    <!-- Local AI Model Pack Screen -->
+    <string name="local_ai_pack_title">Local AI Pack</string>
+    <string name="local_ai_pack_subtitle">Offline receipt &amp; category AI</string>
+    <string name="local_ai_pack_badge_not_installed">Not Installed</string>
+    <string name="local_ai_pack_badge_downloading">Downloading</string>
+    <string name="local_ai_pack_badge_verifying">Verifying</string>
+    <string name="local_ai_pack_badge_installed">Installed</string>
+    <string name="local_ai_pack_badge_incompatible">Incompatible</string>
+    <string name="local_ai_pack_badge_error">Error</string>
+    <string name="local_ai_pack_badge_pro_feature">Pro Feature</string>
+    <string name="local_ai_pack_status_pro_required_title">Unlock Local AI Pack</string>
+    <string name="local_ai_pack_status_pro_required_desc">Upgrade to SplitTrip Pro to download the enhanced offline AI model pack for fast receipt extraction and category prediction.</string>
+    <string name="local_ai_pack_status_not_installed_title">Ready to download</string>
+    <string name="local_ai_pack_status_not_installed_desc">Download the optional local AI pack to run faster offline receipt extraction directly on your device.</string>
+    <string name="local_ai_pack_status_downloading_title">Downloading AI pack…</string>
+    <string name="local_ai_pack_status_downloading_desc">Keep Wi-Fi connected or allow mobile data below while the model pack downloads in the background.</string>
+    <string name="local_ai_pack_status_verifying_title">Verifying integrity…</string>
+    <string name="local_ai_pack_status_verifying_desc">Checking SHA-256 signature before activating the local AI model.</string>
+    <string name="local_ai_pack_status_installed_title">Local AI Pack ready</string>
+    <string name="local_ai_pack_status_installed_desc">Your device is using the downloaded LiteRT-LM pack for offline AI extraction.</string>
+    <string name="local_ai_pack_status_update_available_desc">A newer version of the local AI pack is available to download.</string>
+    <string name="local_ai_pack_status_incompatible_title">Device not compatible</string>
+    <string name="local_ai_pack_status_disabled_title">Pack unavailable</string>
+    <string name="local_ai_pack_status_error_title">Download failed</string>
+    <string name="local_ai_pack_incompatible_abi">64-bit ARM processor required</string>
+    <string name="local_ai_pack_incompatible_ram">Requires at least %1$d MB RAM</string>
+    <string name="local_ai_pack_incompatible_storage">Requires at least %1$s free storage</string>
+    <string name="local_ai_pack_incompatible_disabled">Temporarily unavailable</string>
+    <string name="local_ai_pack_error_not_entitled">Requires an active SplitTrip Pro subscription.</string>
+    <string name="local_ai_pack_error_network">Network error while downloading. Check your connection and retry.</string>
+    <string name="local_ai_pack_error_wifi_required">Waiting for an unmetered Wi-Fi connection.</string>
+    <string name="local_ai_pack_error_storage">Not enough free storage to save the model pack.</string>
+    <string name="local_ai_pack_error_checksum">Downloaded file verification failed. Please retry.</string>
+    <string name="local_ai_pack_error_invalid_config">Model pack configuration is invalid or unavailable.</string>
+    <string name="local_ai_pack_error_io">Could not save the model pack to device storage.</string>
+    <string name="local_ai_pack_error_cancelled">Download was cancelled.</string>
+    <string name="local_ai_pack_error_unknown">An unexpected error occurred during download.</string>
+    <string name="local_ai_pack_section_details">Preferences &amp; Device</string>
+    <string name="local_ai_pack_wifi_only_title">Download on Wi-Fi only</string>
+    <string name="local_ai_pack_wifi_only_subtitle">Avoid mobile data charges for large model downloads</string>
+    <string name="local_ai_pack_compatibility_label">Device compatibility</string>
+    <string name="local_ai_pack_compatibility_supported">Compatible</string>
+    <string name="local_ai_pack_compatibility_unsupported">Incompatible</string>
+    <string name="local_ai_pack_compatibility_disabled">Unavailable</string>
+    <string name="local_ai_pack_active_engine_label">Active AI engine</string>
+    <string name="local_ai_pack_engine_lite_rt">Local AI Pack (LiteRT)</string>
+    <string name="local_ai_pack_engine_ai_core">Device AI (AICore)</string>
+    <string name="local_ai_pack_engine_unavailable">Not available</string>
+    <string name="local_ai_pack_version_format">v%1$s</string>
+    <string name="local_ai_pack_progress_format">%1$d%% (%2$s / %3$s)</string>
+    <string name="local_ai_pack_action_download">Download Pack</string>
+    <string name="local_ai_pack_action_update">Update Pack</string>
+    <string name="local_ai_pack_action_retry">Retry Download</string>
+    <string name="local_ai_pack_action_cancel">Cancel Download</string>
+    <string name="local_ai_pack_action_delete">Delete Model Pack</string>
+    <string name="local_ai_pack_action_upgrade">Upgrade to Pro</string>
+    <string name="local_ai_pack_delete_dialog_title">Delete Local AI Pack?</string>
+    <string name="local_ai_pack_delete_dialog_message">This removes the downloaded model from your device storage. You can download it again anytime.</string>
+    <string name="local_ai_pack_delete_dialog_confirm">Delete</string>
+    <string name="local_ai_pack_pill_download_started">Model pack download scheduled</string>
+    <string name="local_ai_pack_pill_download_failed">Could not start download</string>
+    <string name="local_ai_pack_pill_download_cancelled">Download cancelled</string>
+    <string name="local_ai_pack_pill_deleted">Local AI pack deleted</string>
+    <string name="local_ai_pack_pill_action_failed">Operation failed. Please try again.</string>
+    <string name="local_ai_pack_section_available_models">Available Model Packs</string>
+    <string name="local_ai_pack_badge_recommended">Recommended</string>
+    <string name="local_ai_pack_badge_compatible">Compatible</string>
+    <string name="local_ai_pack_tier_compact">Compact</string>
+    <string name="local_ai_pack_tier_balanced">Balanced</string>
+    <string name="local_ai_pack_tier_high_quality">High Quality</string>
+    <string name="local_ai_pack_requirements_format">Min %1$d MB RAM · %2$s storage</string>
+    <string name="local_ai_pack_action_switch">Switch Pack</string>
+    <string name="local_ai_pack_status_installed_named_desc">Active model: %1$s. Running offline via LiteRT-LM.</string>
+    <string name="local_ai_pack_status_downloading_named_title">Downloading %1$s…</string>
+    <string name="local_ai_pack_status_verifying_named_title">Verifying %1$s…</string>
 </resources>
 

@@ -14,6 +14,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalTabNavContro
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.domain.model.ExpenseFilterCriteria
 import es.pedrazamiguez.splittrip.features.expense.navigation.KEY_APPLIED_FILTER_CRITERIA
@@ -137,15 +138,15 @@ private fun handleExpenseUiAction(
 ) {
     when (action) {
         is ExpensesUiAction.ShowLoadError ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.ERROR)
         is ExpensesUiAction.ShowDeleteSuccess ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.SUCCESS)
         is ExpensesUiAction.ShowDeleteError ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.ERROR)
         is ExpensesUiAction.ShowCancelSuccess ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.SUCCESS)
         is ExpensesUiAction.ShowCancelError ->
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(message = action.message.asString(context), style = TopPillStyle.ERROR)
         is ExpensesUiAction.ScrollToTop -> Unit
     }
 }

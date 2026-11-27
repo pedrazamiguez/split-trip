@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.domain.usecase.auth.GetLinkedProvidersUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.IsUserAnonymousUseCase
 import es.pedrazamiguez.splittrip.domain.usecase.auth.SendPasswordResetEmailUseCase
@@ -128,11 +129,21 @@ class AccountSecurityViewModel(
                 _uiState.update { it.copy(isPasswordResetSending = false) }
                 if (result.isSuccess) {
                     val message = accountSecurityUiMapper.formatPasswordResetSuccessMessage(email)
-                    _actions.send(AccountSecurityUiAction.ShowTopPill(message))
+                    _actions.send(
+                        AccountSecurityUiAction.ShowTopPill(
+                            message = message,
+                            style = TopPillStyle.SUCCESS
+                        )
+                    )
                 } else {
                     val errorMsg = result.exceptionOrNull()?.message ?: "Unknown error"
                     val message = UiText.StringResource(R.string.account_security_error_prefix, errorMsg)
-                    _actions.send(AccountSecurityUiAction.ShowTopPill(message))
+                    _actions.send(
+                        AccountSecurityUiAction.ShowTopPill(
+                            message = message,
+                            style = TopPillStyle.ERROR
+                        )
+                    )
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -141,7 +152,12 @@ class AccountSecurityViewModel(
                 _uiState.update { it.copy(isPasswordResetSending = false) }
                 val errorMsg = e.message ?: "Unknown error"
                 val message = UiText.StringResource(R.string.account_security_error_prefix, errorMsg)
-                _actions.send(AccountSecurityUiAction.ShowTopPill(message))
+                _actions.send(
+                    AccountSecurityUiAction.ShowTopPill(
+                        message = message,
+                        style = TopPillStyle.ERROR
+                    )
+                )
             }
         }
     }
@@ -166,7 +182,12 @@ class AccountSecurityViewModel(
                         R.string.account_security_error_prefix,
                         e.message ?: "Failed to disable biometric lock"
                     )
-                    _actions.send(AccountSecurityUiAction.ShowTopPill(message))
+                    _actions.send(
+                        AccountSecurityUiAction.ShowTopPill(
+                            message = message,
+                            style = TopPillStyle.ERROR
+                        )
+                    )
                 }
             }
         }
@@ -185,7 +206,12 @@ class AccountSecurityViewModel(
                     R.string.account_security_error_prefix,
                     e.message ?: "Failed to enable biometric lock"
                 )
-                _actions.send(AccountSecurityUiAction.ShowTopPill(message))
+                _actions.send(
+                    AccountSecurityUiAction.ShowTopPill(
+                        message = message,
+                        style = TopPillStyle.ERROR
+                    )
+                )
             }
         }
     }

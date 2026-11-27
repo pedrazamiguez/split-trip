@@ -519,4 +519,10 @@
     <string name="add_expense_receipt_free_attachments_exhausted">0 recibos gratis restantes este mes</string>
     <string name="add_expense_receipt_unlock_with_pro">Desbloquea recibos ilimitados con Pro</string>
     <string name="add_expense_receipt_monthly_limit_reached">Has usado tus %1$d adjuntos de recibos mensuales.</string>
+
+    <!-- Local AI Pack Opt-In Banner -->
+    <string name="expense_local_ai_banner_enable_title">Activar escaneo IA sin conexión</string>
+    <string name="expense_local_ai_banner_enable_description">Descarga el paquete de IA local para activar el escaneo de recibos sin conexión en este dispositivo.</string>
+    <string name="expense_local_ai_banner_action">Gestionar paquete de IA local</string>
+    <string name="expense_local_ai_banner_dismiss_cd">Descartar aviso de paquete de IA local</string>
 </resources>

@@ -22,6 +22,7 @@ exifinterface = "1.4.2"
 firebaseBom = "35.2.0"
 firebasePerfPlugin = "2.0.2"
 googleAiEdgeAicore = "0.0.1-exp02"
+googleAiEdgeLitertlm = "0.20.0"
 googleServices = "4.6.0"
 googleid = "1.2.1"
 graphicsShapes = "1.1.0"
@@ -111,6 +112,7 @@ firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 firebase-perf = { module = "com.google.firebase:firebase-perf" }
 firebase-storage = { module = "com.google.firebase:firebase-storage" }
 google-ai-edge-aicore = { module = "com.google.ai.edge.aicore:aicore", version.ref = "googleAiEdgeAicore" }
+google-ai-edge-litertlm = { module = "com.google.ai.edge.litertlm:litertlm-android", version.ref = "googleAiEdgeLitertlm" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }

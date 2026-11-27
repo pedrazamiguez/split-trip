@@ -10,6 +10,8 @@ import es.pedrazamiguez.splittrip.data.firebase.R
 import es.pedrazamiguez.splittrip.data.firebase.config.CategoryClassifierRulesParser
 import es.pedrazamiguez.splittrip.domain.model.CategoryClassifierRuleConfig
 import es.pedrazamiguez.splittrip.domain.model.DeveloperInfo
+import es.pedrazamiguez.splittrip.domain.model.ModelPackCatalog
+import es.pedrazamiguez.splittrip.domain.model.ModelPackConfig
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -134,6 +136,10 @@ class FirebaseAppConfigRepository(
     private val _categoryClassifierRules = MutableStateFlow(CategoryClassifierRuleConfig.EMPTY)
     override val categoryClassifierRules: StateFlow<CategoryClassifierRuleConfig> =
         _categoryClassifierRules.asStateFlow()
+
+    private val _localAiModelPackCatalog = MutableStateFlow(DEFAULT_MODEL_PACK_CATALOG)
+    override val localAiModelPackCatalog: StateFlow<ModelPackCatalog> =
+        _localAiModelPackCatalog.asStateFlow()
 
     init {
         remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
@@ -323,6 +329,12 @@ class FirebaseAppConfigRepository(
         val allowlistStr = remoteConfig.getString("developer_allowlist_email_hashes")
         _developerAllowlistEmailHashes.value =
             parseAllowlistHashes(allowlistStr, DEFAULT_DEVELOPER_ALLOWLIST_EMAIL_HASHES)
+        val modelPackJson = remoteConfig.getString(KEY_LOCAL_AI_MODEL_PACK_JSON)
+        _localAiModelPackCatalog.value = FirebaseModelPackConfigParser.parseCatalog(
+            gson = gson,
+            jsonStr = modelPackJson,
+            defaultCatalog = DEFAULT_MODEL_PACK_CATALOG
+        )
     }
 
     private fun updateAppUpdateFlows() {
@@ -411,6 +423,24 @@ class FirebaseAppConfigRepository(
         private val DEFAULT_OPTIONAL_UPDATE_VERSION_CODES: Set<Long> = emptySet()
         private const val DEFAULT_OPTIONAL_UPDATE_COOLDOWN_HOURS = 24L
         private const val KEY_CATEGORY_CLASSIFIER_RULES_JSON = "category_classifier_rules_json"
+        private const val KEY_LOCAL_AI_MODEL_PACK_JSON = "local_ai_model_pack_json"
+        private const val DEFAULT_MODEL_PACK_MIN_RAM_MB = 4096
+        private const val DEFAULT_MODEL_PACK_MIN_STORAGE_BYTES = 1_073_741_824L
+
+        val DEFAULT_MODEL_PACK_CONFIG = ModelPackConfig(
+            packId = "gemma-litert-receipt-v1",
+            version = "1.0.0",
+            downloadUrl = "",
+            sha256Checksum = "",
+            sizeBytes = 0L,
+            minRamMb = DEFAULT_MODEL_PACK_MIN_RAM_MB,
+            minFreeStorageBytes = DEFAULT_MODEL_PACK_MIN_STORAGE_BYTES,
+            isEnabled = false
+        )
+
+        val DEFAULT_MODEL_PACK_CATALOG = ModelPackCatalog(
+            packs = listOf(DEFAULT_MODEL_PACK_CONFIG)
+        )
 
         private const val LANG_EN = "en"
         private const val LANG_ES = "es"

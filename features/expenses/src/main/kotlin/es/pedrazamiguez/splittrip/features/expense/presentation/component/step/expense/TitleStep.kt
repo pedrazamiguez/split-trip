@@ -17,6 +17,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.input
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.wizard.WizardStepLayout
 import es.pedrazamiguez.splittrip.features.expense.R
 import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.AiScanPromptCard
+import es.pedrazamiguez.splittrip.features.expense.presentation.component.form.receipt.LocalAiPackPromptBanner
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.event.AddExpenseUiEvent
 import es.pedrazamiguez.splittrip.features.expense.presentation.viewmodel.state.AddExpenseUiState
 
@@ -48,6 +49,14 @@ fun TitleStep(
                     remainingScansLabel = uiState.aiRemainingScansLabel,
                     isQuotaExhausted = uiState.isAiGated
                 )
+            } else if (!uiState.isAiCapable && !uiState.isEditMode) {
+                uiState.localAiPackBanner?.let { banner ->
+                    LocalAiPackPromptBanner(
+                        banner = banner,
+                        onManageClick = { onEvent(AddExpenseUiEvent.OpenLocalAiPackSettings) },
+                        onDismissClick = { onEvent(AddExpenseUiEvent.DismissLocalAiPackBanner) }
+                    )
+                }
             }
 
             StyledOutlinedTextField(

@@ -46,6 +46,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layou
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.security.AppLockGate
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillNotification
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.rememberTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.screen.ScreenUiProvider
 import es.pedrazamiguez.splittrip.core.designsystem.transition.NavTransitionDefaults
@@ -335,7 +336,10 @@ fun AppNavHost(
                                                     // Standard user cancellations — do not show error pill
                                                 }
                                                 else -> {
-                                                    pillController.showPill(genericError)
+                                                    pillController.showPill(
+                                                        message = genericError,
+                                                        style = TopPillStyle.ERROR
+                                                    )
                                                 }
                                             }
                                         }

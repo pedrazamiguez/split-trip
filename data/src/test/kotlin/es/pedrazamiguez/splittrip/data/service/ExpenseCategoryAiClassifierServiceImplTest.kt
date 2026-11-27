@@ -1,11 +1,16 @@
 package es.pedrazamiguez.splittrip.data.service
 
+import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseCategory
 import es.pedrazamiguez.splittrip.domain.enums.ExpenseSubcategory
 import es.pedrazamiguez.splittrip.domain.enums.GroupContext
+import es.pedrazamiguez.splittrip.domain.exception.LocalAiModelUnavailableException
+import es.pedrazamiguez.splittrip.domain.model.CategoryPredictionOutcome
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestion
 import es.pedrazamiguez.splittrip.domain.model.CategorySuggestionSource
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
+import es.pedrazamiguez.splittrip.domain.service.AiModelResolverService
+import es.pedrazamiguez.splittrip.domain.service.LocalAiModelPackService
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -14,6 +19,7 @@ import io.mockk.slot
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -30,13 +36,25 @@ class ExpenseCategoryAiClassifierServiceImplTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var aiCoreCapabilityProvider: AICoreCapabilityProvider
     private lateinit var aiInferenceRepository: AiInferenceRepository
-    private var lazyInitialized = false
+    private lateinit var liteRtInferenceRepository: AiInferenceRepository
+    private lateinit var aiModelResolver: AiModelResolverService
+    private lateinit var localAiModelPackService: LocalAiModelPackService
+    private val activeModelFlow = MutableStateFlow(AiEngineType.AI_CORE_GEMMA_4)
+    private var aiCoreLazyInitialized = false
+    private var liteRtLazyInitialized = false
 
     @BeforeEach
     fun setUp() {
         aiCoreCapabilityProvider = mockk()
         aiInferenceRepository = mockk()
-        lazyInitialized = false
+        liteRtInferenceRepository = mockk()
+        aiModelResolver = mockk()
+        localAiModelPackService = mockk()
+        activeModelFlow.value = AiEngineType.AI_CORE_GEMMA_4
+        every { aiModelResolver.getActiveModel() } returns activeModelFlow
+        every { localAiModelPackService.isPackInstalled() } returns false
+        aiCoreLazyInitialized = false
+        liteRtLazyInitialized = false
     }
 
     private fun createService(
@@ -45,9 +63,15 @@ class ExpenseCategoryAiClassifierServiceImplTest {
         return ExpenseCategoryAiClassifierServiceImpl(
             aiCoreCapabilityProvider = aiCoreCapabilityProvider,
             aiCoreInferenceRepository = lazy {
-                lazyInitialized = true
+                aiCoreLazyInitialized = true
                 aiInferenceRepository
             },
+            liteRtInferenceRepository = lazy {
+                liteRtLazyInitialized = true
+                liteRtInferenceRepository
+            },
+            aiModelResolver = aiModelResolver,
+            localAiModelPackService = localAiModelPackService,
             defaultDispatcher = testDispatcher,
             inferenceTimeoutMs = timeoutMs
         )
@@ -61,7 +85,8 @@ class ExpenseCategoryAiClassifierServiceImplTest {
         val result = service.classify("Dinner", GroupContext.TRAVEL)
 
         assertNull(result)
-        assertFalse(lazyInitialized)
+        assertFalse(aiCoreLazyInitialized)
+        assertFalse(liteRtLazyInitialized)
         coVerify(exactly = 0) { aiInferenceRepository.generateContent(any()) }
     }
 
@@ -73,7 +98,8 @@ class ExpenseCategoryAiClassifierServiceImplTest {
         val result = service.classify("  \n\"\"  ", GroupContext.TRAVEL)
 
         assertNull(result)
-        assertFalse(lazyInitialized)
+        assertFalse(aiCoreLazyInitialized)
+        assertFalse(liteRtLazyInitialized)
         coVerify(exactly = 0) { aiInferenceRepository.generateContent(any()) }
     }
 
@@ -291,5 +317,200 @@ class ExpenseCategoryAiClassifierServiceImplTest {
             assertTrue(prompt.contains("HEALTH_PERSONAL_CARE:"))
             assertFalse(prompt.contains("LODGING:"))
             assertFalse(prompt.contains("ACTIVITIES:"))
+        }
+
+    @Test
+    fun `uses LITE_RT_LM structured output when AICore is unsupported and local pack is installed and active`() =
+        runTest(testDispatcher) {
+            every { aiCoreCapabilityProvider.isSupported() } returns false
+            activeModelFlow.value = AiEngineType.LITE_RT_LM
+            every { localAiModelPackService.isPackInstalled() } returns true
+            coEvery { liteRtInferenceRepository.generateStructuredOutput(any(), any()) } returns Result.success(
+                """{"category":"FOOD","subcategory":"RESTAURANT"}"""
+            )
+            val service = createService()
+
+            val result = service.classify("Dinner at Bistro", GroupContext.TRAVEL)
+
+            assertEquals(
+                CategorySuggestion(
+                    category = ExpenseCategory.FOOD,
+                    subcategory = ExpenseSubcategory.RESTAURANT,
+                    source = CategorySuggestionSource.ON_DEVICE_AI
+                ),
+                result
+            )
+            assertTrue(liteRtLazyInitialized)
+            assertFalse(aiCoreLazyInitialized)
+        }
+
+    @Test
+    fun `returns null without initializing either repository when neither engine is available`() =
+        runTest(testDispatcher) {
+            every { aiCoreCapabilityProvider.isSupported() } returns false
+            every { localAiModelPackService.isPackInstalled() } returns false
+
+            activeModelFlow.value = AiEngineType.AI_CORE_GEMMA_4
+            assertNull(createService().classify("Dinner", GroupContext.TRAVEL))
+            assertFalse(aiCoreLazyInitialized)
+            assertFalse(liteRtLazyInitialized)
+
+            activeModelFlow.value = AiEngineType.LITE_RT_LM
+            assertNull(createService().classify("Dinner", GroupContext.TRAVEL))
+            assertFalse(aiCoreLazyInitialized)
+            assertFalse(liteRtLazyInitialized)
+        }
+
+    @Test
+    fun `falls back to AI_CORE_GEMMA_4 when LITE_RT_LM is active but pack is not installed and AICore is supported`() =
+        runTest(testDispatcher) {
+            activeModelFlow.value = AiEngineType.LITE_RT_LM
+            every { localAiModelPackService.isPackInstalled() } returns false
+            every { aiCoreCapabilityProvider.isSupported() } returns true
+            coEvery { aiInferenceRepository.generateContent(any()) } returns Result.success(
+                """{"category":"TRANSPORT","subcategory":"TRAIN"}"""
+            )
+            val service = createService()
+
+            val result = service.classify("Renfe ticket", GroupContext.TRAVEL)
+
+            assertEquals(
+                CategorySuggestion(
+                    category = ExpenseCategory.TRANSPORT,
+                    subcategory = ExpenseSubcategory.TRAIN,
+                    source = CategorySuggestionSource.ON_DEVICE_AI
+                ),
+                result
+            )
+            assertFalse(liteRtLazyInitialized)
+            assertTrue(aiCoreLazyInitialized)
+        }
+
+    @Test
+    fun `falls back to AI_CORE_GEMMA_4 when LITE_RT_LM inference fails and AICore is supported`() =
+        runTest(testDispatcher) {
+            activeModelFlow.value = AiEngineType.LITE_RT_LM
+            every { localAiModelPackService.isPackInstalled() } returns true
+            every { aiCoreCapabilityProvider.isSupported() } returns true
+            coEvery { liteRtInferenceRepository.generateStructuredOutput(any(), any()) } returns
+                Result.failure(LocalAiModelUnavailableException("Failed"))
+            coEvery { aiInferenceRepository.generateContent(any()) } returns Result.success(
+                """{"category":"LODGING","subcategory":"HOTEL"}"""
+            )
+            val service = createService()
+
+            val result = service.classify("Hotel stay", GroupContext.TRAVEL)
+
+            assertEquals(
+                CategorySuggestion(
+                    category = ExpenseCategory.LODGING,
+                    subcategory = ExpenseSubcategory.HOTEL,
+                    source = CategorySuggestionSource.ON_DEVICE_AI
+                ),
+                result
+            )
+        }
+
+    @Test
+    fun `rethrows CancellationException from LITE_RT_LM without falling back to AICore`() {
+        activeModelFlow.value = AiEngineType.LITE_RT_LM
+        every { localAiModelPackService.isPackInstalled() } returns true
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+        coEvery { liteRtInferenceRepository.generateStructuredOutput(any(), any()) } returns
+            Result.failure(CancellationException("Cancelled"))
+        val service = createService()
+
+        assertThrows(CancellationException::class.java) {
+            runTest(testDispatcher) {
+                service.classify("Cancelled", GroupContext.TRAVEL)
+            }
+        }
+        assertFalse(aiCoreLazyInitialized)
+    }
+
+    @Test
+    fun `prefers AI_CORE_GEMMA_4 when resolved active model is AI_CORE_GEMMA_4 without initializing LiteRT`() =
+        runTest(testDispatcher) {
+            activeModelFlow.value = AiEngineType.AI_CORE_GEMMA_4
+            every { aiCoreCapabilityProvider.isSupported() } returns true
+            coEvery { aiInferenceRepository.generateContent(any()) } returns Result.success(
+                """{"category":"FOOD","subcategory":"CAFE_BREAKFAST"}"""
+            )
+            val service = createService()
+
+            val result = service.classify("Morning coffee", GroupContext.TRAVEL)
+
+            assertEquals(
+                CategorySuggestion(
+                    category = ExpenseCategory.FOOD,
+                    subcategory = ExpenseSubcategory.CAFE_BREAKFAST,
+                    source = CategorySuggestionSource.ON_DEVICE_AI
+                ),
+                result
+            )
+            assertTrue(aiCoreLazyInitialized)
+            assertFalse(liteRtLazyInitialized)
+        }
+
+    @Test
+    fun `classifyDetailed returns AiUnavailable when neither engine is supported`() = runTest(testDispatcher) {
+        every { aiCoreCapabilityProvider.isSupported() } returns false
+        every { localAiModelPackService.isPackInstalled() } returns false
+
+        val outcome = createService().classifyDetailed("Towels", GroupContext.EVERYDAY)
+
+        assertEquals(CategoryPredictionOutcome.AiUnavailable, outcome)
+    }
+
+    @Test
+    fun `classifyDetailed returns AiTimeout when inference exceeds timeout`() = runTest(testDispatcher) {
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+        coEvery { aiInferenceRepository.generateContent(any()) } coAnswers {
+            delay(1_000L)
+            Result.success("""{"category":"HOME","subcategory":"HOME_SUPPLIES"}""")
+        }
+
+        val outcome = createService(timeoutMs = 100L).classifyDetailed("Towels", GroupContext.EVERYDAY)
+
+        assertEquals(CategoryPredictionOutcome.AiTimeout(100L), outcome)
+    }
+
+    @Test
+    fun `classifyDetailed returns AiFailure with error message when inference fails`() = runTest(testDispatcher) {
+        every { aiCoreCapabilityProvider.isSupported() } returns true
+        coEvery { aiInferenceRepository.generateContent(any()) } returns Result.failure(
+            IllegalStateException("AICore model not downloaded")
+        )
+
+        val outcome = createService().classifyDetailed("Towels", GroupContext.EVERYDAY)
+
+        assertEquals(CategoryPredictionOutcome.AiFailure("AICore model not downloaded"), outcome)
+    }
+
+    @Test
+    fun `EVERYDAY prompt includes HOME_SUPPLIES guidance and few-shot examples without TRAVEL categories`() =
+        runTest(testDispatcher) {
+            every { aiCoreCapabilityProvider.isSupported() } returns true
+            val promptSlot = slot<String>()
+            coEvery { aiInferenceRepository.generateContent(capture(promptSlot)) } returns Result.success(
+                """{"category":"HOME","subcategory":"HOME_SUPPLIES"}"""
+            )
+
+            val outcome = createService().classifyDetailed("Towels", GroupContext.EVERYDAY)
+
+            val prompt = promptSlot.captured
+            assertTrue(prompt.contains("HOME:HOME_SUPPLIES"))
+            assertTrue(prompt.contains("Examples:"))
+            assertFalse(prompt.contains("LODGING:"))
+            assertEquals(
+                CategoryPredictionOutcome.Matched(
+                    CategorySuggestion(
+                        category = ExpenseCategory.HOME,
+                        subcategory = ExpenseSubcategory.HOME_SUPPLIES,
+                        source = CategorySuggestionSource.ON_DEVICE_AI
+                    )
+                ),
+                outcome
+            )
         }
 }

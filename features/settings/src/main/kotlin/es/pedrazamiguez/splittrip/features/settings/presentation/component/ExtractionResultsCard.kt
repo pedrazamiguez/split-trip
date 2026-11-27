@@ -20,11 +20,13 @@ import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.CurrencyEuro
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.InfoCircle
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Receipt
 import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.ShoppingBag
+import es.pedrazamiguez.splittrip.core.designsystem.icon.outline.Sitemap
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.layout.SectionCard
 import es.pedrazamiguez.splittrip.domain.model.ExtractionConfidence
 import es.pedrazamiguez.splittrip.domain.model.ExtractionSource
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.ExtractionFieldItem
+import es.pedrazamiguez.splittrip.features.settings.presentation.model.InstalledLocalAiPackInfo
 
 @Suppress("LongParameterList")
 @Composable
@@ -37,10 +39,12 @@ internal fun ExtractionResultsCard(
     vendor: String?,
     paymentMethod: String?,
     category: String?,
+    subcategory: String?,
     notes: String?,
     source: ExtractionSource?,
     confidence: ExtractionConfidence?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    installedLocalAiPack: InstalledLocalAiPackInfo? = null
 ) {
     val context = LocalContext.current
     SectionCard(
@@ -58,6 +62,7 @@ internal fun ExtractionResultsCard(
                 vendor = vendor,
                 paymentMethod = paymentMethod,
                 category = category,
+                subcategory = subcategory,
                 notes = notes
             )
 
@@ -66,7 +71,10 @@ internal fun ExtractionResultsCard(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             }
 
-            ExtractionSourceRow(source = source)
+            ExtractionSourceRow(
+                source = source,
+                installedLocalAiPack = installedLocalAiPack
+            )
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             ExtractionConfidenceRow(confidence = confidence)
         }
@@ -84,6 +92,7 @@ private fun buildExtractionFields(
     vendor: String?,
     paymentMethod: String?,
     category: String?,
+    subcategory: String?,
     notes: String?
 ): List<ExtractionFieldItem> = listOf(
     ExtractionFieldItem(
@@ -125,6 +134,11 @@ private fun buildExtractionFields(
         TablerIcons.Outline.Category,
         context.getString(R.string.developer_services_extraction_category),
         category
+    ),
+    ExtractionFieldItem(
+        TablerIcons.Outline.Sitemap,
+        context.getString(R.string.developer_services_extraction_subcategory),
+        subcategory
     ),
     ExtractionFieldItem(
         TablerIcons.Outline.InfoCircle,

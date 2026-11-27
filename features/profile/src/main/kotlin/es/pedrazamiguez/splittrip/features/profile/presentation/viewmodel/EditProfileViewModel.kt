@@ -3,6 +3,7 @@ package es.pedrazamiguez.splittrip.features.profile.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import es.pedrazamiguez.splittrip.core.common.presentation.UiText
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.domain.model.CropRect
 import es.pedrazamiguez.splittrip.domain.model.ValidationResult
 import es.pedrazamiguez.splittrip.domain.service.ProfileImageStorageService
@@ -109,7 +110,8 @@ class EditProfileViewModel(
                     _uiState.update { it.copy(isLoading = false) }
                     _actions.send(
                         EditProfileUiAction.ShowNotification(
-                            UiText.StringResource(R.string.profile_error_loading)
+                            message = UiText.StringResource(R.string.profile_error_loading),
+                            style = TopPillStyle.ERROR
                         )
                     )
                 }
@@ -118,7 +120,8 @@ class EditProfileViewModel(
                 _uiState.update { it.copy(isLoading = false) }
                 _actions.send(
                     EditProfileUiAction.ShowNotification(
-                        UiText.StringResource(R.string.profile_error_loading)
+                        message = UiText.StringResource(R.string.profile_error_loading),
+                        style = TopPillStyle.ERROR
                     )
                 )
             }
@@ -153,7 +156,8 @@ class EditProfileViewModel(
                 _uiState.update { it.copy(isSaving = false, showCropOverlay = false, cropSourceUri = null) }
                 _actions.send(
                     EditProfileUiAction.ShowNotification(
-                        UiText.StringResource(R.string.edit_profile_error_image_process)
+                        message = UiText.StringResource(R.string.edit_profile_error_image_process),
+                        style = TopPillStyle.ERROR
                     )
                 )
             }
@@ -168,7 +172,8 @@ class EditProfileViewModel(
             viewModelScope.launch {
                 _actions.send(
                     EditProfileUiAction.ShowNotification(
-                        UiText.StringResource(R.string.profile_error_loading)
+                        message = UiText.StringResource(R.string.profile_error_loading),
+                        style = TopPillStyle.ERROR
                     )
                 )
             }
@@ -232,7 +237,8 @@ class EditProfileViewModel(
                     _uiState.update { it.copy(isSaving = false) }
                     _actions.send(
                         EditProfileUiAction.ShowNotification(
-                            UiText.StringResource(R.string.edit_profile_success_saved)
+                            message = UiText.StringResource(R.string.edit_profile_success_saved),
+                            style = TopPillStyle.SUCCESS
                         )
                     )
                     _actions.send(EditProfileUiAction.NavigateBack)
@@ -257,7 +263,8 @@ class EditProfileViewModel(
         val fallbackMessage = "Failed to save profile changes"
         _actions.send(
             EditProfileUiAction.ShowNotification(
-                UiText.DynamicString(error?.localizedMessage ?: fallbackMessage)
+                message = UiText.DynamicString(error?.localizedMessage ?: fallbackMessage),
+                style = TopPillStyle.ERROR
             )
         )
     }

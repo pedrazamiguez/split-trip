@@ -58,6 +58,7 @@ object MonetizationTelemetry {
         const val MANUAL_RECEIPT_ATTACHMENT = "manual_receipt_attachment"
         const val PLAN_ALLOWANCES = "plan_allowances"
         const val TRIP_REPORT_EXPORT = "trip_report_export"
+        const val LOCAL_AI_PACK = "local_ai_pack"
         const val DIRECT = "direct"
     }
 

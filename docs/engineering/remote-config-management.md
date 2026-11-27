@@ -83,6 +83,7 @@ SplitTrip parameters are organized into 5 functional groups:
 |---|---|---|---|
 | `extracted_date_max_future_days` | `NUMBER` | `30` | Maximum allowed days in the future for an OCR-extracted receipt date before being discarded. |
 | `ocr_safety_false_positives_blacklist` | `STRING` | `razor,private,toothbrushes` | Comma-separated list of blacklisted terms for OCR false-positive filtering. |
+| `local_ai_model_pack_json` | `JSON` | `{"pack_id":"qwen2.5-1.5b-litert-v1","version":"1.0.0","download_url":"https://models.splittrip.eu/...","is_enabled":true}` | Configuration and SHA-256 metadata for the downloadable local LiteRT-LM AI model pack hosted on Cloudflare R2. See [Local AI Model Pack Hosting & Update Runbook](local-ai-model-pack-hosting.md). |
 
 ### Group 4: Settlements
 *Rate limiting and pacing thresholds for settlement reminders and nudges.*
@@ -292,6 +293,7 @@ Remote Config deployment is automated via GitHub Actions in [`.github/workflows/
   - `firebase.json`
   - `firestore.rules`
   - `firestore.indexes.json`
+  - `storage.rules`
   - `functions/**`
 - **Execution:** The workflow authenticates using Google Cloud Service Account credentials (`FIREBASE_SERVICE_ACCOUNT_JSON`) and runs two deployment steps:
   1. **Deploy Functions, Firestore, and Storage:**

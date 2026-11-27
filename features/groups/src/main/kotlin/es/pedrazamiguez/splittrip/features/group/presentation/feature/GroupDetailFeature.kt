@@ -15,6 +15,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.SharedElementKeys
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.viewmodel.SharedViewModel
 import es.pedrazamiguez.splittrip.core.designsystem.transition.SharedTransitionSurface
 import es.pedrazamiguez.splittrip.features.group.presentation.screen.GroupDetailScreen
@@ -84,7 +85,10 @@ private fun handleAction(
 ) {
     when (action) {
         is GroupDetailUiAction.ShowError -> {
-            pillController.showPill(message = action.message.asString(context))
+            pillController.showPill(
+                message = action.message.asString(context),
+                style = TopPillStyle.ERROR
+            )
         }
         is GroupDetailUiAction.ArchiveSuccess,
         is GroupDetailUiAction.DeleteSuccess,
@@ -116,7 +120,10 @@ private fun handleGroupExitAction(
     context: Context
 ) {
     if (message != null) {
-        pillController.showPill(message = message.asString(context))
+        pillController.showPill(
+            message = message.asString(context),
+            style = TopPillStyle.SUCCESS
+        )
     }
     if (selectedGroupId == groupId) {
         sharedViewModel.selectGroup(null, null, null)

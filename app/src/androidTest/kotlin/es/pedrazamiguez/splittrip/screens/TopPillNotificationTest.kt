@@ -24,10 +24,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TOP_PILL_DISMISS_BUTTON_TEST_TAG
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TOP_PILL_LEADING_ICON_TEST_TAG
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TOP_PILL_MESSAGE_TEST_TAG
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TOP_PILL_NOTIFICATION_TEST_TAG
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillController
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillNotification
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.rememberTopPillController
 import es.pedrazamiguez.splittrip.features.group.R as GroupsR
 import es.pedrazamiguez.splittrip.helpers.ScreenshotRule
@@ -175,6 +177,86 @@ class TopPillNotificationTest {
         composeRule.onNodeWithTag(TOP_PILL_DISMISS_BUTTON_TEST_TAG)
             .assertIsDisplayed()
             .assertHasClickAction()
+    }
+
+    @Test
+    fun neutralStyle_doesNotRenderLeadingIcon() {
+        composeRule.setContent {
+            val controller = rememberTopPillController()
+            LaunchedEffect(Unit) {
+                controller.showPill("Neutral notice", TopPillStyle.NEUTRAL)
+            }
+            SplitTripTheme {
+                TopPillNotification(controller = controller)
+            }
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag(TOP_PILL_NOTIFICATION_TEST_TAG).assertIsDisplayed()
+        composeRule.onNodeWithTag(TOP_PILL_LEADING_ICON_TEST_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun semanticStyles_renderLeadingIconAndMessage_inLightAndDarkThemes() {
+        val semanticStyles = listOf(
+            TopPillStyle.INFO,
+            TopPillStyle.SUCCESS,
+            TopPillStyle.WARNING,
+            TopPillStyle.ERROR
+        )
+        lateinit var controller: TopPillController
+        var darkTheme = false
+
+        composeRule.setContent {
+            controller = rememberTopPillController()
+            SplitTripTheme(darkTheme = darkTheme) {
+                TopPillNotification(controller = controller)
+            }
+        }
+
+        listOf(false, true).forEach { isDark ->
+            darkTheme = isDark
+            semanticStyles.forEach { style ->
+                val message = "Pill ${style.name} dark=$isDark"
+                composeRule.runOnIdle {
+                    controller.showPill(message = message, style = style)
+                }
+                composeRule.waitForIdle()
+
+                composeRule.onNodeWithTag(TOP_PILL_NOTIFICATION_TEST_TAG).assertIsDisplayed()
+                composeRule.onNodeWithTag(TOP_PILL_LEADING_ICON_TEST_TAG).assertIsDisplayed()
+                composeRule.onNodeWithTag(TOP_PILL_MESSAGE_TEST_TAG).assertIsDisplayed()
+                composeRule.onNodeWithText(message).assertIsDisplayed()
+                composeRule.onNodeWithTag(TOP_PILL_DISMISS_BUTTON_TEST_TAG).assertIsDisplayed()
+            }
+        }
+    }
+
+    @Test
+    fun errorStyle_rendersMultiLineMessageWithLeadingIcon_withoutVisualOverflow() {
+        val spanishMessage = getLocalizedString(GroupsR.string.group_error_limit_groups_exceeded, "es")
+
+        composeRule.setContent {
+            val controller = rememberTopPillController()
+            LaunchedEffect(Unit) {
+                controller.showPill(spanishMessage, TopPillStyle.ERROR)
+            }
+            ConstrainedPillHost(controller = controller)
+        }
+
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(spanishMessage).assertIsDisplayed()
+        composeRule.onNodeWithTag(TOP_PILL_LEADING_ICON_TEST_TAG).assertIsDisplayed()
+        val layoutResult = fetchMessageLayoutResult()
+        assertFalse(layoutResult.hasVisualOverflow)
+
+        val pillBounds = fetchNodeBounds(TOP_PILL_NOTIFICATION_TEST_TAG)
+        val iconBounds = fetchNodeBounds(TOP_PILL_LEADING_ICON_TEST_TAG)
+        val dismissBounds = fetchNodeBounds(TOP_PILL_DISMISS_BUTTON_TEST_TAG)
+        assertFitsInside(inner = iconBounds, outer = pillBounds)
+        assertFitsInside(inner = dismissBounds, outer = pillBounds)
     }
 
     @Composable

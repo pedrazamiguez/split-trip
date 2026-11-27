@@ -10,6 +10,7 @@ import es.pedrazamiguez.splittrip.core.designsystem.navigation.LocalRootNavContr
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.Routes
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.scaffold.FeatureScaffold
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.LocalTopPillController
+import es.pedrazamiguez.splittrip.core.designsystem.presentation.notification.TopPillStyle
 import es.pedrazamiguez.splittrip.domain.enums.AppTheme
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.screen.ThemeScreen
@@ -45,7 +46,8 @@ fun ThemeFeature(viewModel: ThemeViewModel = koinViewModel()) {
                 val themeName = themeNames[newThemeCode] ?: newThemeCode
 
                 pillController.showPill(
-                    themeChangedFormat.format(themeName)
+                    message = themeChangedFormat.format(themeName),
+                    style = TopPillStyle.SUCCESS
                 )
 
                 scope.launch {
