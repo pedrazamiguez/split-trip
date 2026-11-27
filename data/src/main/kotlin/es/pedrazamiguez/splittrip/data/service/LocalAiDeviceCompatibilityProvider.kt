@@ -63,30 +63,30 @@ internal class LocalAiDeviceCompatibilityProvider(
                 .thenBy { it.packId }
         )
 
-        val evaluatedPairs = sortedPacks.map { pack ->
-            pack to evaluate(
+        val evaluatedPacks = sortedPacks.map { pack ->
+            EvaluatedCatalogPack(
                 config = pack,
-                requireStorageCheck = pack.packId != installedPackId
+                compatibility = evaluate(
+                    config = pack,
+                    requireStorageCheck = pack.packId != installedPackId
+                ),
+                isRecommended = false
             )
         }
 
-        val recommendedPackId = evaluatedPairs
-            .filter { (_, result) -> result.isCompatible }
+        val recommendedPackId = evaluatedPacks
+            .filter { it.compatibility.isCompatible }
             .maxWithOrNull(
-                compareBy<Pair<ModelPackConfig, DeviceCompatibilityResult>> { it.first.priority }
-                    .thenBy { it.first.tier.rank }
-                    .thenBy { it.first.minRamMb }
-                    .thenByDescending { it.first.packId }
+                compareBy<EvaluatedCatalogPack> { it.config.priority }
+                    .thenBy { it.config.tier.rank }
+                    .thenBy { it.config.minRamMb }
+                    .thenByDescending { it.config.packId }
             )
-            ?.first
+            ?.config
             ?.packId
 
-        return evaluatedPairs.map { (config, compatibility) ->
-            EvaluatedCatalogPack(
-                config = config,
-                compatibility = compatibility,
-                isRecommended = config.packId == recommendedPackId
-            )
+        return evaluatedPacks.map { entry ->
+            entry.copy(isRecommended = entry.config.packId == recommendedPackId)
         }
     }
 

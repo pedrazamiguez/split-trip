@@ -34,10 +34,10 @@ internal fun LocalAiModelPackActionsSection(
             )
         }
 
-        fallbackPrimaryAction?.let { (labelRes, event) ->
+        fallbackPrimaryAction?.let { action ->
             GradientButton(
-                text = stringResource(labelRes),
-                onClick = { onEvent(event) },
+                text = stringResource(action.labelRes),
+                onClick = { onEvent(action.event) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -60,9 +60,14 @@ internal fun LocalAiModelPackActionsSection(
     }
 }
 
+private data class FallbackPrimaryActionSpec(
+    val labelRes: Int,
+    val event: LocalAiModelPackUiEvent
+)
+
 private fun resolveFallbackPrimaryAction(
     uiState: LocalAiModelPackUiState
-): Pair<Int, LocalAiModelPackUiEvent>? {
+): FallbackPrimaryActionSpec? {
     if (uiState.catalogTiers.isNotEmpty()) return null
     return when {
         uiState.showDownloadButton -> {
@@ -71,12 +76,16 @@ private fun resolveFallbackPrimaryAction(
             } else {
                 R.string.local_ai_pack_action_download
             }
-            labelRes to LocalAiModelPackUiEvent.RequestDownload(uiState.activeTargetPackId)
+            FallbackPrimaryActionSpec(
+                labelRes = labelRes,
+                event = LocalAiModelPackUiEvent.RequestDownload(uiState.activeTargetPackId)
+            )
         }
 
-        uiState.showRetryButton ->
-            R.string.local_ai_pack_action_retry to
-                LocalAiModelPackUiEvent.RetryDownload(uiState.activeTargetPackId)
+        uiState.showRetryButton -> FallbackPrimaryActionSpec(
+            labelRes = R.string.local_ai_pack_action_retry,
+            event = LocalAiModelPackUiEvent.RetryDownload(uiState.activeTargetPackId)
+        )
 
         else -> null
     }
