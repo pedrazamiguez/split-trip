@@ -1,0 +1,60 @@
+name: Sync Docs to GitHub Wiki
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - '!docs/release/assets/**'
+      - 'scripts/sync_wiki.py'
+      - '.github/workflows/sync-wiki.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync_wiki:
+    name: Sync Docs to GitHub Wiki
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Checkout GitHub Wiki repository
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: .wiki
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Run Wiki sync unit tests
+        run: python3 -m unittest scripts/test_sync_wiki.py -v
+
+      - name: Sync docs/ to .wiki
+        run: |
+          python3 scripts/sync_wiki.py \
+            --docs-dir docs \
+            --repo-root . \
+            --output-dir .wiki \
+            --repository "${{ github.repository }}" \
+            --branch main
+
+      - name: Commit and push Wiki updates
+        run: |
+          if [ -z "$(git -C .wiki status --porcelain)" ]; then
+            echo "✅ GitHub Wiki is already up to date."
+            exit 0
+          fi
+          git -C .wiki config user.name "GitHub Actions Bot"
+          git -C .wiki config user.email "actions@github.com"
+          git -C .wiki add -A
+          git -C .wiki commit -m "docs: sync GitHub Wiki from docs/ (${GITHUB_SHA::7})"
+          git -C .wiki push origin HEAD:master
