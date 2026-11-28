@@ -1,4 +1,3 @@
 <resources>
     <string name="app_name" translatable="false">SplitTrip</string>
-    <string name="dynamic_litertlm_module_title">On-device AI Runtime (LiteRT-LM)</string>
 </resources>

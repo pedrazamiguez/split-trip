@@ -1,8 +1,6 @@
-package es.pedrazamiguez.splittrip.dynamic.litertlm
+package es.pedrazamiguez.splittrip.data.litert
 
 import android.content.Context
-import es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClient
-import es.pedrazamiguez.splittrip.data.litert.LiteRtRuntimeConfig
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.resume

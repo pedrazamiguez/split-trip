@@ -1,4 +1,4 @@
-package es.pedrazamiguez.splittrip.dynamic.litertlm
+package es.pedrazamiguez.splittrip.data.litert
 
 import android.content.Context
 import com.google.ai.edge.litertlm.Backend
@@ -13,19 +13,13 @@ import com.google.ai.edge.litertlm.Message
 import com.google.ai.edge.litertlm.MessageCallback
 import com.google.ai.edge.litertlm.SamplerConfig
 import com.google.ai.edge.litertlm.ThinkingConfig
-import com.google.android.play.core.splitinstall.SplitInstallHelper
-import es.pedrazamiguez.splittrip.data.litert.LiteRtRuntimeConfig
 import timber.log.Timber
 
 internal class AndroidLiteRtNativeEngineFactory(
     private val context: Context
 ) : LiteRtNativeEngineFactory {
 
-    @Volatile
-    private var nativeLibrariesPreloaded = false
-
     override fun createAndInitialize(modelPath: String): ManagedLiteRtEngine {
-        ensureNativeLibrariesLoaded()
         Engine.setNativeMinLogSeverity(LogSeverity.WARNING)
         val engineSpec = LiteRtRuntimeConfig.buildEngineSpec(
             modelPath = modelPath,
@@ -44,16 +38,6 @@ internal class AndroidLiteRtNativeEngineFactory(
             modelPath
         )
         return AndroidManagedLiteRtEngine(engine)
-    }
-
-    // Load split native .so libraries immediately after on-demand install so JNI succeeds without process restart.
-    private fun ensureNativeLibrariesLoaded() {
-        if (nativeLibrariesPreloaded) return
-        runCatching { SplitInstallHelper.loadLibrary(context, NATIVE_LIB_LITERT) }
-            .onFailure { Timber.d(it, "SplitInstallHelper preload skipped for %s", NATIVE_LIB_LITERT) }
-        runCatching { SplitInstallHelper.loadLibrary(context, NATIVE_LIB_LITERT_LM_JNI) }
-            .onFailure { Timber.w(it, "SplitInstallHelper preload failed for %s", NATIVE_LIB_LITERT_LM_JNI) }
-        nativeLibrariesPreloaded = true
     }
 
     private class AndroidManagedLiteRtEngine(
@@ -113,9 +97,6 @@ internal class AndroidLiteRtNativeEngineFactory(
     }
 
     private companion object {
-        private const val NATIVE_LIB_LITERT = "LiteRt"
-        private const val NATIVE_LIB_LITERT_LM_JNI = "litertlm_jni"
-
         private fun LiteRtRuntimeConfig.EngineSpec.toEngineConfig(): EngineConfig = EngineConfig(
             modelPath = modelPath,
             backend = when (backend) {

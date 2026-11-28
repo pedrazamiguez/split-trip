@@ -48,7 +48,6 @@ mockk = "1.14.12"
 navigation = "2.10.2"
 playAppUpdate = "2.1.0"
 playBilling = "9.1.0"
-playFeatureDelivery = "2.1.0"
 playServicesAds = "25.5.0"
 robolectric = "4.18.1"
 room = "2.8.5"
@@ -141,7 +140,6 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 play-app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "playAppUpdate" }
 play-billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "playBilling" }
-play-feature-delivery-ktx = { module = "com.google.android.play:feature-delivery-ktx", version.ref = "playFeatureDelivery" }
 play-services-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
 play-services-mlkit-barcode-scanning = { module = "com.google.android.gms:play-services-mlkit-barcode-scanning", version.ref = "mlkitBarcodeScanning" }
 play-services-mlkit-text-recognition = { module = "com.google.android.gms:play-services-mlkit-text-recognition", version.ref = "mlkitTextRecognition" }
@@ -155,7 +153,6 @@ zxing = { module = "com.google.zxing:core", version.ref = "zxing" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-android-dynamic-feature = { id = "com.android.dynamic-feature", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 cpd = { id = "de.aaschmid.cpd", version.ref = "cpd" }
 crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlytics" }

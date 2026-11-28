@@ -5,7 +5,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
-import com.google.android.play.core.splitcompat.SplitCompat
 import com.google.firebase.appcheck.FirebaseAppCheck
 import es.pedrazamiguez.splittrip.appcheck.createAppCheckProviderFactory
 import es.pedrazamiguez.splittrip.appcheck.getDebugTokenFromPrefs
@@ -46,11 +45,6 @@ import org.koin.core.context.startKoin
 import timber.log.Timber
 
 class App : Application() {
-
-    override fun attachBaseContext(base: Context) {
-        super.attachBaseContext(base)
-        SplitCompat.install(this)
-    }
 
     override fun onCreate() {
         super.onCreate()

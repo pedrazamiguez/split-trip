@@ -37,7 +37,6 @@ val appVersionCode = vMajor * 1000000 + vMinor * 1000 + vPatch
 
 android {
     namespace = "es.pedrazamiguez.splittrip"
-    dynamicFeatures += setOf(":dynamic_litertlm")
 
     defaultConfig {
         applicationId = "es.pedrazamiguez.splittrip"
@@ -45,7 +44,7 @@ android {
         versionCode = appVersionCode
         versionName = appVersionName
         testInstrumentationRunner = "es.pedrazamiguez.splittrip.TestRunner"
-        // Match dynamic_litertlm native ABIs (the dynamic runtime does not ship 32-bit x86).
+        // Exclude 32-bit x86 (LiteRT-LM does not ship x86 .so binaries).
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
         }
@@ -97,6 +96,13 @@ android {
     }
 
     packaging {
+        jniLibs {
+            excludes += listOf(
+                "lib/armeabi-v7a/libLiteRt.so",
+                "lib/armeabi-v7a/libLiteRtClGlAccelerator.so",
+                "lib/armeabi-v7a/liblitert_jni.so"
+            )
+        }
         resources {
             excludes += listOf(
                 "/META-INF/{AL2.0,LGPL2.1}",
@@ -164,7 +170,6 @@ dependencies {
     implementation(libs.timber)
     implementation(libs.play.app.update.ktx)
     implementation(libs.play.billing.ktx)
-    implementation(libs.play.feature.delivery.ktx)
     testImplementation(libs.junit4)
     testImplementation(libs.mockk)
     testImplementation(platform(libs.junit.bom))

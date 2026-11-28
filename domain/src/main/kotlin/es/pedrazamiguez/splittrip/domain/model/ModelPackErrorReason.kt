@@ -9,6 +9,5 @@ enum class ModelPackErrorReason {
     INVALID_CONFIG,
     IO_ERROR,
     CANCELLED,
-    RUNTIME_UNAVAILABLE,
     UNKNOWN
 }

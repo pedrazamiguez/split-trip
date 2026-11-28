@@ -140,19 +140,19 @@ class LiteRtInferenceRepositoryImplTest {
         }
 
     @Test
-    fun `generateContent preserves LocalAiModelUnavailableException when runtime is missing`() =
+    fun `generateContent preserves LocalAiModelUnavailableException thrown by engineClient`() =
         runTest(testDispatcher) {
-            val missingRuntimeException = LocalAiModelUnavailableException(
-                "LiteRT-LM dynamic runtime module is not installed"
+            val unavailableException = LocalAiModelUnavailableException(
+                "LiteRT-LM model is unavailable"
             )
             coEvery {
                 engineClient.generate(any(), any(), any())
-            } throws missingRuntimeException
+            } throws unavailableException
 
             val result = repository.generateContent("Receipt text")
 
             assertTrue(result.isFailure)
-            assertEquals(missingRuntimeException, result.exceptionOrNull())
+            assertEquals(unavailableException, result.exceptionOrNull())
         }
 
     @Test
