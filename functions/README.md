@@ -6,16 +6,20 @@ Server-side notification dispatch infrastructure for SplitTrip. These Cloud Func
 
 ```
 functions/
+├── .env                            # Non-sensitive runtime defaults (kill-switch flags)
 ├── src/
+│   ├── config.ts                   # Global Cloud Functions v2 options (region: europe-west1)
 │   ├── index.ts                    # Entry point — re-exports all triggers
 │   ├── types.ts                    # Shared TypeScript interfaces & enums
 │   ├── services/
+│   │   ├── billing.service.ts      # Cloud Billing API adapter & unlink helper
 │   │   ├── notification.service.ts # FCM multicast dispatch + stale token cleanup
 │   │   ├── token.service.ts        # Device token resolution (group members → FCM tokens)
 │   │   └── firestore.service.ts    # Shared Firestore read helpers
 │   ├── utils/
 │   │   └── format.ts              # Amount formatting + deep link builder
 │   ├── triggers/
+│   │   ├── onBillingBudgetAlert.ts # Pub/Sub billing kill-switch (billing-budget-alerts)
 │   │   ├── onExpenseCreated.ts     # EXPENSE_ADDED
 │   │   ├── onExpenseUpdated.ts     # EXPENSE_UPDATED
 │   │   ├── onExpenseDeleted.ts     # EXPENSE_DELETED
@@ -43,6 +47,19 @@ functions/
 | `onCashWithdrawal` | `onCreate` | `groups/{groupId}/cash_withdrawals/{id}` | `CASH_WITHDRAWAL` |
 | `onContributionAdded` | `onCreate` | `groups/{groupId}/contributions/{id}` | `CONTRIBUTION_ADDED` |
 | `onSettlementUpdated` | `onUpdate` | `groups/{groupId}/settlements/{settlementId}` | `SETTLEMENT_REQUEST` / `SETTLEMENT_CONFIRMED` / `SETTLEMENT_DISPUTED` |
+
+## Pub/Sub Triggers
+
+| Function | Topic | Service Account | Purpose |
+|---|---|---|---|
+| `onBillingBudgetAlert` | `billing-budget-alerts` | `billing-kill-switch@<PROJECT_ID>.iam.gserviceaccount.com` | Automated Blaze emergency billing kill-switch |
+
+Runtime configuration is supplied via `functions/.env` (no secrets):
+- `BILLING_KILL_SWITCH_ENABLED` (`true`/`false`, fail-safe default `false` if unset)
+- `BILLING_KILL_SWITCH_DRY_RUN` (`true`/`false`, fail-safe default `true` if unset)
+- `BILLING_EMERGENCY_BUDGET_NAME` (must match the emergency hard-cap budget display name identically)
+
+See [Production Service Integrations & Configuration Guide § 5](../docs/release/production-service-integrations.md#5-gcp-cloud-billing-budgets--automated-kill-switch) for IAM setup, two-budget setup, dry-run verification, and post-incident recovery steps.
 
 ## FCM Payload Contract
 

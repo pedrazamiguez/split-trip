@@ -204,6 +204,12 @@ ARPU_ad_free = ((I_ban_MAU / 1000) × eCPM_net_ban) + ((I_int_MAU / 1000) × eCP
    - Switching default paywall selection from `MONTHLY` to `ANNUAL` shifts annual plan share from `w_annual_0` to `w_annual_1` and paywall conversion from `CR_0` to `CR_1`. The change is net-LTV positive whenever:
      `CR_1 / CR_0 >= LTV_pro(w_annual_0) / LTV_pro(w_annual_1)`
 
+### 3.6 Infrastructure COGS & Firestore Region Decision
+
+- **Firestore Region (`eur3` Retained for `v1.0.0`):** Per [ADR-0010](../architecture/adrs/0010-firestore-region-eur3-vs-single-region.md), SplitTrip retains the `(default)` Firestore database in multi-region `eur3` for the `v1.0.0` public launch while keeping Cloud Functions v2 in `europe-west1`. Although `europe-west1` reduces per-operation and storage unit rates by `~40%` (`$0.036` vs `$0.06` per 100k reads), `ADR-0009` incremental delta sync, `#2116` listener optimizations, and Firestore's daily free tier keep early-scale Firestore spend negligible (`~$0–$5/mo` below `10,000 MAU`), avoiding an intrusive pre-launch export/delete/recreate cutover.
+- **Re-Evaluation Gate:** Revisit migrating Firestore to `europe-west1` only if monthly Firestore COGS exceeds **`5%` of Net MRR** (`MRR_net`).
+- **Blaze Runaway-Spend Guardrails:** To eliminate uncapped pay-as-you-go tail risk on Blaze, GCP Cloud Billing configures a **`€20/month`** soft-warning email budget (`50%` / `80%` / `100%` Actual + `100%` Forecasted) and a separate **`€50/month`** emergency hard-cap budget (`SplitTrip Emergency Hard Cap`) wired via Cloud Pub/Sub to `onBillingBudgetAlert` (see [Production Service Integrations Guide § 5](../release/production-service-integrations.md)).
+
 ---
 
 ## 📈 4. Scenario Forecast Tables (Conservative, Baseline, Optimistic)

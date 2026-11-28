@@ -1,10 +1,9 @@
 /**
  * SplitTrip — Firebase Cloud Functions
  *
- * Entry point for all Firestore-triggered notification dispatch functions.
- * Each function listens to a specific Firestore document lifecycle event
- * and sends FCM notification messages (with data payload) to relevant
- * group members.
+ * Entry point for Firestore-triggered notification dispatch functions,
+ * scheduled maintenance jobs, and Pub/Sub operational triggers (such as
+ * the Cloud Billing emergency kill-switch).
  */
 
 import * as admin from "firebase-admin";
@@ -26,3 +25,4 @@ export { onSettlementUpdated } from "./triggers/onSettlementUpdated";
 export { onGroupDeletionRequested } from "./triggers/onGroupDeletionRequested";
 export { expenseReminders } from "./triggers/scheduled/expenseReminders";
 export { syncExchangeRates } from "./triggers/scheduled/syncExchangeRates";
+export { onBillingBudgetAlert } from "./triggers/onBillingBudgetAlert";

@@ -220,3 +220,45 @@ export interface CurrenciesDoc {
   currencies: Record<string, string>;
   updatedAt: FirebaseFirestore.Timestamp;
 }
+
+// ---------------------------------------------------------------------------
+// Cloud Billing Budget Pub/Sub notification & kill-switch types
+// ---------------------------------------------------------------------------
+
+export interface BillingBudgetNotification {
+  schemaVersion?: string;
+  budgetDisplayName?: string;
+  costAmount: number;
+  costIntervalStart?: string;
+  budgetAmount: number;
+  budgetAmountType?: string;
+  currencyCode?: string;
+  alertThresholdExceeded?: number;
+  forecastThresholdExceeded?: number;
+}
+
+export interface BillingKillSwitchConfig {
+  projectId: string;
+  enabled: boolean;
+  dryRun: boolean;
+  emergencyBudgetDisplayName: string;
+}
+
+export type BillingKillSwitchAction =
+  | "UNLINKED"
+  | "DRY_RUN"
+  | "SKIPPED_DISABLED"
+  | "SKIPPED_INVALID_PAYLOAD"
+  | "SKIPPED_NON_EMERGENCY_BUDGET"
+  | "SKIPPED_BELOW_THRESHOLD"
+  | "SKIPPED_ALREADY_DISABLED";
+
+export interface BillingKillSwitchResult {
+  action: BillingKillSwitchAction;
+  projectId: string;
+  reason: string;
+  budgetDisplayName?: string;
+  costAmount?: number;
+  budgetAmount?: number;
+  currencyCode?: string;
+}

@@ -12,6 +12,7 @@ SplitTrip utilizes the custom domain `splittrip.eu` across multiple services:
 2. **DNS & Email Forwarding:** Routes apex and subdomain traffic to GitHub Pages, and forwards inbound support emails (`support@splittrip.eu`) to the developer's personal inbox.
 3. **Firebase Authentication:** Authorizes `splittrip.eu` for OAuth redirect handlers and brands transactional auth emails (password resets and email verification).
 4. **Google Play Console:** Maps the official website, support email, privacy policy URL, and App Signing SHA-256 fingerprints for Android App Links.
+5. **GCP Cloud Billing Budgets & Automated Kill-Switch:** Enforces staged `€20/mo` soft email alerts and an automated `€50/mo` Pub/Sub emergency kill-switch (`onBillingBudgetAlert`) that unlinks billing on runaway Blaze spend.
 
 ---
 
@@ -134,7 +135,134 @@ SplitTrip does not require a paid email inbox provider. Free inbound email forwa
 
 ---
 
-## 5. Verification Checklist
+## 5. GCP Cloud Billing Budgets & Automated Kill-Switch
+
+SplitTrip runs on the Firebase **Blaze** (pay-as-you-go) plan. Because GCP Cloud Billing budget alerts are purely informational by default, SplitTrip pairs staged email warnings with an automated Pub/Sub kill-switch Cloud Function (`onBillingBudgetAlert` in `functions/src/triggers/onBillingBudgetAlert.ts`).
+
+> [!IMPORTANT]
+> **Placeholder Policy:** Never commit real project IDs, billing account IDs, or service account keys to git. Always substitute `<PROJECT_ID>`, `<BILLING_ACCOUNT_ID>`, and `<DEPLOYER_SA_EMAIL>` locally when running commands below.
+
+### 5.1 Required GCP APIs & Pub/Sub Topic
+
+Enable the required GCP APIs and create the dedicated Pub/Sub topic **before** deploying `onBillingBudgetAlert`:
+
+```bash
+gcloud auth login
+gcloud config set project <PROJECT_ID>
+
+gcloud services enable \
+  cloudbilling.googleapis.com \
+  billingbudgets.googleapis.com \
+  pubsub.googleapis.com \
+  eventarc.googleapis.com \
+  --project=<PROJECT_ID>
+
+gcloud pubsub topics create billing-budget-alerts --project=<PROJECT_ID>
+```
+
+### 5.2 Least-Privilege IAM Binding
+
+`onBillingBudgetAlert` runs as a dedicated service account (`billing-kill-switch@<PROJECT_ID>.iam.gserviceaccount.com`) so that `roles/billing.projectManager` is isolated away from all other Cloud Functions:
+
+```bash
+# 1. Create dedicated runtime service account
+gcloud iam service-accounts create billing-kill-switch \
+  --display-name="SplitTrip Billing Kill-Switch" \
+  --project=<PROJECT_ID>
+
+# 2. Grant project-level billing management (inspect & unlink billing on <PROJECT_ID>)
+gcloud projects add-iam-policy-binding <PROJECT_ID> \
+  --member="serviceAccount:billing-kill-switch@<PROJECT_ID>.iam.gserviceaccount.com" \
+  --role="roles/billing.projectManager"
+
+# 3. Allow the GitHub Actions CI deployer SA to deploy functions running as billing-kill-switch
+#    and read Pub/Sub topic metadata
+gcloud iam service-accounts add-iam-policy-binding \
+  billing-kill-switch@<PROJECT_ID>.iam.gserviceaccount.com \
+  --member="serviceAccount:<DEPLOYER_SA_EMAIL>" \
+  --role="roles/iam.serviceAccountUser" \
+  --project=<PROJECT_ID>
+
+gcloud pubsub topics add-iam-policy-binding billing-budget-alerts \
+  --member="serviceAccount:<DEPLOYER_SA_EMAIL>" \
+  --role="roles/pubsub.viewer" \
+  --project=<PROJECT_ID>
+```
+
+> [!NOTE]
+> **Org-Policy / Billing-Account Fallback:** If dry-run or live unlink returns `PERMISSION_DENIED` due to billing-account-level org policies, additionally grant `billing-kill-switch@<PROJECT_ID>.iam.gserviceaccount.com` a custom billing-account role containing `billing.resourceAssociations.delete` (or `roles/billing.admin`) under **GCP Console → Billing → Account Management → Permissions**.
+
+### 5.3 Two-Budget Configuration (GCP Console)
+
+Configure two **separate** budgets under **Google Cloud Console → Billing → Budgets & alerts → Create budget**:
+
+1. **Budget 1 — Soft Warning Budget (Email Notifications Only):**
+   - **Name:** `SplitTrip Monthly Soft Warnings`
+   - **Time range:** Monthly (calendar)
+   - **Scope:** Select `<PROJECT_ID>` only (all services)
+   - **Target amount:** Specified amount: `€20`
+   - **Threshold rules:** `50%` (Actual), `80%` (Actual), `100%` (Actual), `100%` (Forecasted)
+   - **Actions:** Check **Email alerts to billing admins and users**. Do **not** connect to a Pub/Sub topic.
+2. **Budget 2 — Emergency Kill-Switch Hard Cap (Connected to Pub/Sub):**
+   - **Name:** `SplitTrip Emergency Hard Cap` *(must match `BILLING_EMERGENCY_BUDGET_NAME` in `functions/.env` character-for-character)*
+   - **Time range:** Monthly (calendar)
+   - **Scope:** Select `<PROJECT_ID>` only (all services)
+   - **Target amount:** Specified amount: `€50`
+   - **Threshold rules:** `100%` (**Actual only** — never attach kill-switch unlinking to Forecasted thresholds)
+   - **Actions:**
+     - Check **Email alerts to billing admins and users**
+     - Check **Connect a Pub/Sub topic to this budget** → Project: `<PROJECT_ID>` → Topic: `billing-budget-alerts`
+
+### 5.4 Dry-Run Verification & Arming Live Mode
+
+`functions/.env` ships with `BILLING_KILL_SWITCH_ENABLED=true` and `BILLING_KILL_SWITCH_DRY_RUN=true` so initial deployments never disrupt production while validating Pub/Sub delivery and Cloud Billing API read permissions end-to-end.
+
+1. **Test soft-warning isolation** (expects `SKIPPED_NON_EMERGENCY_BUDGET`):
+   ```bash
+   gcloud pubsub topics publish billing-budget-alerts \
+     --project=<PROJECT_ID> \
+     --message='{"budgetDisplayName":"SplitTrip Monthly Soft Warnings","costAmount":25,"budgetAmount":20,"currencyCode":"EUR","alertThresholdExceeded":1.0}'
+   ```
+2. **Test below-threshold / forecast-only skip** (expects `SKIPPED_BELOW_THRESHOLD`):
+   ```bash
+   gcloud pubsub topics publish billing-budget-alerts \
+     --project=<PROJECT_ID> \
+     --message='{"budgetDisplayName":"SplitTrip Emergency Hard Cap","costAmount":40,"budgetAmount":50,"currencyCode":"EUR","forecastThresholdExceeded":1.0}'
+   ```
+3. **Test breached-cap dry-run & IAM read check** (calls `isBillingEnabled` and logs `[DRY RUN]` with `DRY_RUN`, without unlinking):
+   ```bash
+   gcloud pubsub topics publish billing-budget-alerts \
+     --project=<PROJECT_ID> \
+     --message='{"budgetDisplayName":"SplitTrip Emergency Hard Cap","costAmount":55,"budgetAmount":50,"currencyCode":"EUR","alertThresholdExceeded":1.0}'
+   ```
+4. **Inspect logs** and confirm all three actions completed with zero `PERMISSION_DENIED` errors:
+   ```bash
+   gcloud functions logs read onBillingBudgetAlert --region=europe-west1 --gen2 --limit=25 --project=<PROJECT_ID>
+   ```
+5. **Arm live mode:** Set `BILLING_KILL_SWITCH_DRY_RUN=false` in `functions/.env`, redeploy, and verify the live runtime configuration:
+   ```bash
+   gcloud functions describe onBillingBudgetAlert --region=europe-west1 --gen2 --project=<PROJECT_ID> \
+     --format="yaml(serviceConfig.environmentVariables,serviceConfig.serviceAccountEmail)"
+   ```
+
+### 5.5 Post-Incident Recovery Runbook & Latency Caveats
+
+> [!WARNING]
+> **Reporting Latency Caveat:** Cloud Billing budget evaluations typically lag real-time usage by **~15–60+ minutes** (occasionally longer for certain services). This kill-switch caps catastrophic multi-hour runaway loops; it does not provide sub-second circuit breaking.
+
+If `onBillingBudgetAlert` unlinks billing:
+
+1. **Mitigate root cause first:** Inspect Cloud Logging, Firestore Usage, Cloud Storage Egress, and Cloud Functions invocation metrics. Fix the runaway loop or tighten security rules **before** re-enabling billing.
+2. **Re-link billing account:**
+   ```bash
+   gcloud billing projects link <PROJECT_ID> --billing-account=<BILLING_ACCOUNT_ID>
+   ```
+   *(Or via GCP Console → Billing → Account Management → My Projects → Change billing.)*
+3. **Verify Firebase services:** Confirm the Blaze plan is restored in Firebase Console, verify Firestore read/write, Firebase Auth, Cloud Storage, and Remote Config, and confirm scheduled/trigger Cloud Functions (`syncExchangeRates`, `expenseReminders`, notification triggers) are active (re-run `make firebase` or `deploy-firebase.yml` if any Gen-2 Cloud Run revision requires redeployment).
+
+---
+
+## 6. Verification Checklist
 
 - [ ] `dig splittrip.eu +short` returns the four GitHub Pages IPs (`185.199.108.153`, etc.).
 - [ ] `curl -I https://splittrip.eu` returns `HTTP/2 200` with valid Let's Encrypt certificate.
@@ -142,3 +270,5 @@ SplitTrip does not require a paid email inbox provider. Free inbound email forwa
 - [ ] `curl https://splittrip.eu/.well-known/assetlinks.json` returns valid JSON with `application/json` content-type.
 - [ ] Send a test email from an external account to `support@splittrip.eu` and confirm receipt in the personal inbox.
 - [ ] Send a test password reset email from the app or Firebase Console and verify the sender name displays `SplitTrip` and reply-to displays `support@splittrip.eu`.
+- [ ] Confirm `billing-budget-alerts` Pub/Sub topic and `billing-kill-switch@<PROJECT_ID>.iam.gserviceaccount.com` SA with `roles/billing.projectManager` exist.
+- [ ] Confirm dry-run Pub/Sub test messages log `SKIPPED_NON_EMERGENCY_BUDGET`, `SKIPPED_BELOW_THRESHOLD`, and `DRY_RUN` cleanly in `onBillingBudgetAlert` before setting `BILLING_KILL_SWITCH_DRY_RUN=false`.
