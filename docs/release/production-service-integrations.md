@@ -170,10 +170,15 @@ gcloud iam service-accounts create billing-kill-switch \
   --display-name="SplitTrip Billing Kill-Switch" \
   --project=<PROJECT_ID>
 
-# 2. Grant project-level billing management (inspect & unlink billing on <PROJECT_ID>)
+# 2. Grant project-level billing management + metadata read (resourcemanager.projects.get
+#    is required by projects.getBillingInfo; roles/browser grants metadata without data access)
 gcloud projects add-iam-policy-binding <PROJECT_ID> \
   --member="serviceAccount:billing-kill-switch@<PROJECT_ID>.iam.gserviceaccount.com" \
   --role="roles/billing.projectManager"
+
+gcloud projects add-iam-policy-binding <PROJECT_ID> \
+  --member="serviceAccount:billing-kill-switch@<PROJECT_ID>.iam.gserviceaccount.com" \
+  --role="roles/browser"
 
 # 3. Allow the GitHub Actions CI deployer SA to deploy functions running as billing-kill-switch
 #    and read Pub/Sub topic metadata
@@ -187,10 +192,19 @@ gcloud pubsub topics add-iam-policy-binding billing-budget-alerts \
   --member="serviceAccount:<DEPLOYER_SA_EMAIL>" \
   --role="roles/pubsub.viewer" \
   --project=<PROJECT_ID>
+
+# 4. Allow Eventarc / Pub/Sub push delivery (authenticating as billing-kill-switch) to invoke
+#    the Gen-2 Cloud Run service. Run scoped to the service after first deploy (or grant
+#    roles/run.invoker at project scope before first deploy):
+gcloud run services add-iam-policy-binding onbillingbudgetalert \
+  --region=europe-west1 \
+  --project=<PROJECT_ID> \
+  --member="serviceAccount:billing-kill-switch@<PROJECT_ID>.iam.gserviceaccount.com" \
+  --role="roles/run.invoker"
 ```
 
 > [!NOTE]
-> **Org-Policy / Billing-Account Fallback:** If dry-run or live unlink returns `PERMISSION_DENIED` due to billing-account-level org policies, additionally grant `billing-kill-switch@<PROJECT_ID>.iam.gserviceaccount.com` a custom billing-account role containing `billing.resourceAssociations.delete` (or `roles/billing.admin`) under **GCP Console → Billing → Account Management → Permissions**.
+> **Billing-Account-Level Permission Required for Unlinking:** `projects.updateProjectBillingInfo` requires permission on the target Cloud Billing account as well as the project. Under **GCP Console → Billing → Account Management → `+ Add principal`** (right-hand permissions panel), add `billing-kill-switch@<PROJECT_ID>.iam.gserviceaccount.com` with **Billing Account Administrator** (`roles/billing.admin`)—or a custom org role containing `billing.resourceAssociations.delete` if your organization supports custom billing roles.
 
 ### 5.3 Two-Budget Configuration (GCP Console)
 
@@ -215,7 +229,7 @@ Configure two **separate** budgets under **Google Cloud Console → Billing → 
 
 ### 5.4 Dry-Run Verification & Arming Live Mode
 
-`functions/.env` ships with `BILLING_KILL_SWITCH_ENABLED=true` and `BILLING_KILL_SWITCH_DRY_RUN=true` so initial deployments never disrupt production while validating Pub/Sub delivery and Cloud Billing API read permissions end-to-end.
+Before enabling live unlinking, set `BILLING_KILL_SWITCH_ENABLED=true` and `BILLING_KILL_SWITCH_DRY_RUN=true` in `functions/.env` to validate Pub/Sub delivery and Cloud Billing API read permissions end-to-end without disrupting production:
 
 1. **Test soft-warning isolation** (expects `SKIPPED_NON_EMERGENCY_BUDGET`):
    ```bash
@@ -270,5 +284,5 @@ If `onBillingBudgetAlert` unlinks billing:
 - [ ] `curl https://splittrip.eu/.well-known/assetlinks.json` returns valid JSON with `application/json` content-type.
 - [ ] Send a test email from an external account to `support@splittrip.eu` and confirm receipt in the personal inbox.
 - [ ] Send a test password reset email from the app or Firebase Console and verify the sender name displays `SplitTrip` and reply-to displays `support@splittrip.eu`.
-- [ ] Confirm `billing-budget-alerts` Pub/Sub topic and `billing-kill-switch@<PROJECT_ID>.iam.gserviceaccount.com` SA with `roles/billing.projectManager` exist.
+- [ ] Confirm `billing-budget-alerts` Pub/Sub topic and `billing-kill-switch@<PROJECT_ID>.iam.gserviceaccount.com` SA exist with `roles/billing.projectManager` + `roles/browser` (project), `roles/run.invoker` (`onbillingbudgetalert` Cloud Run service), and `roles/billing.admin` (billing account).
 - [ ] Confirm dry-run Pub/Sub test messages log `SKIPPED_NON_EMERGENCY_BUDGET`, `SKIPPED_BELOW_THRESHOLD`, and `DRY_RUN` cleanly in `onBillingBudgetAlert` before setting `BILLING_KILL_SWITCH_DRY_RUN=false`.
