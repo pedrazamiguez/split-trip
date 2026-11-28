@@ -428,7 +428,7 @@
     <string name="local_ai_pack_status_disabled_title">Pack unavailable</string>
     <string name="local_ai_pack_status_error_title">Download failed</string>
     <string name="local_ai_pack_incompatible_abi">64-bit ARM processor required</string>
-    <string name="local_ai_pack_incompatible_ram">Requires at least %1$d MB RAM</string>
+    <string name="local_ai_pack_incompatible_ram">Requires at least %1$s RAM</string>
     <string name="local_ai_pack_incompatible_storage">Requires at least %1$s free storage</string>
     <string name="local_ai_pack_incompatible_disabled">Temporarily unavailable</string>
     <string name="local_ai_pack_error_not_entitled">Requires an active SplitTrip Pro subscription.</string>
@@ -473,7 +473,7 @@
     <string name="local_ai_pack_tier_compact">Compact</string>
     <string name="local_ai_pack_tier_balanced">Balanced</string>
     <string name="local_ai_pack_tier_high_quality">High Quality</string>
-    <string name="local_ai_pack_requirements_format">Min %1$d MB RAM · %2$s storage</string>
+    <string name="local_ai_pack_requirements_format">Min %1$s RAM · %2$s storage</string>
     <string name="local_ai_pack_action_switch">Switch Pack</string>
     <string name="local_ai_pack_status_installed_named_desc">Active model: %1$s. Running offline via LiteRT-LM.</string>
     <string name="local_ai_pack_status_downloading_named_title">Downloading %1$s…</string>
