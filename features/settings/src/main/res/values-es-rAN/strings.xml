@@ -380,7 +380,7 @@
     <string name="local_ai_pack_status_disabled_title">Paquete no dîpponible</string>
     <string name="local_ai_pack_status_error_title">Errôh en la dêccarga</string>
     <string name="local_ai_pack_incompatible_abi">Çe requiere proçeçadôh ARM de 64 bits</string>
-    <string name="local_ai_pack_incompatible_ram">Requiere ar menô %1$d MB de RAM</string>
+    <string name="local_ai_pack_incompatible_ram">Requiere ar menô %1$s de RAM</string>
     <string name="local_ai_pack_incompatible_storage">Requiere ar menô %1$s de êppaçio libre</string>
     <string name="local_ai_pack_incompatible_disabled">No dîpponible temporarmente</string>
     <string name="local_ai_pack_error_not_entitled">Requiere una çûccrîççión âttiba a SplîTTrîh Pro.</string>
@@ -425,7 +425,7 @@
     <string name="local_ai_pack_tier_compact">Compâtto</string>
     <string name="local_ai_pack_tier_balanced">Equilibrao</string>
     <string name="local_ai_pack_tier_high_quality">Arta calidá</string>
-    <string name="local_ai_pack_requirements_format">Mín. %1$d MB RAM · %2$s de êppaçio</string>
+    <string name="local_ai_pack_requirements_format">Mín. %1$s RAM · %2$s de êppaçio</string>
     <string name="local_ai_pack_action_switch">Cambiâh paquete</string>
     <string name="local_ai_pack_status_installed_named_desc">Modelo âttibo: %1$s. Ehecutándoçe çin conêççión mediante LiteRT-RM.</string>
     <string name="local_ai_pack_status_downloading_named_title">Dêccargando %1$s…</string>
