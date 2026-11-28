@@ -32,6 +32,15 @@ export const onExpenseCreated = onDocumentCreated(
     const expense = snapshot.data() as ExpenseDoc;
     const groupId = event.params.groupId;
     const expenseId = event.params.expenseId;
+
+    if (expense.isDeleted === true) {
+      logger.info("onExpenseCreated: Suppressed — tombstoned document created", {
+        groupId,
+        expenseId,
+      });
+      return;
+    }
+
     const actorId = expense.createdBy;
 
     if (!actorId) {

@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.data.local.entity.GroupEntity
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.SplitType
+import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Expense
 import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
@@ -456,4 +457,65 @@ class LocalExpenseDataSourceImplTest {
         assertEquals(1, pending.size)
         assertEquals("exp-receipt-pending", pending.first().id)
     }
+
+    @Test
+    fun applyExpensesDeltaForGroup_upsertsPreservesLocalReceiptAndPendingSyncDeletesTombstonesAndKeepsUntouched() =
+        runTest {
+            val untouched = testExpense1.copy(id = "exp-untouched", title = "Untouched")
+            val existingPending = testExpense1.copy(
+                id = "exp-pending",
+                title = "Old Title",
+                syncStatus = SyncStatus.PENDING_SYNC,
+                receiptAttachment = ReceiptAttachment(
+                    localUri = "file:///local/receipt.jpg",
+                    remoteUrl = null,
+                    mimeType = "image/jpeg",
+                    capturedAtMillis = 1000L
+                ),
+                splits = listOf(ExpenseSplit(userId = "user-1", amountCents = 5000L))
+            )
+            val toDelete = testExpense2.copy(
+                id = "exp-delete",
+                splits = listOf(ExpenseSplit(userId = "user-2", amountCents = 2000L))
+            )
+            localDataSource.saveExpenses(listOf(untouched, existingPending, toDelete))
+
+            val remotePendingUpdate = testExpense1.copy(
+                id = "exp-pending",
+                title = "Updated Title",
+                syncStatus = SyncStatus.SYNCED,
+                receiptAttachment = null,
+                splits = listOf(ExpenseSplit(userId = "user-1", amountCents = 5500L))
+            )
+            val remoteNew = testExpense2.copy(
+                id = "exp-new",
+                title = "New Expense",
+                splits = listOf(ExpenseSplit(userId = "user-1", amountCents = 2100L))
+            )
+
+            localDataSource.applyExpensesDeltaForGroup(
+                groupId = testGroupId,
+                upserts = listOf(remotePendingUpdate, remoteNew),
+                deletedIds = listOf("exp-delete")
+            )
+
+            val untouchedResult = localDataSource.getExpenseById("exp-untouched")
+            assertNotNull(untouchedResult)
+            assertEquals("Untouched", untouchedResult?.title)
+
+            val pendingResult = localDataSource.getExpenseById("exp-pending")
+            assertNotNull(pendingResult)
+            assertEquals("Updated Title", pendingResult?.title)
+            assertEquals(SyncStatus.PENDING_SYNC, pendingResult?.syncStatus)
+            assertEquals("file:///local/receipt.jpg", pendingResult?.receiptAttachment?.localUri)
+            assertEquals(5500L, pendingResult?.splits?.firstOrNull()?.amountCents)
+
+            assertNull(localDataSource.getExpenseById("exp-delete"))
+            assertEquals(0, expenseSplitDao.getSplitsByExpenseId("exp-delete").size)
+
+            val newResult = localDataSource.getExpenseById("exp-new")
+            assertNotNull(newResult)
+            assertEquals("New Expense", newResult?.title)
+            assertEquals(2100L, newResult?.splits?.firstOrNull()?.amountCents)
+        }
 }

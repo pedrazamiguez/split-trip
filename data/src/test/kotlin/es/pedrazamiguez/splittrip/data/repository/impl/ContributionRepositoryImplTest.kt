@@ -5,10 +5,14 @@ import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSyncCheckpointDataSource
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
+import es.pedrazamiguez.splittrip.domain.enums.SyncCollectionName
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Contribution
+import es.pedrazamiguez.splittrip.domain.model.DeltaSyncBatch
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.model.SyncWatermark
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -19,6 +23,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -74,8 +79,8 @@ class ContributionRepositoryImplTest {
         )
     )
 
-    private lateinit var localGroupDataSource:
-        LocalGroupDataSource
+    private lateinit var localGroupDataSource: LocalGroupDataSource
+    private lateinit var localSyncCheckpointDataSource: LocalSyncCheckpointDataSource
     private lateinit var syncTeardownCoordinator: SyncTeardownCoordinator
 
     @BeforeEach
@@ -84,22 +89,25 @@ class ContributionRepositoryImplTest {
         localContributionDataSource = mockk(relaxed = true)
         authenticationService = mockk()
         performanceMonitor = mockk(relaxed = true) {
-            io.mockk.coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
-            io.mockk.every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
+            coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
+            every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
         }
 
         coEvery { authenticationService.currentUserId() } returns testUserId
 
         localGroupDataSource = mockk(relaxed = true)
+        localSyncCheckpointDataSource = mockk(relaxed = true)
+        coEvery { localSyncCheckpointDataSource.getWatermark(any(), any()) } returns null
         syncTeardownCoordinator = mockk(relaxed = true)
         repository = ContributionRepositoryImpl(
             cloudContributionDataSource = cloudContributionDataSource,
             localContributionDataSource = localContributionDataSource,
+            localGroupDataSource = localGroupDataSource,
+            localSyncCheckpointDataSource = localSyncCheckpointDataSource,
             authenticationService = authenticationService,
             performanceMonitor = performanceMonitor,
-            ioDispatcher = testDispatcher,
-            localGroupDataSource = localGroupDataSource,
-            syncTeardownCoordinator = syncTeardownCoordinator
+            syncTeardownCoordinator = syncTeardownCoordinator,
+            ioDispatcher = testDispatcher
         )
     }
 
@@ -282,15 +290,24 @@ class ContributionRepositoryImplTest {
     @DisplayName("GetGroupContributionsFlow")
     inner class GetGroupContributionsFlow {
 
+        private fun stubFullSnapshotBootstrap() {
+            coEvery { cloudContributionDataSource.fetchContributionsFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                upserts = cloudContributions,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
+            every { cloudContributionDataSource.observeContributionsDeltaFlow(testGroupId, any()) } returns emptyFlow()
+        }
+
         @Test
         fun `returns flow from local data source`() = runTest(testDispatcher) {
             // Given
             every {
                 localContributionDataSource.getContributionsByGroupIdFlow(testGroupId)
             } returns flowOf(listOf(testContribution))
-            every {
-                cloudContributionDataSource.getContributionsByGroupIdFlow(testGroupId)
-            } returns flowOf(cloudContributions)
+            stubFullSnapshotBootstrap()
             coEvery {
                 localContributionDataSource.replaceContributionsForGroup(any(), any())
             } just Runs
@@ -309,9 +326,7 @@ class ContributionRepositoryImplTest {
             every {
                 localContributionDataSource.getContributionsByGroupIdFlow(testGroupId)
             } returns flowOf(emptyList())
-            every {
-                cloudContributionDataSource.getContributionsByGroupIdFlow(testGroupId)
-            } returns flowOf(cloudContributions)
+            stubFullSnapshotBootstrap()
             coEvery {
                 localContributionDataSource.replaceContributionsForGroup(any(), any())
             } just Runs
@@ -337,6 +352,7 @@ class ContributionRepositoryImplTest {
                 cloudContributionDataSource = cloudContributionDataSource,
                 localContributionDataSource = localContributionDataSource,
                 localGroupDataSource = localGroupDataSource,
+                localSyncCheckpointDataSource = localSyncCheckpointDataSource,
                 authenticationService = authenticationService,
                 performanceMonitor = performanceMonitor,
                 syncTeardownCoordinator = realTeardownCoordinator,
@@ -350,8 +366,14 @@ class ContributionRepositoryImplTest {
                 status = GroupStatus.ARCHIVED
             )
             coEvery {
-                cloudContributionDataSource.fetchContributionsByGroupId(testGroupId)
-            } returns cloudContributions
+                cloudContributionDataSource.fetchContributionsFullSnapshot(testGroupId)
+            } returns DeltaSyncBatch(
+                upserts = cloudContributions,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
             coEvery {
                 localContributionDataSource.replaceContributionsForGroup(any(), any())
             } just Runs
@@ -361,8 +383,8 @@ class ContributionRepositoryImplTest {
             realRepo.getGroupContributionsFlow(testGroupId).first()
             advanceUntilIdle()
 
-            verify(exactly = 0) { cloudContributionDataSource.getContributionsByGroupIdFlow(testGroupId) }
-            coVerify(exactly = 1) { cloudContributionDataSource.fetchContributionsByGroupId(testGroupId) }
+            verify(exactly = 0) { cloudContributionDataSource.observeContributionsDeltaFlow(testGroupId, any()) }
+            coVerify(exactly = 1) { cloudContributionDataSource.fetchContributionsFullSnapshot(testGroupId) }
             coVerify(exactly = 1) {
                 localContributionDataSource.replaceContributionsForGroup(testGroupId, cloudContributions)
             }
@@ -371,8 +393,68 @@ class ContributionRepositoryImplTest {
             realRepo.getGroupContributionsFlow(testGroupId).first()
             advanceUntilIdle()
 
-            coVerify(exactly = 2) { cloudContributionDataSource.fetchContributionsByGroupId(testGroupId) }
+            coVerify(exactly = 2) { cloudContributionDataSource.fetchContributionsFullSnapshot(testGroupId) }
         }
+
+        @Test
+        fun `existing checkpoint passes SyncWatermark to delta flow and applies tombstones`() =
+            runTest(testDispatcher) {
+                val stored = SyncWatermark((System.currentTimeMillis() / 1000L) - 60L, 0)
+                val next = SyncWatermark(System.currentTimeMillis() / 1000L, 0)
+                every {
+                    localContributionDataSource.getContributionsByGroupIdFlow(testGroupId)
+                } returns flowOf(emptyList())
+                coEvery {
+                    localSyncCheckpointDataSource.getWatermark(testGroupId, SyncCollectionName.CONTRIBUTIONS)
+                } returns stored
+                every {
+                    cloudContributionDataSource.observeContributionsDeltaFlow(testGroupId, stored)
+                } returns flowOf(
+                    DeltaSyncBatch(
+                        upserts = cloudContributions,
+                        deletedIds = listOf("contrib-deleted"),
+                        maxServerUpdatedAt = next,
+                        isServerConfirmed = true,
+                        isFullSnapshot = false
+                    )
+                )
+
+                repository.getGroupContributionsFlow(testGroupId).first()
+                advanceUntilIdle()
+
+                coVerify(exactly = 0) { cloudContributionDataSource.fetchContributionsFullSnapshot(any()) }
+                verify(exactly = 1) {
+                    cloudContributionDataSource.observeContributionsDeltaFlow(testGroupId, stored)
+                }
+                coVerify(exactly = 1) {
+                    localContributionDataSource.applyContributionsDeltaForGroup(
+                        testGroupId,
+                        cloudContributions,
+                        listOf("contrib-deleted")
+                    )
+                }
+            }
+
+        @Test
+        fun `expired checkpoint falls back to fetchContributionsFullSnapshot and replaceContributionsForGroup`() =
+            runTest(testDispatcher) {
+                val expired = SyncWatermark(1000L, 0)
+                every {
+                    localContributionDataSource.getContributionsByGroupIdFlow(testGroupId)
+                } returns flowOf(emptyList())
+                coEvery {
+                    localSyncCheckpointDataSource.getWatermark(testGroupId, SyncCollectionName.CONTRIBUTIONS)
+                } returns expired
+                stubFullSnapshotBootstrap()
+
+                repository.getGroupContributionsFlow(testGroupId).first()
+                advanceUntilIdle()
+
+                coVerify(exactly = 1) { cloudContributionDataSource.fetchContributionsFullSnapshot(testGroupId) }
+                coVerify(exactly = 1) {
+                    localContributionDataSource.replaceContributionsForGroup(testGroupId, cloudContributions)
+                }
+            }
     }
 
     @Nested
@@ -672,9 +754,18 @@ class ContributionRepositoryImplTest {
             every {
                 localContributionDataSource.getContributionsByGroupIdFlow(testGroupId)
             } returns flowOf(emptyList())
+            coEvery {
+                cloudContributionDataSource.fetchContributionsFullSnapshot(testGroupId)
+            } returns DeltaSyncBatch(
+                upserts = cloudContributions,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
             every {
-                cloudContributionDataSource.getContributionsByGroupIdFlow(testGroupId)
-            } returns flowOf(cloudContributions)
+                cloudContributionDataSource.observeContributionsDeltaFlow(testGroupId, any())
+            } returns emptyFlow()
             coEvery {
                 localContributionDataSource.replaceContributionsForGroup(any(), any())
             } just Runs
@@ -702,9 +793,18 @@ class ContributionRepositoryImplTest {
             every {
                 localContributionDataSource.getContributionsByGroupIdFlow(testGroupId)
             } returns flowOf(emptyList())
+            coEvery {
+                cloudContributionDataSource.fetchContributionsFullSnapshot(testGroupId)
+            } returns DeltaSyncBatch(
+                upserts = cloudContributions,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
             every {
-                cloudContributionDataSource.getContributionsByGroupIdFlow(testGroupId)
-            } returns flowOf(cloudContributions)
+                cloudContributionDataSource.observeContributionsDeltaFlow(testGroupId, any())
+            } returns emptyFlow()
             coEvery {
                 localContributionDataSource.replaceContributionsForGroup(any(), any())
             } just Runs
@@ -731,9 +831,18 @@ class ContributionRepositoryImplTest {
             every {
                 localContributionDataSource.getContributionsByGroupIdFlow(testGroupId)
             } returns flowOf(emptyList())
+            coEvery {
+                cloudContributionDataSource.fetchContributionsFullSnapshot(testGroupId)
+            } returns DeltaSyncBatch(
+                upserts = cloudContributions,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
             every {
-                cloudContributionDataSource.getContributionsByGroupIdFlow(testGroupId)
-            } returns flowOf(cloudContributions)
+                cloudContributionDataSource.observeContributionsDeltaFlow(testGroupId, any())
+            } returns emptyFlow()
             coEvery {
                 localContributionDataSource.replaceContributionsForGroup(any(), any())
             } just Runs

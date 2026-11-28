@@ -26,6 +26,15 @@ interface LocalSubunitDataSource {
      */
     suspend fun replaceSubunitsForGroup(groupId: String, subunits: List<Subunit>)
 
+    /**
+     * Atomically applies an incremental delta (upserts + tombstone deletions) for a group.
+     */
+    suspend fun applySubunitsDeltaForGroup(
+        groupId: String,
+        upserts: List<Subunit>,
+        deletedIds: List<String>
+    )
+
     suspend fun getSubunitIdsByGroup(groupId: String): List<String>
 
     suspend fun getSubunitById(subunitId: String): Subunit?

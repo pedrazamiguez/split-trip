@@ -28,6 +28,15 @@ interface LocalExpenseDataSource {
      */
     suspend fun replaceExpensesForGroup(groupId: String, expenses: List<Expense>)
 
+    /**
+     * Atomically applies an incremental delta (upserts + tombstone deletions) for a group.
+     */
+    suspend fun applyExpensesDeltaForGroup(
+        groupId: String,
+        upserts: List<Expense>,
+        deletedIds: List<String>
+    )
+
     suspend fun getExpenseIdsByGroup(groupId: String): List<String>
 
     /**

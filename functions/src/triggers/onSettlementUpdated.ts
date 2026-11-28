@@ -37,7 +37,7 @@ export const onSettlementUpdated = onDocumentUpdated(
     const groupId = event.params.groupId;
     const settlementId = event.params.settlementId;
 
-    if (!before || !after || before.status === after.status) {
+    if (!before || !after || before.isDeleted === true || after.isDeleted === true || before.status === after.status) {
       return;
     }
 

@@ -9,6 +9,7 @@ import es.pedrazamiguez.splittrip.data.local.database.AppDatabase
 import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalContributionDataSourceImpl
 import es.pedrazamiguez.splittrip.data.local.entity.GroupEntity
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -16,6 +17,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -92,5 +94,38 @@ class LocalContributionDataSourceImplTest {
         assertNotNull(result)
         assertEquals("contribution-new", result?.id)
         assertEquals(2000L, result?.amount)
+    }
+
+    @Test
+    fun applyContributionsDeltaForGroup_upsertsPreservesUnsyncedDeletesTombstonesAndKeepsUntouched() = runTest {
+        val untouched = Contribution(
+            id = "c-untouched",
+            groupId = testGroupId,
+            userId = "user-1",
+            createdBy = "user-1",
+            contributionScope = PayerType.GROUP,
+            amount = 1000L,
+            currency = "EUR",
+            syncStatus = SyncStatus.SYNCED
+        )
+        val pending = untouched.copy(id = "c-pending", amount = 2000L, syncStatus = SyncStatus.PENDING_SYNC)
+        val toDelete = untouched.copy(id = "c-delete", amount = 3000L, syncStatus = SyncStatus.SYNCED)
+        localDataSource.saveContribution(untouched)
+        localDataSource.saveContribution(pending)
+        localDataSource.saveContribution(toDelete)
+
+        val remotePending = pending.copy(syncStatus = SyncStatus.SYNCED)
+        val remoteNew = untouched.copy(id = "c-new", amount = 4000L, syncStatus = SyncStatus.SYNCED)
+
+        localDataSource.applyContributionsDeltaForGroup(
+            groupId = testGroupId,
+            upserts = listOf(remotePending, remoteNew),
+            deletedIds = listOf("c-delete")
+        )
+
+        assertNotNull(localDataSource.findContributionById("c-untouched"))
+        assertEquals(SyncStatus.PENDING_SYNC, localDataSource.findContributionById("c-pending")?.syncStatus)
+        assertNull(localDataSource.findContributionById("c-delete"))
+        assertEquals(4000L, localDataSource.findContributionById("c-new")?.amount)
     }
 }

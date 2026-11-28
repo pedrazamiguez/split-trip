@@ -89,37 +89,43 @@ To prevent this:
 
 While we are Offline-First, this is a **multi-user, multi-device** app. Changes made by one user (or on one device) must eventually propagate to all other users/devices that share the same data. We achieve this using **Firestore Snapshot Listeners** that feed into Room, keeping the local-first flow intact.
 
-### The Pattern: Snapshot Listener → Room Reconciliation
+### The Pattern: Incremental Delta Sync → Room Reconciliation
 
-The Repository's `get*Flow()` method subscribes to a real-time Firestore `snapshotListener` via `onStart`. This listener fires whenever **any** user adds, modifies, or deletes data in the watched collection. Each snapshot represents the **complete authoritative state** of the collection at that moment.
+For the 6 group subcollections (`expenses`, `contributions`, `cash_withdrawals`, `cash_transfers`, `subunits`, `settlements`), repositories delegate synchronization to `syncGroupCollectionDelta()` in `DeltaSyncDelegates.kt`:
+
+1. **Read:** The UI observes the **Room Flow** (`local*DataSource.get*ByGroupIdFlow(groupId)`).
+2. **Checkpoint Lookup:** On start (managed by `KeyedSubscriptionTracker`), `LocalSyncCheckpointDataSource` loads the persisted `SyncWatermark(seconds, nanoseconds)` for `(groupId, collectionName)` from Room (`group_sync_checkpoints`). Checkpoints older than 30 days (`SyncCheckpointPolicy.CHECKPOINT_MAX_AGE_MILLIS`) are cleared and treated as `null` (falling back to a full snapshot so rows whose 60-day tombstones were TTL-purged get pruned).
+3. **Two-Phase Bootstrap → Delta Listener:**
+   - **Null / expired checkpoint:** Paginated full snapshot (`orderBy(FieldPath.documentId()).limit(500)`) reconciles Room via `replace*ForGroup`, persists the server-confirmed `maxServerUpdatedAt` watermark, and then attaches the bounded delta listener.
+   - **Valid checkpoint:** Immediately attaches `whereGreaterThan("serverUpdatedAt", cursor).orderBy("serverUpdatedAt", ASC).limit(500)` with `MetadataChanges.INCLUDE`, applying incremental upserts + tombstone deletions (`isDeleted == true`) via `apply*DeltaForGroup`. If a server-confirmed emission hits the 500-doc limit and advances the watermark, the listener automatically re-subscribes from the new cursor.
+   - **Archived groups:** Perform a single one-shot `fetch*Delta` (or `fetch*FullSnapshot` if null/expired) per session.
+4. **Server-Confirmed Monotonic Watermarks:** Watermarks advance strictly monotonically (`candidate > currentWatermark`) and **only** when `!snapshot.metadata.isFromCache && !snapshot.metadata.hasPendingWrites()`.
 
 ```kotlin
-// Repository
-override fun getGroupExpensesFlow(groupId: String): Flow<List<Expense>> {
-    return localDataSource.getExpensesByGroupIdFlow(groupId) // UI observes Room
-        .onStart {
-            // Cancel any previous listener to prevent duplicates
-            cloudSubscriptionJobs[groupId]?.cancel()
-            cloudSubscriptionJobs[groupId] = syncScope.launch {
-                subscribeToCloudChanges(groupId) // Persistent Firestore listener
-            }
+// Repository (Delta Sync Pattern)
+override fun getGroupSubunitsFlow(groupId: String): Flow<List<Subunit>> =
+    localSubunitDataSource.getSubunitsByGroupIdFlow(groupId)
+        .trackSubscription(subscriptionTracker, groupId, syncScope) {
+            syncGroupCollectionDelta(
+                DeltaSyncParams(
+                    groupId = groupId,
+                    collectionName = SyncCollectionName.SUBUNITS,
+                    checkpointDataSource = localSyncCheckpointDataSource,
+                    // ... fetchFullSnapshot, fetchDeltaOnce, observeDeltaFlow,
+                    // replaceLocal, applyDeltaLocal, getPendingIds, verifyOnServer, markSynced
+                )
+            )
         }
-}
-
-private suspend fun subscribeToCloudChanges(groupId: String) {
-    cloudDataSource.getExpensesByGroupIdFlow(groupId)
-        .collect { remoteExpenses ->
-            // Atomic replace: delete stale + insert fresh in a @Transaction
-            localDataSource.replaceExpensesForGroup(groupId, remoteExpenses)
-        }
-}
 ```
 
-**How it works:**
-1. The UI subscribes to the **Room Flow** (instant, offline data).
-2. `onStart` launches a **persistent Firestore snapshot listener** in a background scope.
-3. When the listener fires (new data from any user/device), the Repository atomically replaces the local data for that scope using a Room `@Transaction`.
-4. The Room Flow **re-emits automatically**, updating the UI in near real-time.
+### Soft-Delete Tombstones & TTL
+
+All 6 synced subcollections perform deletions via idempotent merge tombstones (`SetOptions.merge()`) instead of hard `.delete()` calls:
+- Sets `groupId`, `isDeleted = true`, `deletedAt = FieldValue.serverTimestamp()`, `serverUpdatedAt = FieldValue.serverTimestamp()`, `expireAt = Timestamp(now + 60 days)`, and optional `lastUpdatedBy`.
+- Preserves offline `create → delete` FIFO ordering and existing document fields needed by Cloud Functions notifications.
+- `firestore.indexes.json` defines `expireAt` TTL (`"ttl": true`, `"indexes": []`) on all 6 collection groups.
+
+*(Legacy full-snapshot pattern using `subscribeAndReconcile()` in `CloudSyncDelegates.kt` remains used by `GroupRepositoryImpl`.)*
 
 ### ⚠️ Preventing Duplicate Snapshot Listeners
 
@@ -241,9 +247,13 @@ internal class KeyedSubscriptionTracker {
 
 **When NOT to use:** `GroupRepositoryImpl` uses a single `Job?` — the pattern is trivial (3 lines) and doesn't benefit from the tracker's key management.
 
+### `DeltaSyncDelegates.kt`
+
+Encapsulates server-timestamped incremental delta synchronization (`syncGroupCollectionDelta`, `DeltaSyncParams`, `SyncCheckpointPolicy`) for all 6 group subcollections (`expenses`, `contributions`, `cash_withdrawals`, `cash_transfers`, `subunits`, `settlements`). See [ADR-0009](../adrs/0009-incremental-firestore-delta-sync.md) for the full protocol.
+
 ### `CloudSyncDelegates.kt`
 
-Four top-level `internal` functions that encapsulate the common offline-first coordination patterns:
+Four top-level `internal` functions that encapsulate the common offline-first coordination patterns (used by `GroupRepositoryImpl` and shared write/pending-confirm helpers):
 
 #### `subscribeAndReconcile<T>()`
 
@@ -354,15 +364,31 @@ class SubunitRepositoryImpl(
         )
     }
 
-    // READ: Local Flow + managed cloud subscription
+    // READ: Local Flow + managed delta sync subscription
     override fun getGroupSubunitsFlow(groupId: String): Flow<List<Subunit>> =
         localSubunitDataSource.getSubunitsByGroupIdFlow(groupId)
-            .onStart {
-                subscriptionTracker.cancelAndRelaunch(groupId, syncScope) {
-                    subscribeAndReconcile(
-                        cloudFlow = cloudSubunitDataSource.getSubunitsByGroupIdFlow(groupId),
-                        reconcileLocal = { remoteSubunits ->
+            .trackSubscription(subscriptionTracker, groupId, syncScope) {
+                syncGroupCollectionDelta(
+                    DeltaSyncParams(
+                        groupId = groupId,
+                        collectionName = SyncCollectionName.SUBUNITS,
+                        checkpointDataSource = localSyncCheckpointDataSource,
+                        isGroupArchived = {
+                            localGroupDataSource.getGroupById(groupId)?.status == GroupStatus.ARCHIVED
+                        },
+                        syncedArchivedGroupIds = syncedArchivedGroupIds,
+                        fetchFullSnapshot = { cloudSubunitDataSource.fetchSubunitsFullSnapshot(groupId) },
+                        fetchDeltaOnce = { watermark ->
+                            cloudSubunitDataSource.fetchSubunitsDelta(groupId, watermark)
+                        },
+                        observeDeltaFlow = { watermark ->
+                            cloudSubunitDataSource.observeSubunitsDeltaFlow(groupId, watermark)
+                        },
+                        replaceLocal = { remoteSubunits ->
                             localSubunitDataSource.replaceSubunitsForGroup(groupId, remoteSubunits)
+                        },
+                        applyDeltaLocal = { upserts, deletedIds ->
+                            localSubunitDataSource.applySubunitsDeltaForGroup(groupId, upserts, deletedIds)
                         },
                         getPendingIds = {
                             localSubunitDataSource.getPendingSyncSubunitIds(groupId)
@@ -374,9 +400,10 @@ class SubunitRepositoryImpl(
                             localSubunitDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
                         },
                         entityLabel = "subunit",
-                        logContext = "for group $groupId"
+                        logContext = "for group $groupId",
+                        performanceMonitor = performanceMonitor
                     )
-                }
+                )
             }
 }
 ```
@@ -425,6 +452,10 @@ When implementing a new repository, verify these points:
 ---
 
 ## Room DB Migrations & Performance Notes
+
+### Migration 46 → 47 (Incremental Delta Sync Checkpoints)
+
+Added `group_sync_checkpoints` table (`PK(groupId, collectionName)`, `FOREIGN KEY(groupId) REFERENCES groups(id) ON DELETE CASCADE`, index on `groupId`) storing lossless `(lastServerUpdatedSeconds, lastServerUpdatedNanos)` watermarks and `lastSyncedAtClientMillis` per group subcollection.
 
 ### Migration 25 → 26 (Scope-Aware FIFO Indexes)
 

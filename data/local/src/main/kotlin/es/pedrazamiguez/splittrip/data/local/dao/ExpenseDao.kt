@@ -73,6 +73,12 @@ interface ExpenseDao {
     @Query("DELETE FROM expenses WHERE id IN (:ids)")
     suspend fun deleteExpensesByIds(ids: List<String>)
 
+    @Query("SELECT * FROM expenses WHERE groupId = :groupId AND id IN (:ids)")
+    suspend fun getExpensesByIds(groupId: String, ids: List<String>): List<ExpenseEntity>
+
+    @Query("DELETE FROM expenses WHERE groupId = :groupId AND id IN (:ids)")
+    suspend fun deleteExpensesByGroupAndIds(groupId: String, ids: List<String>)
+
     @Query("UPDATE expenses SET receiptRemoteUrl = :remoteUrl WHERE id = :expenseId")
     suspend fun updateReceiptRemoteUrl(expenseId: String, remoteUrl: String)
 
@@ -103,22 +109,7 @@ interface ExpenseDao {
     suspend fun replaceExpensesForGroup(groupId: String, expenses: List<ExpenseEntity>) {
         val existingExpenses = getExpensesByGroupId(groupId).associateBy { it.id }
         val mergedExpenses = expenses.map { remote ->
-            val local = existingExpenses[remote.id]
-            if (local != null) {
-                remote.copy(
-                    receiptLocalUri = local.receiptLocalUri?.takeIf { it.isNotBlank() } ?: remote.receiptLocalUri,
-                    receiptRemoteUrl = remote.receiptRemoteUrl?.takeIf { it.isNotBlank() } ?: local.receiptRemoteUrl,
-                    receiptMimeType = remote.receiptMimeType?.takeIf { it.isNotBlank() } ?: local.receiptMimeType,
-                    receiptCapturedAtMillis = if (remote.receiptCapturedAtMillis != 0L) {
-                        remote.receiptCapturedAtMillis
-                    } else {
-                        local.receiptCapturedAtMillis
-                    },
-                    syncStatus = local.syncStatus.takeIf { it != "SYNCED" } ?: remote.syncStatus
-                )
-            } else {
-                remote
-            }
+            mergeExpenseWithLocal(remote, existingExpenses[remote.id])
         }
 
         val remoteIds = mergedExpenses.map { it.id }.toSet()
@@ -136,7 +127,61 @@ interface ExpenseDao {
             id !in remoteIds && existingExpenses[id]?.syncStatus == "SYNCED"
         }
         if (staleIds.isNotEmpty()) {
-            deleteExpensesByIds(staleIds)
+            staleIds.chunked(SQLITE_BIND_LIMIT).forEach { chunk ->
+                deleteExpensesByIds(chunk)
+            }
         }
+    }
+
+    @Transaction
+    suspend fun applyExpensesDeltaForGroup(
+        groupId: String,
+        upserts: List<ExpenseEntity>,
+        deletedIds: List<String>
+    ) {
+        if (upserts.isEmpty() && deletedIds.isEmpty()) return
+
+        if (upserts.isNotEmpty()) {
+            val existingById = upserts
+                .map { it.id }
+                .chunked(SQLITE_BIND_LIMIT)
+                .flatMap { chunk -> getExpensesByIds(groupId, chunk) }
+                .associateBy { it.id }
+
+            val toUpsert = upserts
+                .map { remote -> mergeExpenseWithLocal(remote, existingById[remote.id]) }
+                .filter { merged ->
+                    val existing = existingById[merged.id]
+                    existing == null || existing != merged
+                }
+            if (toUpsert.isNotEmpty()) {
+                insertExpenses(toUpsert)
+            }
+        }
+
+        if (deletedIds.isNotEmpty()) {
+            deletedIds.chunked(SQLITE_BIND_LIMIT).forEach { chunk ->
+                deleteExpensesByGroupAndIds(groupId, chunk)
+            }
+        }
+    }
+
+    private fun mergeExpenseWithLocal(remote: ExpenseEntity, local: ExpenseEntity?): ExpenseEntity {
+        if (local == null) return remote
+        return remote.copy(
+            receiptLocalUri = local.receiptLocalUri?.takeIf { it.isNotBlank() } ?: remote.receiptLocalUri,
+            receiptRemoteUrl = remote.receiptRemoteUrl?.takeIf { it.isNotBlank() } ?: local.receiptRemoteUrl,
+            receiptMimeType = remote.receiptMimeType?.takeIf { it.isNotBlank() } ?: local.receiptMimeType,
+            receiptCapturedAtMillis = if (remote.receiptCapturedAtMillis != 0L) {
+                remote.receiptCapturedAtMillis
+            } else {
+                local.receiptCapturedAtMillis
+            },
+            syncStatus = local.syncStatus.takeIf { it != "SYNCED" } ?: remote.syncStatus
+        )
+    }
+
+    private companion object {
+        const val SQLITE_BIND_LIMIT = 500
     }
 }

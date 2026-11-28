@@ -8,6 +8,14 @@ import es.pedrazamiguez.splittrip.data.local.entity.SubunitEntity
 import es.pedrazamiguez.splittrip.data.local.entity.SyncStatusEntry
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * DAO for group subunits.
+ *
+ * The function count exceeds Detekt's `TooManyFunctions` threshold because this single-table
+ * Room DAO exposes queries, writes, sync-status transitions, and @Transaction delta/full
+ * reconciliation helpers for the `subunits` table.
+ */
+@Suppress("TooManyFunctions")
 @Dao
 interface SubunitDao {
 
@@ -67,6 +75,9 @@ interface SubunitDao {
     @Query("DELETE FROM subunits WHERE id IN (:ids)")
     suspend fun deleteSubunitsByIds(ids: List<String>)
 
+    @Query("DELETE FROM subunits WHERE groupId = :groupId AND id IN (:ids)")
+    suspend fun deleteSubunitsByGroupAndIds(groupId: String, ids: List<String>)
+
     /**
      * Reconciles local subunits for a group with the authoritative cloud snapshot.
      *
@@ -117,5 +128,30 @@ interface SubunitDao {
         if (staleIds.isNotEmpty()) {
             deleteSubunitsByIds(staleIds)
         }
+    }
+
+    @Transaction
+    suspend fun applySubunitsDeltaForGroup(
+        groupId: String,
+        upserts: List<SubunitEntity>,
+        deletedIds: List<String>
+    ) {
+        if (upserts.isEmpty() && deletedIds.isEmpty()) return
+        val deletedIdSet = deletedIds.toSet()
+        if (upserts.isNotEmpty()) {
+            val unsyncedStatuses = getUnsyncedSubunitStatuses(groupId)
+            insertSubunits(upserts)
+            val upsertedIds = upserts.map { it.id }.toSet()
+            unsyncedStatuses
+                .filter { it.id in upsertedIds && it.id !in deletedIdSet }
+                .forEach { updateSyncStatus(it.id, it.syncStatus) }
+        }
+        deletedIds.chunked(SQLITE_BIND_LIMIT).forEach { chunk ->
+            deleteSubunitsByGroupAndIds(groupId, chunk)
+        }
+    }
+
+    private companion object {
+        const val SQLITE_BIND_LIMIT = 500
     }
 }

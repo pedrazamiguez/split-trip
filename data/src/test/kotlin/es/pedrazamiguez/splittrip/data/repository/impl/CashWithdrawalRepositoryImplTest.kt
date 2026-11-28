@@ -6,12 +6,16 @@ import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudCashWithdrawalDat
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalQueryDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalWriteDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSyncCheckpointDataSource
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PayerType
+import es.pedrazamiguez.splittrip.domain.enums.SyncCollectionName
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawalRemainingAmountUpdate
+import es.pedrazamiguez.splittrip.domain.model.DeltaSyncBatch
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.model.SyncWatermark
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -25,6 +29,7 @@ import io.mockk.verify
 import java.math.BigDecimal
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -63,8 +68,8 @@ class CashWithdrawalRepositoryImplTest {
         createdAt = LocalDateTime.of(2026, 1, 15, 12, 0)
     )
 
-    private lateinit var localGroupDataSource:
-        LocalGroupDataSource
+    private lateinit var localGroupDataSource: LocalGroupDataSource
+    private lateinit var localSyncCheckpointDataSource: LocalSyncCheckpointDataSource
     private lateinit var syncTeardownCoordinator: SyncTeardownCoordinator
 
     @BeforeEach
@@ -75,22 +80,25 @@ class CashWithdrawalRepositoryImplTest {
         localWriteDataSource = mockk(relaxed = true)
         authenticationService = mockk()
         performanceMonitor = mockk(relaxed = true) {
-            io.mockk.coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
-            io.mockk.every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
+            coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
+            every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
         }
         every { authenticationService.currentUserId() } returns testUserId
 
         localGroupDataSource = mockk(relaxed = true)
+        localSyncCheckpointDataSource = mockk(relaxed = true)
+        coEvery { localSyncCheckpointDataSource.getWatermark(any(), any()) } returns null
         syncTeardownCoordinator = mockk(relaxed = true)
         repository = CashWithdrawalRepositoryImpl(
             cloudCashWithdrawalDataSource = cloudDataSource,
             localQueryDataSource = localQueryDataSource,
             localWriteDataSource = localWriteDataSource,
+            localGroupDataSource = localGroupDataSource,
+            localSyncCheckpointDataSource = localSyncCheckpointDataSource,
             authenticationService = authenticationService,
             performanceMonitor = performanceMonitor,
-            ioDispatcher = testDispatcher,
-            localGroupDataSource = localGroupDataSource,
-            syncTeardownCoordinator = syncTeardownCoordinator
+            syncTeardownCoordinator = syncTeardownCoordinator,
+            ioDispatcher = testDispatcher
         )
     }
 
@@ -246,7 +254,14 @@ class CashWithdrawalRepositoryImplTest {
             // Given
             val localWithdrawals = listOf(testWithdrawal)
             every { localQueryDataSource.getWithdrawalsByGroupIdFlow(testGroupId) } returns flowOf(localWithdrawals)
-            every { cloudDataSource.getWithdrawalsByGroupIdFlow(testGroupId) } returns flowOf(localWithdrawals)
+            coEvery { cloudDataSource.fetchWithdrawalsFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                upserts = localWithdrawals,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
+            every { cloudDataSource.observeWithdrawalsDeltaFlow(testGroupId, any()) } returns emptyFlow()
             coEvery { localWriteDataSource.replaceWithdrawalsForGroup(any(), any()) } just Runs
 
             // When
@@ -267,7 +282,13 @@ class CashWithdrawalRepositoryImplTest {
                 id = testGroupId,
                 status = GroupStatus.ARCHIVED
             )
-            coEvery { cloudDataSource.fetchWithdrawalsByGroupId(testGroupId) } returns remoteWithdrawals
+            coEvery { cloudDataSource.fetchWithdrawalsFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                upserts = remoteWithdrawals,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
             coEvery { localWriteDataSource.replaceWithdrawalsForGroup(any(), any()) } just Runs
 
             repository.getGroupWithdrawalsFlow(testGroupId).first()
@@ -275,12 +296,71 @@ class CashWithdrawalRepositoryImplTest {
             repository.getGroupWithdrawalsFlow(testGroupId).first()
             advanceUntilIdle()
 
-            verify(exactly = 0) { cloudDataSource.getWithdrawalsByGroupIdFlow(testGroupId) }
-            coVerify(exactly = 1) { cloudDataSource.fetchWithdrawalsByGroupId(testGroupId) }
+            verify(exactly = 0) { cloudDataSource.observeWithdrawalsDeltaFlow(testGroupId, any()) }
+            coVerify(exactly = 1) { cloudDataSource.fetchWithdrawalsFullSnapshot(testGroupId) }
             coVerify(exactly = 1) {
                 localWriteDataSource.replaceWithdrawalsForGroup(testGroupId, remoteWithdrawals)
             }
         }
+
+        @Test
+        fun `existing checkpoint passes stored SyncWatermark to observeWithdrawalsDeltaFlow and applies tombstones`() =
+            runTest(testDispatcher) {
+                val stored = SyncWatermark((System.currentTimeMillis() / 1000L) - 60L, 0)
+                val next = SyncWatermark(System.currentTimeMillis() / 1000L, 0)
+                every { localQueryDataSource.getWithdrawalsByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
+                coEvery {
+                    localSyncCheckpointDataSource.getWatermark(testGroupId, SyncCollectionName.CASH_WITHDRAWALS)
+                } returns stored
+                every { cloudDataSource.observeWithdrawalsDeltaFlow(testGroupId, stored) } returns flowOf(
+                    DeltaSyncBatch(
+                        upserts = listOf(testWithdrawal),
+                        deletedIds = listOf("w-deleted"),
+                        maxServerUpdatedAt = next,
+                        isServerConfirmed = true,
+                        isFullSnapshot = false
+                    )
+                )
+
+                repository.getGroupWithdrawalsFlow(testGroupId).first()
+                advanceUntilIdle()
+
+                coVerify(exactly = 0) { cloudDataSource.fetchWithdrawalsFullSnapshot(any()) }
+                verify(exactly = 1) { cloudDataSource.observeWithdrawalsDeltaFlow(testGroupId, stored) }
+                coVerify(exactly = 1) {
+                    localWriteDataSource.applyWithdrawalsDeltaForGroup(
+                        testGroupId,
+                        listOf(testWithdrawal),
+                        listOf("w-deleted")
+                    )
+                }
+            }
+
+        @Test
+        fun `expired checkpoint falls back to fetchWithdrawalsFullSnapshot and replaceWithdrawalsForGroup`() =
+            runTest(testDispatcher) {
+                val expired = SyncWatermark(1000L, 0)
+                every { localQueryDataSource.getWithdrawalsByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
+                coEvery {
+                    localSyncCheckpointDataSource.getWatermark(testGroupId, SyncCollectionName.CASH_WITHDRAWALS)
+                } returns expired
+                coEvery { cloudDataSource.fetchWithdrawalsFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                    upserts = listOf(testWithdrawal),
+                    deletedIds = emptyList(),
+                    maxServerUpdatedAt = SyncWatermark(System.currentTimeMillis() / 1000L, 0),
+                    isServerConfirmed = true,
+                    isFullSnapshot = true
+                )
+                every { cloudDataSource.observeWithdrawalsDeltaFlow(testGroupId, any()) } returns emptyFlow()
+
+                repository.getGroupWithdrawalsFlow(testGroupId).first()
+                advanceUntilIdle()
+
+                coVerify(exactly = 1) { cloudDataSource.fetchWithdrawalsFullSnapshot(testGroupId) }
+                coVerify(exactly = 1) {
+                    localWriteDataSource.replaceWithdrawalsForGroup(testGroupId, listOf(testWithdrawal))
+                }
+            }
     }
 
     @Nested
@@ -347,7 +427,14 @@ class CashWithdrawalRepositoryImplTest {
             // Given — cloud returns withdrawals, local has pending sync IDs
             val localWithdrawals = listOf(testWithdrawal)
             every { localQueryDataSource.getWithdrawalsByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
-            every { cloudDataSource.getWithdrawalsByGroupIdFlow(testGroupId) } returns flowOf(localWithdrawals)
+            coEvery { cloudDataSource.fetchWithdrawalsFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                upserts = localWithdrawals,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
+            every { cloudDataSource.observeWithdrawalsDeltaFlow(testGroupId, any()) } returns emptyFlow()
             coEvery { localWriteDataSource.replaceWithdrawalsForGroup(any(), any()) } just Runs
             coEvery { localQueryDataSource.getPendingSyncWithdrawalIds(testGroupId) } returns listOf("pending-1")
             coEvery { cloudDataSource.verifyWithdrawalOnServer(testGroupId, "pending-1") } returns true
@@ -365,7 +452,14 @@ class CashWithdrawalRepositoryImplTest {
         fun `keeps PENDING_SYNC when server verification fails`() = runTest(testDispatcher) {
             // Given
             every { localQueryDataSource.getWithdrawalsByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
-            every { cloudDataSource.getWithdrawalsByGroupIdFlow(testGroupId) } returns flowOf(listOf(testWithdrawal))
+            coEvery { cloudDataSource.fetchWithdrawalsFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                upserts = listOf(testWithdrawal),
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
+            every { cloudDataSource.observeWithdrawalsDeltaFlow(testGroupId, any()) } returns emptyFlow()
             coEvery { localWriteDataSource.replaceWithdrawalsForGroup(any(), any()) } just Runs
             coEvery { localQueryDataSource.getPendingSyncWithdrawalIds(testGroupId) } returns listOf("pending-1")
             coEvery {
@@ -386,7 +480,14 @@ class CashWithdrawalRepositoryImplTest {
         fun `skips when no pending withdrawals exist`() = runTest(testDispatcher) {
             // Given
             every { localQueryDataSource.getWithdrawalsByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
-            every { cloudDataSource.getWithdrawalsByGroupIdFlow(testGroupId) } returns flowOf(listOf(testWithdrawal))
+            coEvery { cloudDataSource.fetchWithdrawalsFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                upserts = listOf(testWithdrawal),
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
+            every { cloudDataSource.observeWithdrawalsDeltaFlow(testGroupId, any()) } returns emptyFlow()
             coEvery { localWriteDataSource.replaceWithdrawalsForGroup(any(), any()) } just Runs
             coEvery { localQueryDataSource.getPendingSyncWithdrawalIds(testGroupId) } returns emptyList()
 

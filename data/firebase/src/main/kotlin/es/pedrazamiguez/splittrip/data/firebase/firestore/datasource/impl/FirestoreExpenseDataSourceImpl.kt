@@ -2,7 +2,9 @@ package es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl
 
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.Transaction
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.CashWithdrawalDocument
@@ -10,15 +12,18 @@ import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ExpenseDocume
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.GroupDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.mapper.toDomain
+import es.pedrazamiguez.splittrip.data.firebase.firestore.sync.FirestoreSyncFields
+import es.pedrazamiguez.splittrip.data.firebase.firestore.sync.fetchCollectionDelta
+import es.pedrazamiguez.splittrip.data.firebase.firestore.sync.fetchCollectionFullSnapshot
+import es.pedrazamiguez.splittrip.data.firebase.firestore.sync.observeCollectionDeltaFlow
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
+import es.pedrazamiguez.splittrip.domain.model.DeltaSyncBatch
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.SyncWatermark
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
-import timber.log.Timber
 
 @Suppress("TooManyFunctions")
 class FirestoreExpenseDataSourceImpl(
@@ -49,54 +54,54 @@ class FirestoreExpenseDataSourceImpl(
     }
 
     override suspend fun deleteExpense(groupId: String, expenseId: String) {
-        firestore
-            .collection(GroupDocument.COLLECTION_PATH)
-            .document(groupId)
-            .collection(ExpenseDocument.COLLECTION_PATH)
+        createExpensesCollection(groupId)
             .document(expenseId)
-            .delete()
+            .set(
+                FirestoreSyncFields.buildSoftDeleteTombstone(
+                    groupId = groupId,
+                    deletedByUserId = authenticationService.currentUserId()
+                ),
+                SetOptions.merge()
+            )
             .await()
     }
 
-    override suspend fun fetchExpensesByGroupId(groupId: String): List<Expense> {
-        val snapshot = firestore
-            .collection(GroupDocument.COLLECTION_PATH)
-            .document(groupId)
-            .collection(ExpenseDocument.COLLECTION_PATH)
-            .get()
-            .await()
+    override suspend fun fetchExpensesFullSnapshot(groupId: String): DeltaSyncBatch<Expense> =
+        fetchCollectionFullSnapshot(
+            collectionRef = createExpensesCollection(groupId),
+            mapDocument = { it.toObject(ExpenseDocument::class.java)?.toDomain() },
+            sort = { list -> list.sortedByDescending { it.createdAt ?: it.lastUpdatedAt } }
+        )
 
-        return snapshot.documents.mapNotNull { doc ->
-            doc.toObject(ExpenseDocument::class.java)?.toDomain()
-        }.sortedByDescending { it.createdAt ?: it.lastUpdatedAt }
-    }
+    override suspend fun fetchExpensesDelta(
+        groupId: String,
+        sinceWatermark: SyncWatermark
+    ): DeltaSyncBatch<Expense> =
+        fetchCollectionDelta(
+            collectionRef = createExpensesCollection(groupId),
+            sinceWatermark = sinceWatermark,
+            mapDocument = { it.toObject(ExpenseDocument::class.java)?.toDomain() },
+            sort = { list -> list.sortedByDescending { it.createdAt ?: it.lastUpdatedAt } }
+        )
 
-    override fun getExpensesByGroupIdFlow(groupId: String): Flow<List<Expense>> = callbackFlow {
-        val expensesCollection = createExpensesCollection(groupId)
-        val listener = expensesCollection.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                Timber.e(error, "Error listening to expenses")
-                return@addSnapshotListener
-            }
-            if (snapshot != null) {
-                val expenses = snapshot.documents.mapNotNull { doc ->
-                    doc.toObject(ExpenseDocument::class.java)?.toDomain()
-                }.sortedByDescending { it.createdAt ?: it.lastUpdatedAt }
-                trySend(expenses)
-            }
-        }
-        awaitClose { listener.remove() }
-    }
+    override fun observeExpensesDeltaFlow(
+        groupId: String,
+        sinceWatermark: SyncWatermark?
+    ): Flow<DeltaSyncBatch<Expense>> =
+        observeCollectionDeltaFlow(
+            collectionRef = createExpensesCollection(groupId),
+            sinceWatermark = sinceWatermark,
+            entityLabel = "expenses",
+            mapDocument = { it.toObject(ExpenseDocument::class.java)?.toDomain() },
+            sort = { list -> list.sortedByDescending { it.createdAt ?: it.lastUpdatedAt } }
+        )
 
     override suspend fun verifyExpenseOnServer(groupId: String, expenseId: String): Boolean {
-        val doc = firestore
-            .collection(GroupDocument.COLLECTION_PATH)
-            .document(groupId)
-            .collection(ExpenseDocument.COLLECTION_PATH)
+        val doc = createExpensesCollection(groupId)
             .document(expenseId)
             .get(Source.SERVER)
             .await()
-        return doc.exists()
+        return doc.exists() && doc.getBoolean(FirestoreSyncFields.IS_DELETED) != true
     }
 
     /**
@@ -227,7 +232,13 @@ class FirestoreExpenseDataSourceImpl(
     ) {
         for (ref in withdrawalRefs) {
             val newRemaining = withdrawalUpdates[ref.id] ?: continue
-            transaction.update(ref, FIELD_REMAINING_AMOUNT, newRemaining)
+            transaction.update(
+                ref,
+                mapOf(
+                    FIELD_REMAINING_AMOUNT to newRemaining,
+                    FirestoreSyncFields.SERVER_UPDATED_AT to FieldValue.serverTimestamp()
+                )
+            )
         }
     }
 

@@ -1,5 +1,6 @@
 package es.pedrazamiguez.splittrip.data.firebase.firestore.datasource.impl
 
+import com.google.firebase.Timestamp
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.CashWithdrawalDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ContributionDocument
 import es.pedrazamiguez.splittrip.data.firebase.firestore.document.ExpenseDocument
@@ -24,7 +25,8 @@ class ReconciliationMappersTest {
             val doc = ExpenseDocument(
                 expenseId = "exp-1",
                 payerId = pendingUserId,
-                createdBy = otherUserId
+                createdBy = otherUserId,
+                serverUpdatedAt = Timestamp(100L, 0)
             )
 
             val updated = doc.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId)
@@ -32,6 +34,7 @@ class ReconciliationMappersTest {
             assertNotNull(updated)
             assertEquals(activeUserId, updated?.payerId)
             assertEquals(otherUserId, updated?.createdBy)
+            assertNull(updated?.serverUpdatedAt)
         }
 
         @Test
@@ -137,7 +140,8 @@ class ReconciliationMappersTest {
             val doc = ContributionDocument(
                 contributionId = "c-1",
                 userId = pendingUserId,
-                createdBy = otherUserId
+                createdBy = otherUserId,
+                serverUpdatedAt = Timestamp(100L, 0)
             )
 
             val updated = doc.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId)
@@ -145,6 +149,7 @@ class ReconciliationMappersTest {
             assertNotNull(updated)
             assertEquals(activeUserId, updated?.userId)
             assertEquals(otherUserId, updated?.createdBy)
+            assertNull(updated?.serverUpdatedAt)
         }
 
         @Test
@@ -184,7 +189,8 @@ class ReconciliationMappersTest {
             val doc = CashWithdrawalDocument(
                 withdrawalId = "w-1",
                 withdrawnBy = pendingUserId,
-                createdBy = otherUserId
+                createdBy = otherUserId,
+                serverUpdatedAt = Timestamp(100L, 0)
             )
 
             val updated = doc.getUpdatedIfNeedsUpdate(pendingUserId, activeUserId)
@@ -192,6 +198,7 @@ class ReconciliationMappersTest {
             assertNotNull(updated)
             assertEquals(activeUserId, updated?.withdrawnBy)
             assertEquals(otherUserId, updated?.createdBy)
+            assertNull(updated?.serverUpdatedAt)
         }
 
         @Test

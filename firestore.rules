@@ -39,6 +39,79 @@ service cloud.firestore {
              || get(/databases/$(database)/documents/groups/$(groupId)).data.get("deletionRequested", false) == true;
     }
 
+    function hasValidQueryLimit(maxLimit) {
+      return request.query.limit != null
+             && request.query.limit > 0
+             && request.query.limit <= maxLimit;
+    }
+
+    function isValidOptionalServerTimestamp(fieldName) {
+      return !(fieldName in request.resource.data)
+             || request.resource.data[fieldName] == null
+             || request.resource.data[fieldName] == request.time
+             || (resource != null
+                 && fieldName in resource.data
+                 && request.resource.data[fieldName] == resource.data[fieldName]);
+    }
+
+    function hasValidSyncMetadata(maxKeys) {
+      return request.resource.data.keys().size() <= maxKeys
+             && (!('isDeleted' in request.resource.data) || request.resource.data.isDeleted is bool)
+             && isValidOptionalServerTimestamp('serverUpdatedAt')
+             && isValidOptionalServerTimestamp('deletedAt')
+             && (!('expireAt' in request.resource.data) || request.resource.data.expireAt == null || request.resource.data.expireAt is timestamp);
+    }
+
+    function isBoundedOptionalString(fieldName, maxLen) {
+      return !(fieldName in request.resource.data)
+             || request.resource.data[fieldName] == null
+             || (request.resource.data[fieldName] is string
+                 && request.resource.data[fieldName].size() <= maxLen);
+    }
+
+    function isBoundedOptionalList(fieldName, maxSize) {
+      return !(fieldName in request.resource.data)
+             || request.resource.data[fieldName] == null
+             || (request.resource.data[fieldName] is list
+                 && request.resource.data[fieldName].size() <= maxSize);
+    }
+
+    function isValidExpensePayload() {
+      return hasValidSyncMetadata(45)
+             && isBoundedOptionalString('title', 200)
+             && isBoundedOptionalString('notes', 2000)
+             && isBoundedOptionalString('description', 2000)
+             && isBoundedOptionalList('splits', 100)
+             && isBoundedOptionalList('addOns', 50)
+             && isBoundedOptionalList('attachments', 10);
+    }
+
+    function isValidContributionPayload() {
+      return hasValidSyncMetadata(30);
+    }
+
+    function isValidCashWithdrawalPayload() {
+      return hasValidSyncMetadata(30)
+             && isBoundedOptionalString('title', 200)
+             && isBoundedOptionalString('notes', 2000)
+             && isBoundedOptionalList('addOns', 50);
+    }
+
+    function isValidCashTransferPayload() {
+      return hasValidSyncMetadata(20);
+    }
+
+    function isValidSubunitPayload() {
+      return hasValidSyncMetadata(20)
+             && isBoundedOptionalString('name', 150)
+             && isBoundedOptionalList('memberIds', 100);
+    }
+
+    function isValidSettlementPayload() {
+      return hasValidSyncMetadata(25)
+             && isBoundedOptionalString('disputeReason', 1000);
+    }
+
     // ---------------------------------------------------------------
     // Users
     // ---------------------------------------------------------------
@@ -97,36 +170,41 @@ service cloud.firestore {
 
       // Expenses subcollection
       match /expenses/{expenseId} {
-        allow read: if isAuthenticated();
-        allow create, update: if isAuthenticated() && isGroupActiveOrNew(groupId);
+        allow get: if isAuthenticated();
+        allow list: if isAuthenticated() && hasValidQueryLimit(500);
+        allow create, update: if isAuthenticated() && isGroupActiveOrNew(groupId) && isValidExpensePayload();
         allow delete: if isAuthenticated();
       }
 
       // Contributions subcollection
       match /contributions/{contributionId} {
-        allow read: if isAuthenticated();
-        allow create, update: if isAuthenticated() && isGroupActiveOrNew(groupId);
+        allow get: if isAuthenticated();
+        allow list: if isAuthenticated() && hasValidQueryLimit(500);
+        allow create, update: if isAuthenticated() && isGroupActiveOrNew(groupId) && isValidContributionPayload();
         allow delete: if isAuthenticated();
       }
 
       // Cash withdrawals subcollection
       match /cash_withdrawals/{withdrawalId} {
-        allow read: if isAuthenticated();
-        allow create, update: if isAuthenticated() && isGroupActiveOrNew(groupId);
+        allow get: if isAuthenticated();
+        allow list: if isAuthenticated() && hasValidQueryLimit(500);
+        allow create, update: if isAuthenticated() && isGroupActiveOrNew(groupId) && isValidCashWithdrawalPayload();
         allow delete: if isAuthenticated();
       }
 
       // Subunits subcollection
       match /subunits/{subunitId} {
-        allow read: if isAuthenticated();
-        allow create, update: if isAuthenticated() && isGroupActiveOrNew(groupId);
+        allow get: if isAuthenticated();
+        allow list: if isAuthenticated() && hasValidQueryLimit(500);
+        allow create, update: if isAuthenticated() && isGroupActiveOrNew(groupId) && isValidSubunitPayload();
         allow delete: if isAuthenticated();
       }
 
       // Settlements subcollection
       match /settlements/{settlementId} {
-        allow read: if isAuthenticated();
-        allow create, update: if isAuthenticated() && isGroupActiveOrNew(groupId);
+        allow get: if isAuthenticated();
+        allow list: if isAuthenticated() && hasValidQueryLimit(500);
+        allow create, update: if isAuthenticated() && isGroupActiveOrNew(groupId) && isValidSettlementPayload();
         allow delete: if isAuthenticated();
       }
 
@@ -139,8 +217,9 @@ service cloud.firestore {
 
       // Cash transfers subcollection
       match /cash_transfers/{transferId} {
-        allow read: if isAuthenticated();
-        allow create, update: if isAuthenticated() && isGroupActiveOrNew(groupId);
+        allow get: if isAuthenticated();
+        allow list: if isAuthenticated() && hasValidQueryLimit(500);
+        allow create, update: if isAuthenticated() && isGroupActiveOrNew(groupId) && isValidCashTransferPayload();
         allow delete: if isAuthenticated();
       }
     }

@@ -36,6 +36,15 @@ export const onContributionAdded = onDocumentCreated(
     const contribution = snapshot.data() as ContributionDoc;
     const groupId = event.params.groupId;
     const contributionId = event.params.contributionId;
+
+    if (contribution.isDeleted === true) {
+      logger.info("onContributionAdded: Suppressed — tombstoned document created", {
+        groupId,
+        contributionId,
+      });
+      return;
+    }
+
     const actorId = contribution.createdBy;
 
     if (!actorId) {

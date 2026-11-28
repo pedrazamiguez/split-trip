@@ -36,7 +36,8 @@ internal fun ExpenseDocument.getUpdatedIfNeedsUpdate(
         this.copy(
             payerId = payerId,
             createdBy = createdBy,
-            splits = updatedSplits
+            splits = updatedSplits,
+            serverUpdatedAt = null
         )
     } else {
         null
@@ -90,7 +91,8 @@ internal fun ContributionDocument.getUpdatedIfNeedsUpdate(
     return if (needsUpdate) {
         this.copy(
             userId = cUserId,
-            createdBy = cCreatedBy
+            createdBy = cCreatedBy,
+            serverUpdatedAt = null
         )
     } else {
         null
@@ -117,7 +119,8 @@ internal fun CashWithdrawalDocument.getUpdatedIfNeedsUpdate(
     return if (needsUpdate) {
         this.copy(
             withdrawnBy = wWithdrawnBy,
-            createdBy = wCreatedBy
+            createdBy = wCreatedBy,
+            serverUpdatedAt = null
         )
     } else {
         null

@@ -78,6 +78,18 @@ class LocalCashWithdrawalDataSourceImpl(private val cashWithdrawalDao: CashWithd
         )
     }
 
+    override suspend fun applyWithdrawalsDeltaForGroup(
+        groupId: String,
+        upserts: List<CashWithdrawal>,
+        deletedIds: List<String>
+    ) {
+        cashWithdrawalDao.applyWithdrawalsDeltaForGroup(
+            groupId = groupId,
+            upserts = upserts.map { it.toEntity() },
+            deletedIds = deletedIds
+        )
+    }
+
     override suspend fun getWithdrawalIdsByGroup(groupId: String): List<String> =
         cashWithdrawalDao.getWithdrawalIdsByGroupId(groupId)
 

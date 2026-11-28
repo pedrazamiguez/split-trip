@@ -3,14 +3,21 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSyncCheckpointDataSource
 import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
+import es.pedrazamiguez.splittrip.domain.enums.SyncCollectionName
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
+import es.pedrazamiguez.splittrip.domain.model.DeltaSyncBatch
 import es.pedrazamiguez.splittrip.domain.model.Expense
+import es.pedrazamiguez.splittrip.domain.model.ExpenseSplit
 import es.pedrazamiguez.splittrip.domain.model.Group
+import es.pedrazamiguez.splittrip.domain.model.MembershipRemovalEvent
 import es.pedrazamiguez.splittrip.domain.model.ReceiptAttachment
+import es.pedrazamiguez.splittrip.domain.model.SyncWatermark
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.ReceiptStorageService
 import es.pedrazamiguez.splittrip.domain.service.RemainderDistributionService
@@ -29,6 +36,8 @@ import java.time.LocalDateTime
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -51,11 +60,11 @@ class ExpenseRepositoryImplTest {
     private lateinit var cloudExpenseDataSource: CloudExpenseDataSource
     private lateinit var localExpenseDataSource: LocalExpenseDataSource
     private lateinit var authenticationService: AuthenticationService
-    private lateinit var cloudStorageDataSource:
-        es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
+    private lateinit var cloudStorageDataSource: CloudStorageDataSource
     private lateinit var receiptStorageService: ReceiptStorageService
     private lateinit var performanceMonitor: PerformanceMonitor
     private lateinit var localGroupDataSource: LocalGroupDataSource
+    private lateinit var localSyncCheckpointDataSource: LocalSyncCheckpointDataSource
     private lateinit var remainderDistributionService: RemainderDistributionService
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var repository: ExpenseRepositoryImpl
@@ -102,10 +111,12 @@ class ExpenseRepositoryImplTest {
         cloudStorageDataSource = mockk(relaxed = true)
         receiptStorageService = mockk(relaxed = true)
         localGroupDataSource = mockk(relaxed = true)
+        localSyncCheckpointDataSource = mockk(relaxed = true)
+        coEvery { localSyncCheckpointDataSource.getWatermark(any(), any()) } returns null
         remainderDistributionService = RemainderDistributionServiceImpl()
         performanceMonitor = mockk(relaxed = true) {
-            io.mockk.coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
-            io.mockk.every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
+            coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
+            every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
         }
         every { authenticationService.currentUserId() } returns testUserId
         syncTeardownCoordinator = mockk(relaxed = true)
@@ -117,6 +128,7 @@ class ExpenseRepositoryImplTest {
             receiptStorageService,
             performanceMonitor,
             localGroupDataSource,
+            localSyncCheckpointDataSource,
             remainderDistributionService,
             syncTeardownCoordinator = syncTeardownCoordinator,
             ioDispatcher = testDispatcher
@@ -376,6 +388,17 @@ class ExpenseRepositoryImplTest {
     @Nested
     inner class GetGroupExpensesFlow {
 
+        private fun stubFullSnapshotBootstrap(expenses: List<Expense> = cloudExpenses) {
+            coEvery { cloudExpenseDataSource.fetchExpensesFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                upserts = expenses,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
+            every { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, any()) } returns emptyFlow()
+        }
+
         @Test
         fun `returns local data immediately`() = runTest(testDispatcher) {
             // Given - Local data is available, cloud listener exists
@@ -383,9 +406,7 @@ class ExpenseRepositoryImplTest {
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(
                 localExpenses
             )
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(
-                cloudExpenses
-            )
+            stubFullSnapshotBootstrap()
             coEvery { localExpenseDataSource.replaceExpensesForGroup(any(), any()) } just Runs
 
             // When
@@ -403,9 +424,7 @@ class ExpenseRepositoryImplTest {
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(
                 emptyList()
             )
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(
-                cloudExpenses
-            )
+            stubFullSnapshotBootstrap()
             coEvery { localExpenseDataSource.replaceExpensesForGroup(any(), any()) } just Runs
 
             // When
@@ -413,7 +432,7 @@ class ExpenseRepositoryImplTest {
             flow.first() // Trigger flow collection
             advanceUntilIdle() // Allow background subscription to process
 
-            // Then - Cloud real-time listener should be used (not one-shot fetch)
+            // Then - Cloud real-time listener should be used
             coVerify { localExpenseDataSource.replaceExpensesForGroup(testGroupId, cloudExpenses) }
         }
 
@@ -423,9 +442,7 @@ class ExpenseRepositoryImplTest {
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(
                 emptyList()
             )
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(
-                cloudExpenses
-            )
+            stubFullSnapshotBootstrap()
             coEvery { localExpenseDataSource.replaceExpensesForGroup(any(), any()) } just Runs
 
             // When
@@ -444,7 +461,9 @@ class ExpenseRepositoryImplTest {
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(
                 localExpenses
             )
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flow {
+            coEvery { cloudExpenseDataSource.fetchExpensesFullSnapshot(testGroupId) } throws
+                IOException("Network error")
+            every { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, null) } returns flow {
                 throw IOException("Network error")
             }
 
@@ -463,14 +482,14 @@ class ExpenseRepositoryImplTest {
         fun `multiple concurrent collectors launch exactly one cloud listener`() = runTest(testDispatcher) {
             val localFlow = flowOf(listOf(testExpense))
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns localFlow
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(cloudExpenses)
+            stubFullSnapshotBootstrap()
 
             val flow = repository.getGroupExpensesFlow(testGroupId)
             val job1 = launch { flow.collect {} }
             val job2 = launch { flow.collect {} }
             advanceUntilIdle()
 
-            verify(exactly = 1) { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) }
+            verify(exactly = 1) { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, any()) }
             job1.cancel()
             job2.cancel()
         }
@@ -482,7 +501,13 @@ class ExpenseRepositoryImplTest {
                 id = testGroupId,
                 status = GroupStatus.ARCHIVED
             )
-            coEvery { cloudExpenseDataSource.fetchExpensesByGroupId(testGroupId) } returns cloudExpenses
+            coEvery { cloudExpenseDataSource.fetchExpensesFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                upserts = cloudExpenses,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
             coEvery { localExpenseDataSource.replaceExpensesForGroup(any(), any()) } just Runs
             coEvery { localExpenseDataSource.getPendingSyncExpenseIds(testGroupId) } returns emptyList()
 
@@ -491,10 +516,60 @@ class ExpenseRepositoryImplTest {
             repository.getGroupExpensesFlow(testGroupId).first()
             advanceUntilIdle()
 
-            verify(exactly = 0) { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) }
-            coVerify(exactly = 1) { cloudExpenseDataSource.fetchExpensesByGroupId(testGroupId) }
+            verify(exactly = 0) { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, any()) }
+            coVerify(exactly = 1) { cloudExpenseDataSource.fetchExpensesFullSnapshot(testGroupId) }
             coVerify(exactly = 1) { localExpenseDataSource.replaceExpensesForGroup(testGroupId, cloudExpenses) }
         }
+
+        @Test
+        fun `existing checkpoint passes stored SyncWatermark to observeExpensesDeltaFlow and applies tombstones`() =
+            runTest(testDispatcher) {
+                val stored = SyncWatermark((System.currentTimeMillis() / 1000L) - 60L, 0)
+                val next = SyncWatermark(System.currentTimeMillis() / 1000L, 0)
+                every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
+                coEvery {
+                    localSyncCheckpointDataSource.getWatermark(testGroupId, SyncCollectionName.EXPENSES)
+                } returns stored
+                every { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, stored) } returns flowOf(
+                    DeltaSyncBatch(
+                        upserts = listOf(testExpense),
+                        deletedIds = listOf("exp-deleted"),
+                        maxServerUpdatedAt = next,
+                        isServerConfirmed = true,
+                        isFullSnapshot = false
+                    )
+                )
+
+                repository.getGroupExpensesFlow(testGroupId).first()
+                advanceUntilIdle()
+
+                coVerify(exactly = 0) { cloudExpenseDataSource.fetchExpensesFullSnapshot(any()) }
+                verify(exactly = 1) { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, stored) }
+                coVerify(exactly = 1) {
+                    localExpenseDataSource.applyExpensesDeltaForGroup(
+                        testGroupId,
+                        listOf(testExpense),
+                        listOf("exp-deleted")
+                    )
+                }
+            }
+
+        @Test
+        fun `expired checkpoint falls back to fetchExpensesFullSnapshot and replaceExpensesForGroup`() =
+            runTest(testDispatcher) {
+                val expired = SyncWatermark(1000L, 0)
+                every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
+                coEvery {
+                    localSyncCheckpointDataSource.getWatermark(testGroupId, SyncCollectionName.EXPENSES)
+                } returns expired
+                stubFullSnapshotBootstrap(cloudExpenses)
+
+                repository.getGroupExpensesFlow(testGroupId).first()
+                advanceUntilIdle()
+
+                coVerify(exactly = 1) { cloudExpenseDataSource.fetchExpensesFullSnapshot(testGroupId) }
+                coVerify(exactly = 1) { localExpenseDataSource.replaceExpensesForGroup(testGroupId, cloudExpenses) }
+            }
     }
 
     @Nested
@@ -507,7 +582,8 @@ class ExpenseRepositoryImplTest {
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(
                 localExpenses
             )
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flow {
+            coEvery { cloudExpenseDataSource.fetchExpensesFullSnapshot(testGroupId) } throws IOException("No network")
+            every { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, null) } returns flow {
                 throw IOException("No network")
             }
 
@@ -547,10 +623,11 @@ class ExpenseRepositoryImplTest {
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(
                 listOf(staleExpense)
             )
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flow {
-                delay(1000) // Simulate slow network
-                emit(cloudExpenses)
+            coEvery { cloudExpenseDataSource.fetchExpensesFullSnapshot(testGroupId) } coAnswers {
+                delay(1000)
+                DeltaSyncBatch(cloudExpenses, emptyList(), SyncWatermark(100L, 0), true, true)
             }
+            every { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, any()) } returns emptyFlow()
             coEvery { localExpenseDataSource.replaceExpensesForGroup(any(), any()) } just Runs
 
             // When - Get data immediately
@@ -574,9 +651,14 @@ class ExpenseRepositoryImplTest {
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(
                 localExpenses
             )
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(
-                cloudExpensesList
+            coEvery { cloudExpenseDataSource.fetchExpensesFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                upserts = cloudExpensesList,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
             )
+            every { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, any()) } returns emptyFlow()
             coEvery { localExpenseDataSource.replaceExpensesForGroup(any(), any()) } just Runs
 
             // When - Get data
@@ -596,9 +678,14 @@ class ExpenseRepositoryImplTest {
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(
                 initialLocal
             )
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(
-                cloudUpdate
+            coEvery { cloudExpenseDataSource.fetchExpensesFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                upserts = cloudUpdate,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
             )
+            every { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, any()) } returns emptyFlow()
             coEvery { localExpenseDataSource.replaceExpensesForGroup(any(), any()) } just Runs
 
             // When
@@ -695,6 +782,7 @@ class ExpenseRepositoryImplTest {
                 receiptStorageService,
                 performanceMonitor,
                 localGroupDataSource,
+                localSyncCheckpointDataSource,
                 remainderDistributionService,
                 syncTeardownCoordinator = syncTeardownCoordinator,
                 ioDispatcher = testDispatcher
@@ -899,7 +987,14 @@ class ExpenseRepositoryImplTest {
         fun `transitions PENDING_SYNC expenses to SYNCED when server confirms`() = runTest(testDispatcher) {
             // Given — cloud returns expenses, local has pending sync IDs
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(cloudExpenses)
+            coEvery { cloudExpenseDataSource.fetchExpensesFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                upserts = cloudExpenses,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
+            every { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, any()) } returns emptyFlow()
             coEvery { localExpenseDataSource.replaceExpensesForGroup(any(), any()) } just Runs
             coEvery { localExpenseDataSource.getPendingSyncExpenseIds(testGroupId) } returns listOf("pending-1")
             coEvery { cloudExpenseDataSource.verifyExpenseOnServer(testGroupId, "pending-1") } returns true
@@ -917,7 +1012,14 @@ class ExpenseRepositoryImplTest {
         fun `keeps PENDING_SYNC when server verification fails`() = runTest(testDispatcher) {
             // Given
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(cloudExpenses)
+            coEvery { cloudExpenseDataSource.fetchExpensesFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                upserts = cloudExpenses,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
+            every { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, any()) } returns emptyFlow()
             coEvery { localExpenseDataSource.replaceExpensesForGroup(any(), any()) } just Runs
             coEvery { localExpenseDataSource.getPendingSyncExpenseIds(testGroupId) } returns listOf("pending-1")
             coEvery {
@@ -938,7 +1040,14 @@ class ExpenseRepositoryImplTest {
         fun `skips when no pending expenses exist`() = runTest(testDispatcher) {
             // Given
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(cloudExpenses)
+            coEvery { cloudExpenseDataSource.fetchExpensesFullSnapshot(testGroupId) } returns DeltaSyncBatch(
+                upserts = cloudExpenses,
+                deletedIds = emptyList(),
+                maxServerUpdatedAt = SyncWatermark(100L, 0),
+                isServerConfirmed = true,
+                isFullSnapshot = true
+            )
+            every { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, any()) } returns emptyFlow()
             coEvery { localExpenseDataSource.replaceExpensesForGroup(any(), any()) } just Runs
             coEvery { localExpenseDataSource.getPendingSyncExpenseIds(testGroupId) } returns emptyList()
 
@@ -1024,9 +1133,21 @@ class ExpenseRepositoryImplTest {
 
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns
                 flowOf(listOf(expenseWithPendingReceipt))
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns
-                flowOf(listOf(expenseWithPendingReceipt))
-            coEvery { localExpenseDataSource.replaceExpensesForGroup(testGroupId, any()) } just Runs
+            val validWatermark = SyncWatermark((System.currentTimeMillis() / 1000L) - 60L, 0)
+            coEvery {
+                localSyncCheckpointDataSource.getWatermark(testGroupId, SyncCollectionName.EXPENSES)
+            } returns validWatermark
+            every { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, validWatermark) } returns
+                flowOf(
+                    DeltaSyncBatch(
+                        upserts = listOf(expenseWithPendingReceipt),
+                        deletedIds = emptyList(),
+                        maxServerUpdatedAt = SyncWatermark(System.currentTimeMillis() / 1000L, 0),
+                        isServerConfirmed = true,
+                        isFullSnapshot = false
+                    )
+                )
+            coEvery { localExpenseDataSource.applyExpensesDeltaForGroup(testGroupId, any(), any()) } just Runs
             coEvery { localExpenseDataSource.getPendingSyncExpenseIds(testGroupId) } returns emptyList()
             coEvery { localExpenseDataSource.getPendingReceiptExpenses(testGroupId) } returns
                 listOf(expenseWithPendingReceipt)
@@ -1060,14 +1181,21 @@ class ExpenseRepositoryImplTest {
     @Nested
     inner class ReactiveReSplits {
 
+        private fun stubIdleSyncLoop() {
+            coEvery { cloudExpenseDataSource.fetchExpensesFullSnapshot(testGroupId) } returns
+                DeltaSyncBatch(emptyList(), emptyList(), null, isServerConfirmed = true, isFullSnapshot = true)
+            every { cloudExpenseDataSource.observeExpensesDeltaFlow(testGroupId, any()) } returns emptyFlow()
+            coEvery { localExpenseDataSource.replaceExpensesForGroup(testGroupId, any()) } just Runs
+            coEvery { localExpenseDataSource.getPendingSyncExpenseIds(testGroupId) } returns emptyList()
+            coEvery { localExpenseDataSource.getExpenseIdsByGroup(testGroupId) } returns emptyList()
+        }
+
         @Test
         fun `re-splits active expenses when membership removal event is emitted`() = runTest(testDispatcher) {
-            // Given
             val leftUserId = "user-left"
             val remainingUser1 = "user-1"
             val remainingUser2 = "user-2"
-
-            val event = es.pedrazamiguez.splittrip.domain.model.MembershipRemovalEvent(
+            val event = MembershipRemovalEvent(
                 id = "event-id-1",
                 groupId = testGroupId,
                 userId = leftUserId,
@@ -1075,66 +1203,44 @@ class ExpenseRepositoryImplTest {
                 processed = false,
                 syncStatus = SyncStatus.SYNCED
             )
-
-            // Emit the event via Flow mock
-            val eventFlow = kotlinx.coroutines.flow.MutableStateFlow(listOf(event))
+            val eventFlow = MutableStateFlow(listOf(event))
             every { localGroupDataSource.getUnprocessedMembershipRemovalEventsFlow(testGroupId) } returns eventFlow
-
-            // Mock expense list flow
-            val initialSplits = listOf(
-                es.pedrazamiguez.splittrip.domain.model.ExpenseSplit(userId = leftUserId, amountCents = 1500L),
-                es.pedrazamiguez.splittrip.domain.model.ExpenseSplit(userId = remainingUser1, amountCents = 1500L),
-                es.pedrazamiguez.splittrip.domain.model.ExpenseSplit(userId = remainingUser2, amountCents = 2000L)
-            )
             val activeExpense = testExpense.copy(
                 id = "expense-to-resplit",
                 sourceAmount = 5000L,
-                splits = initialSplits
+                splits = listOf(
+                    ExpenseSplit(userId = leftUserId, amountCents = 1500L),
+                    ExpenseSplit(userId = remainingUser1, amountCents = 1500L),
+                    ExpenseSplit(userId = remainingUser2, amountCents = 2000L)
+                )
             )
-
             every { localExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(listOf(activeExpense))
             coEvery { localExpenseDataSource.saveExpense(any()) } just Runs
             coEvery { cloudExpenseDataSource.addExpense(testGroupId, any()) } just Runs
             coEvery { localExpenseDataSource.updateSyncStatus(any(), any()) } just Runs
             coEvery { localGroupDataSource.markMembershipRemovalEventProcessed(any()) } just Runs
+            stubIdleSyncLoop()
 
-            // Mock other sync loops to avoid unrelated work
-            every { cloudExpenseDataSource.getExpensesByGroupIdFlow(testGroupId) } returns flowOf(emptyList())
-            coEvery { localExpenseDataSource.replaceExpensesForGroup(testGroupId, any()) } just Runs
-            coEvery { localExpenseDataSource.getPendingSyncExpenseIds(testGroupId) } returns emptyList()
-            coEvery { localExpenseDataSource.getExpenseIdsByGroup(testGroupId) } returns emptyList()
-
-            // When - starting the flow collection triggers the onStart block where observation runs
             repository.getGroupExpensesFlow(testGroupId).first()
             advanceUntilIdle()
 
-            // Then
-            // Verify left user split is zeroed out and remaining splits rescaled:
-            // original remaining sum = 3500. debt to distribute = 1500. new total = 5000.
-            // proportional scale: remainingUser1: 1500 * 5000 / 3500 = 2142 (+1 remainder = 2143)
-            // proportional scale: remainingUser2: 2000 * 5000 / 3500 = 2857
             coVerify(exactly = 1) {
                 localExpenseDataSource.saveExpense(
-                    match { expense ->
-                        expense.id == "expense-to-resplit" &&
-                            expense.splits.find { it.userId == leftUserId }?.amountCents == 0L &&
-                            expense.splits.find { it.userId == leftUserId }?.isExcluded == true &&
-                            expense.splits.find { it.userId == remainingUser1 }?.amountCents == 2143L &&
-                            expense.splits.find { it.userId == remainingUser2 }?.amountCents == 2857L &&
-                            expense.syncStatus == SyncStatus.PENDING_SYNC
+                    match { exp ->
+                        val leftSplit = exp.splits.find { it.userId == leftUserId }
+                        exp.id == "expense-to-resplit" &&
+                            leftSplit?.amountCents == 0L &&
+                            leftSplit?.isExcluded == true &&
+                            exp.splits.find { it.userId == remainingUser1 }?.amountCents == 2143L &&
+                            exp.splits.find { it.userId == remainingUser2 }?.amountCents == 2857L &&
+                            exp.syncStatus == SyncStatus.PENDING_SYNC
                     }
                 )
             }
-
             coVerify(exactly = 1) {
                 cloudExpenseDataSource.addExpense(testGroupId, match { it.id == "expense-to-resplit" })
             }
-
-            coVerify(exactly = 1) {
-                localGroupDataSource.markMembershipRemovalEventProcessed("event-id-1")
-            }
-
-            // Clean up the event flow to avoid infinite collect looping
+            coVerify(exactly = 1) { localGroupDataSource.markMembershipRemovalEventProcessed("event-id-1") }
             eventFlow.value = emptyList()
             advanceUntilIdle()
         }

@@ -52,4 +52,16 @@ class LocalSettlementDataSourceImpl(
     ) {
         settlementRecordDao.replaceForGroup(groupId, records.map { it.toEntity() })
     }
+
+    override suspend fun applySettlementsDeltaForGroup(
+        groupId: String,
+        upserts: List<SettlementRecord>,
+        deletedIds: List<String>
+    ) {
+        settlementRecordDao.applyDeltaForGroup(
+            groupId = groupId,
+            upserts = upserts.map { it.toEntity() },
+            deletedIds = deletedIds
+        )
+    }
 }

@@ -71,6 +71,10 @@ export interface ExpenseDoc {
   notes?: string;
   createdBy: string;
   lastUpdatedBy?: string;
+  isDeleted?: boolean;
+  deletedAt?: unknown;
+  serverUpdatedAt?: unknown;
+  expireAt?: unknown;
 }
 
 export interface ContributionDoc {
@@ -80,6 +84,10 @@ export interface ContributionDoc {
   amountCents: number;
   currency: string;
   createdBy: string;
+  isDeleted?: boolean;
+  deletedAt?: unknown;
+  serverUpdatedAt?: unknown;
+  expireAt?: unknown;
 }
 
 export interface CashWithdrawalDoc {
@@ -91,6 +99,10 @@ export interface CashWithdrawalDoc {
   amountWithdrawn: number;
   currency: string;
   createdBy: string;
+  isDeleted?: boolean;
+  deletedAt?: unknown;
+  serverUpdatedAt?: unknown;
+  expireAt?: unknown;
 }
 
 export interface UserDoc {
@@ -117,6 +129,10 @@ export interface SettlementDoc {
   currency?: string;
   status?: string;
   disputedBy?: string;
+  isDeleted?: boolean;
+  deletedAt?: unknown;
+  serverUpdatedAt?: unknown;
+  expireAt?: unknown;
 }
 
 export interface NudgeDoc {
