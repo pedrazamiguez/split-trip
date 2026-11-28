@@ -1,6 +1,5 @@
-package es.pedrazamiguez.splittrip.dynamic.litertlm
+package es.pedrazamiguez.splittrip.data.litert
 
-import es.pedrazamiguez.splittrip.data.litert.LiteRtRuntimeConfig
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch

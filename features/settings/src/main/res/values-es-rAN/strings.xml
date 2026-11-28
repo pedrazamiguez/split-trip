@@ -430,8 +430,4 @@
     <string name="local_ai_pack_status_installed_named_desc">Modelo âttibo: %1$s. Ehecutándoçe çin conêççión mediante LiteRT-RM.</string>
     <string name="local_ai_pack_status_downloading_named_title">Dêccargando %1$s…</string>
     <string name="local_ai_pack_status_verifying_named_title">Berificando %1$s…</string>
-    <string name="local_ai_pack_badge_installing_runtime">Preparando motôh</string>
-    <string name="local_ai_pack_status_installing_runtime_title">Îttalando motôh de IA…</string>
-    <string name="local_ai_pack_status_installing_runtime_desc">Dêccargando er módulo LiteRT-RM dêdde Google Play antê de dêccargâh er paquete der modelo.</string>
-    <string name="local_ai_pack_error_runtime_unavailable">No çe pudo îttalâh er motôh LiteRT-RM dêdde Google Play. Açegúrate de que Google Play êtté dîpponible e inténtalo de nuebo.</string>
 </resources>

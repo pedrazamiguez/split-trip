@@ -1,8 +1,5 @@
 package es.pedrazamiguez.splittrip.data.service
 
-import es.pedrazamiguez.splittrip.data.litert.LiteRtDynamicRuntimeState
-import es.pedrazamiguez.splittrip.data.litert.isActiveInstall
-import es.pedrazamiguez.splittrip.data.litert.toProgressPercent
 import es.pedrazamiguez.splittrip.data.local.datastore.InstalledModelPackMetadata
 import es.pedrazamiguez.splittrip.data.worker.ModelPackWorkState
 import es.pedrazamiguez.splittrip.domain.model.ModelPackCatalog
@@ -15,15 +12,12 @@ internal class ModelPackStatusResolver(
     private val compatibilityProvider: LocalAiDeviceCompatibilityProvider
 ) {
 
-    @Suppress("LongParameterList")
     fun resolveAggregateStatus(
         catalog: ModelPackCatalog,
         evaluated: List<EvaluatedCatalogPack>,
         installed: InstalledModelPackMetadata?,
         isInstalledValid: Boolean,
-        workState: ModelPackWorkState,
-        runtimeState: LiteRtDynamicRuntimeState,
-        activeRuntimePackId: String?
+        workState: ModelPackWorkState
     ): ModelPackStatus = when (workState) {
         is ModelPackWorkState.Queued -> {
             val targetConfig = resolveWorkTargetConfig(catalog, workState.packId)
@@ -61,50 +55,31 @@ internal class ModelPackStatusResolver(
 
         ModelPackWorkState.Idle,
         is ModelPackWorkState.Succeeded,
-        ModelPackWorkState.Cancelled -> resolveIdleOrRuntimeStatus(
+        ModelPackWorkState.Cancelled -> resolveSettledStatus(
             catalog = catalog,
             evaluated = evaluated,
             installed = installed,
-            isInstalledValid = isInstalledValid,
-            runtimeState = runtimeState,
-            activeRuntimePackId = activeRuntimePackId
+            isInstalledValid = isInstalledValid
         )
     }
 
-    @Suppress("LongParameterList")
     fun mapCatalogEntry(
         entry: EvaluatedCatalogPack,
         installed: InstalledModelPackMetadata?,
         isInstalledValid: Boolean,
-        workState: ModelPackWorkState,
-        runtimeState: LiteRtDynamicRuntimeState,
-        activeRuntimePackId: String?
+        workState: ModelPackWorkState
     ): ModelPackCatalogEntry {
         val packId = entry.config.packId
-        val isRuntimeInstalled = runtimeState is LiteRtDynamicRuntimeState.Installed
-        val isThisInstalled = isInstalledValid && installed?.packId == packId && isRuntimeInstalled
+        val isThisInstalled = isInstalledValid && installed?.packId == packId
         val isThisActiveWork = workState.targetPackId() == packId
-        val validInstalledPackId = installed?.takeIf { isInstalledValid }?.packId
-        val targetRuntimePackId = activeRuntimePackId ?: validInstalledPackId
-        val isThisActiveRuntime = runtimeState.isActiveInstall() && targetRuntimePackId == packId
-        val isThisFailedRuntime = isFailedRuntimeForPack(
-            packId = packId,
-            activeRuntimePackId = activeRuntimePackId,
-            validInstalledPackId = validInstalledPackId,
-            runtimeState = runtimeState
-        )
         val status = resolveCatalogEntryStatus(
             entry = entry,
             installed = installed,
-            isInstalledValid = isInstalledValid,
             isThisInstalled = isThisInstalled,
             isThisActiveWork = isThisActiveWork,
-            isThisActiveRuntime = isThisActiveRuntime,
-            isThisFailedRuntime = isThisFailedRuntime,
-            workState = workState,
-            runtimeState = runtimeState
+            workState = workState
         )
-        val isActiveDownload = (isThisActiveWork && workState.isActiveDownload()) || isThisActiveRuntime
+        val isActiveDownload = isThisActiveWork && workState.isActiveDownload()
 
         return ModelPackCatalogEntry(
             config = entry.config,
@@ -116,90 +91,23 @@ internal class ModelPackStatusResolver(
         )
     }
 
-    @Suppress("LongParameterList")
-    private fun resolveIdleOrRuntimeStatus(
-        catalog: ModelPackCatalog,
-        evaluated: List<EvaluatedCatalogPack>,
-        installed: InstalledModelPackMetadata?,
-        isInstalledValid: Boolean,
-        runtimeState: LiteRtDynamicRuntimeState,
-        activeRuntimePackId: String?
-    ): ModelPackStatus {
-        val validInstalledPackId = installed?.takeIf { isInstalledValid }?.packId
-        val activePackId = activeRuntimePackId ?: validInstalledPackId.orEmpty()
-        if (runtimeState.isActiveInstall()) {
-            return ModelPackStatus.InstallingRuntime(
-                progressPercent = runtimeState.toProgressPercent(),
-                packId = activePackId
-            )
-        }
-        val hasRuntimeFailureContext = activeRuntimePackId != null || isInstalledValid
-        if (runtimeState is LiteRtDynamicRuntimeState.Failed && hasRuntimeFailureContext) {
-            return ModelPackStatus.Error(
-                reason = runtimeState.reason,
-                canRetry = true,
-                packId = activePackId
-            )
-        }
-        return resolveSettledStatus(
-            catalog = catalog,
-            evaluated = evaluated,
-            installed = installed,
-            isInstalledValid = isInstalledValid,
-            runtimeState = runtimeState
-        )
-    }
-
-    private fun isFailedRuntimeForPack(
-        packId: String,
-        activeRuntimePackId: String?,
-        validInstalledPackId: String?,
-        runtimeState: LiteRtDynamicRuntimeState
-    ): Boolean {
-        if (runtimeState !is LiteRtDynamicRuntimeState.Failed) return false
-        return activeRuntimePackId == packId || (activeRuntimePackId == null && validInstalledPackId == packId)
-    }
-
-    @Suppress("LongParameterList", "ReturnCount")
+    @Suppress("ReturnCount")
     private fun resolveCatalogEntryStatus(
         entry: EvaluatedCatalogPack,
         installed: InstalledModelPackMetadata?,
-        isInstalledValid: Boolean,
         isThisInstalled: Boolean,
         isThisActiveWork: Boolean,
-        isThisActiveRuntime: Boolean,
-        isThisFailedRuntime: Boolean,
-        workState: ModelPackWorkState,
-        runtimeState: LiteRtDynamicRuntimeState
+        workState: ModelPackWorkState
     ): ModelPackStatus {
         val packId = entry.config.packId
         if (isThisActiveWork) {
             resolveActiveWorkStatus(entry.config, workState)?.let { return it }
-        }
-        if (isThisActiveRuntime) {
-            return ModelPackStatus.InstallingRuntime(
-                progressPercent = runtimeState.toProgressPercent(),
-                packId = packId
-            )
-        }
-        if (isThisFailedRuntime && runtimeState is LiteRtDynamicRuntimeState.Failed) {
-            return ModelPackStatus.Error(
-                reason = runtimeState.reason,
-                canRetry = true,
-                packId = packId
-            )
         }
         if (isThisInstalled && installed != null) {
             return ModelPackStatus.Installed(
                 version = installed.version,
                 sizeBytes = installed.sizeBytes,
                 isUpdateAvailable = installed.version != entry.config.version,
-                packId = packId
-            )
-        }
-        if (isInstalledValid && installed?.packId == packId) {
-            return ModelPackStatus.InstallingRuntime(
-                progressPercent = null,
                 packId = packId
             )
         }
@@ -258,16 +166,9 @@ internal class ModelPackStatusResolver(
         catalog: ModelPackCatalog,
         evaluated: List<EvaluatedCatalogPack>,
         installed: InstalledModelPackMetadata?,
-        isInstalledValid: Boolean,
-        runtimeState: LiteRtDynamicRuntimeState
+        isInstalledValid: Boolean
     ): ModelPackStatus {
         if (isInstalledValid && installed != null) {
-            if (runtimeState !is LiteRtDynamicRuntimeState.Installed) {
-                return ModelPackStatus.InstallingRuntime(
-                    progressPercent = null,
-                    packId = installed.packId
-                )
-            }
             val matchingConfig = catalog.findById(installed.packId)
             return ModelPackStatus.Installed(
                 version = installed.version,

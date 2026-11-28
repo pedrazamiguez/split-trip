@@ -1,6 +1,5 @@
 package es.pedrazamiguez.splittrip
 
-import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
@@ -17,7 +16,6 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.google.android.play.core.splitcompat.SplitCompat
 import es.pedrazamiguez.splittrip.core.designsystem.ad.AdConsentManager
 import es.pedrazamiguez.splittrip.core.designsystem.foundation.SplitTripTheme
 import es.pedrazamiguez.splittrip.core.designsystem.navigation.NavigationUtils
@@ -35,11 +33,6 @@ class MainActivity : AppCompatActivity() {
 
     private var navHostController: NavHostController? = null
     private val deepLinkHolder: DeepLinkHolder by inject()
-
-    override fun attachBaseContext(newBase: Context) {
-        super.attachBaseContext(newBase)
-        SplitCompat.installActivity(this)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
