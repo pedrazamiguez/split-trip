@@ -12,6 +12,7 @@ import es.pedrazamiguez.splittrip.data.local.dao.ExchangeRateDao
 import es.pedrazamiguez.splittrip.data.local.dao.ExpenseDao
 import es.pedrazamiguez.splittrip.data.local.dao.ExpenseSplitDao
 import es.pedrazamiguez.splittrip.data.local.dao.GroupDao
+import es.pedrazamiguez.splittrip.data.local.dao.GroupSyncCheckpointDao
 import es.pedrazamiguez.splittrip.data.local.dao.MembershipRemovalEventDao
 import es.pedrazamiguez.splittrip.data.local.dao.SettlementRecordDao
 import es.pedrazamiguez.splittrip.data.local.dao.SubunitDao
@@ -25,6 +26,7 @@ import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalExpenseDataSou
 import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalGroupDataSourceImpl
 import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalSettlementDataSourceImpl
 import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalSubunitDataSourceImpl
+import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalSyncCheckpointDataSourceImpl
 import es.pedrazamiguez.splittrip.data.local.datasource.impl.LocalUserDataSourceImpl
 import es.pedrazamiguez.splittrip.data.local.datastore.LocalAiModelPackPreferences
 import es.pedrazamiguez.splittrip.data.local.datastore.NotificationUserPreferences
@@ -43,6 +45,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSettlementDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSubunitDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSyncCheckpointDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalUserDataSource
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -178,6 +181,14 @@ val dataLocalModule = module {
     single<LocalSubunitDataSource> {
         LocalSubunitDataSourceImpl(
             subunitDao = get<SubunitDao>()
+        )
+    }
+
+    single<GroupSyncCheckpointDao> { get<AppDatabase>().groupSyncCheckpointDao() }
+
+    single<LocalSyncCheckpointDataSource> {
+        LocalSyncCheckpointDataSourceImpl(
+            groupSyncCheckpointDao = get<GroupSyncCheckpointDao>()
         )
     }
 

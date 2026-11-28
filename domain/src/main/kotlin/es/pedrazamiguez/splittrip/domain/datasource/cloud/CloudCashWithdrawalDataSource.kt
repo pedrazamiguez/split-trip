@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.domain.datasource.cloud
 
 import es.pedrazamiguez.splittrip.domain.model.CashWithdrawal
+import es.pedrazamiguez.splittrip.domain.model.DeltaSyncBatch
+import es.pedrazamiguez.splittrip.domain.model.SyncWatermark
 import kotlinx.coroutines.flow.Flow
 
 interface CloudCashWithdrawalDataSource {
@@ -12,15 +14,25 @@ interface CloudCashWithdrawalDataSource {
     suspend fun deleteWithdrawal(groupId: String, withdrawalId: String)
 
     /**
-     * One-shot fetch of withdrawals for sync purposes.
+     * One-shot paginated full-collection fetch used for initial bootstrap or expired-checkpoint fallback.
      */
-    suspend fun fetchWithdrawalsByGroupId(groupId: String): List<CashWithdrawal>
+    suspend fun fetchWithdrawalsFullSnapshot(groupId: String): DeltaSyncBatch<CashWithdrawal>
 
     /**
-     * Reactive stream of withdrawals for real-time UI observers.
-     * Emits local cache first, then server data as it arrives.
+     * One-shot incremental delta fetch for changes after [sinceWatermark].
      */
-    fun getWithdrawalsByGroupIdFlow(groupId: String): Flow<List<CashWithdrawal>>
+    suspend fun fetchWithdrawalsDelta(
+        groupId: String,
+        sinceWatermark: SyncWatermark
+    ): DeltaSyncBatch<CashWithdrawal>
+
+    /**
+     * Reactive delta stream for real-time observers starting after [sinceWatermark].
+     */
+    fun observeWithdrawalsDeltaFlow(
+        groupId: String,
+        sinceWatermark: SyncWatermark?
+    ): Flow<DeltaSyncBatch<CashWithdrawal>>
 
     /**
      * Verifies that a withdrawal document exists on the Firestore server (not just local cache).

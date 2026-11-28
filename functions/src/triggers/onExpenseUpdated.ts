@@ -22,6 +22,7 @@ import { getRecipientTokens } from "../services/token.service";
 import { sendDataMessage } from "../services/notification.service";
 import { getGroupData, getActorDisplayName } from "../services/firestore.service";
 import { buildDeepLink, formatAmount } from "../utils/format";
+import { dispatchExpenseDeletedNotification } from "../utils/expenseNotifications";
 
 /** Fields that constitute a "meaningful" change worth notifying about. */
 const SUBSTANTIVE_FIELDS: (keyof ExpenseDoc)[] = [
@@ -54,6 +55,30 @@ export const onExpenseUpdated = onDocumentUpdated(
     const after = change.after.data() as ExpenseDoc;
     const groupId = event.params.groupId;
     const expenseId = event.params.expenseId;
+
+    if (before.isDeleted === true) {
+      logger.info("onExpenseUpdated: Already tombstoned — skipping notification", {
+        groupId,
+        expenseId,
+      });
+      return;
+    }
+
+    if (after.isDeleted === true) {
+      const mergedExpense: ExpenseDoc = {
+        ...before,
+        ...after,
+        title: after.title || before.title,
+        amountCents: after.amountCents ?? before.amountCents,
+        groupAmountCents: after.groupAmountCents ?? before.groupAmountCents,
+        currency: after.currency || before.currency,
+        groupCurrency: after.groupCurrency || before.groupCurrency,
+        createdBy: after.createdBy || before.createdBy,
+        lastUpdatedBy: after.lastUpdatedBy || before.lastUpdatedBy,
+      };
+      await dispatchExpenseDeletedNotification(groupId, expenseId, mergedExpense, "onExpenseUpdated");
+      return;
+    }
 
     // Skip if no substantive fields changed
     if (!hasSubstantiveChange(before, after)) {

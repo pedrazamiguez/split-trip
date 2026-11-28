@@ -6,6 +6,7 @@ import es.pedrazamiguez.splittrip.data.worker.GroupDeletionRetryScheduler
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
@@ -21,14 +22,21 @@ import io.mockk.verify
 import java.io.IOException
 import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -503,6 +511,99 @@ class GroupRepositoryImplTest {
             assertEquals(1, result.size)
             assertEquals(testGroup.id, result[0].id)
         }
+
+        @Test
+        fun `concurrent collectors of getAllGroupsFlow share a single cloud listener`() = runTest(testDispatcher) {
+            val localFlow = MutableSharedFlow<List<Group>>()
+            val cloudFlow = MutableSharedFlow<List<Group>>()
+            every { localGroupDataSource.getGroupsFlow() } returns localFlow
+            every { cloudGroupDataSource.getAllGroupsFlow() } returns cloudFlow
+
+            val job1 = launch { repository.getAllGroupsFlow().collect {} }
+            val job2 = launch { repository.getAllGroupsFlow().collect {} }
+            runCurrent()
+
+            verify(exactly = 1) { cloudGroupDataSource.getAllGroupsFlow() }
+            job1.cancel()
+            job2.cancel()
+            advanceUntilIdle()
+        }
+
+        @Test
+        fun `getAllGroupsFlow detaches cloud listener after grace period when all collectors cancel`() =
+            runTest(testDispatcher) {
+                val localFlow = MutableSharedFlow<List<Group>>()
+                var cancelledCount = 0
+                every { localGroupDataSource.getGroupsFlow() } returns localFlow
+                every { cloudGroupDataSource.getAllGroupsFlow() } answers {
+                    flow {
+                        try {
+                            awaitCancellation()
+                        } finally {
+                            cancelledCount++
+                        }
+                    }
+                }
+
+                val job1 = launch { repository.getAllGroupsFlow().collect {} }
+                runCurrent()
+                verify(exactly = 1) { cloudGroupDataSource.getAllGroupsFlow() }
+                assertEquals(0, cancelledCount)
+
+                job1.cancel()
+                runCurrent()
+                // Still within grace period — listener remains active
+                assertEquals(0, cancelledCount)
+
+                advanceTimeBy(5_100L)
+                runCurrent()
+                // After 5s grace period — original listener was cancelled
+                assertEquals(1, cancelledCount)
+
+                val job2 = launch { repository.getAllGroupsFlow().collect {} }
+                runCurrent()
+                verify(exactly = 2) { cloudGroupDataSource.getAllGroupsFlow() }
+                job2.cancel()
+                advanceUntilIdle()
+            }
+
+        @Test
+        fun `syncTeardownCoordinator cancels active getAllGroupsFlow listener on teardownAll`() =
+            runTest(testDispatcher) {
+                val realTeardownCoordinator = SyncTeardownCoordinator()
+                val realRepo = GroupRepositoryImpl(
+                    cloudGroupDataSource = cloudGroupDataSource,
+                    localGroupDataSource = localGroupDataSource,
+                    authenticationService = authenticationService,
+                    groupDeletionRetryScheduler = groupDeletionRetryScheduler,
+                    groupImageStorageService = groupImageStorageService,
+                    cloudStorageDataSource = cloudStorageDataSource,
+                    performanceMonitor = performanceMonitor,
+                    syncTeardownCoordinator = realTeardownCoordinator,
+                    ioDispatcher = testDispatcher
+                )
+                val localFlow = MutableSharedFlow<List<Group>>()
+                var cancelled = false
+                every { localGroupDataSource.getGroupsFlow() } returns localFlow
+                every { cloudGroupDataSource.getAllGroupsFlow() } returns flow {
+                    try {
+                        awaitCancellation()
+                    } finally {
+                        cancelled = true
+                    }
+                }
+
+                val collectorJob = launch { realRepo.getAllGroupsFlow().collect {} }
+                runCurrent()
+                assertFalse(cancelled)
+
+                realTeardownCoordinator.teardownAll()
+                runCurrent()
+
+                assertTrue(cancelled)
+                collectorJob.cancel()
+                advanceUntilIdle()
+            }
     }
 
     @Nested
@@ -1128,6 +1229,44 @@ class GroupRepositoryImplTest {
             // with old subscription cancelled before new one starts)
             coVerify(exactly = 2) { cloudGroupDataSource.getGroupFlow(testGroupId) }
         }
+
+        @Test
+        fun `getGroupByIdFlow performs one-shot fetch without attaching snapshot listener when group is ARCHIVED`() =
+            runTest(testDispatcher) {
+                val realTeardownCoordinator = SyncTeardownCoordinator()
+                val realRepo = GroupRepositoryImpl(
+                    cloudGroupDataSource = cloudGroupDataSource,
+                    localGroupDataSource = localGroupDataSource,
+                    authenticationService = authenticationService,
+                    groupDeletionRetryScheduler = groupDeletionRetryScheduler,
+                    groupImageStorageService = groupImageStorageService,
+                    cloudStorageDataSource = cloudStorageDataSource,
+                    performanceMonitor = performanceMonitor,
+                    syncTeardownCoordinator = realTeardownCoordinator,
+                    ioDispatcher = testDispatcher
+                )
+                val archivedGroup = testGroup.copy(status = GroupStatus.ARCHIVED)
+                every { localGroupDataSource.getGroupByIdFlow(testGroupId) } returns flowOf(archivedGroup)
+                coEvery { localGroupDataSource.getGroupById(testGroupId) } returns archivedGroup
+                coEvery { cloudGroupDataSource.getGroupById(testGroupId) } returns archivedGroup
+                coEvery { localGroupDataSource.saveGroup(any()) } just Runs
+
+                realRepo.getGroupByIdFlow(testGroupId).first()
+                advanceUntilIdle()
+                realRepo.getGroupByIdFlow(testGroupId).first()
+                advanceUntilIdle()
+
+                verify(exactly = 0) { cloudGroupDataSource.getGroupFlow(testGroupId) }
+                coVerify(exactly = 1) { cloudGroupDataSource.getGroupById(testGroupId) }
+                coVerify(exactly = 1) { localGroupDataSource.saveGroup(archivedGroup) }
+
+                // Session cache resets on sign-out teardown
+                realTeardownCoordinator.teardownAll()
+                realRepo.getGroupByIdFlow(testGroupId).first()
+                advanceUntilIdle()
+
+                coVerify(exactly = 2) { cloudGroupDataSource.getGroupById(testGroupId) }
+            }
     }
 
     @Nested

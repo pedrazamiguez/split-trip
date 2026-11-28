@@ -86,6 +86,9 @@ interface ContributionDao {
     @Query("DELETE FROM contributions WHERE id IN (:ids)")
     suspend fun deleteContributionsByIds(ids: List<String>)
 
+    @Query("DELETE FROM contributions WHERE groupId = :groupId AND id IN (:ids)")
+    suspend fun deleteContributionsByGroupAndIds(groupId: String, ids: List<String>)
+
     /**
      * Reconciles local contributions for a group with the authoritative cloud snapshot.
      *
@@ -136,5 +139,30 @@ interface ContributionDao {
         if (staleIds.isNotEmpty()) {
             deleteContributionsByIds(staleIds)
         }
+    }
+
+    @Transaction
+    suspend fun applyContributionsDeltaForGroup(
+        groupId: String,
+        upserts: List<ContributionEntity>,
+        deletedIds: List<String>
+    ) {
+        if (upserts.isEmpty() && deletedIds.isEmpty()) return
+        val deletedIdSet = deletedIds.toSet()
+        if (upserts.isNotEmpty()) {
+            val unsyncedStatuses = getUnsyncedContributionStatuses(groupId)
+            insertContributions(upserts)
+            val upsertedIds = upserts.map { it.id }.toSet()
+            unsyncedStatuses
+                .filter { it.id in upsertedIds && it.id !in deletedIdSet }
+                .forEach { updateSyncStatus(it.id, it.syncStatus) }
+        }
+        deletedIds.chunked(SQLITE_BIND_LIMIT).forEach { chunk ->
+            deleteContributionsByGroupAndIds(groupId, chunk)
+        }
+    }
+
+    private companion object {
+        const val SQLITE_BIND_LIMIT = 500
     }
 }

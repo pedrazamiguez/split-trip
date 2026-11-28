@@ -11,8 +11,16 @@ jest.mock("firebase-admin", () => {
     collectionGroup: jest.fn(),
   };
 
+  const firestoreFn = Object.assign(jest.fn(() => firestoreMock), {
+    Timestamp: {
+      fromDate: jest.fn((date: Date) => ({
+        toDate: () => date,
+      })),
+    },
+  });
+
   return {
-    firestore: jest.fn(() => firestoreMock),
+    firestore: firestoreFn,
     initializeApp: jest.fn(),
   };
 });
@@ -46,6 +54,20 @@ describe("processExpenseReminders", () => {
     memberIds: ["user1"],
   };
 
+  function setupCollectionGroupDocs(docs: unknown[]) {
+    const getMock = jest.fn().mockResolvedValue({
+      empty: docs.length === 0,
+      docs,
+    });
+    const queryChain: { where: jest.Mock; get: jest.Mock } = {
+      where: jest.fn(),
+      get: getMock,
+    };
+    queryChain.where.mockReturnValue(queryChain);
+    firestoreMock.collectionGroup.mockReturnValue(queryChain);
+    return { whereMock: queryChain.where, getMock };
+  }
+
   beforeEach(() => {
     jest.clearAllMocks();
     firestoreMock = admin.firestore() as unknown as {
@@ -54,16 +76,40 @@ describe("processExpenseReminders", () => {
     };
   });
 
-  it("queries collectionGroup expenses with status in SCHEDULED, REFUNDABLE", async () => {
-    const whereMock = jest.fn().mockReturnValue({
-      get: jest.fn().mockResolvedValue({ empty: true, docs: [] }),
-    });
-    firestoreMock.collectionGroup.mockReturnValue({ where: whereMock });
+  it("queries collectionGroup expenses with status in SCHEDULED, REFUNDABLE and bounded dueDate window", async () => {
+    const { whereMock } = setupCollectionGroupDocs([]);
 
-    await processExpenseReminders(new Date("2026-05-10T13:00:00Z"));
+    const now = new Date("2026-05-10T13:00:00Z");
+    await processExpenseReminders(now);
 
     expect(firestoreMock.collectionGroup).toHaveBeenCalledWith("expenses");
-    expect(whereMock).toHaveBeenCalledWith("paymentStatus", "in", ["SCHEDULED", "REFUNDABLE"]);
+    expect(whereMock).toHaveBeenNthCalledWith(
+      1,
+      "paymentStatus",
+      "in",
+      ["SCHEDULED", "REFUNDABLE"]
+    );
+    expect(whereMock).toHaveBeenNthCalledWith(
+      2,
+      "dueDate",
+      ">=",
+      expect.objectContaining({
+        toDate: expect.any(Function),
+      })
+    );
+    expect(whereMock).toHaveBeenNthCalledWith(
+      3,
+      "dueDate",
+      "<=",
+      expect.objectContaining({
+        toDate: expect.any(Function),
+      })
+    );
+
+    const windowStartArg = whereMock.mock.calls[1][2] as { toDate: () => Date };
+    const windowEndArg = whereMock.mock.calls[2][2] as { toDate: () => Date };
+    expect(windowStartArg.toDate().toISOString()).toBe("2026-05-08T13:00:00.000Z");
+    expect(windowEndArg.toDate().toISOString()).toBe("2026-05-13T13:00:00.000Z");
     expect(getGroupDataMock).not.toHaveBeenCalled();
   });
 
@@ -80,11 +126,7 @@ describe("processExpenseReminders", () => {
       },
     ];
 
-    firestoreMock.collectionGroup.mockReturnValue({
-      where: jest.fn().mockReturnValue({
-        get: jest.fn().mockResolvedValue({ empty: false, docs }),
-      }),
-    });
+    setupCollectionGroupDocs(docs);
 
     await processExpenseReminders(new Date("2026-05-10T13:00:00Z"));
 
@@ -106,11 +148,7 @@ describe("processExpenseReminders", () => {
       },
     ];
 
-    firestoreMock.collectionGroup.mockReturnValue({
-      where: jest.fn().mockReturnValue({
-        get: jest.fn().mockResolvedValue({ empty: false, docs }),
-      }),
-    });
+    setupCollectionGroupDocs(docs);
 
     // Case 1: groupData is null
     getGroupDataMock.mockResolvedValueOnce(null);
@@ -137,11 +175,7 @@ describe("processExpenseReminders", () => {
       },
     ];
 
-    firestoreMock.collectionGroup.mockReturnValue({
-      where: jest.fn().mockReturnValue({
-        get: jest.fn().mockResolvedValue({ empty: false, docs }),
-      }),
-    });
+    setupCollectionGroupDocs(docs);
 
     getGroupDataMock.mockResolvedValue(sampleGroup);
 
@@ -199,11 +233,7 @@ describe("processExpenseReminders", () => {
       },
     ];
 
-    firestoreMock.collectionGroup.mockReturnValue({
-      where: jest.fn().mockReturnValue({
-        get: jest.fn().mockResolvedValue({ empty: false, docs }),
-      }),
-    });
+    setupCollectionGroupDocs(docs);
 
     getGroupDataMock.mockResolvedValue(sampleGroup);
 
@@ -252,11 +282,7 @@ describe("processExpenseReminders", () => {
       },
     ];
 
-    firestoreMock.collectionGroup.mockReturnValue({
-      where: jest.fn().mockReturnValue({
-        get: jest.fn().mockResolvedValue({ empty: false, docs }),
-      }),
-    });
+    setupCollectionGroupDocs(docs);
 
     getGroupDataMock.mockResolvedValue(sampleGroup);
 
@@ -306,11 +332,7 @@ describe("processExpenseReminders", () => {
       },
     ];
 
-    firestoreMock.collectionGroup.mockReturnValue({
-      where: jest.fn().mockReturnValue({
-        get: jest.fn().mockResolvedValue({ empty: false, docs }),
-      }),
-    });
+    setupCollectionGroupDocs(docs);
 
     getGroupDataMock.mockResolvedValue(sampleGroup);
 
@@ -357,11 +379,7 @@ describe("processExpenseReminders", () => {
       },
     ];
 
-    firestoreMock.collectionGroup.mockReturnValue({
-      where: jest.fn().mockReturnValue({
-        get: jest.fn().mockResolvedValue({ empty: false, docs }),
-      }),
-    });
+    setupCollectionGroupDocs(docs);
 
     getGroupDataMock.mockResolvedValue(sampleGroup);
 
@@ -399,11 +417,7 @@ describe("processExpenseReminders", () => {
       },
     ];
 
-    firestoreMock.collectionGroup.mockReturnValue({
-      where: jest.fn().mockReturnValue({
-        get: jest.fn().mockResolvedValue({ empty: false, docs }),
-      }),
-    });
+    setupCollectionGroupDocs(docs);
 
     getGroupDataMock.mockResolvedValue(sampleGroup);
 
@@ -423,6 +437,186 @@ describe("processExpenseReminders", () => {
 
     await processExpenseReminders(new Date("2026-05-10T13:00:00Z"));
 
+    expect(sendDataMessageMock).not.toHaveBeenCalled();
+  });
+
+  it("deduplicates user document reads via userCache across multiple expenses sharing members", async () => {
+    const docs = [
+      {
+        id: "exp1",
+        data: () => ({
+          groupId: "group1",
+          paymentStatus: "SCHEDULED",
+          title: "Hotel Booking",
+          dueDate: { toDate: () => new Date("2026-05-10T00:00:00Z") },
+        }),
+        ref: { parent: { parent: { id: "group1" } } },
+      },
+      {
+        id: "exp2",
+        data: () => ({
+          groupId: "group2",
+          paymentStatus: "SCHEDULED",
+          title: "Train Tickets",
+          dueDate: { toDate: () => new Date("2026-05-10T00:00:00Z") },
+        }),
+        ref: { parent: { parent: { id: "group2" } } },
+      },
+    ];
+
+    setupCollectionGroupDocs(docs);
+
+    getGroupDataMock
+      .mockResolvedValueOnce({ ...sampleGroup, groupId: "group1", memberIds: ["user1"] })
+      .mockResolvedValueOnce({ ...sampleGroup, groupId: "group2", memberIds: ["user1"] });
+
+    const user1GetMock = jest.fn().mockResolvedValue({
+      exists: true,
+      data: () => ({
+        timezone: "America/New_York",
+        preferredReminderTime: "09:00",
+      }),
+    });
+
+    firestoreMock.collection.mockReturnValue({
+      doc: jest.fn().mockReturnValue({
+        get: user1GetMock,
+      }),
+    });
+
+    getUserDeviceTokensMock.mockResolvedValue(["token1"]);
+
+    await processExpenseReminders(new Date("2026-05-10T13:00:00Z"));
+
+    expect(user1GetMock).toHaveBeenCalledTimes(1);
+    expect(sendDataMessageMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("caches missing user documents as null in userCache", async () => {
+    const docs = [
+      {
+        id: "exp1",
+        data: () => ({
+          groupId: "group1",
+          paymentStatus: "SCHEDULED",
+          title: "Hotel Booking",
+          dueDate: { toDate: () => new Date("2026-05-10T00:00:00Z") },
+        }),
+        ref: { parent: { parent: { id: "group1" } } },
+      },
+      {
+        id: "exp2",
+        data: () => ({
+          groupId: "group1",
+          paymentStatus: "SCHEDULED",
+          title: "Dinner",
+          dueDate: { toDate: () => new Date("2026-05-10T00:00:00Z") },
+        }),
+        ref: { parent: { parent: { id: "group1" } } },
+      },
+    ];
+
+    setupCollectionGroupDocs(docs);
+    getGroupDataMock.mockResolvedValue({
+      ...sampleGroup,
+      memberIds: ["missing-user"],
+    });
+
+    const missingUserGetMock = jest.fn().mockResolvedValue({
+      exists: false,
+    });
+
+    firestoreMock.collection.mockReturnValue({
+      doc: jest.fn().mockReturnValue({
+        get: missingUserGetMock,
+      }),
+    });
+
+    await processExpenseReminders(new Date("2026-05-10T13:00:00Z"));
+
+    expect(missingUserGetMock).toHaveBeenCalledTimes(1);
+    expect(sendDataMessageMock).not.toHaveBeenCalled();
+  });
+
+  it("deduplicates device token reads via tokenCache when same user receives multiple reminders", async () => {
+    const docs = [
+      {
+        id: "exp1",
+        data: () => ({
+          groupId: "group1",
+          paymentStatus: "SCHEDULED",
+          title: "Hotel Booking",
+          dueDate: { toDate: () => new Date("2026-05-10T00:00:00Z") },
+        }),
+        ref: { parent: { parent: { id: "group1" } } },
+      },
+      {
+        id: "exp2",
+        data: () => ({
+          groupId: "group1",
+          paymentStatus: "SCHEDULED",
+          title: "Museum Pass",
+          dueDate: { toDate: () => new Date("2026-05-10T00:00:00Z") },
+        }),
+        ref: { parent: { parent: { id: "group1" } } },
+      },
+    ];
+
+    setupCollectionGroupDocs(docs);
+    getGroupDataMock.mockResolvedValue(sampleGroup);
+
+    firestoreMock.collection.mockReturnValue({
+      doc: jest.fn().mockReturnValue({
+        get: jest.fn().mockResolvedValue({
+          exists: true,
+          data: () => ({
+            timezone: "America/New_York",
+            preferredReminderTime: "09:00",
+          }),
+        }),
+      }),
+    });
+
+    getUserDeviceTokensMock.mockResolvedValue(["token1"]);
+
+    await processExpenseReminders(new Date("2026-05-10T13:00:00Z"));
+
+    expect(getUserDeviceTokensMock).toHaveBeenCalledTimes(1);
+    expect(getUserDeviceTokensMock).toHaveBeenCalledWith("user1");
+    expect(sendDataMessageMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("skips soft-deleted SCHEDULED and REFUNDABLE expenses (isDeleted === true)", async () => {
+    const docs = [
+      {
+        id: "exp-del-sched",
+        data: () => ({
+          groupId: "group1",
+          paymentStatus: "SCHEDULED",
+          title: "Deleted Scheduled",
+          dueDate: { toDate: () => new Date("2026-05-10T00:00:00Z") },
+          isDeleted: true,
+        }),
+        ref: { parent: { parent: { id: "group1" } } },
+      },
+      {
+        id: "exp-del-ref",
+        data: () => ({
+          groupId: "group1",
+          paymentStatus: "REFUNDABLE",
+          title: "Deleted Refundable",
+          dueDate: { toDate: () => new Date("2026-05-10T00:00:00Z") },
+          isDeleted: true,
+        }),
+        ref: { parent: { parent: { id: "group1" } } },
+      },
+    ];
+
+    setupCollectionGroupDocs(docs);
+
+    await processExpenseReminders(new Date("2026-05-09T13:00:00Z"));
+
+    expect(getGroupDataMock).not.toHaveBeenCalled();
     expect(sendDataMessageMock).not.toHaveBeenCalled();
   });
 });

@@ -13,6 +13,7 @@ import es.pedrazamiguez.splittrip.data.worker.GroupDeletionRetryScheduler
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Group
 import es.pedrazamiguez.splittrip.domain.model.MembershipRemovalEvent
@@ -21,13 +22,12 @@ import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import es.pedrazamiguez.splittrip.domain.service.GroupImageStorageService
 import java.time.LocalDateTime
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -54,19 +54,13 @@ class GroupRepositoryImpl(
 
     private val syncScope = CoroutineScope(ioDispatcher)
 
-    /**
-     * Tracks the single active cloud subscription Job for groups.
-     * Prevents duplicate Firestore snapshot listeners from accumulating
-     * when onStart fires multiple times (e.g., config changes, tab switches,
-     * WhileSubscribed resubscriptions).
-     */
-    private var cloudSubscriptionJob: Job? = null
     private val groupSubscriptionTracker = KeyedSubscriptionTracker()
+    private val syncedArchivedGroupIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     init {
         syncTeardownCoordinator.registerAction {
-            cloudSubscriptionJob?.cancel()
             groupSubscriptionTracker.cancelAll()
+            syncedArchivedGroupIds.clear()
         }
     }
 
@@ -75,28 +69,25 @@ class GroupRepositoryImpl(
      * On start, subscribes to real-time cloud changes for multi-user sync.
      * This is INSTANT because data comes from Room.
      *
-     * Uses a single shared subscription: any existing cloud listener is cancelled
-     * before starting a new one, preventing duplicate snapshot listeners.
+     * Uses [KeyedSubscriptionTracker] so concurrent collectors share a single
+     * listener and detach automatically after the grace period when backgrounded.
      */
     override fun getAllGroupsFlow(): Flow<List<Group>> = localGroupDataSource.getGroupsFlow()
-        .onStart {
-            cloudSubscriptionJob?.cancel()
-            cloudSubscriptionJob = syncScope.launch {
-                subscribeAndReconcile(
-                    cloudFlow = cloudGroupDataSource.getAllGroupsFlow(),
-                    params = SyncReconciliationParams(
-                        reconcileLocal = localGroupDataSource::replaceAllGroups,
-                        getPendingIds = localGroupDataSource::getPendingSyncGroupIds,
-                        verifyOnServer = cloudGroupDataSource::verifyGroupOnServer,
-                        markSynced = { id ->
-                            localGroupDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
-                        },
-                        entityLabel = "group",
-                        logContext = "",
-                        performanceMonitor = performanceMonitor
-                    )
+        .trackSubscription(groupSubscriptionTracker, ALL_GROUPS_SUBSCRIPTION_KEY, syncScope) {
+            subscribeAndReconcile(
+                cloudFlow = cloudGroupDataSource.getAllGroupsFlow(),
+                params = SyncReconciliationParams(
+                    reconcileLocal = localGroupDataSource::replaceAllGroups,
+                    getPendingIds = localGroupDataSource::getPendingSyncGroupIds,
+                    verifyOnServer = cloudGroupDataSource::verifyGroupOnServer,
+                    markSynced = { id ->
+                        localGroupDataSource.updateSyncStatus(id, SyncStatus.SYNCED)
+                    },
+                    entityLabel = "group",
+                    logContext = "",
+                    performanceMonitor = performanceMonitor
                 )
-            }
+            )
         }
 
     /**
@@ -125,18 +116,40 @@ class GroupRepositoryImpl(
     override fun getGroupByIdFlow(groupId: String): Flow<Group?> =
         localGroupDataSource.getGroupByIdFlow(groupId)
             .trackSubscription(groupSubscriptionTracker, groupId, syncScope) {
-                try {
-                    cloudGroupDataSource.getGroupFlow(groupId).collect { remoteGroup ->
-                        if (remoteGroup != null) {
-                            localGroupDataSource.saveGroup(remoteGroup)
-                        }
-                    }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Timber.e(e, "Error subscribing to cloud group changes for: $groupId")
+                if (localGroupDataSource.getGroupById(groupId)?.status == GroupStatus.ARCHIVED) {
+                    syncArchivedGroupOnce(groupId)
+                } else {
+                    subscribeToSingleGroupChanges(groupId)
                 }
             }
+
+    private suspend fun syncArchivedGroupOnce(groupId: String) {
+        if (groupId in syncedArchivedGroupIds) return
+        try {
+            cloudGroupDataSource.getGroupById(groupId)?.let { remoteGroup ->
+                localGroupDataSource.saveGroup(remoteGroup)
+            }
+            syncedArchivedGroupIds.add(groupId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "Error fetching archived group: $groupId")
+        }
+    }
+
+    private suspend fun subscribeToSingleGroupChanges(groupId: String) {
+        try {
+            cloudGroupDataSource.getGroupFlow(groupId).collect { remoteGroup ->
+                if (remoteGroup != null) {
+                    localGroupDataSource.saveGroup(remoteGroup)
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.e(e, "Error subscribing to cloud group changes for: $groupId")
+        }
+    }
 
     /**
      * Creates a group locally first, then syncs to cloud.
@@ -537,5 +550,9 @@ class GroupRepositoryImpl(
             Timber.e(e, "Failed to reconcile unregistered user in the cloud")
             throw e
         }
+    }
+
+    private companion object {
+        const val ALL_GROUPS_SUBSCRIPTION_KEY = "__all_groups__"
     }
 }

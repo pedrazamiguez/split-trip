@@ -35,6 +35,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSyncCheckpointDataSource
 import es.pedrazamiguez.splittrip.domain.repository.AiInferenceRepository
 import es.pedrazamiguez.splittrip.domain.repository.AppConfigRepository
 import es.pedrazamiguez.splittrip.domain.repository.ExpenseRepository
@@ -63,6 +64,7 @@ val expensesDataModule = module {
             receiptStorageService = get<ReceiptStorageService>(),
             performanceMonitor = get<PerformanceMonitor>(),
             localGroupDataSource = get<LocalGroupDataSource>(),
+            localSyncCheckpointDataSource = get<LocalSyncCheckpointDataSource>(),
             syncTeardownCoordinator = get<SyncTeardownCoordinator>(),
             remainderDistributionService = get<RemainderDistributionService>(),
             ioDispatcher = Dispatchers.IO
@@ -231,6 +233,7 @@ val expensesDataModule = module {
         val aiModelResolverService = get<AiModelResolverService>()
         val localAiModelPackService = get<LocalAiModelPackService>()
         ExpenseCategoryAiClassifierServiceImpl(
+            context = androidContext(),
             aiCoreCapabilityProvider = aiCoreCapabilityProvider,
             aiCoreInferenceRepository = lazy { get<AiInferenceRepository>(named("ai_core_classifier")) },
             liteRtInferenceRepository = lazy { get<AiInferenceRepository>(named("lite_rt")) },

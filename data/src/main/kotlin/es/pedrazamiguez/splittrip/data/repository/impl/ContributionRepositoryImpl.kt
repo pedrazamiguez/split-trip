@@ -2,22 +2,26 @@ package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
 import es.pedrazamiguez.splittrip.core.performance.PerformanceTraces
+import es.pedrazamiguez.splittrip.data.sync.DeltaSyncParams
 import es.pedrazamiguez.splittrip.data.sync.KeyedSubscriptionTracker
 import es.pedrazamiguez.splittrip.data.sync.SyncCreateParams
-import es.pedrazamiguez.splittrip.data.sync.SyncReconciliationParams
 import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
-import es.pedrazamiguez.splittrip.data.sync.subscribeAndReconcile
 import es.pedrazamiguez.splittrip.data.sync.syncCreateToCloud
+import es.pedrazamiguez.splittrip.data.sync.syncGroupCollectionDelta
 import es.pedrazamiguez.splittrip.data.sync.trackSubscription
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSyncCheckpointDataSource
+import es.pedrazamiguez.splittrip.domain.enums.GroupStatus
+import es.pedrazamiguez.splittrip.domain.enums.SyncCollectionName
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.model.Contribution
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
 import es.pedrazamiguez.splittrip.domain.service.AuthenticationService
 import java.time.LocalDateTime
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +34,7 @@ class ContributionRepositoryImpl(
     private val cloudContributionDataSource: CloudContributionDataSource,
     private val localContributionDataSource: LocalContributionDataSource,
     private val localGroupDataSource: LocalGroupDataSource,
+    private val localSyncCheckpointDataSource: LocalSyncCheckpointDataSource,
     private val authenticationService: AuthenticationService,
     private val performanceMonitor: PerformanceMonitor,
     private val syncTeardownCoordinator: SyncTeardownCoordinator,
@@ -39,9 +44,13 @@ class ContributionRepositoryImpl(
     private val syncScope = CoroutineScope(ioDispatcher)
 
     private val cloudSubscriptionTracker = KeyedSubscriptionTracker()
+    private val syncedArchivedGroupIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     init {
-        syncTeardownCoordinator.registerAction { cloudSubscriptionTracker.cancelAll() }
+        syncTeardownCoordinator.registerAction {
+            cloudSubscriptionTracker.cancelAll()
+            syncedArchivedGroupIds.clear()
+        }
     }
 
     override suspend fun addContribution(groupId: String, contribution: Contribution) {
@@ -176,14 +185,35 @@ class ContributionRepositoryImpl(
     override fun getGroupContributionsFlow(groupId: String): Flow<List<Contribution>> =
         localContributionDataSource.getContributionsByGroupIdFlow(groupId)
             .trackSubscription(cloudSubscriptionTracker, groupId, syncScope) {
-                subscribeAndReconcile(
-                    cloudFlow = cloudContributionDataSource
-                        .getContributionsByGroupIdFlow(groupId),
-                    params = SyncReconciliationParams(
-                        reconcileLocal = { remoteContributions ->
+                syncGroupCollectionDelta(
+                    DeltaSyncParams(
+                        groupId = groupId,
+                        collectionName = SyncCollectionName.CONTRIBUTIONS,
+                        checkpointDataSource = localSyncCheckpointDataSource,
+                        isGroupArchived = {
+                            localGroupDataSource.getGroupById(groupId)?.status == GroupStatus.ARCHIVED
+                        },
+                        syncedArchivedGroupIds = syncedArchivedGroupIds,
+                        fetchFullSnapshot = {
+                            cloudContributionDataSource.fetchContributionsFullSnapshot(groupId)
+                        },
+                        fetchDeltaOnce = { watermark ->
+                            cloudContributionDataSource.fetchContributionsDelta(groupId, watermark)
+                        },
+                        observeDeltaFlow = { watermark ->
+                            cloudContributionDataSource.observeContributionsDeltaFlow(groupId, watermark)
+                        },
+                        replaceLocal = { remoteContributions ->
                             localContributionDataSource.replaceContributionsForGroup(
                                 groupId,
                                 remoteContributions
+                            )
+                        },
+                        applyDeltaLocal = { upserts, deletedIds ->
+                            localContributionDataSource.applyContributionsDeltaForGroup(
+                                groupId,
+                                upserts,
+                                deletedIds
                             )
                         },
                         getPendingIds = {

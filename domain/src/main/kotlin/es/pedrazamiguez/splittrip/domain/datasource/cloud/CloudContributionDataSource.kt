@@ -1,6 +1,8 @@
 package es.pedrazamiguez.splittrip.domain.datasource.cloud
 
 import es.pedrazamiguez.splittrip.domain.model.Contribution
+import es.pedrazamiguez.splittrip.domain.model.DeltaSyncBatch
+import es.pedrazamiguez.splittrip.domain.model.SyncWatermark
 import kotlinx.coroutines.flow.Flow
 
 interface CloudContributionDataSource {
@@ -10,15 +12,25 @@ interface CloudContributionDataSource {
     suspend fun deleteContribution(groupId: String, contributionId: String)
 
     /**
-     * One-shot fetch of contributions for sync purposes.
+     * One-shot paginated full-collection fetch used for initial bootstrap or expired-checkpoint fallback.
      */
-    suspend fun fetchContributionsByGroupId(groupId: String): List<Contribution>
+    suspend fun fetchContributionsFullSnapshot(groupId: String): DeltaSyncBatch<Contribution>
 
     /**
-     * Reactive stream of contributions for real-time UI observers.
-     * Emits local cache first, then server data as it arrives.
+     * One-shot incremental delta fetch for changes after [sinceWatermark].
      */
-    fun getContributionsByGroupIdFlow(groupId: String): Flow<List<Contribution>>
+    suspend fun fetchContributionsDelta(
+        groupId: String,
+        sinceWatermark: SyncWatermark
+    ): DeltaSyncBatch<Contribution>
+
+    /**
+     * Reactive delta stream for real-time observers starting after [sinceWatermark].
+     */
+    fun observeContributionsDeltaFlow(
+        groupId: String,
+        sinceWatermark: SyncWatermark?
+    ): Flow<DeltaSyncBatch<Contribution>>
 
     /**
      * Verifies that a contribution document exists on the Firestore server (not just local cache).

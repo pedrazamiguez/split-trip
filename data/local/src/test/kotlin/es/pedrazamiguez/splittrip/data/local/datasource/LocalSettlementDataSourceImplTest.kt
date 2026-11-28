@@ -120,4 +120,54 @@ class LocalSettlementDataSourceImplTest {
         assertNotNull(newResult)
         assertEquals(1500L, newResult?.settlement?.amount)
     }
+
+    @Test
+    fun applySettlementsDeltaForGroup_preservesUnsyncedEditsDeletesTombstonesAndKeepsUntouched() = runTest {
+        val untouched = SettlementRecord(
+            id = "s-untouched",
+            groupId = testGroupId,
+            settlement = Settlement("user-1", "user-2", 1000L, "EUR", SettlementPocketType.CASH),
+            status = SettlementStatus.RESOLVED,
+            createdAt = LocalDateTime.now()
+        )
+        val pending = SettlementRecord(
+            id = "s-pending",
+            groupId = testGroupId,
+            settlement = Settlement("user-1", "user-2", 2000L, "EUR", SettlementPocketType.CASH),
+            status = SettlementStatus.CONFIRMED_BY_PAYER,
+            createdAt = LocalDateTime.now()
+        )
+        val toDelete = SettlementRecord(
+            id = "s-delete",
+            groupId = testGroupId,
+            settlement = Settlement("user-2", "user-3", 3000L, "EUR", SettlementPocketType.CASH),
+            status = SettlementStatus.RESOLVED,
+            createdAt = LocalDateTime.now()
+        )
+        localDataSource.saveSettlement(untouched, SyncStatus.SYNCED)
+        localDataSource.saveSettlement(pending, SyncStatus.PENDING_SYNC)
+        localDataSource.saveSettlement(toDelete, SyncStatus.SYNCED)
+
+        val remotePendingUpdate = pending.copy(status = SettlementStatus.RESOLVED)
+        val remoteNew = SettlementRecord(
+            id = "s-new",
+            groupId = testGroupId,
+            settlement = Settlement("user-3", "user-1", 4000L, "EUR", SettlementPocketType.CASH),
+            status = SettlementStatus.CONFIRMED_BY_PAYER,
+            createdAt = LocalDateTime.now()
+        )
+
+        localDataSource.applySettlementsDeltaForGroup(
+            groupId = testGroupId,
+            upserts = listOf(remotePendingUpdate, remoteNew),
+            deletedIds = listOf("s-delete")
+        )
+
+        assertNotNull(localDataSource.getSettlementById("s-untouched"))
+        val pendingAfter = localDataSource.getSettlementById("s-pending")
+        assertEquals(SettlementStatus.CONFIRMED_BY_PAYER, pendingAfter?.status)
+        assertEquals(SyncStatus.PENDING_SYNC, localDataSource.getSyncStatus("s-pending"))
+        assertNull(localDataSource.getSettlementById("s-delete"))
+        assertEquals(4000L, localDataSource.getSettlementById("s-new")?.settlement?.amount)
+    }
 }

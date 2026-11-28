@@ -5,7 +5,6 @@ import es.pedrazamiguez.splittrip.core.common.provider.LocaleProvider
 import es.pedrazamiguez.splittrip.core.designsystem.presentation.component.chip.PassportTagStyle
 import es.pedrazamiguez.splittrip.domain.enums.AiEngineType
 import es.pedrazamiguez.splittrip.domain.model.DeviceCompatibilityResult
-import es.pedrazamiguez.splittrip.domain.model.LocalAiModelPackState
 import es.pedrazamiguez.splittrip.domain.model.ModelPackCatalogEntry
 import es.pedrazamiguez.splittrip.domain.model.ModelPackConfig
 import es.pedrazamiguez.splittrip.domain.model.ModelPackErrorReason
@@ -15,7 +14,6 @@ import es.pedrazamiguez.splittrip.domain.model.ModelPackTier
 import es.pedrazamiguez.splittrip.features.settings.R
 import es.pedrazamiguez.splittrip.features.settings.presentation.mapper.impl.LocalAiModelPackUiMapperImpl
 import es.pedrazamiguez.splittrip.features.settings.presentation.model.LocalAiModelPackTierAction
-import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -25,23 +23,9 @@ import org.junit.jupiter.api.Test
 
 class LocalAiModelPackUiMapperImplTest {
 
-    private val usLocaleProvider = object : LocaleProvider {
-        override fun getCurrentLocale(): Locale = Locale.US
-    }
-
-    private val esLocaleProvider = object : LocaleProvider {
-        override fun getCurrentLocale(): Locale = Locale("es", "ES")
-    }
-
-    private val compatibleResult = DeviceCompatibilityResult(
-        isCompatible = true,
-        reason = null,
-        availableRamMb = 8192L,
-        requiredRamMb = 4096,
-        availableStorageBytes = 4_000_000_000L,
-        requiredStorageBytes = 1_073_741_824L,
-        supportedAbis = listOf("arm64-v8a")
-    )
+    private val usLocaleProvider: LocaleProvider = usTestLocaleProvider
+    private val esLocaleProvider: LocaleProvider = esTestLocaleProvider
+    private val compatibleResult: DeviceCompatibilityResult = testCompatibleResult
 
     private fun stateWith(
         status: ModelPackStatus,
@@ -49,14 +33,7 @@ class LocalAiModelPackUiMapperImplTest {
         compatibility: DeviceCompatibilityResult = compatibleResult,
         activeEngine: AiEngineType = AiEngineType.AI_CORE_GEMMA_4,
         isAiCoreSupported: Boolean = true
-    ) = LocalAiModelPackState(
-        status = status,
-        compatibility = compatibility,
-        isEntitled = isEntitled,
-        isWifiOnly = true,
-        isAiCoreSupported = isAiCoreSupported,
-        activeEngine = activeEngine
-    )
+    ) = testStateWith(status, isEntitled, compatibility, activeEngine, isAiCoreSupported)
 
     @Test
     fun `maps NotInstalled for Pro user with formatted size and enabled download button`() {
@@ -106,7 +83,7 @@ class LocalAiModelPackUiMapperImplTest {
         assertTrue(uiState.isDownloading)
         assertEquals(0.50f, uiState.progressFraction)
         assertEquals(
-            UiText.StringResource(R.string.local_ai_pack_progress_format, 50, "250 MB", "500 MB"),
+            UiText.StringResource(R.string.local_ai_pack_progress_format, 50, "250.0 MB", "500.0 MB"),
             uiState.progressLabel
         )
         assertTrue(uiState.showCancelButton)
@@ -187,7 +164,7 @@ class LocalAiModelPackUiMapperImplTest {
         )
         assertFalse(ramState.isCompatible)
         assertEquals(UiText.StringResource(R.string.local_ai_pack_status_incompatible_title), ramState.statusTitle)
-        assertEquals(UiText.StringResource(R.string.local_ai_pack_incompatible_ram, 4096), ramState.statusDescription)
+        assertEquals(UiText.StringResource(R.string.local_ai_pack_incompatible_ram, "4 GB"), ramState.statusDescription)
         assertEquals(
             UiText.StringResource(R.string.local_ai_pack_compatibility_unsupported),
             ramState.compatibilityLabel
@@ -331,7 +308,7 @@ class LocalAiModelPackUiMapperImplTest {
         assertEquals(PassportTagStyle.PRIMARY, compactUi.statusTagStyle)
         assertEquals(UiText.StringResource(R.string.local_ai_pack_badge_recommended), compactUi.statusBadge)
         assertEquals(
-            UiText.StringResource(R.string.local_ai_pack_requirements_format, 2048, "1 GB"),
+            UiText.StringResource(R.string.local_ai_pack_requirements_format, "2 GB", "1 GB"),
             compactUi.requirementsLabel
         )
         assertEquals(LocalAiModelPackTierAction.DOWNLOAD, compactUi.action)
@@ -339,7 +316,10 @@ class LocalAiModelPackUiMapperImplTest {
 
         val highUi = uiState.catalogTiers[1]
         assertEquals(PassportTagStyle.WARNING, highUi.statusTagStyle)
-        assertEquals(UiText.StringResource(R.string.local_ai_pack_incompatible_ram, 6144), highUi.incompatibilityReason)
+        assertEquals(
+            UiText.StringResource(R.string.local_ai_pack_incompatible_ram, "6 GB"),
+            highUi.incompatibilityReason
+        )
         assertEquals(LocalAiModelPackTierAction.NONE, highUi.action)
         assertFalse(highUi.isActionEnabled)
     }
@@ -562,25 +542,100 @@ class LocalAiModelPackUiMapperImplTest {
         assertFalse(uiState.showUpgradeButton)
     }
 
+    @Test
+    fun `maps Downloading progress with fixed 1-decimal precision across locales for status card and catalog tier`() {
+        val esMapper = LocalAiModelPackUiMapperImpl(esLocaleProvider)
+        val usMapper = LocalAiModelPackUiMapperImpl(usLocaleProvider)
+        fun assertProgress(
+            mapper: LocalAiModelPackUiMapperImpl,
+            percent: Int,
+            downloaded: Long,
+            total: Long,
+            expectedLabelPair: Pair<String, String>
+        ) {
+            val status = ModelPackStatus.Downloading(percent, downloaded, total, "qwen2.5-1.5b-litert-v1")
+            val entry = testCatalogEntry(
+                testTierConfig("qwen2.5-1.5b-litert-v1", "Balanced", ModelPackTier.BALANCED, 20, 3072),
+                status = status,
+                isActiveDownload = true
+            )
+            val ui = mapper.map(
+                stateWith(status).copy(catalogEntries = listOf(entry), recommendedPackId = entry.config.packId),
+                false
+            )
+            val expected = UiText.StringResource(
+                R.string.local_ai_pack_progress_format,
+                percent,
+                expectedLabelPair.first,
+                expectedLabelPair.second
+            )
+            assertEquals(expected, ui.progressLabel)
+            assertEquals(expected, ui.catalogTiers[0].progressLabel)
+        }
+        assertProgress(esMapper, 9, 153_092_096L, 1_610_612_736L, "146,0 MB" to "1,5 GB")
+        assertProgress(esMapper, 2, 38_168_166L, 1_610_612_736L, "36,4 MB" to "1,5 GB")
+        assertProgress(esMapper, 50, 1_073_741_824L, 2_147_483_648L, "1,0 GB" to "2,0 GB")
+        assertProgress(usMapper, 14, 153_092_096L, 1_073_741_824L, "146.0 MB" to "1.0 GB")
+        assertProgress(usMapper, 0, 0L, 524_288_000L, "0.0 MB" to "500.0 MB")
+    }
+
+    @Test
+    fun `formats RAM requirements and incompatibility reasons in GB or MB while keeping static sizes compact`() {
+        val usMapper = LocalAiModelPackUiMapperImpl(usLocaleProvider)
+        val esMapper = LocalAiModelPackUiMapperImpl(esLocaleProvider)
+        fun assertRam(
+            mapper: LocalAiModelPackUiMapperImpl,
+            ramMb: Int,
+            storageBytes: Long,
+            expectedPair: Pair<String, String>,
+            incompatible: Boolean = false
+        ) {
+            val cfg = testTierConfig("pack-$ramMb", "Pack", ModelPackTier.BALANCED, 20, ramMb)
+                .copy(sizeBytes = 1_073_741_824L, minFreeStorageBytes = storageBytes)
+            val status = if (incompatible) {
+                ModelPackStatus.Incompatible(
+                    ModelPackIncompatibilityReason.INSUFFICIENT_RAM,
+                    ramMb,
+                    256L,
+                    storageBytes,
+                    4_000_000_000L,
+                    cfg.packId
+                )
+            } else {
+                ModelPackStatus.NotInstalled("1.0.0", 1_073_741_824L, cfg.packId)
+            }
+            val reason = ModelPackIncompatibilityReason.INSUFFICIENT_RAM.takeIf { incompatible }
+            val entry = testCatalogEntry(cfg, status, incompatibleReason = reason)
+            val ui = mapper.map(stateWith(status).copy(catalogEntries = listOf(entry)), false)
+            assertEquals("1 GB", ui.catalogTiers[0].sizeLabel)
+            assertEquals(
+                UiText.StringResource(
+                    R.string.local_ai_pack_requirements_format,
+                    expectedPair.first,
+                    expectedPair.second
+                ),
+                ui.catalogTiers[0].requirementsLabel
+            )
+            if (incompatible) {
+                val msg = UiText.StringResource(R.string.local_ai_pack_incompatible_ram, expectedPair.first)
+                assertEquals(msg, ui.statusDescription)
+                assertEquals(msg, ui.catalogTiers[0].incompatibilityReason)
+            }
+        }
+        assertRam(usMapper, 3072, 3_221_225_472L, "3 GB" to "3 GB")
+        assertRam(usMapper, 512, 524_288_000L, "512 MB" to "500 MB", incompatible = true)
+        assertRam(usMapper, 1536, 1_073_741_824L, "1.5 GB" to "1 GB")
+        assertRam(esMapper, 1536, 1_610_612_736L, "1,5 GB" to "1,5 GB", incompatible = true)
+        listOf(0, -128).forEach { assertRam(esMapper, it, 1_073_741_824L, "0 MB" to "1 GB", incompatible = true) }
+    }
+
     private fun tierConfig(
         packId: String,
         displayName: String,
         tier: ModelPackTier,
         priority: Int,
         minRamMb: Int
-    ): ModelPackConfig = ModelPackConfig(
-        packId = packId,
-        displayName = displayName,
-        tier = tier,
-        priority = priority,
-        version = "1.0.0",
-        downloadUrl = "https://models.splittrip.eu/$packId.litertlm",
-        sha256Checksum = "a".repeat(64),
-        sizeBytes = 343_490_560L,
-        minRamMb = minRamMb,
-        minFreeStorageBytes = 1_073_741_824L,
-        isEnabled = true
-    )
+    ): ModelPackConfig = testTierConfig(packId, displayName, tier, priority, minRamMb)
 
     private fun catalogEntry(
         config: ModelPackConfig,
@@ -589,17 +644,12 @@ class LocalAiModelPackUiMapperImplTest {
         isInstalled: Boolean = false,
         isActiveDownload: Boolean = false,
         incompatibleReason: ModelPackIncompatibilityReason? = null
-    ): ModelPackCatalogEntry = ModelPackCatalogEntry(
-        config = config,
-        compatibility = compatibleResult.copy(
-            isCompatible = incompatibleReason == null,
-            reason = incompatibleReason,
-            requiredRamMb = config.minRamMb,
-            requiredStorageBytes = config.minFreeStorageBytes
-        ),
-        status = status,
-        isRecommended = isRecommended,
-        isInstalled = isInstalled,
-        isActiveDownload = isActiveDownload
+    ): ModelPackCatalogEntry = testCatalogEntry(
+        config,
+        status,
+        isRecommended,
+        isInstalled,
+        isActiveDownload,
+        incompatibleReason
     )
 }

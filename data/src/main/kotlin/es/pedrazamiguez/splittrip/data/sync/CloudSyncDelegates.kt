@@ -78,6 +78,74 @@ internal suspend fun <T> subscribeAndReconcile(
 }
 
 /**
+ * Performs a one-shot fetch of a group's collection (used for read-only ARCHIVED groups)
+ * and reconciles the local database once per session.
+ *
+ * Avoids attaching a persistent Firestore snapshot listener for archived groups while
+ * still hydrating local storage if the user opens an archived group not yet cached.
+ */
+internal suspend fun <T> fetchOnceAndReconcile(
+    groupId: String,
+    syncedArchivedGroupIds: MutableSet<String>,
+    fetchOnce: suspend () -> List<T>,
+    params: SyncReconciliationParams<T>
+) {
+    if (groupId in syncedArchivedGroupIds) return
+    try {
+        val remoteItems = fetchOnce()
+        if (params.verifyParentExists != null && !params.verifyParentExists.invoke()) {
+            Timber.tag(LogTag.SYNC).w(
+                "Parent missing, skipping one-shot reconciliation for %ss",
+                params.entityLabel
+            )
+            return
+        }
+        params.performanceMonitor.traceAsync(PerformanceTraces.SYNC_SUBSCRIBE_AND_RECONCILE) {
+            Timber.tag(LogTag.SYNC).v(
+                "One-shot archived sync: %d %ss %s",
+                remoteItems.size,
+                params.entityLabel,
+                params.logContext
+            )
+            params.reconcileLocal(remoteItems)
+            syncedArchivedGroupIds.add(groupId)
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Timber.tag(LogTag.SYNC).w(e, "Error fetching archived %ss, using local cache", params.entityLabel)
+    }
+}
+
+/**
+ * Routes group subcollection sync based on group status:
+ * - ARCHIVED groups perform a one-shot fetch once per session via [fetchOnceAndReconcile].
+ * - ACTIVE groups attach a reference-counted real-time listener via [subscribeAndReconcile].
+ */
+internal suspend fun <T> syncGroupCollection(
+    groupId: String,
+    isGroupArchived: suspend () -> Boolean,
+    syncedArchivedGroupIds: MutableSet<String>,
+    fetchOnce: suspend () -> List<T>,
+    cloudFlow: () -> Flow<List<T>>,
+    params: SyncReconciliationParams<T>
+) {
+    if (isGroupArchived()) {
+        fetchOnceAndReconcile(
+            groupId = groupId,
+            syncedArchivedGroupIds = syncedArchivedGroupIds,
+            fetchOnce = fetchOnce,
+            params = params
+        )
+    } else {
+        subscribeAndReconcile(
+            cloudFlow = cloudFlow(),
+            params = params
+        )
+    }
+}
+
+/**
  * Attempts to confirm PENDING_SYNC entities by verifying their existence
  * on the server.
  *

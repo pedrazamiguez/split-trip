@@ -33,6 +33,15 @@ interface LocalCashWithdrawalWriteDataSource {
     suspend fun replaceWithdrawalsForGroup(groupId: String, withdrawals: List<CashWithdrawal>)
 
     /**
+     * Atomically applies an incremental delta (upserts + tombstone deletions) for a group.
+     */
+    suspend fun applyWithdrawalsDeltaForGroup(
+        groupId: String,
+        upserts: List<CashWithdrawal>,
+        deletedIds: List<String>
+    )
+
+    /**
      * Updates the sync status of a single cash withdrawal.
      * Used by repositories to track cloud sync progress (PENDING_SYNC → SYNCED / SYNC_FAILED).
      */

@@ -428,7 +428,7 @@
     <string name="local_ai_pack_status_disabled_title">Paquete no disponible</string>
     <string name="local_ai_pack_status_error_title">Error en la descarga</string>
     <string name="local_ai_pack_incompatible_abi">Se requiere procesador ARM de 64 bits</string>
-    <string name="local_ai_pack_incompatible_ram">Requiere al menos %1$d MB de RAM</string>
+    <string name="local_ai_pack_incompatible_ram">Requiere al menos %1$s de RAM</string>
     <string name="local_ai_pack_incompatible_storage">Requiere al menos %1$s de espacio libre</string>
     <string name="local_ai_pack_incompatible_disabled">No disponible temporalmente</string>
     <string name="local_ai_pack_error_not_entitled">Requiere una suscripción activa a SplitTrip Pro.</string>
@@ -473,7 +473,7 @@
     <string name="local_ai_pack_tier_compact">Compacto</string>
     <string name="local_ai_pack_tier_balanced">Equilibrado</string>
     <string name="local_ai_pack_tier_high_quality">Alta calidad</string>
-    <string name="local_ai_pack_requirements_format">Mín. %1$d MB RAM · %2$s de espacio</string>
+    <string name="local_ai_pack_requirements_format">Mín. %1$s RAM · %2$s de espacio</string>
     <string name="local_ai_pack_action_switch">Cambiar paquete</string>
     <string name="local_ai_pack_status_installed_named_desc">Modelo activo: %1$s. Ejecutándose sin conexión mediante LiteRT-LM.</string>
     <string name="local_ai_pack_status_downloading_named_title">Descargando %1$s…</string>

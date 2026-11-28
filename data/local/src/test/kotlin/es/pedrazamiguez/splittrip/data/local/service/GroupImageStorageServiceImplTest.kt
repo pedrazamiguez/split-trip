@@ -398,29 +398,102 @@ class GroupImageStorageServiceImplTest {
 
         every { mockResolver.openInputStream(mockUri) } returns ByteArrayInputStream("Dummy".toByteArray())
 
+        val capturedOptions = mutableListOf<BitmapFactory.Options>()
+        val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
+        every { mockOriginalBitmap.width } returns 625
+        every { mockOriginalBitmap.height } returns 375
+        every { mockOriginalBitmap.isRecycled } returns false
+
         mockkStatic(BitmapFactory::class)
         every { BitmapFactory.decodeStream(any(), null, any()) } answers {
             val opts = arg<BitmapFactory.Options>(2)
+            capturedOptions.add(opts)
             if (opts.inJustDecodeBounds) {
                 opts.outWidth = 5000
                 opts.outHeight = 3000
                 null
             } else {
-                mockk<Bitmap>(relaxed = true)
+                mockOriginalBitmap
             }
         }
-
-        val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
-        every { mockOriginalBitmap.width } returns 1250
-        every { mockOriginalBitmap.height } returns 750
-        every { mockOriginalBitmap.isRecycled } returns false
-        every { BitmapFactory.decodeStream(any(), null, match { !it.inJustDecodeBounds }) } returns mockOriginalBitmap
 
         // When
         val resultUri = service.saveTempGroupImage(sourceUriStr)
 
         // Then
         assertNotNull(resultUri)
+        val decodeOpts = capturedOptions.single { !it.inJustDecodeBounds }
+        assertEquals(8, decodeOpts.inSampleSize)
+    }
+
+    @Test
+    fun saveTempGroupImage_2048x1536_downsamplesWithInSampleSize2() = runTest {
+        val sourceUriStr = "content://media/picker/image_2048"
+        val mockUri = mockk<Uri>(relaxed = true)
+
+        mockkStatic(Uri::class)
+        every { Uri.parse(sourceUriStr) } returns mockUri
+        every { mockResolver.openInputStream(mockUri) } returns ByteArrayInputStream("Dummy".toByteArray())
+
+        val capturedOptions = mutableListOf<BitmapFactory.Options>()
+        val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
+        every { mockOriginalBitmap.width } returns 1024
+        every { mockOriginalBitmap.height } returns 768
+        every { mockOriginalBitmap.isRecycled } returns false
+
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeStream(any(), null, any()) } answers {
+            val opts = arg<BitmapFactory.Options>(2)
+            capturedOptions.add(opts)
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = 2048
+                opts.outHeight = 1536
+                null
+            } else {
+                mockOriginalBitmap
+            }
+        }
+
+        val resultUri = service.saveTempGroupImage(sourceUriStr)
+
+        assertNotNull(resultUri)
+        val decodeOpts = capturedOptions.single { !it.inJustDecodeBounds }
+        assertEquals(2, decodeOpts.inSampleSize)
+    }
+
+    @Test
+    fun saveTempGroupImage_1024x768_keepsInSampleSize1() = runTest {
+        val sourceUriStr = "content://media/picker/image_1024"
+        val mockUri = mockk<Uri>(relaxed = true)
+
+        mockkStatic(Uri::class)
+        every { Uri.parse(sourceUriStr) } returns mockUri
+        every { mockResolver.openInputStream(mockUri) } returns ByteArrayInputStream("Dummy".toByteArray())
+
+        val capturedOptions = mutableListOf<BitmapFactory.Options>()
+        val mockOriginalBitmap = mockk<Bitmap>(relaxed = true)
+        every { mockOriginalBitmap.width } returns 1024
+        every { mockOriginalBitmap.height } returns 768
+        every { mockOriginalBitmap.isRecycled } returns false
+
+        mockkStatic(BitmapFactory::class)
+        every { BitmapFactory.decodeStream(any(), null, any()) } answers {
+            val opts = arg<BitmapFactory.Options>(2)
+            capturedOptions.add(opts)
+            if (opts.inJustDecodeBounds) {
+                opts.outWidth = 1024
+                opts.outHeight = 768
+                null
+            } else {
+                mockOriginalBitmap
+            }
+        }
+
+        val resultUri = service.saveTempGroupImage(sourceUriStr)
+
+        assertNotNull(resultUri)
+        val decodeOpts = capturedOptions.single { !it.inJustDecodeBounds }
+        assertEquals(1, decodeOpts.inSampleSize)
     }
 
     @Test

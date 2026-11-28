@@ -28,11 +28,10 @@ internal fun interface HttpConnectionFactory {
 /**
  * Copies a user-selected file from a content:// or file:// URI into the app's
  * private files directory (`filesDir/receipts/`) and compresses image types to
- * WebP to reduce on-device storage.
+ * lossy WebP to minimize storage and Cloud Storage egress while preserving OCR readability.
  *
- * On API 30+, `WEBP_LOSSLESS` guarantees lossless compression.
- * On API < 30, the legacy `WEBP` format is used; this is lossy at quality < 100
- * but since [WEBP_QUALITY] is set to 100 the output is visually lossless in practice.
+ * On API 30+, `WEBP_LOSSY` is used at [WEBP_QUALITY] (85) with max dimension [MAX_IMAGE_DIMENSION] (1280 px).
+ * On API < 30, the legacy `WEBP` format is used at [WEBP_QUALITY] (85).
  *
  * PDFs and other non-image MIME types are copied verbatim with their original extension.
  *
@@ -229,11 +228,10 @@ internal class ReceiptStorageServiceImpl(
 
     /**
      * Decodes the source bitmap with OOM-safe downsampling (max [MAX_IMAGE_DIMENSION] px on
-     * either axis), applies EXIF orientation if required, and re-encodes it as WebP.
+     * either axis), applies EXIF orientation if required, and re-encodes it as lossy WebP.
      *
-     * On API 30+ `WEBP_LOSSLESS` is used (truly lossless).
-     * On API < 30 the legacy `WEBP` encoder is used at quality 100; it is not guaranteed
-     * lossless by the spec but in practice produces visually lossless output.
+     * On API 30+ `WEBP_LOSSY` is used at quality [WEBP_QUALITY].
+     * On API < 30 the legacy `WEBP` encoder is used at quality [WEBP_QUALITY].
      *
      * Returns the saved file and its MIME type.
      */
@@ -338,11 +336,11 @@ internal class ReceiptStorageServiceImpl(
         const val FALLBACK_MIME = "application/octet-stream"
         const val DEFAULT_EXT = ".bin"
 
-        // Quality param is ignored for WEBP_LOSSLESS but required by the API signature.
-        const val WEBP_QUALITY = 100
+        /** Quality 85 preserves crisp receipt text edges and digits for ML Kit OCR while keeping size small. */
+        const val WEBP_QUALITY = 85
 
-        /** Max width/height in pixels before downsampling kicks in. */
-        const val MAX_IMAGE_DIMENSION = 2048
+        /** Max width/height in pixels before power-of-2 downsampling kicks in. */
+        const val MAX_IMAGE_DIMENSION = 1280
 
         const val ROTATION_90 = 90
         const val ROTATION_180 = 180
@@ -355,11 +353,11 @@ internal class ReceiptStorageServiceImpl(
             "image/gif" to ".gif"
         )
 
-        @Suppress("DEPRECATION") // WEBP_LOSSLESS added in API 30; WEBP used on < 30 (see KDoc)
+        @Suppress("DEPRECATION") // WEBP_LOSSY added in API 30; WEBP used on < 30 (see KDoc)
         fun getWebpCompressFormat(): Bitmap.CompressFormat =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 try {
-                    Bitmap.CompressFormat.valueOf("WEBP_LOSSLESS")
+                    Bitmap.CompressFormat.valueOf("WEBP_LOSSY")
                 } catch (_: Throwable) {
                     Bitmap.CompressFormat.WEBP
                 }

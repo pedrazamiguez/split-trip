@@ -265,7 +265,7 @@ class GroupImageStorageServiceImpl(
         const val GROUPS_DIR = "groups"
         const val TEMP_DIR = "groups_temp"
         const val WEBP_QUALITY = 80
-        const val MAX_IMAGE_DIMENSION = 2048
+        const val MAX_IMAGE_DIMENSION = 1024
         const val CLEANUP_THRESHOLD_MS = 10 * 60 * 1000L // 10 minutes
         const val ROTATION_90 = 90
         const val ROTATION_180 = 180

@@ -2,25 +2,38 @@ import * as functions from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 import { logger } from "firebase-functions/v2";
 import { toZonedTime } from "date-fns-tz";
-import { addDays } from "date-fns";
+import { addDays, subDays } from "date-fns";
 import {
   NotificationType,
   NotificationChannelId,
   FcmDataPayload,
   NotificationDisplay,
   GroupDoc,
+  UserDoc,
 } from "../../types";
 import { getGroupData } from "../../services/firestore.service";
 import { getUserDeviceTokens } from "../../services/token.service";
 import { sendDataMessage } from "../../services/notification.service";
 import { buildDeepLink } from "../../utils/format";
 
+const DUE_DATE_WINDOW_DAYS_BEFORE = 2;
+const DUE_DATE_WINDOW_DAYS_AFTER = 3;
+
 export async function processExpenseReminders(now: Date = new Date()): Promise<void> {
   const db = admin.firestore();
+
+  const windowStart = admin.firestore.Timestamp.fromDate(
+    subDays(now, DUE_DATE_WINDOW_DAYS_BEFORE)
+  );
+  const windowEnd = admin.firestore.Timestamp.fromDate(
+    addDays(now, DUE_DATE_WINDOW_DAYS_AFTER)
+  );
 
   const expensesQuery = await db
     .collectionGroup("expenses")
     .where("paymentStatus", "in", ["SCHEDULED", "REFUNDABLE"])
+    .where("dueDate", ">=", windowStart)
+    .where("dueDate", "<=", windowEnd)
     .get();
 
   if (expensesQuery.empty) {
@@ -28,9 +41,12 @@ export async function processExpenseReminders(now: Date = new Date()): Promise<v
   }
 
   const groupCache = new Map<string, GroupDoc | null>();
+  const userCache = new Map<string, UserDoc | null>();
+  const tokenCache = new Map<string, string[]>();
 
   for (const doc of expensesQuery.docs) {
     const expense = doc.data();
+    if (expense.isDeleted === true) continue;
     if (!expense.dueDate) continue;
 
     const dueDate: Date = typeof expense.dueDate.toDate === "function"
@@ -57,10 +73,16 @@ export async function processExpenseReminders(now: Date = new Date()): Promise<v
     if (memberIds.length === 0) continue;
 
     for (const memberId of memberIds) {
-      const userDoc = await db.collection("users").doc(memberId).get();
-      if (!userDoc.exists) continue;
+      let user: UserDoc | null;
+      if (userCache.has(memberId)) {
+        user = userCache.get(memberId) ?? null;
+      } else {
+        const userDoc = await db.collection("users").doc(memberId).get();
+        user = userDoc.exists ? (userDoc.data() as UserDoc) : null;
+        userCache.set(memberId, user);
+      }
+      if (!user) continue;
 
-      const user = userDoc.data()!;
       const timezone = user.timezone || "UTC";
       const preferredReminderTime = user.preferredReminderTime || "12:00";
 
@@ -106,7 +128,13 @@ export async function processExpenseReminders(now: Date = new Date()): Promise<v
         }
 
         if (type && titleLocKey && bodyLocKey) {
-          const tokens = await getUserDeviceTokens(memberId);
+          let tokens: string[];
+          if (tokenCache.has(memberId)) {
+            tokens = tokenCache.get(memberId) ?? [];
+          } else {
+            tokens = await getUserDeviceTokens(memberId);
+            tokenCache.set(memberId, tokens);
+          }
           if (tokens.length > 0) {
             const payload: FcmDataPayload = {
               type,

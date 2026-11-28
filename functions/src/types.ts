@@ -71,6 +71,10 @@ export interface ExpenseDoc {
   notes?: string;
   createdBy: string;
   lastUpdatedBy?: string;
+  isDeleted?: boolean;
+  deletedAt?: unknown;
+  serverUpdatedAt?: unknown;
+  expireAt?: unknown;
 }
 
 export interface ContributionDoc {
@@ -80,6 +84,10 @@ export interface ContributionDoc {
   amountCents: number;
   currency: string;
   createdBy: string;
+  isDeleted?: boolean;
+  deletedAt?: unknown;
+  serverUpdatedAt?: unknown;
+  expireAt?: unknown;
 }
 
 export interface CashWithdrawalDoc {
@@ -91,6 +99,10 @@ export interface CashWithdrawalDoc {
   amountWithdrawn: number;
   currency: string;
   createdBy: string;
+  isDeleted?: boolean;
+  deletedAt?: unknown;
+  serverUpdatedAt?: unknown;
+  expireAt?: unknown;
 }
 
 export interface UserDoc {
@@ -98,6 +110,8 @@ export interface UserDoc {
   username: string;
   email: string;
   displayName?: string;
+  timezone?: string;
+  preferredReminderTime?: string;
 }
 
 export interface DeviceDoc {
@@ -115,6 +129,10 @@ export interface SettlementDoc {
   currency?: string;
   status?: string;
   disputedBy?: string;
+  isDeleted?: boolean;
+  deletedAt?: unknown;
+  serverUpdatedAt?: unknown;
+  expireAt?: unknown;
 }
 
 export interface NudgeDoc {
@@ -201,4 +219,46 @@ export interface ExchangeRatesDoc {
 export interface CurrenciesDoc {
   currencies: Record<string, string>;
   updatedAt: FirebaseFirestore.Timestamp;
+}
+
+// ---------------------------------------------------------------------------
+// Cloud Billing Budget Pub/Sub notification & kill-switch types
+// ---------------------------------------------------------------------------
+
+export interface BillingBudgetNotification {
+  schemaVersion?: string;
+  budgetDisplayName?: string;
+  costAmount: number;
+  costIntervalStart?: string;
+  budgetAmount: number;
+  budgetAmountType?: string;
+  currencyCode?: string;
+  alertThresholdExceeded?: number;
+  forecastThresholdExceeded?: number;
+}
+
+export interface BillingKillSwitchConfig {
+  projectId: string;
+  enabled: boolean;
+  dryRun: boolean;
+  emergencyBudgetDisplayName: string;
+}
+
+export type BillingKillSwitchAction =
+  | "UNLINKED"
+  | "DRY_RUN"
+  | "SKIPPED_DISABLED"
+  | "SKIPPED_INVALID_PAYLOAD"
+  | "SKIPPED_NON_EMERGENCY_BUDGET"
+  | "SKIPPED_BELOW_THRESHOLD"
+  | "SKIPPED_ALREADY_DISABLED";
+
+export interface BillingKillSwitchResult {
+  action: BillingKillSwitchAction;
+  projectId: string;
+  reason: string;
+  budgetDisplayName?: string;
+  costAmount?: number;
+  budgetAmount?: number;
+  currencyCode?: string;
 }

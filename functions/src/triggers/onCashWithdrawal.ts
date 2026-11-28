@@ -36,6 +36,15 @@ export const onCashWithdrawal = onDocumentCreated(
     const withdrawal = snapshot.data() as CashWithdrawalDoc;
     const groupId = event.params.groupId;
     const withdrawalId = event.params.withdrawalId;
+
+    if (withdrawal.isDeleted === true) {
+      logger.info("onCashWithdrawal: Suppressed — tombstoned document created", {
+        groupId,
+        withdrawalId,
+      });
+      return;
+    }
+
     const actorId = withdrawal.createdBy;
 
     if (!actorId) {

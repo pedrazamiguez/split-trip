@@ -16,6 +16,7 @@ import es.pedrazamiguez.splittrip.domain.datasource.local.LocalCashWithdrawalWri
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalContributionDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSettlementDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSyncCheckpointDataSource
 import es.pedrazamiguez.splittrip.domain.repository.CashTransferRepository
 import es.pedrazamiguez.splittrip.domain.repository.CashWithdrawalRepository
 import es.pedrazamiguez.splittrip.domain.repository.ContributionRepository
@@ -30,6 +31,7 @@ val balancesDataModule = module {
             cloudContributionDataSource = get<CloudContributionDataSource>(),
             localContributionDataSource = get<LocalContributionDataSource>(),
             localGroupDataSource = get<LocalGroupDataSource>(),
+            localSyncCheckpointDataSource = get<LocalSyncCheckpointDataSource>(),
             authenticationService = get<AuthenticationService>(),
             syncTeardownCoordinator = get<SyncTeardownCoordinator>(),
             performanceMonitor = get<PerformanceMonitor>()
@@ -42,6 +44,7 @@ val balancesDataModule = module {
             localQueryDataSource = get<LocalCashWithdrawalQueryDataSource>(),
             localWriteDataSource = get<LocalCashWithdrawalWriteDataSource>(),
             localGroupDataSource = get<LocalGroupDataSource>(),
+            localSyncCheckpointDataSource = get<LocalSyncCheckpointDataSource>(),
             authenticationService = get<AuthenticationService>(),
             syncTeardownCoordinator = get<SyncTeardownCoordinator>(),
             performanceMonitor = get<PerformanceMonitor>(),
@@ -53,7 +56,10 @@ val balancesDataModule = module {
         SettlementRepositoryImpl(
             cloudSettlementDataSource = get<CloudSettlementDataSource>(),
             localSettlementDataSource = get<LocalSettlementDataSource>(),
+            localGroupDataSource = get<LocalGroupDataSource>(),
+            localSyncCheckpointDataSource = get<LocalSyncCheckpointDataSource>(),
             performanceMonitor = get<PerformanceMonitor>(),
+            syncTeardownCoordinator = get<SyncTeardownCoordinator>(),
             ioDispatcher = Dispatchers.IO
         )
     }
@@ -62,7 +68,10 @@ val balancesDataModule = module {
         CashTransferRepositoryImpl(
             cashTransferDao = get<CashTransferDao>(),
             cloudCashTransferDataSource = get<CloudCashTransferDataSource>(),
+            localGroupDataSource = get<LocalGroupDataSource>(),
+            localSyncCheckpointDataSource = get<LocalSyncCheckpointDataSource>(),
             performanceMonitor = get<PerformanceMonitor>(),
+            syncTeardownCoordinator = get<SyncTeardownCoordinator>(),
             ioDispatcher = Dispatchers.IO
         )
     }

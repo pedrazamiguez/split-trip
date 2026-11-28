@@ -133,7 +133,7 @@ class LocalAiModelPackUiMapperImpl(
         val sizeLabel = formatByteSize(config.sizeBytes)
         val requirementsLabel = UiText.StringResource(
             R.string.local_ai_pack_requirements_format,
-            config.minRamMb,
+            formatRamSize(config.minRamMb),
             formatByteSize(config.minFreeStorageBytes)
         )
 
@@ -208,8 +208,8 @@ class LocalAiModelPackUiMapperImpl(
         progressLabel = UiText.StringResource(
             R.string.local_ai_pack_progress_format,
             status.progressPercent,
-            formatByteSize(status.downloadedBytes),
-            formatByteSize(status.totalBytes)
+            formatByteSize(status.downloadedBytes, minFractionDigits = PROGRESS_MIN_FRACTION_DIGITS),
+            formatByteSize(status.totalBytes, minFractionDigits = PROGRESS_MIN_FRACTION_DIGITS)
         ),
         action = LocalAiModelPackTierAction.CANCEL,
         actionLabel = UiText.StringResource(R.string.local_ai_pack_action_cancel),
@@ -299,7 +299,7 @@ class LocalAiModelPackUiMapperImpl(
         status: ModelPackStatus.NotInstalled,
         isEntitled: Boolean
     ): LocalAiModelPackUiState {
-        val sizeLabel = status.downloadSizeBytes.takeIf { it > 0L }?.let(::formatByteSize)
+        val sizeLabel = status.downloadSizeBytes.takeIf { it > 0L }?.let { formatByteSize(it) }
         val versionLabel = status.availableVersion.takeIf { it.isNotBlank() }?.let {
             UiText.StringResource(R.string.local_ai_pack_version_format, it)
         }
@@ -353,8 +353,8 @@ class LocalAiModelPackUiMapperImpl(
         val progressLabel = UiText.StringResource(
             R.string.local_ai_pack_progress_format,
             status.progressPercent,
-            formatByteSize(status.downloadedBytes),
-            formatByteSize(status.totalBytes)
+            formatByteSize(status.downloadedBytes, minFractionDigits = PROGRESS_MIN_FRACTION_DIGITS),
+            formatByteSize(status.totalBytes, minFractionDigits = PROGRESS_MIN_FRACTION_DIGITS)
         )
         val title = if (activePackDisplayName != null) {
             UiText.StringResource(R.string.local_ai_pack_status_downloading_named_title, activePackDisplayName)
@@ -483,7 +483,10 @@ class LocalAiModelPackUiMapperImpl(
         ModelPackIncompatibilityReason.UNSUPPORTED_ABI ->
             UiText.StringResource(R.string.local_ai_pack_incompatible_abi)
         ModelPackIncompatibilityReason.INSUFFICIENT_RAM ->
-            UiText.StringResource(R.string.local_ai_pack_incompatible_ram, requiredRamMb)
+            UiText.StringResource(
+                R.string.local_ai_pack_incompatible_ram,
+                formatRamSize(requiredRamMb)
+            )
         ModelPackIncompatibilityReason.INSUFFICIENT_STORAGE ->
             UiText.StringResource(
                 R.string.local_ai_pack_incompatible_storage,
@@ -530,19 +533,25 @@ class LocalAiModelPackUiMapperImpl(
             .divide(BigDecimal(MAX_PERCENT), FRACTION_SCALE, RoundingMode.HALF_UP)
             .toFloat()
 
-    private fun formatByteSize(bytes: Long): String {
+    private fun formatRamSize(ramMb: Int): String =
+        formatByteSize(ramMb.coerceAtLeast(0).toLong() * BYTES_PER_MB)
+
+    private fun formatByteSize(
+        bytes: Long,
+        minFractionDigits: Int = DEFAULT_MIN_FRACTION_DIGITS
+    ): String {
         val safeBytes = bytes.coerceAtLeast(0L)
         val numberFormat = NumberFormat.getNumberInstance(localeProvider.getCurrentLocale()).apply {
-            minimumFractionDigits = 0
-            maximumFractionDigits = 1
+            minimumFractionDigits = minFractionDigits
+            maximumFractionDigits = BYTE_SIZE_FRACTION_SCALE
         }
         return if (safeBytes >= BYTES_PER_GB) {
             val gbValue = BigDecimal(safeBytes)
-                .divide(BigDecimal(BYTES_PER_GB), 1, RoundingMode.HALF_UP)
+                .divide(BigDecimal(BYTES_PER_GB), BYTE_SIZE_FRACTION_SCALE, RoundingMode.HALF_UP)
             "${numberFormat.format(gbValue)} GB"
         } else {
             val mbValue = BigDecimal(safeBytes)
-                .divide(BigDecimal(BYTES_PER_MB), 1, RoundingMode.HALF_UP)
+                .divide(BigDecimal(BYTES_PER_MB), BYTE_SIZE_FRACTION_SCALE, RoundingMode.HALF_UP)
             "${numberFormat.format(mbValue)} MB"
         }
     }
@@ -550,6 +559,9 @@ class LocalAiModelPackUiMapperImpl(
     private companion object {
         private const val MAX_PERCENT = 100
         private const val FRACTION_SCALE = 2
+        private const val BYTE_SIZE_FRACTION_SCALE = 1
+        private const val DEFAULT_MIN_FRACTION_DIGITS = 0
+        private const val PROGRESS_MIN_FRACTION_DIGITS = 1
         private const val BYTES_PER_MB = 1_048_576L
         private const val BYTES_PER_GB = 1_073_741_824L
     }

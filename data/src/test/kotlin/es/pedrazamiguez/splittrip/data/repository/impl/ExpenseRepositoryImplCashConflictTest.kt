@@ -1,9 +1,12 @@
 package es.pedrazamiguez.splittrip.data.repository.impl
 
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
+import es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator
 import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudExpenseDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalExpenseDataSource
 import es.pedrazamiguez.splittrip.domain.datasource.local.LocalGroupDataSource
+import es.pedrazamiguez.splittrip.domain.datasource.local.LocalSyncCheckpointDataSource
 import es.pedrazamiguez.splittrip.domain.enums.PaymentMethod
 import es.pedrazamiguez.splittrip.domain.enums.SyncStatus
 import es.pedrazamiguez.splittrip.domain.exception.CashConflictException
@@ -41,11 +44,11 @@ class ExpenseRepositoryImplCashConflictTest {
     private lateinit var cloudExpenseDataSource: CloudExpenseDataSource
     private lateinit var localExpenseDataSource: LocalExpenseDataSource
     private lateinit var authenticationService: AuthenticationService
-    private lateinit var cloudStorageDataSource:
-        es.pedrazamiguez.splittrip.domain.datasource.cloud.CloudStorageDataSource
+    private lateinit var cloudStorageDataSource: CloudStorageDataSource
     private lateinit var receiptStorageService: ReceiptStorageService
     private lateinit var performanceMonitor: PerformanceMonitor
     private lateinit var localGroupDataSource: LocalGroupDataSource
+    private lateinit var localSyncCheckpointDataSource: LocalSyncCheckpointDataSource
     private lateinit var remainderDistributionService: RemainderDistributionService
     private lateinit var testDispatcher: TestDispatcher
     private lateinit var repository: ExpenseRepositoryImpl
@@ -79,14 +82,14 @@ class ExpenseRepositoryImplCashConflictTest {
         cloudStorageDataSource = mockk(relaxed = true)
         receiptStorageService = mockk(relaxed = true)
         localGroupDataSource = mockk(relaxed = true)
+        localSyncCheckpointDataSource = mockk(relaxed = true)
         remainderDistributionService = RemainderDistributionServiceImpl()
         performanceMonitor = mockk(relaxed = true) {
-            io.mockk.coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
-            io.mockk.every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
+            coEvery { traceAsync<Any?>(any(), any()) } coAnswers { secondArg<suspend () -> Any?>().invoke() }
+            every { trace<Any?>(any(), any()) } answers { secondArg<() -> Any?>().invoke() }
         }
         every { authenticationService.currentUserId() } returns testUserId
-        val syncTeardownCoordinator =
-            mockk<es.pedrazamiguez.splittrip.data.sync.SyncTeardownCoordinator>(relaxed = true)
+        val syncTeardownCoordinator = mockk<SyncTeardownCoordinator>(relaxed = true)
 
         repository = ExpenseRepositoryImpl(
             cloudExpenseDataSource,
@@ -96,6 +99,7 @@ class ExpenseRepositoryImplCashConflictTest {
             receiptStorageService,
             performanceMonitor,
             localGroupDataSource,
+            localSyncCheckpointDataSource,
             remainderDistributionService,
             syncTeardownCoordinator = syncTeardownCoordinator,
             ioDispatcher = testDispatcher

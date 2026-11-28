@@ -164,6 +164,9 @@ interface CashWithdrawalDao {
     @Query("DELETE FROM cash_withdrawals WHERE id IN (:ids)")
     suspend fun deleteWithdrawalsByIds(ids: List<String>)
 
+    @Query("DELETE FROM cash_withdrawals WHERE groupId = :groupId AND id IN (:ids)")
+    suspend fun deleteWithdrawalsByGroupAndIds(groupId: String, ids: List<String>)
+
     /**
      * Reconciles local withdrawals for a group with the authoritative cloud snapshot.
      *
@@ -214,5 +217,30 @@ interface CashWithdrawalDao {
         if (staleIds.isNotEmpty()) {
             deleteWithdrawalsByIds(staleIds)
         }
+    }
+
+    @Transaction
+    suspend fun applyWithdrawalsDeltaForGroup(
+        groupId: String,
+        upserts: List<CashWithdrawalEntity>,
+        deletedIds: List<String>
+    ) {
+        if (upserts.isEmpty() && deletedIds.isEmpty()) return
+        val deletedIdSet = deletedIds.toSet()
+        if (upserts.isNotEmpty()) {
+            val unsyncedStatuses = getUnsyncedWithdrawalStatuses(groupId)
+            insertWithdrawals(upserts)
+            val upsertedIds = upserts.map { it.id }.toSet()
+            unsyncedStatuses
+                .filter { it.id in upsertedIds && it.id !in deletedIdSet }
+                .forEach { updateSyncStatus(it.id, it.syncStatus) }
+        }
+        deletedIds.chunked(SQLITE_BIND_LIMIT).forEach { chunk ->
+            deleteWithdrawalsByGroupAndIds(groupId, chunk)
+        }
+    }
+
+    private companion object {
+        const val SQLITE_BIND_LIMIT = 500
     }
 }
