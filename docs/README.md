@@ -30,6 +30,7 @@ docs/
 * [ADR-0005: Mandatory Debounced Modifiers for UI Navigation & Actions](architecture/adrs/0005-debounced-ui-interactions.md)
 * [ADR-0006: Koin Dependency Injection Standards & Variable Naming](architecture/adrs/0006-koin-di-conventions.md)
 * [ADR-0007: Specialized Multi-Agent and Skill-Driven Development Ecosystem](architecture/adrs/0007-multi-agent-sdd-ecosystem.md)
+* [ADR-0010: Firestore Region Evaluation (eur3 vs. Single-Region EU)](architecture/adrs/0010-firestore-region-eur3-vs-single-region.md)
 
 ### Architectural Patterns
 * [Offline-First Architecture & Sync Delegates](architecture/patterns/offline-first.md)
