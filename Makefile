@@ -227,6 +227,7 @@ fast-check: andaluz-lenient remoteconfig-validate ## Fast incremental check usin
 	@printf "$(YELLOW)⏳  Running GitHub MCP guard & AI config tests...$(NC)\n"
 	@python3 -m unittest scripts/test_github_mcp_guard.py -v
 	@python3 -m unittest scripts/test_merge_remote_config.py -v
+	@python3 -m unittest scripts/test_sync_wiki.py -v
 	@printf "$(YELLOW)⏳  Running fast incremental quality checks...$(NC)\n"
 	@$(FAST_GRADLEW) ktlintCheck detekt lintDebug :konsist-tests:test --continue
 	@$(FAST_GRADLEW) jacocoMergedReport --continue
@@ -237,6 +238,7 @@ check: clean andaluz-lenient remoteconfig-validate ## Run all local quality gate
 	@printf "$(YELLOW)⏳  Running GitHub MCP guard & AI config tests...$(NC)\n"
 	@python3 -m unittest scripts/test_github_mcp_guard.py -v
 	@python3 -m unittest scripts/test_merge_remote_config.py -v
+	@python3 -m unittest scripts/test_sync_wiki.py -v
 	@printf "$(YELLOW)⏳  Running full cold quality gates (single-pass Gradle execution)...$(NC)\n"
 	@$(GRADLEW) ktlintFormat ktlintCheck detekt lintDebug :konsist-tests:test --continue
 	@$(GRADLEW) jacocoMergedReport --continue

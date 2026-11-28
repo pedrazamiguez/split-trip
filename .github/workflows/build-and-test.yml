@@ -52,6 +52,7 @@ jobs:
           python3 -m unittest scripts/test_generate_play_store_whatsnew.py -v
           python3 -m unittest scripts/test_github_mcp_guard.py -v
           python3 -m unittest scripts/test_merge_remote_config.py -v
+          python3 -m unittest scripts/test_sync_wiki.py -v
 
       - name: Lint, Test, and Build
         run: ./gradlew lintDebug testDebugUnitTest assembleDebug
