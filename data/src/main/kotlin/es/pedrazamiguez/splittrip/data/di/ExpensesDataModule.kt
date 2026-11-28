@@ -3,16 +3,9 @@ package es.pedrazamiguez.splittrip.data.di
 import androidx.work.WorkManager
 import com.google.ai.edge.aicore.GenerativeModel
 import com.google.ai.edge.aicore.generationConfig
-import com.google.android.play.core.splitinstall.SplitInstallManagerFactory
 import es.pedrazamiguez.splittrip.core.performance.PerformanceMonitor
-import es.pedrazamiguez.splittrip.data.litert.AndroidPlaySplitInstallClient
-import es.pedrazamiguez.splittrip.data.litert.DynamicLiteRtEngineClient
-import es.pedrazamiguez.splittrip.data.litert.LiteRtDynamicRuntimeManager
-import es.pedrazamiguez.splittrip.data.litert.LiteRtDynamicRuntimeManagerImpl
 import es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClient
-import es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClientFactoryLoader
-import es.pedrazamiguez.splittrip.data.litert.PlaySplitInstallClient
-import es.pedrazamiguez.splittrip.data.litert.ServiceLoaderLiteRtEngineClientFactoryLoader
+import es.pedrazamiguez.splittrip.data.litert.LiteRtLmEngineClientImpl
 import es.pedrazamiguez.splittrip.data.local.datastore.LocalAiModelPackPreferences
 import es.pedrazamiguez.splittrip.data.local.datastore.UserPreferences
 import es.pedrazamiguez.splittrip.data.repository.impl.AICoreInferenceRepositoryImpl
@@ -130,39 +123,8 @@ val expensesDataModule = module {
         WorkManagerLocalAiModelPackScheduler(workManager = get<WorkManager>())
     }
 
-    single<PlaySplitInstallClient> {
-        val applicationContext = androidContext().applicationContext
-        val splitInstallManager = SplitInstallManagerFactory.create(applicationContext)
-        AndroidPlaySplitInstallClient(
-            context = applicationContext,
-            splitInstallManager = splitInstallManager
-        )
-    }
-
-    single<LiteRtEngineClientFactoryLoader> {
-        val applicationContext = androidContext().applicationContext
-        ServiceLoaderLiteRtEngineClientFactoryLoader(
-            classLoaderProvider = { applicationContext.classLoader }
-        )
-    }
-
-    single<LiteRtDynamicRuntimeManager> {
-        val playSplitInstallClient = get<PlaySplitInstallClient>()
-        val liteRtEngineClientFactoryLoader = get<LiteRtEngineClientFactoryLoader>()
-        LiteRtDynamicRuntimeManagerImpl(
-            splitInstallClient = playSplitInstallClient,
-            factoryLoader = liteRtEngineClientFactoryLoader
-        )
-    }
-
     single<LiteRtEngineClient> {
-        val liteRtDynamicRuntimeManager = get<LiteRtDynamicRuntimeManager>()
-        val liteRtEngineClientFactoryLoader = get<LiteRtEngineClientFactoryLoader>()
-        DynamicLiteRtEngineClient(
-            context = androidContext().applicationContext,
-            runtimeManager = liteRtDynamicRuntimeManager,
-            factoryLoader = liteRtEngineClientFactoryLoader
-        )
+        LiteRtLmEngineClientImpl(context = androidContext().applicationContext)
     }
 
     single<LocalAiModelPackService> {
@@ -172,7 +134,6 @@ val expensesDataModule = module {
         val modelPackStorageManager = get<ModelPackStorageManager>()
         val localAiModelPackPreferences = get<LocalAiModelPackPreferences>()
         val localAiModelPackWorkScheduler = get<LocalAiModelPackWorkScheduler>()
-        val liteRtDynamicRuntimeManager = get<LiteRtDynamicRuntimeManager>()
         LocalAiModelPackServiceImpl(
             appConfigRepository = appConfigRepository,
             featureGateService = featureGateService,
@@ -181,7 +142,6 @@ val expensesDataModule = module {
             preferences = localAiModelPackPreferences,
             workScheduler = localAiModelPackWorkScheduler,
             engineClient = lazy { get<LiteRtEngineClient>() },
-            dynamicRuntimeManager = liteRtDynamicRuntimeManager,
             ioDispatcher = Dispatchers.IO
         )
     }

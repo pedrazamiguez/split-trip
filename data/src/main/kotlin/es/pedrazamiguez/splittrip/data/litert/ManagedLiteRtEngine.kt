@@ -1,6 +1,4 @@
-package es.pedrazamiguez.splittrip.dynamic.litertlm
-
-import es.pedrazamiguez.splittrip.data.litert.LiteRtRuntimeConfig
+package es.pedrazamiguez.splittrip.data.litert
 
 internal interface ManagedLiteRtEngine : AutoCloseable {
     fun isInitialized(): Boolean

@@ -1,7 +1,5 @@
 package es.pedrazamiguez.splittrip.data.service
 
-import es.pedrazamiguez.splittrip.data.litert.LiteRtDynamicRuntimeManager
-import es.pedrazamiguez.splittrip.data.litert.LiteRtDynamicRuntimeState
 import es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClient
 import es.pedrazamiguez.splittrip.data.local.datastore.InstalledModelPackMetadata
 import es.pedrazamiguez.splittrip.data.local.datastore.LocalAiModelPackPreferences
@@ -23,10 +21,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -39,19 +35,8 @@ internal class LocalAiModelPackServiceImpl(
     private val preferences: LocalAiModelPackPreferences,
     private val workScheduler: LocalAiModelPackWorkScheduler,
     private val engineClient: Lazy<LiteRtEngineClient>,
-    private val dynamicRuntimeManager: LiteRtDynamicRuntimeManager,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : LocalAiModelPackService, AutoCloseable {
-
-    private data class PendingRuntimeDownload(
-        val config: ModelPackConfig,
-        val wifiOnly: Boolean
-    )
-
-    private data class InstalledEntitlementSnapshot(
-        val metadata: InstalledModelPackMetadata?,
-        val isEntitled: Boolean
-    )
 
     private val statusResolver = ModelPackStatusResolver(compatibilityProvider)
     private val serviceJob = SupervisorJob()
@@ -60,66 +45,19 @@ internal class LocalAiModelPackServiceImpl(
     @Volatile
     private var cachedInstalledPack: InstalledModelPackMetadata? = null
 
-    private val pendingRuntimeDownload = MutableStateFlow<PendingRuntimeDownload?>(null)
-    private val activeRuntimePackId = MutableStateFlow<String?>(null)
-
     init {
         serviceScope.launch {
-            combine(
-                preferences.installedPackMetadata,
-                featureGateService.isFeatureEnabled(GatedFeature.LOCAL_AI_MODEL_PACK)
-            ) { metadata, isEntitled ->
-                InstalledEntitlementSnapshot(metadata = metadata, isEntitled = isEntitled)
-            }.collect(::handleInstalledPackEntitlement)
-        }
-
-        serviceScope.launch {
-            dynamicRuntimeManager.observeState().collect(::handleRuntimeStateTransition)
-        }
-    }
-
-    private suspend fun handleInstalledPackEntitlement(snapshot: InstalledEntitlementSnapshot) {
-        val metadata = snapshot.metadata
-        cachedInstalledPack = metadata
-        val needsRuntimeBackfill = metadata != null &&
-            snapshot.isEntitled &&
-            isInstalledPackValid(metadata) &&
-            !dynamicRuntimeManager.isRuntimeInstalled()
-        if (needsRuntimeBackfill &&
-            dynamicRuntimeManager.observeState().value is LiteRtDynamicRuntimeState.NotInstalled
-        ) {
-            activeRuntimePackId.value = metadata.packId
-            dynamicRuntimeManager.requestInstall()
-        }
-    }
-
-    private fun handleRuntimeStateTransition(runtimeState: LiteRtDynamicRuntimeState) {
-        when (runtimeState) {
-            LiteRtDynamicRuntimeState.Installed -> {
-                val pending = pendingRuntimeDownload.getAndUpdate { null }
-                if (pending != null) {
-                    workScheduler.enqueueDownload(pending.config, pending.wifiOnly)
-                }
-                activeRuntimePackId.value = null
+            preferences.installedPackMetadata.collect { metadata ->
+                cachedInstalledPack = metadata
             }
-
-            is LiteRtDynamicRuntimeState.Failed -> {
-                pendingRuntimeDownload.value = null
-            }
-
-            LiteRtDynamicRuntimeState.NotInstalled,
-            LiteRtDynamicRuntimeState.Pending,
-            is LiteRtDynamicRuntimeState.Downloading,
-            LiteRtDynamicRuntimeState.Installing -> Unit
         }
     }
 
     override fun observeStatus(): Flow<ModelPackStatus> = combine(
         appConfigRepository.localAiModelPackCatalog,
         preferences.installedPackMetadata,
-        workScheduler.observeWorkState(),
-        dynamicRuntimeManager.observeState()
-    ) { catalog, installed, workState, runtimeState ->
+        workScheduler.observeWorkState()
+    ) { catalog, installed, workState ->
         cachedInstalledPack = installed
         val isInstalledValid = isInstalledPackValid(installed)
         val validInstalledPackId = installed?.takeIf { isInstalledValid }?.packId
@@ -130,18 +68,15 @@ internal class LocalAiModelPackServiceImpl(
             evaluated = evaluated,
             installed = installed,
             isInstalledValid = isInstalledValid,
-            workState = workState,
-            runtimeState = runtimeState,
-            activeRuntimePackId = activeRuntimePackId.value
+            workState = workState
         )
     }
 
     override fun observeCatalogEntries(): Flow<List<ModelPackCatalogEntry>> = combine(
         appConfigRepository.localAiModelPackCatalog,
         preferences.installedPackMetadata,
-        workScheduler.observeWorkState(),
-        dynamicRuntimeManager.observeState()
-    ) { catalog, installed, workState, runtimeState ->
+        workScheduler.observeWorkState()
+    ) { catalog, installed, workState ->
         cachedInstalledPack = installed
         val isInstalledValid = isInstalledPackValid(installed)
         val validInstalledPackId = installed?.takeIf { isInstalledValid }?.packId
@@ -152,9 +87,7 @@ internal class LocalAiModelPackServiceImpl(
                 entry = entry,
                 installed = installed,
                 isInstalledValid = isInstalledValid,
-                workState = workState,
-                runtimeState = runtimeState,
-                activeRuntimePackId = activeRuntimePackId.value
+                workState = workState
             )
         }
     }
@@ -177,8 +110,7 @@ internal class LocalAiModelPackServiceImpl(
 
     override fun isPackInstalled(): Boolean {
         val cached = cachedInstalledPack ?: return false
-        return dynamicRuntimeManager.isRuntimeInstalled() &&
-            storageManager.isFileValid(cached.filePath, cached.sizeBytes)
+        return storageManager.isFileValid(cached.filePath, cached.sizeBytes)
     }
 
     override fun getInstalledModelPath(): String? {
@@ -231,15 +163,7 @@ internal class LocalAiModelPackServiceImpl(
             }
 
             val wifiOnly = preferences.wifiOnlyDownload.first()
-            if (dynamicRuntimeManager.isRuntimeInstalled()) {
-                pendingRuntimeDownload.value = null
-                activeRuntimePackId.value = null
-                workScheduler.enqueueDownload(targetConfig, wifiOnly)
-            } else {
-                pendingRuntimeDownload.value = PendingRuntimeDownload(targetConfig, wifiOnly)
-                activeRuntimePackId.value = targetConfig.packId
-                dynamicRuntimeManager.requestInstall()
-            }
+            workScheduler.enqueueDownload(targetConfig, wifiOnly)
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
@@ -272,9 +196,6 @@ internal class LocalAiModelPackServiceImpl(
 
     override suspend fun cancelDownload(packId: String?): Result<Unit> {
         return try {
-            pendingRuntimeDownload.value = null
-            activeRuntimePackId.value = null
-            dynamicRuntimeManager.cancelInstall()
             workScheduler.cancelDownload()
             val catalog = appConfigRepository.localAiModelPackCatalog.value
             val targetConfig = packId?.takeIf { it.isNotBlank() }?.let { catalog.findById(it) }
@@ -295,9 +216,6 @@ internal class LocalAiModelPackServiceImpl(
 
     override suspend fun deletePack(): Result<Unit> {
         return try {
-            pendingRuntimeDownload.value = null
-            activeRuntimePackId.value = null
-            dynamicRuntimeManager.cancelInstall()
             workScheduler.cancelDownload()
             withContext(ioDispatcher) {
                 if (engineClient.isInitialized()) {
@@ -307,7 +225,6 @@ internal class LocalAiModelPackServiceImpl(
                 preferences.clearInstalledPackMetadata()
                 cachedInstalledPack = null
             }
-            dynamicRuntimeManager.requestDeferredUninstall()
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
