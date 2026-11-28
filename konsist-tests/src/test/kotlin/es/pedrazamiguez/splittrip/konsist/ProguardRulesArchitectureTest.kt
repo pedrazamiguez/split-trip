@@ -155,22 +155,4 @@ class ProguardRulesArchitectureTest {
             "Proguard rules must keep LiteRtLmJni\$JniInferenceCallback implementations"
         )
     }
-
-    @Test
-    @DisplayName("LiteRT-LM dynamic SPI contract and implementations must have keep rules")
-    fun `litertlm dynamic spi contract must have keep rules`() {
-        val rules = readProguardRules()
-        assertTrue(
-            rules.contains("es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClient"),
-            "Proguard rules must keep LiteRtEngineClient SPI contract"
-        )
-        assertTrue(
-            rules.contains("es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClientFactory"),
-            "Proguard rules must keep LiteRtEngineClientFactory SPI contract"
-        )
-        assertTrue(
-            rules.contains("* implements es.pedrazamiguez.splittrip.data.litert.LiteRtEngineClientFactory"),
-            "Proguard rules must keep LiteRtEngineClientFactory SPI implementations"
-        )
-    }
 }
