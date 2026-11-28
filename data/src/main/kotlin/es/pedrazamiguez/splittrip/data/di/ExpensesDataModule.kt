@@ -233,6 +233,7 @@ val expensesDataModule = module {
         val aiModelResolverService = get<AiModelResolverService>()
         val localAiModelPackService = get<LocalAiModelPackService>()
         ExpenseCategoryAiClassifierServiceImpl(
+            context = androidContext(),
             aiCoreCapabilityProvider = aiCoreCapabilityProvider,
             aiCoreInferenceRepository = lazy { get<AiInferenceRepository>(named("ai_core_classifier")) },
             liteRtInferenceRepository = lazy { get<AiInferenceRepository>(named("lite_rt")) },
