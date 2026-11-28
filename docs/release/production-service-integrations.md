@@ -259,20 +259,42 @@ Before enabling live unlinking, set `BILLING_KILL_SWITCH_ENABLED=true` and `BILL
      --format="yaml(serviceConfig.environmentVariables,serviceConfig.serviceAccountEmail)"
    ```
 
-### 5.5 Post-Incident Recovery Runbook & Latency Caveats
+### 5.5 Live Budget Adjustments, User Impact & Post-Incident Recovery
 
 > [!WARNING]
 > **Reporting Latency Caveat:** Cloud Billing budget evaluations typically lag real-time usage by **~15–60+ minutes** (occasionally longer for certain services). This kill-switch caps catastrophic multi-hour runaway loops; it does not provide sub-second circuit breaking.
 
-If `onBillingBudgetAlert` unlinks billing:
+#### Adjusting Budget Amounts Live
+* **Amount changes require no code change or redeploy:** `onBillingBudgetAlert` evaluates `costAmount < budgetAmount` dynamically from each Pub/Sub payload. Raising `SplitTrip Emergency Hard Cap` (e.g., `€50` → `€100` as MAU and Net MRR grow) in GCP Console takes effect on subsequent budget evaluations without redeploying Cloud Functions.
+* **Do NOT rename `SplitTrip Emergency Hard Cap`** in GCP Console unless you also update `BILLING_EMERGENCY_BUDGET_NAME` in `functions/.env`—mismatched names are ignored (`SKIPPED_NON_EMERGENCY_BUDGET`).
+
+#### What Happens When the Kill-Switch Fires
+* **Billing does NOT auto-relink next month:** Re-linking is strictly manual so a runaway bug cannot automatically resume on the 1st of the next calendar month.
+* **User experience while unlinked:**
+  * *Continues working (offline-first Room SSOT):* App launch, cached groups/balances/expenses, local offline expense recording, on-device receipt OCR, Google Play Billing, and AdMob.
+  * *Stops working until re-linked:* Cloud Firestore multi-device sync, online group creation/invites, Cloud Functions (all push notification triggers, `syncExchangeRates`, `expenseReminders`), Cloud Storage receipt/cover uploads & downloads, and potentially Firebase Auth token refreshes/new sign-ins.
+
+#### Post-Incident Recovery Runbook (Step-by-Step)
 
 1. **Mitigate root cause first:** Inspect Cloud Logging, Firestore Usage, Cloud Storage Egress, and Cloud Functions invocation metrics. Fix the runaway loop or tighten security rules **before** re-enabling billing.
-2. **Re-link billing account:**
-   ```bash
-   gcloud billing projects link <PROJECT_ID> --billing-account=<BILLING_ACCOUNT_ID>
-   ```
-   *(Or via GCP Console → Billing → Account Management → My Projects → Change billing.)*
-3. **Verify Firebase services:** Confirm the Blaze plan is restored in Firebase Console, verify Firestore read/write, Firebase Auth, Cloud Storage, and Remote Config, and confirm scheduled/trigger Cloud Functions (`syncExchangeRates`, `expenseReminders`, notification triggers) are active (re-run `make firebase` or `deploy-firebase.yml` if any Gen-2 Cloud Run revision requires redeployment).
+2. **Prevent an immediate same-month re-unlink:** Monthly spend on the billing account accumulates across the calendar month. If you are recovering **in the same calendar month** that triggered the cap, edit **`SplitTrip Emergency Hard Cap`** in **GCP Console → Billing → Budgets & alerts** and raise the target amount above your current month-to-date spend (e.g., `€50` → `€100`) **before** re-linking—otherwise GCP's next budget evaluation will still see `costAmount >= budgetAmount` and unlink billing again.
+3. **Re-link the billing account manually:**
+   * **Via `gcloud` CLI:**
+     ```bash
+     # List your billing account IDs if you don't have <BILLING_ACCOUNT_ID> handy
+     gcloud billing accounts list
+
+     # Re-link <PROJECT_ID> to your Blaze billing account
+     gcloud billing projects link <PROJECT_ID> --billing-account=<BILLING_ACCOUNT_ID>
+
+     # Confirm billingEnabled: true
+     gcloud billing projects describe <PROJECT_ID>
+     ```
+   * **Via GCP Console:** Open **Billing → Account Management → My Projects** (or **Billing → Account Management → Linked projects**), locate `<PROJECT_ID>`, and select **Change billing** → choose your Blaze billing account.
+4. **Verify & restore Firebase services:**
+   * Confirm the **Blaze** plan is active in Firebase Console.
+   * Test Firestore read/write, Firebase Auth, Cloud Storage, and Remote Config.
+   * Verify Cloud Functions (`onBillingBudgetAlert`, `syncExchangeRates`, `expenseReminders`, and Firestore notification triggers) are active; if any Gen-2 Cloud Run service or Eventarc trigger stopped cleanly during unlink, redeploy with `make firebase` (or trigger `.github/workflows/deploy-firebase.yml` via `workflow_dispatch`).
 
 ---
 
